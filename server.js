@@ -43,6 +43,38 @@ function sanitizeSubject(value) {
     .slice(0, 80);
 }
 
+// Multilingual blocklist — terms inappropriate for a children's coloring app.
+// Add new languages by appending to the same set.
+const BLOCKED_TERMS = new Set([
+  // English
+  "nude","naked","nudity","blood","bloody","gore","gory","kill","killing",
+  "murder","murderer","dead","death","dying","corpse","weapon","weapons",
+  "gun","guns","rifle","pistol","knife","knives","bomb","bombs","explosive",
+  "sex","sexy","sexual","porn","pornography","erotic","erotica",
+  "violence","violent","torture","abuse","drug","drugs","cocaine","heroin",
+  "meth","terror","terrorist","suicide","rape","racist","racism","nazi",
+  // German
+  "nackt","nackten","blut","blutig","töten","tötung","mord","mörder",
+  "tot","leiche","waffe","waffen","gewehr","messer","bombe","bomben",
+  "sex","sexuell","pornografie","gewalt","folter","missbrauch","droge",
+  "drogen","terror","terrorist","selbstmord","vergewaltigung",
+  // Russian (Cyrillic)
+  "голый","голая","голые","кровь","кровавый","убить","убийство","убийца",
+  "мертвый","мёртвый","труп","смерть","оружие","пистолет","нож","бомба",
+  "секс","порно","насилие","пытка","наркотик","наркотики","террор",
+  "суицид","изнасилование","расизм",
+  // French
+  "nu","nue","nus","nues","sang","sanglant","tuer","meurtre","meurtrier",
+  "mort","cadavre","arme","armes","pistolet","couteau","bombe","bombes",
+  "sexe","sexuel","pornographie","violence","torture","abus","drogue",
+  "drogues","terreur","terroriste","suicide","viol","racisme",
+]);
+
+function isSafeSubject(subject) {
+  const words = subject.toLowerCase().split(/[\s,!?;:'"()\[\]{}\-_/\\@#]+/);
+  return !words.some(w => w.length > 0 && BLOCKED_TERMS.has(w));
+}
+
 function buildPrompt(subject, difficulty = "medium") {
   const diffHint = {
     easy:   "only 3-4 very large simple shapes, no small details, toddler coloring book",
@@ -147,16 +179,29 @@ async function generateWithHuggingFace(prompt, width = 1024, height = 1024) {
   };
 }
 
+function isQuotaError(err) {
+  const msg = (err.message || "").toLowerCase();
+  return msg.includes("402") || msg.includes("429") ||
+         msg.includes("credit") || msg.includes("quota") ||
+         msg.includes("limit") || msg.includes("exceeded") ||
+         msg.includes("payment") || msg.includes("billing");
+}
+
 async function generateImage(prompt, width = 1024, height = 1024) {
   if (IMAGE_PROVIDER === "pollinations") {
     return generateWithPollinations(prompt, width, height);
   }
 
-  if (IMAGE_PROVIDER === "huggingface") {
-    return generateWithHuggingFace(prompt, width, height);
+  // HuggingFace with automatic Pollinations fallback on quota/limit errors.
+  try {
+    return await generateWithHuggingFace(prompt, width, height);
+  } catch (err) {
+    if (isQuotaError(err)) {
+      console.warn(`HuggingFace quota error — falling back to Pollinations. (${err.message.slice(0, 80)})`);
+      return generateWithPollinations(prompt, width, height);
+    }
+    throw err;
   }
-
-  throw new Error(`Unsupported IMAGE_PROVIDER: ${IMAGE_PROVIDER}`);
 }
 
 function serveStaticFile(req, res, pathname) {
@@ -222,6 +267,11 @@ const server = http.createServer(async (req, res) => {
 
       if (!subject) {
         sendJson(res, 400, { error: "Please provide a subject to draw." });
+        return;
+      }
+
+      if (!isSafeSubject(subject)) {
+        sendJson(res, 400, { error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
         return;
       }
 

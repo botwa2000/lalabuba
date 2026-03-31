@@ -29,6 +29,7 @@ const TRANSLATIONS = {
     generating: (s, d) => `Drawing "${s}" (${d})… may take a few seconds.`,
     done: "Done! Click a numbered area then pick a color in the legend to fill it.",
     typeFirst: "Type something to draw first.",
+    unsafeSubject: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…",
     source: "Source",
     srcBackend: "🖥️ Backend", srcDirect: "🌐 Direct", srcDemo: "🎭 Demo",
   },
@@ -59,6 +60,7 @@ const TRANSLATIONS = {
     generating: (s, d) => `Zeichne "${s}" (${d})… einen Moment bitte.`,
     done: "Fertig! Klicke auf einen nummerierten Bereich und wähle eine Farbe.",
     typeFirst: "Gib zuerst etwas zum Zeichnen ein.",
+    unsafeSubject: "Bitte wähle ein kinderfreundliches Thema — Tiere, Fahrzeuge, Fantasiewesen, Essen…",
     source: "Quelle",
     srcBackend: "🖥️ Server", srcDirect: "🌐 Direkt", srcDemo: "🎭 Demo",
   },
@@ -89,6 +91,7 @@ const TRANSLATIONS = {
     generating: (s, d) => `Рисую "${s}" (${d})… подожди немного.`,
     done: "Готово! Нажми на область с цифрой и выбери цвет в палитре.",
     typeFirst: "Сначала введи что-нибудь для рисования.",
+    unsafeSubject: "Пожалуйста, выбери детскую тему — животные, транспорт, сказочные существа, еда…",
     source: "Источник",
     srcBackend: "🖥️ Сервер", srcDirect: "🌐 Прямой", srcDemo: "🎭 Демо",
   },
@@ -119,6 +122,7 @@ const TRANSLATIONS = {
     generating: (s, d) => `Dessin de "${s}" (${d})… quelques secondes.`,
     done: "Terminé! Cliquez sur une zone numérotée puis choisissez une couleur.",
     typeFirst: "Tapez d'abord quelque chose à dessiner.",
+    unsafeSubject: "Veuillez choisir un thème adapté aux enfants — animaux, véhicules, créatures fantastiques, nourriture…",
     source: "Source",
     srcBackend: "🖥️ Serveur", srcDirect: "🌐 Direct", srcDemo: "🎭 Démo",
   },
@@ -285,6 +289,37 @@ function sanitizeSubject(value) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 80);
+}
+
+// Mirrors the server-side blocklist for instant client feedback.
+const BLOCKED_TERMS = new Set([
+  // English
+  "nude","naked","nudity","blood","bloody","gore","gory","kill","killing",
+  "murder","murderer","dead","death","dying","corpse","weapon","weapons",
+  "gun","guns","rifle","pistol","knife","knives","bomb","bombs","explosive",
+  "sex","sexy","sexual","porn","pornography","erotic","erotica",
+  "violence","violent","torture","abuse","drug","drugs","cocaine","heroin",
+  "meth","terror","terrorist","suicide","rape","racist","racism","nazi",
+  // German
+  "nackt","nackten","blut","blutig","töten","tötung","mord","mörder",
+  "tot","leiche","waffe","waffen","gewehr","messer","bombe","bomben",
+  "sexuell","pornografie","gewalt","folter","missbrauch","droge",
+  "drogen","terror","terrorist","selbstmord","vergewaltigung",
+  // Russian
+  "голый","голая","голые","кровь","кровавый","убить","убийство","убийца",
+  "мертвый","мёртвый","труп","смерть","оружие","пистолет","нож","бомба",
+  "порно","насилие","пытка","наркотик","наркотики","террор",
+  "суицид","изнасилование","расизм",
+  // French
+  "nu","nue","nus","nues","sang","sanglant","tuer","meurtre","meurtrier",
+  "mort","cadavre","arme","armes","pistolet","couteau","bombe","bombes",
+  "sexuel","pornographie","violence","torture","abus","drogue",
+  "drogues","terreur","terroriste","suicide","viol","racisme",
+]);
+
+function isSafeSubject(subject) {
+  const words = subject.toLowerCase().split(/[\s,!?;:'"()\[\]{}\-_/@#]+/);
+  return !words.some(w => w.length > 0 && BLOCKED_TERMS.has(w));
 }
 
 function buildPrompt(subject, difficulty = "medium") {
@@ -970,6 +1005,11 @@ form.addEventListener("submit", async (event) => {
   const subject = sanitizeSubject(subjectInput.value);
   if (!subject) {
     setStatus(t('typeFirst'), true);
+    return;
+  }
+
+  if (!isSafeSubject(subject)) {
+    setStatus(t('unsafeSubject'), true);
     return;
   }
 
