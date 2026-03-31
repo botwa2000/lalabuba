@@ -401,6 +401,7 @@ body {
 }
 .action-btn:hover:not(:disabled) { border-color: var(--orange); color: var(--orange); transform: translateY(-1px); }
 .action-btn:disabled { opacity: .4; cursor: not-allowed; }
+.action-btn.active { border-color: var(--purple); color: var(--purple); background: rgba(124,77,255,0.09); }
 
 /* Preview stage */
 .preview-stage {
@@ -412,16 +413,33 @@ body {
   align-items: center;
   justify-content: center;
 }
-.preview-stage canvas {
+.canvas-frame {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 0;
+  margin: 0 auto;
+}
+#preview-canvas {
   display: block;
   max-width: 100%;
   max-height: 78vh;
   width: auto;
   height: auto;
-  margin: 0 auto;
   cursor: crosshair;
 }
-.preview-stage.empty canvas { display: none; }
+#draw-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  cursor: crosshair;
+}
+#draw-canvas.pencil-active {
+  pointer-events: auto;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z' fill='%23333'/%3E%3Cpath d='M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z' fill='%23555'/%3E%3C/svg%3E") 0 24, crosshair;
+}
+.preview-stage.empty .canvas-frame { display: none; }
 .empty-hint {
   position: absolute;
   top: 50%;
@@ -609,7 +627,24 @@ body {
     45deg, #ebebeb 0 4px, #d4d4d4 4px 8px
   ) !important;
 }
-.erase-swatch .swatch-num { font-size: 1.2rem; color: #999; }
+.erase-swatch svg { pointer-events: none; }
+
+/* Custom color picker swatch */
+.custom-color-swatch {
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+}
+.color-input-hidden {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
 
 /* ─── Side panel ─────────────────────────────────────────────────────────── */
 .side-panel {
@@ -765,5 +800,7 @@ body {
   body { background: white; }
   .site-header, .generator-section, .canvas-actions, .palette-area, .palette-sidebar, .side-panel, .site-footer { display: none !important; }
   .workspace, .canvas-wrapper { all: unset; }
-  .preview-stage canvas { width: 100%; max-height: none; }
+  .canvas-frame { display: block !important; position: relative; }
+  #preview-canvas { width: 100%; max-height: none; }
+  #draw-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
 }

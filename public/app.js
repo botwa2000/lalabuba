@@ -44,6 +44,12 @@ const TRANSLATIONS = {
     ctrlSize: "Size",
     footerDesc: "AI coloring pages · Free for kids",
     footerFun: "Free & fun for everyone 🌈",
+    pencilBtn: "✏️ Draw",
+    clearPencilBtn: "🗑️ Clear",
+    pencilMode: "Pencil mode — draw freely on the picture!",
+    customColorHint: "Pick any colour",
+    customColorSelected: "Custom colour selected. Click a region to fill!",
+    customColorLabel: "custom colour",
   },
   de: {
     tagline: "Zeichne · Färbe · Liebe es 🌈",
@@ -87,6 +93,12 @@ const TRANSLATIONS = {
     ctrlSize: "Größe",
     footerDesc: "KI-Malseiten · Kostenlos für Kinder",
     footerFun: "Kostenlos & Spaß für alle 🌈",
+    pencilBtn: "✏️ Zeichnen",
+    clearPencilBtn: "🗑️ Löschen",
+    pencilMode: "Stiftmodus — zeichne frei auf das Bild!",
+    customColorHint: "Eigene Farbe wählen",
+    customColorSelected: "Eigene Farbe gewählt. Klicke auf einen Bereich!",
+    customColorLabel: "eigene Farbe",
   },
   ru: {
     tagline: "Рисуй · Раскрашивай · Люби 🌈",
@@ -130,6 +142,12 @@ const TRANSLATIONS = {
     ctrlSize: "Размер",
     footerDesc: "ИИ-раскраски · Бесплатно для детей",
     footerFun: "Бесплатно и весело для всех 🌈",
+    pencilBtn: "✏️ Рисовать",
+    clearPencilBtn: "🗑️ Очистить",
+    pencilMode: "Режим карандаша — рисуй свободно!",
+    customColorHint: "Выбери любой цвет",
+    customColorSelected: "Свой цвет выбран. Нажми на область!",
+    customColorLabel: "свой цвет",
   },
   fr: {
     tagline: "Dessine · Colorie · Adore-le 🌈",
@@ -173,6 +191,12 @@ const TRANSLATIONS = {
     ctrlSize: "Taille",
     footerDesc: "Pages de coloriage IA · Gratuit pour les enfants",
     footerFun: "Gratuit & amusant pour tous 🌈",
+    pencilBtn: "✏️ Dessiner",
+    clearPencilBtn: "🗑️ Effacer",
+    pencilMode: "Mode crayon — dessine librement sur l'image!",
+    customColorHint: "Choisir une couleur",
+    customColorSelected: "Couleur personnalisée. Clique sur une zone!",
+    customColorLabel: "couleur personnalisée",
   },
 };
 
@@ -212,13 +236,21 @@ const paletteSelect = document.getElementById("palette-select");
 const statusElement = document.getElementById("status");
 const previewStage = document.getElementById("preview-stage");
 const previewCanvas = document.getElementById("preview-canvas");
+const drawCanvas = document.getElementById("draw-canvas");
 const printButton = document.getElementById("print-button");
 const downloadButton = document.getElementById("download-button");
+const pencilBtn = document.getElementById("pencil-button");
+const clearPencilBtn = document.getElementById("clear-pencil-button");
 const legendList = document.getElementById("legend-list");
 const colorCountSelect = document.getElementById("color-count-select");
 const debugPanel = document.getElementById("debug-panel");
 
 const context = previewCanvas.getContext("2d", { willReadFrequently: true });
+const drawCtx = drawCanvas.getContext("2d");
+
+let pencilMode = false;
+let pencilDrawing = false;
+let customColor = '#e91e63';
 
 const PALETTES = {
   classic: [
@@ -499,9 +531,15 @@ function renderLegend() {
   const palette = activePalette();
   legendList.innerHTML = "";
 
-  // Erase swatch (always first).
+  // Erase swatch (always first) — shown as eraser icon.
   const eraseItem = document.createElement("li");
-  eraseItem.innerHTML = `<button class="color-swatch erase-swatch${eraseMode ? " active" : ""}" title="Erase"><span class="swatch-num">✕</span></button>`;
+  eraseItem.innerHTML = `<button class="color-swatch erase-swatch${eraseMode ? " active" : ""}" title="Erase">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 22" width="24" height="17" aria-hidden="true">
+      <rect x="1" y="2" width="30" height="18" rx="3" fill="#ffd6e7" stroke="#e879a3" stroke-width="1.8"/>
+      <rect x="1" y="2" width="10" height="18" rx="3" fill="#ff84bc" stroke="#e879a3" stroke-width="1.8"/>
+      <line x1="11" y1="2" x2="11" y2="20" stroke="#e879a3" stroke-width="1.8"/>
+    </svg>
+  </button>`;
   eraseItem.querySelector("button").addEventListener("click", () => {
     eraseMode = true;
     renderLegend();
@@ -521,6 +559,34 @@ function renderLegend() {
     });
     legendList.appendChild(item);
   });
+
+  // Custom color swatch (always last).
+  const customItem = document.createElement("li");
+  const isCustomActive = !eraseMode && selectedPaletteIndex === -1;
+  customItem.innerHTML = `<label class="color-swatch custom-color-swatch${isCustomActive ? " active" : ""}" style="--c:${customColor}" title="${t('customColorHint')}">
+    <input type="color" class="color-input-hidden" value="${customColor}">
+    <span class="swatch-num" style="font-size:.7rem;color:rgba(0,0,0,.6);text-shadow:0 1px 2px rgba(255,255,255,.8)">+</span>
+  </label>`;
+  const colorInput = customItem.querySelector('input');
+  colorInput.addEventListener('input', (e) => {
+    customColor = e.target.value;
+    eraseMode = false;
+    selectedPaletteIndex = -1;
+    customItem.querySelector('label').style.setProperty('--c', customColor);
+    customItem.querySelector('label').classList.add('active');
+  });
+  colorInput.addEventListener('change', (e) => {
+    customColor = e.target.value;
+    eraseMode = false;
+    selectedPaletteIndex = -1;
+    renderLegend();
+    setStatus(t('customColorSelected'));
+  });
+  customItem.querySelector('label').addEventListener('click', () => {
+    eraseMode = false;
+    selectedPaletteIndex = -1;
+  });
+  legendList.appendChild(customItem);
 }
 
 function imageFromBase64(imageBase64) {
@@ -600,6 +666,22 @@ function drawBaseImage(image) {
   previewCanvas.height = image.naturalHeight || image.height || 1024;
   previewCanvas.hidden = false;
   previewStage.classList.remove("empty");
+
+  // Reset draw canvas to match new image dimensions and clear pencil strokes.
+  drawCanvas.width  = previewCanvas.width;
+  drawCanvas.height = previewCanvas.height;
+  drawCanvas.hidden = false;
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+
+  // Exit pencil mode on new image.
+  pencilMode = false;
+  pencilBtn.classList.remove('active');
+  drawCanvas.classList.remove('pencil-active');
+  previewCanvas.style.pointerEvents = '';
+
+  pencilBtn.disabled = false;
+  clearPencilBtn.disabled = false;
+
   context.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
@@ -1205,21 +1287,28 @@ previewCanvas.addEventListener("click", (event) => {
     return;
   }
 
-  // Color-constraint: when numbers are shown, enforce the assigned palette color.
-  if (showNumbersInput.checked && regionColorMap && regionColorMap.has(regionId)) {
-    const required = regionColorMap.get(regionId);
-    if (selectedPaletteIndex !== required) {
-      const c = activePalette()[required];
-      setStatus(t('needsColor', required + 1, c.label), true);
-      return;
+  let fillColor;
+  if (selectedPaletteIndex === -1) {
+    // Custom color — no constraint enforced, fills freely.
+    fillColor = hexToRgb(customColor);
+  } else {
+    // Color-constraint: when numbers are shown, enforce the assigned palette color.
+    if (showNumbersInput.checked && regionColorMap && regionColorMap.has(regionId)) {
+      const required = regionColorMap.get(regionId);
+      if (selectedPaletteIndex !== required) {
+        const c = activePalette()[required];
+        setStatus(t('needsColor', required + 1, c.label), true);
+        return;
+      }
     }
+    const palette = activePalette();
+    fillColor = hexToRgb(palette[selectedPaletteIndex].color);
   }
 
-  const palette = activePalette();
-  const fillColor = hexToRgb(palette[selectedPaletteIndex].color);
   completedRegions.add(regionId);
   fillRegion(regionId, fillColor);
-  setStatus(t('filled', palette[selectedPaletteIndex].label));
+  const label = selectedPaletteIndex === -1 ? t('customColorLabel') : activePalette()[selectedPaletteIndex].label;
+  setStatus(t('filled', label));
   checkCompletion();
 });
 
@@ -1228,12 +1317,18 @@ printButton.addEventListener("click", () => {
 });
 
 downloadButton.addEventListener("click", () => {
-  if (!currentImage) {
-    return;
-  }
+  if (!currentImage) return;
+
+  // Composite the coloring canvas and pencil drawing layer into one image.
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width  = previewCanvas.width;
+  tempCanvas.height = previewCanvas.height;
+  const tCtx = tempCanvas.getContext("2d");
+  tCtx.drawImage(previewCanvas, 0, 0);
+  tCtx.drawImage(drawCanvas, 0, 0);
 
   const link = document.createElement("a");
-  link.href = previewCanvas.toDataURL("image/png");
+  link.href = tempCanvas.toDataURL("image/png");
   link.download = `${subjectInput.value.trim().replace(/\s+/g, "-").toLowerCase() || "coloring-page"}.png`;
   link.click();
 });
@@ -1316,6 +1411,75 @@ document.querySelectorAll(".size-pill").forEach((btn) => {
     canvasWrapper.classList.add(`size-${btn.dataset.size}`);
   });
 });
+
+// ─── Pencil tool ────────────────────────────────────────────────────────────
+
+function getActivePencilColor() {
+  if (selectedPaletteIndex === -1) return customColor;
+  return activePalette()[selectedPaletteIndex]?.color ?? '#000000';
+}
+
+pencilBtn.addEventListener('click', () => {
+  pencilMode = !pencilMode;
+  pencilBtn.classList.toggle('active', pencilMode);
+  drawCanvas.classList.toggle('pencil-active', pencilMode);
+  previewCanvas.style.pointerEvents = pencilMode ? 'none' : '';
+  if (pencilMode) setStatus(t('pencilMode'));
+});
+
+clearPencilBtn.addEventListener('click', () => {
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+});
+
+function getPencilPos(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - rect.left) * (drawCanvas.width  / rect.width),
+    y: (src.clientY - rect.top)  * (drawCanvas.height / rect.height),
+  };
+}
+
+function pencilStart(e) {
+  pencilDrawing = true;
+  const { x, y } = getPencilPos(e);
+  drawCtx.beginPath();
+  drawCtx.moveTo(x, y);
+  // Draw a dot for single tap.
+  drawCtx.globalCompositeOperation = 'source-over';
+  drawCtx.fillStyle = getActivePencilColor();
+  drawCtx.beginPath();
+  drawCtx.arc(x, y, 3, 0, Math.PI * 2);
+  drawCtx.fill();
+  drawCtx.beginPath();
+  drawCtx.moveTo(x, y);
+}
+
+function pencilMove(e) {
+  if (!pencilDrawing) return;
+  const { x, y } = getPencilPos(e);
+  drawCtx.globalCompositeOperation = 'source-over';
+  drawCtx.strokeStyle = getActivePencilColor();
+  drawCtx.lineWidth = 5;
+  drawCtx.lineCap = 'round';
+  drawCtx.lineJoin = 'round';
+  drawCtx.lineTo(x, y);
+  drawCtx.stroke();
+  drawCtx.beginPath();
+  drawCtx.moveTo(x, y);
+}
+
+function pencilEnd() { pencilDrawing = false; }
+
+drawCanvas.addEventListener('mousedown', (e) => { if (pencilMode) pencilStart(e); });
+drawCanvas.addEventListener('mousemove', (e) => { if (pencilMode) pencilMove(e); });
+drawCanvas.addEventListener('mouseup',   pencilEnd);
+drawCanvas.addEventListener('mouseleave', pencilEnd);
+drawCanvas.addEventListener('touchstart', (e) => { if (pencilMode) { e.preventDefault(); pencilStart(e); } }, { passive: false });
+drawCanvas.addEventListener('touchmove',  (e) => { if (pencilMode) { e.preventDefault(); pencilMove(e); } }, { passive: false });
+drawCanvas.addEventListener('touchend',   pencilEnd);
+
+// ─── End pencil tool ─────────────────────────────────────────────────────────
 
 // Hide debug-only elements in production
 if (!DEBUG) {
