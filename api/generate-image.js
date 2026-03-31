@@ -31,6 +31,7 @@ function buildPrompt(subject, difficulty = "medium") {
     "absolutely no shading or shadow lines inside shapes",
     "no open lines",
     "no loose line ends",
+    "every panel door and window has a fully closed border",
     "no gradients",
     "no color",
     "no detail strokes inside shapes",

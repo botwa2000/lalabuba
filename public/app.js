@@ -354,6 +354,7 @@ function buildPrompt(subject, difficulty = "medium") {
     "absolutely no shading or shadow lines inside shapes",
     "no open lines",
     "no loose line ends",
+    "every panel door and window has a fully closed border",
     "no gradients",
     "no color",
     "no detail strokes inside shapes",
@@ -736,6 +737,8 @@ function overlayNumbers() {
   context.textAlign = "center";
   context.textBaseline = "middle";
 
+  const drawnMapIds = new Set(); // prevent drawing the same region badge twice
+
   regions.forEach((region) => {
     // If centroid lands on an outline/background pixel, snap to nearest region pixel.
     let mapId = regionMap?.[region.y * w + region.x];
@@ -750,8 +753,10 @@ function overlayNumbers() {
         }
       }
     }
-    // Hide badge once the region has been filled.
+    // Hide badge once the region has been filled, or if already drawn for this mapId.
     if (mapId > 0 && completedRegions.has(mapId)) return;
+    if (mapId > 0 && drawnMapIds.has(mapId)) return;
+    if (mapId > 0) drawnMapIds.add(mapId);
     const paletteIndex = (mapId > 0 ? regionColorMap.get(mapId) : null) ?? 0;
     const badgeColor = palette[paletteIndex]?.color ?? "#222";
     const radius = Math.max(14, Math.min(26, Math.sqrt(region.area) * 0.08));
@@ -947,24 +952,34 @@ async function renderGeneratedImage(imageBase64) {
   downloadButton.disabled = false;
 }
 
-let loadingTimer1 = null, loadingTimer2 = null;
+let loadingTimer1 = null, loadingTimer2 = null, loadingShownAt = 0;
 const loadingOverlay = document.getElementById('loading-overlay');
 const emptyHint      = document.querySelector('.empty-hint');
+const MIN_LOADING_MS = 900;
 
 function showLoading() {
   const text = document.getElementById('loading-text');
   text.textContent = t('loadingMsg');
   if (emptyHint) emptyHint.style.display = 'none';
   loadingOverlay.style.display = 'flex';
+  loadingShownAt = Date.now();
   loadingTimer1 = setTimeout(() => { text.textContent = t('loadingWait'); }, 10000);
   loadingTimer2 = setTimeout(() => { text.textContent = t('loadingLong'); }, 25000);
 }
 
 function hideLoading() {
-  loadingOverlay.style.display = 'none';
-  if (emptyHint) emptyHint.style.display = '';
-  clearTimeout(loadingTimer1);
-  clearTimeout(loadingTimer2);
+  const elapsed = Date.now() - loadingShownAt;
+  const doHide = () => {
+    loadingOverlay.style.display = 'none';
+    if (emptyHint) emptyHint.style.display = '';
+    clearTimeout(loadingTimer1);
+    clearTimeout(loadingTimer2);
+  };
+  if (elapsed < MIN_LOADING_MS) {
+    setTimeout(doHide, MIN_LOADING_MS - elapsed);
+  } else {
+    doHide();
+  }
 }
 
 async function generatePage(subject) {
