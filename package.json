@@ -1,0 +1,9 @@
+{
+  "name": "lalabuba",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kid-friendly coloring page generator with optional color-by-number overlays.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lalabuba 🎨</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app">
+
+    <header class="site-header">
+      <h1 class="logo" aria-label="Lalabuba">
+        <span style="--i:0">L</span><span style="--i:1">a</span><span style="--i:2">l</span><span style="--i:3">a</span><span style="--i:4">b</span><span style="--i:5">u</span><span style="--i:6">b</span><span style="--i:7">a</span>
+      </h1>
+      <p class="tagline">Draw it · Color it · Love it 🌈</p>
+    </header>
+
+    <main>
+      <section class="generator-section">
+        <form id="generator-form" class="generator-form">
+          <div class="search-bar">
+            <input
+              id="subject"
+              name="subject"
+              type="text"
+              maxlength="80"
+              placeholder="🦋 butterfly · 🐉 dragon · 🏰 castle · 🦄 unicorn…"
+              autocomplete="off"
+              required
+            />
+            <button id="generate-button" type="submit" class="go-btn">Draw! ✨</button>
+          </div>
+
+          <div class="quick-row">
+            <div class="pill-group" role="group" aria-label="Picture size">
+              <button type="button" class="size-pill" data-size="small">🤏 Small</button>
+              <button type="button" class="size-pill selected" data-size="medium">📄 Medium</button>
+              <button type="button" class="size-pill" data-size="large">🖼️ Large</button>
+              <button type="button" class="size-pill" data-size="xxl">🎨 XXL</button>
+            </div>
+            <label class="check-pill">
+              <input id="show-numbers" type="checkbox" checked />
+              <span>🔢 Color by number</span>
+            </label>
+          </div>
+
+          <details class="more-opts">
+            <summary>⚙️ More options</summary>
+            <div class="opts-grid">
+              <label for="difficulty-select">Difficulty</label>
+              <select id="difficulty-select">
+                <option value="easy">Easy 🌟</option>
+                <option value="medium" selected>Medium 🌟🌟</option>
+                <option value="hard">Hard 🌟🌟🌟</option>
+              </select>
+              <label for="color-count-select">Colors</label>
+              <select id="color-count-select">
+                <option value="6">6 colors</option>
+                <option value="12" selected>12 colors</option>
+                <option value="18">18 colors</option>
+                <option value="24">24 colors</option>
+              </select>
+              <label for="palette-select">Palette</label>
+              <select id="palette-select">
+                <option value="classic">🖍️ Classic crayons</option>
+                <option value="pastel">🌸 Soft pastels</option>
+                <option value="nature">🌿 Nature</option>
+              </select>
+              <label for="provider-select">Source</label>
+              <select id="provider-select">
+                <option value="backend" selected>🖥️ Backend</option>
+                <option value="direct">🌐 Direct</option>
+                <option value="demo">🎭 Demo</option>
+              </select>
+            </div>
+          </details>
+
+          <p id="status" class="status-bar" role="status">
+            Pick something to draw and tap <strong>Draw!</strong> 🎨
+          </p>
+        </form>
+      </section>
+
+      <section class="workspace">
+        <div class="canvas-wrapper">
+          <div class="canvas-actions">
+            <button id="print-button"    type="button" disabled class="action-btn">🖨️ Print</button>
+            <button id="download-button" type="button" disabled class="action-btn">💾 Save</button>
+          </div>
+
+          <div id="preview-stage" class="preview-stage empty">
+            <div class="empty-hint">
+              <span class="empty-icon">🖌️</span>
+              <p>Your picture will appear here!</p>
+            </div>
+            <canvas id="preview-canvas" width="1024" height="1024" hidden></canvas>
+          </div>
+
+          <div class="palette-area">
+            <ul id="legend-list" class="palette-strip" role="listbox" aria-label="Colour palette"></ul>
+          </div>
+        </div>
+
+        <aside class="side-panel">
+          <details id="debug-details" class="debug-wrap">
+            <summary>Debug</summary>
+            <pre id="debug-panel" class="debug-panel">Click canvas to see info.</pre>
+          </details>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div id="celebration" class="celebration hidden" aria-hidden="true">
+    <div class="celebration-card">
+      <div class="celebration-art">🎨</div>
+      <h2>Well done!</h2>
+      <p>You colored the whole picture!</p>
+      <div class="celebration-actions">
+        <button id="celebration-keep" type="button">Keep coloring</button>
+        <button id="celebration-new"  type="button">Make a new one</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
