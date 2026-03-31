@@ -646,7 +646,7 @@ function closeOutlineGaps(imageData) {
   const dark = new Uint8Array(width * height);
   for (let i = 0; i < width * height; i++) {
     const o = i * 4;
-    dark[i] = (data[o] + data[o + 1] + data[o + 2]) / 3 < 40 ? 1 : 0;
+    dark[i] = (data[o] + data[o + 1] + data[o + 2]) / 3 < 100 ? 1 : 0;
   }
   for (let y = 1; y < height - 1; y++) {
     for (let x = 1; x < width - 1; x++) {
@@ -902,9 +902,10 @@ function hexToRgb(hex) {
 //
 // Dual threshold strategy:
 //   sealMask (200)    — includes anti-aliased edges; used only for background BFS
-//   outlineMask (128) — true outline pixels; used for pixel assignment
-// Anti-aliased pixels (brightness 128–200) are NOT outline, so they join their
-// adjacent region → no unpainted white fringe between fill and lines.
+//   outlineMask (100) — outline + anti-aliased dark edge pixels; CCA barrier.
+// Pixels with brightness 100–200 (light anti-aliased fringe) join their adjacent
+// region → minimal unpainted fringe. Using 100 (not 40) prevents CCA from leaking
+// through dark-gray pixels in uploaded/compressed images.
 
 function precomputeRegions() {
   const { width, height } = previewCanvas;
@@ -913,12 +914,12 @@ function precomputeRegions() {
 
   // Build both masks in one pass.
   let sealMask     = new Uint8Array(n); // threshold 200
-  const outlineMask = new Uint8Array(n); // threshold 128
+  const outlineMask = new Uint8Array(n); // threshold 100
   for (let i = 0; i < n; i++) {
     const o = i * 4;
     const br = (src[o] + src[o + 1] + src[o + 2]) / 3;
     sealMask[i]    = br < 200 ? 1 : 0;
-    outlineMask[i] = br < 40 ? 1 : 0;
+    outlineMask[i] = br < 100 ? 1 : 0;
   }
 
   // Dilate sealMask 4× to close gaps up to 4 px (segmentation copy only).
