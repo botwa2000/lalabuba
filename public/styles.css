@@ -333,9 +333,8 @@ body {
 .empty-hint {
   position: absolute;
   top: 50%;
-  left: 0;
-  right: 0;
-  transform: translateY(-50%);
+  left: 50%;
+  transform: translate(-50%, -50%);
   text-align: center;
   color: var(--muted);
   opacity: .45;
@@ -344,7 +343,7 @@ body {
 .empty-icon {
   font-size: 4rem;
   display: block;
-  margin-bottom: 10px;
+  margin: 0 auto 10px;
   animation: floatIcon 3s ease-in-out infinite;
 }
 .empty-hint p { font-size: 1rem; font-weight: 700; }

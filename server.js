@@ -227,7 +227,11 @@ function serveStaticFile(req, res, pathname) {
     }
 
     const extension = path.extname(absolutePath);
-    res.writeHead(200, { "Content-Type": MIME_TYPES[extension] || "application/octet-stream" });
+    const noCache = [".js", ".css", ".html"].includes(extension);
+    res.writeHead(200, {
+      "Content-Type": MIME_TYPES[extension] || "application/octet-stream",
+      ...(noCache ? { "Cache-Control": "no-store" } : {}),
+    });
     res.end(contents);
   });
 }

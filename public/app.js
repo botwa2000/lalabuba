@@ -986,6 +986,7 @@ async function generatePage(subject) {
   const difficulty = difficultySelect.value;
   setStatus(t('generating', subject, difficulty));
   showLoading();
+  await new Promise(r => requestAnimationFrame(r));
   try {
     const imageUrl = await requestGeneratedImage(subject, difficulty);
     await renderGeneratedImage(imageUrl);
@@ -1238,6 +1239,7 @@ document.querySelectorAll(".size-pill").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".size-pill").forEach((b) => b.classList.remove("selected"));
     btn.classList.add("selected");
+    selectedSize = btn.dataset.size;
     canvasWrapper.classList.remove("size-small", "size-medium", "size-large", "size-xxl");
     canvasWrapper.classList.add(`size-${btn.dataset.size}`);
   });
@@ -1257,3 +1259,39 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
 });
 applyTranslations();
+
+// ─── Layout debug (always runs — open browser console F12 to see) ────────────
+setTimeout(() => {
+  const stage   = document.getElementById('preview-stage');
+  const hint    = document.querySelector('.empty-hint');
+  const wrapper = document.querySelector('.canvas-wrapper');
+
+  function rect(el, name) {
+    const r  = el.getBoundingClientRect();
+    const cs = getComputedStyle(el);
+    console.log(`[layout] ${name}`, {
+      x: Math.round(r.x), y: Math.round(r.y),
+      w: Math.round(r.width), h: Math.round(r.height),
+      display:   cs.display,
+      position:  cs.position,
+      top:       cs.top,
+      left:      cs.left,
+      transform: cs.transform,
+    });
+  }
+
+  rect(wrapper, 'canvas-wrapper');
+  rect(stage,   'preview-stage');
+  rect(hint,    'empty-hint');
+
+  // Expected: empty-hint center ≈ preview-stage center
+  const sr = stage.getBoundingClientRect();
+  const hr = hint.getBoundingClientRect();
+  const stageCx = Math.round(sr.x + sr.width  / 2);
+  const stageCy = Math.round(sr.y + sr.height / 2);
+  const hintCx  = Math.round(hr.x + hr.width  / 2);
+  const hintCy  = Math.round(hr.y + hr.height / 2);
+  console.log(`[layout] stage center  = (${stageCx}, ${stageCy})`);
+  console.log(`[layout] hint  center  = (${hintCx},  ${hintCy})`);
+  console.log(`[layout] offset from center: dx=${hintCx - stageCx}px  dy=${hintCy - stageCy}px`);
+}, 300);
