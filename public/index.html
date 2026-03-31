@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=3" />
+  <link rel="stylesheet" href="/styles.css?v=4" />
 </head>
 <body>
   <div class="app">
@@ -41,9 +41,16 @@
               required
             />
             <button id="generate-button" type="submit" class="go-btn" data-i18n="drawBtn">Draw! ✨</button>
+            <button id="regen-button" type="button" class="regen-btn" disabled data-i18n="regenBtn">🎲 Again!</button>
           </div>
 
+          <!-- Row 1: difficulty pills + size pills + color-by-number -->
           <div class="quick-row">
+            <div class="pill-group" role="group" aria-label="Difficulty">
+              <button type="button" class="diff-pill" data-diff="easy" data-i18n="diffEasy">Easy 🌟</button>
+              <button type="button" class="diff-pill selected" data-diff="medium" data-i18n="diffMedium">Medium 🌟🌟</button>
+              <button type="button" class="diff-pill" data-diff="hard" data-i18n="diffHard">Hard 🌟🌟🌟</button>
+            </div>
             <div class="pill-group" role="group" aria-label="Picture size">
               <button type="button" class="size-pill" data-size="small" data-i18n="sizeSmall">🤏 Small</button>
               <button type="button" class="size-pill selected" data-size="medium" data-i18n="sizeMedium">📄 Medium</button>
@@ -56,40 +63,48 @@
             </label>
           </div>
 
-          <details class="more-opts">
-            <summary data-i18n="moreOptions">⚙️ More options</summary>
-            <div class="opts-grid">
-              <label for="difficulty-select" data-i18n="difficulty">Difficulty</label>
-              <select id="difficulty-select">
-                <option value="easy" data-i18n="diffEasy">Easy 🌟</option>
-                <option value="medium" selected data-i18n="diffMedium">Medium 🌟🌟</option>
-                <option value="hard" data-i18n="diffHard">Hard 🌟🌟🌟</option>
-              </select>
-              <label for="color-count-select" data-i18n="colors">Colors</label>
-              <select id="color-count-select">
-                <option value="6">6 colors</option>
-                <option value="12" selected>12 colors</option>
-                <option value="18">18 colors</option>
-                <option value="24">24 colors</option>
-              </select>
-              <label for="palette-select" data-i18n="palette">Palette</label>
-              <select id="palette-select">
-                <option value="classic" data-i18n="paletteClassic">🖍️ Classic crayons</option>
-                <option value="pastel" data-i18n="palettePastel">🌸 Soft pastels</option>
-                <option value="nature" data-i18n="paletteNature">🌿 Nature</option>
-              </select>
-              <label for="provider-select" class="debug-item" data-i18n="source">Source</label>
-              <select id="provider-select" class="debug-item">
-                <option value="backend" selected data-i18n="srcBackend">🖥️ Backend</option>
-                <option value="direct" data-i18n="srcDirect">🌐 Direct</option>
-                <option value="demo" data-i18n="srcDemo">🎭 Demo</option>
-              </select>
+          <!-- Row 2: palette pills + help button -->
+          <div class="quick-row">
+            <div class="pill-group" role="group" aria-label="Palette">
+              <button type="button" class="palette-pill selected" data-palette="classic" data-i18n="paletteClassic">🖍️ Classic crayons</button>
+              <button type="button" class="palette-pill" data-palette="pastel" data-i18n="palettePastel">🌸 Soft pastels</button>
+              <button type="button" class="palette-pill" data-palette="nature" data-i18n="paletteNature">🌿 Nature</button>
             </div>
-          </details>
+            <button type="button" id="help-btn" class="help-btn" data-i18n="helpBtn">❓ How it works</button>
+          </div>
 
-          <p id="status" class="status-bar" role="status">
-            Pick something to draw and tap <strong>Draw!</strong> 🎨
-          </p>
+          <!-- Collapsible help panel -->
+          <div id="help-panel" class="help-panel" hidden>
+            <div class="help-step" data-i18n="helpLine1">✏️ Type anything to draw — a cat, a dragon, a rocket ship…</div>
+            <div class="help-step" data-i18n="helpLine2">🎨 Click Draw! and AI creates a coloring page just for you</div>
+            <div class="help-step" data-i18n="helpLine3">🔢 Tap a numbered area, then tap a color to fill it</div>
+            <div class="help-step" data-i18n="helpLine4">🖨️ Print or save your masterpiece when you're done!</div>
+          </div>
+
+          <!-- Hidden selects kept for JS compatibility -->
+          <select id="difficulty-select" class="sr-only" aria-hidden="true">
+            <option value="easy" data-i18n="diffEasy">Easy 🌟</option>
+            <option value="medium" selected data-i18n="diffMedium">Medium 🌟🌟</option>
+            <option value="hard" data-i18n="diffHard">Hard 🌟🌟🌟</option>
+          </select>
+          <select id="color-count-select" class="sr-only" aria-hidden="true">
+            <option value="6">6 colors</option>
+            <option value="12" selected>12 colors</option>
+            <option value="18">18 colors</option>
+            <option value="24">24 colors</option>
+          </select>
+          <select id="palette-select" class="sr-only" aria-hidden="true">
+            <option value="classic" data-i18n="paletteClassic">🖍️ Classic crayons</option>
+            <option value="pastel" data-i18n="palettePastel">🌸 Soft pastels</option>
+            <option value="nature" data-i18n="paletteNature">🌿 Nature</option>
+          </select>
+          <select id="provider-select" class="sr-only debug-item" aria-hidden="true">
+            <option value="backend" selected data-i18n="srcBackend">🖥️ Backend</option>
+            <option value="direct" data-i18n="srcDirect">🌐 Direct</option>
+            <option value="demo" data-i18n="srcDemo">🎭 Demo</option>
+          </select>
+
+          <p id="status" class="status-bar" role="status" data-i18n="statusDefault"></p>
         </form>
       </section>
 
@@ -100,28 +115,30 @@
             <button id="download-button" type="button" disabled class="action-btn" data-i18n="saveBtn">💾 Save</button>
           </div>
 
-          <div id="preview-stage" class="preview-stage empty">
-            <div class="empty-hint">
-              <span class="empty-icon">🖌️</span>
-              <p data-i18n="emptyHint">Your picture will appear here!</p>
-            </div>
-            <div id="loading-overlay" class="loading-overlay" style="display:none">
-              <span class="loading-pencil">✏️</span>
-              <div class="loading-dots">
-                <span style="--c:#ff4757"></span>
-                <span style="--c:#ff7043"></span>
-                <span style="--c:#ffca28"></span>
-                <span style="--c:#26c281"></span>
-                <span style="--c:#1e90ff"></span>
-                <span style="--c:#7c4dff"></span>
+          <div class="canvas-body">
+            <div id="preview-stage" class="preview-stage empty">
+              <div class="empty-hint">
+                <span class="empty-icon">🖌️</span>
+                <p data-i18n="emptyHint">Your picture will appear here!</p>
               </div>
-              <p class="loading-text" id="loading-text"></p>
+              <div id="loading-overlay" class="loading-overlay" style="display:none">
+                <span class="loading-pencil">✏️</span>
+                <div class="loading-dots">
+                  <span style="--c:#ff4757"></span>
+                  <span style="--c:#ff7043"></span>
+                  <span style="--c:#ffca28"></span>
+                  <span style="--c:#26c281"></span>
+                  <span style="--c:#1e90ff"></span>
+                  <span style="--c:#7c4dff"></span>
+                </div>
+                <p class="loading-text" id="loading-text"></p>
+              </div>
+              <canvas id="preview-canvas" width="1024" height="1024" hidden></canvas>
             </div>
-            <canvas id="preview-canvas" width="1024" height="1024" hidden></canvas>
-          </div>
 
-          <div class="palette-area">
-            <ul id="legend-list" class="palette-strip" role="listbox" aria-label="Colour palette"></ul>
+            <div class="palette-sidebar">
+              <ul id="legend-list" class="palette-strip" role="listbox" aria-label="Colour palette"></ul>
+            </div>
           </div>
         </div>
 
@@ -147,6 +164,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=3" defer></script>
+  <script src="/app.js?v=4" defer></script>
 </body>
 </html>

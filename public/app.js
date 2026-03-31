@@ -35,6 +35,12 @@ const TRANSLATIONS = {
     loadingLong: "Nearly done… hang tight! 🖌️",
     source: "Source",
     srcBackend: "🖥️ Backend", srcDirect: "🌐 Direct", srcDemo: "🎭 Demo",
+    regenBtn: "🎲 Again!",
+    helpBtn: "❓ How it works",
+    helpLine1: "✏️ Type anything to draw — a cat, a dragon, a rocket ship…",
+    helpLine2: "🎨 Click Draw! and AI creates a coloring page just for you",
+    helpLine3: "🔢 Tap a numbered area, then tap a color to fill it",
+    helpLine4: "🖨️ Print or save your masterpiece when you're done!",
   },
   de: {
     tagline: "Zeichne · Färbe · Liebe es 🌈",
@@ -69,6 +75,12 @@ const TRANSLATIONS = {
     loadingLong: "Fast fertig… noch einen Moment! 🖌️",
     source: "Quelle",
     srcBackend: "🖥️ Server", srcDirect: "🌐 Direkt", srcDemo: "🎭 Demo",
+    regenBtn: "🎲 Nochmal!",
+    helpBtn: "❓ Wie geht's?",
+    helpLine1: "✏️ Schreib etwas — eine Katze, ein Drache, ein Raumschiff…",
+    helpLine2: "🎨 Klick auf Zeichnen! und die KI erstellt eine Malseite für dich",
+    helpLine3: "🔢 Tippe auf einen nummerierten Bereich, dann auf eine Farbe",
+    helpLine4: "🖨️ Drucke oder speichere dein Meisterwerk wenn du fertig bist!",
   },
   ru: {
     tagline: "Рисуй · Раскрашивай · Люби 🌈",
@@ -103,6 +115,12 @@ const TRANSLATIONS = {
     loadingLong: "Почти готово… ещё чуть-чуть! 🖌️",
     source: "Источник",
     srcBackend: "🖥️ Сервер", srcDirect: "🌐 Прямой", srcDemo: "🎭 Демо",
+    regenBtn: "🎲 Ещё раз!",
+    helpBtn: "❓ Как это работает?",
+    helpLine1: "✏️ Напиши что угодно — кошку, дракона, ракету…",
+    helpLine2: "🎨 Нажми Рисовать! и ИИ создаст раскраску специально для тебя",
+    helpLine3: "🔢 Нажми на область с цифрой, потом выбери цвет",
+    helpLine4: "🖨️ Распечатай или сохрани свой шедевр когда закончишь!",
   },
   fr: {
     tagline: "Dessine · Colorie · Adore-le 🌈",
@@ -137,6 +155,12 @@ const TRANSLATIONS = {
     loadingLong: "Presque terminé… encore un instant! 🖌️",
     source: "Source",
     srcBackend: "🖥️ Serveur", srcDirect: "🌐 Direct", srcDemo: "🎭 Démo",
+    regenBtn: "🎲 Encore!",
+    helpBtn: "❓ Comment ça marche?",
+    helpLine1: "✏️ Écris n'importe quoi — un chat, un dragon, une fusée…",
+    helpLine2: "🎨 Clique sur Dessiner! et l'IA crée une page de coloriage pour toi",
+    helpLine3: "🔢 Touche une zone numérotée, puis choisis une couleur",
+    helpLine4: "🖨️ Imprime ou sauvegarde ton chef-d'œuvre quand tu as fini!",
   },
 };
 
@@ -266,9 +290,9 @@ const PALETTES = {
 };
 
 const DIFFICULTY = {
-  easy:   { minArea: 3000, maxRegions: 6  },
-  medium: { minArea:  900, maxRegions: 12 },
-  hard:   { minArea:  400, maxRegions: 18 },
+  easy:   { minArea: 2000, maxRegions:  8 },
+  medium: { minArea:  600, maxRegions: 16 },
+  hard:   { minArea:  250, maxRegions: 24 },
 };
 
 function activePalette() {
@@ -689,46 +713,27 @@ function overlayNumbers() {
   const w = previewCanvas.width;
 
   // Build regionColorMap once per image load; reuse on subsequent redraws.
+  // Colors can repeat across regions (like a real color-by-number book).
   if (!regionColorMap) {
     regionColorMap = new Map();
-    const used = new Set();
 
     regions.forEach((region, index) => {
-      // Sample average color of this region's pixels to find the nearest palette match.
-      const pixels = regionMap ? regionPixels?.get(regionMap[region.y * w + region.x]) : null;
       let paletteIndex = index % palette.length;
-
+      const pixels = regionMap ? regionPixels?.get(regionMap[region.y * w + region.x]) : null;
       if (pixels && pixels.length > 0) {
         let sumR = 0, sumG = 0, sumB = 0;
-        const step = Math.max(1, Math.floor(pixels.length / 200)); // sample up to 200 pixels
+        const step = Math.max(1, Math.floor(pixels.length / 200));
         let count = 0;
         for (let pi = 0; pi < pixels.length; pi += step) {
           const o = pixels[pi] * 4;
-          sumR += src[o]; sumG += src[o + 1]; sumB += src[o + 2];
+          sumR += src[o]; sumG += src[o+1]; sumB += src[o+2];
           count++;
         }
-        const avgR = sumR / count, avgG = sumG / count, avgB = sumB / count;
-        const avgBr = (avgR + avgG + avgB) / 3;
-        // Only use color-matching if the region has a non-white average color hint.
+        const avgBr = (sumR + sumG + sumB) / (count * 3);
         if (avgBr < 240) {
-          const candidate = nearestPaletteIndex(avgR, avgG, avgB, palette);
-          if (!used.has(candidate)) paletteIndex = candidate;
-        }
-        // Fallback: find first unused palette index if color match is already taken.
-        if (used.has(paletteIndex)) {
-          for (let k = 0; k < palette.length; k++) {
-            if (!used.has(k)) { paletteIndex = k; break; }
-          }
+          paletteIndex = nearestPaletteIndex(sumR/count, sumG/count, sumB/count, palette);
         }
       }
-
-      // Always deduplicate, even when pixels were unavailable.
-      if (used.has(paletteIndex)) {
-        for (let k = 0; k < palette.length; k++) {
-          if (!used.has(k)) { paletteIndex = k; break; }
-        }
-      }
-      used.add(paletteIndex);
       const mapId = regionMap?.[region.y * w + region.x];
       if (mapId > 0) regionColorMap.set(mapId, paletteIndex);
     });
@@ -991,6 +996,7 @@ async function generatePage(subject) {
     const imageUrl = await requestGeneratedImage(subject, difficulty);
     await renderGeneratedImage(imageUrl);
     setStatus(t('done'));
+    document.getElementById('regen-button').disabled = false;
   } finally {
     hideLoading();
   }
@@ -1230,6 +1236,54 @@ document.getElementById("celebration-new").addEventListener("click", () => {
   document.getElementById("celebration").setAttribute("aria-hidden", "true");
   subjectInput.value = "";
   subjectInput.focus();
+});
+
+// Difficulty pill event listeners
+document.querySelectorAll('.diff-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-pill').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    difficultySelect.value = btn.dataset.diff;
+    difficultySelect.dispatchEvent(new Event('change'));
+    // Auto-set color count based on difficulty
+    const diffColorCount = { easy: '6', medium: '12', hard: '18' };
+    colorCountSelect.value = diffColorCount[btn.dataset.diff] || '12';
+    colorCountSelect.dispatchEvent(new Event('change'));
+  });
+});
+
+// Palette pill event listeners
+document.querySelectorAll('.palette-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.palette-pill').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    paletteSelect.value = btn.dataset.palette;
+    paletteSelect.dispatchEvent(new Event('change'));
+  });
+});
+
+// Regenerate button
+const regenButton = document.getElementById('regen-button');
+regenButton.addEventListener('click', async () => {
+  const subject = sanitizeSubject(subjectInput.value);
+  if (!subject) return;
+  regenButton.disabled = true;
+  const submitButton = document.getElementById('generate-button');
+  submitButton.disabled = true;
+  try {
+    await generatePage(subject);
+  } catch (error) {
+    setStatus(error.message || 'Something went wrong.', true);
+  } finally {
+    regenButton.disabled = false;
+    submitButton.disabled = false;
+  }
+});
+
+// Help panel toggle
+document.getElementById('help-btn').addEventListener('click', () => {
+  const panel = document.getElementById('help-panel');
+  panel.hidden = !panel.hidden;
 });
 
 const canvasWrapper = document.querySelector(".canvas-wrapper");
