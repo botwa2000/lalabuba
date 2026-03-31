@@ -948,19 +948,21 @@ async function renderGeneratedImage(imageBase64) {
 }
 
 let loadingTimer1 = null, loadingTimer2 = null;
+const loadingOverlay = document.getElementById('loading-overlay');
+const emptyHint      = document.querySelector('.empty-hint');
 
 function showLoading() {
-  const overlay = document.getElementById('loading-overlay');
-  const text    = document.getElementById('loading-text');
-  overlay.classList.remove('hidden');
-  previewStage.classList.add('empty');
+  const text = document.getElementById('loading-text');
   text.textContent = t('loadingMsg');
+  if (emptyHint) emptyHint.style.display = 'none';
+  loadingOverlay.style.display = 'flex';
   loadingTimer1 = setTimeout(() => { text.textContent = t('loadingWait'); }, 10000);
   loadingTimer2 = setTimeout(() => { text.textContent = t('loadingLong'); }, 25000);
 }
 
 function hideLoading() {
-  document.getElementById('loading-overlay').classList.add('hidden');
+  loadingOverlay.style.display = 'none';
+  if (emptyHint) emptyHint.style.display = '';
   clearTimeout(loadingTimer1);
   clearTimeout(loadingTimer2);
 }
