@@ -517,25 +517,29 @@ body {
 
 /* ─── Palette sidebar ────────────────────────────────────────────────────── */
 .palette-sidebar {
-  width: 72px;
+  width: 138px;
+  flex-shrink: 0;
   background: linear-gradient(to bottom, #fff 0%, #f4f6fb 100%);
   border-left: 1.5px solid var(--border);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 12px 8px;
+  align-items: stretch;
+  padding: 12px 9px;
   overflow-y: auto;
 }
 .palette-sidebar .palette-strip {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
   list-style: none;
 }
 .palette-sidebar .color-swatch {
-  width: 44px;
-  height: 44px;
+  width: 100%;
+  aspect-ratio: 1;
+  height: auto;
+  min-width: 0;
 }
+.palette-sidebar .swatch-num { font-size: .75rem; }
 .palette-sidebar .swatch-name { display: none; }
 
 /* ─── Palette strip (legacy / general) ──────────────────────────────────── */
@@ -694,7 +698,8 @@ body {
   .swatch-name { display: none; }
   .canvas-body { flex-direction: column; }
   .palette-sidebar { width: 100%; flex-direction: row; border-left: none; border-top: 1.5px solid var(--border); overflow-x: auto; overflow-y: visible; padding: 10px 12px; }
-  .palette-sidebar .palette-strip { flex-direction: row; }
+  .palette-sidebar .palette-strip { display: flex; flex-direction: row; }
+  .palette-sidebar .color-swatch { width: 40px; aspect-ratio: 1; }
 }
 
 /* ─── Site footer ────────────────────────────────────────────────────────── */
