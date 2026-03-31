@@ -105,6 +105,18 @@
               <span class="empty-icon">🖌️</span>
               <p data-i18n="emptyHint">Your picture will appear here!</p>
             </div>
+            <div id="loading-overlay" class="loading-overlay hidden">
+              <span class="loading-pencil">✏️</span>
+              <div class="loading-dots">
+                <span style="--c:#ff4757"></span>
+                <span style="--c:#ff7043"></span>
+                <span style="--c:#ffca28"></span>
+                <span style="--c:#26c281"></span>
+                <span style="--c:#1e90ff"></span>
+                <span style="--c:#7c4dff"></span>
+              </div>
+              <p class="loading-text" id="loading-text" data-i18n="loadingMsg">Drawing your picture…</p>
+            </div>
             <canvas id="preview-canvas" width="1024" height="1024" hidden></canvas>
           </div>
 

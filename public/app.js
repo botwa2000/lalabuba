@@ -30,6 +30,9 @@ const TRANSLATIONS = {
     done: "Done! Click a numbered area then pick a color in the legend to fill it.",
     typeFirst: "Type something to draw first.",
     unsafeSubject: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…",
+    loadingMsg: "Drawing your picture… ✏️",
+    loadingWait: "Adding details… almost there! 🎨",
+    loadingLong: "Nearly done… hang tight! 🖌️",
     source: "Source",
     srcBackend: "🖥️ Backend", srcDirect: "🌐 Direct", srcDemo: "🎭 Demo",
   },
@@ -61,6 +64,9 @@ const TRANSLATIONS = {
     done: "Fertig! Klicke auf einen nummerierten Bereich und wähle eine Farbe.",
     typeFirst: "Gib zuerst etwas zum Zeichnen ein.",
     unsafeSubject: "Bitte wähle ein kinderfreundliches Thema — Tiere, Fahrzeuge, Fantasiewesen, Essen…",
+    loadingMsg: "Dein Bild wird gezeichnet… ✏️",
+    loadingWait: "Details werden hinzugefügt… fast fertig! 🎨",
+    loadingLong: "Fast fertig… noch einen Moment! 🖌️",
     source: "Quelle",
     srcBackend: "🖥️ Server", srcDirect: "🌐 Direkt", srcDemo: "🎭 Demo",
   },
@@ -92,6 +98,9 @@ const TRANSLATIONS = {
     done: "Готово! Нажми на область с цифрой и выбери цвет в палитре.",
     typeFirst: "Сначала введи что-нибудь для рисования.",
     unsafeSubject: "Пожалуйста, выбери детскую тему — животные, транспорт, сказочные существа, еда…",
+    loadingMsg: "Рисую картинку… ✏️",
+    loadingWait: "Добавляю детали… почти готово! 🎨",
+    loadingLong: "Почти готово… ещё чуть-чуть! 🖌️",
     source: "Источник",
     srcBackend: "🖥️ Сервер", srcDirect: "🌐 Прямой", srcDemo: "🎭 Демо",
   },
@@ -123,6 +132,9 @@ const TRANSLATIONS = {
     done: "Terminé! Cliquez sur une zone numérotée puis choisissez une couleur.",
     typeFirst: "Tapez d'abord quelque chose à dessiner.",
     unsafeSubject: "Veuillez choisir un thème adapté aux enfants — animaux, véhicules, créatures fantastiques, nourriture…",
+    loadingMsg: "Dessin en cours… ✏️",
+    loadingWait: "Ajout des détails… presque fini! 🎨",
+    loadingLong: "Presque terminé… encore un instant! 🖌️",
     source: "Source",
     srcBackend: "🖥️ Serveur", srcDirect: "🌐 Direct", srcDemo: "🎭 Démo",
   },
@@ -935,12 +947,35 @@ async function renderGeneratedImage(imageBase64) {
   downloadButton.disabled = false;
 }
 
+let loadingTimer1 = null, loadingTimer2 = null;
+
+function showLoading() {
+  const overlay = document.getElementById('loading-overlay');
+  const text    = document.getElementById('loading-text');
+  overlay.classList.remove('hidden');
+  previewStage.classList.add('empty');
+  text.textContent = t('loadingMsg');
+  loadingTimer1 = setTimeout(() => { text.textContent = t('loadingWait'); }, 10000);
+  loadingTimer2 = setTimeout(() => { text.textContent = t('loadingLong'); }, 25000);
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.add('hidden');
+  clearTimeout(loadingTimer1);
+  clearTimeout(loadingTimer2);
+}
+
 async function generatePage(subject) {
   const difficulty = difficultySelect.value;
   setStatus(t('generating', subject, difficulty));
-  const imageUrl = await requestGeneratedImage(subject, difficulty);
-  await renderGeneratedImage(imageUrl);
-  setStatus(t('done'));
+  showLoading();
+  try {
+    const imageUrl = await requestGeneratedImage(subject, difficulty);
+    await renderGeneratedImage(imageUrl);
+    setStatus(t('done'));
+  } finally {
+    hideLoading();
+  }
 }
 
 async function requestGeneratedImage(subject, difficulty = "medium") {
