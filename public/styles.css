@@ -280,7 +280,12 @@ body {
   border: 2px solid var(--border);
   display: flex;
   flex-direction: column;
+  transition: max-width 0.3s ease;
 }
+.canvas-wrapper.size-small  { max-width: 360px; }
+.canvas-wrapper.size-medium { max-width: 580px; }
+.canvas-wrapper.size-large  { max-width: 820px; }
+.canvas-wrapper.size-xxl    { max-width: 100%;  }
 
 .canvas-actions {
   display: flex;

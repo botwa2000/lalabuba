@@ -1139,11 +1139,15 @@ document.getElementById("celebration-new").addEventListener("click", () => {
   subjectInput.focus();
 });
 
+const canvasWrapper = document.querySelector(".canvas-wrapper");
+canvasWrapper.classList.add("size-medium");
+
 document.querySelectorAll(".size-pill").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".size-pill").forEach((b) => b.classList.remove("selected"));
     btn.classList.add("selected");
-    selectedSize = btn.dataset.size;
+    canvasWrapper.classList.remove("size-small", "size-medium", "size-large", "size-xxl");
+    canvasWrapper.classList.add(`size-${btn.dataset.size}`);
   });
 });
 
