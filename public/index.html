@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=4" />
+  <link rel="stylesheet" href="/styles.css?v=5" />
 </head>
 <body>
   <div class="app">
@@ -44,33 +44,46 @@
             <button id="regen-button" type="button" class="regen-btn" disabled data-i18n="regenBtn">🎲 Again!</button>
           </div>
 
-          <!-- Row 1: difficulty pills + size pills + color-by-number -->
-          <div class="quick-row">
-            <div class="pill-group" role="group" aria-label="Difficulty">
-              <button type="button" class="diff-pill" data-diff="easy" data-i18n="diffEasy">Easy 🌟</button>
-              <button type="button" class="diff-pill selected" data-diff="medium" data-i18n="diffMedium">Medium 🌟🌟</button>
-              <button type="button" class="diff-pill" data-diff="hard" data-i18n="diffHard">Hard 🌟🌟🌟</button>
+          <div class="controls-grid">
+            <div class="control-row">
+              <span class="ctrl-label" data-i18n="difficulty">Difficulty</span>
+              <div class="pill-group" role="group">
+                <button type="button" class="diff-pill" data-diff="easy" data-i18n="diffEasy">Easy 🌟</button>
+                <button type="button" class="diff-pill selected" data-diff="medium" data-i18n="diffMedium">Medium 🌟🌟</button>
+                <button type="button" class="diff-pill" data-diff="hard" data-i18n="diffHard">Hard 🌟🌟🌟</button>
+              </div>
             </div>
-            <div class="pill-group" role="group" aria-label="Picture size">
-              <button type="button" class="size-pill" data-size="small" data-i18n="sizeSmall">🤏 Small</button>
-              <button type="button" class="size-pill selected" data-size="medium" data-i18n="sizeMedium">📄 Medium</button>
-              <button type="button" class="size-pill" data-size="large" data-i18n="sizeLarge">🖼️ Large</button>
-              <button type="button" class="size-pill" data-size="xxl" data-i18n="sizeXxl">🎨 XXL</button>
+            <div class="control-row">
+              <span class="ctrl-label" data-i18n="ctrlSize">Size</span>
+              <div class="pill-group" role="group">
+                <button type="button" class="size-pill" data-size="small" data-i18n="sizeSmall">🤏 Small</button>
+                <button type="button" class="size-pill selected" data-size="medium" data-i18n="sizeMedium">📄 Medium</button>
+                <button type="button" class="size-pill" data-size="large" data-i18n="sizeLarge">🖼️ Large</button>
+                <button type="button" class="size-pill" data-size="xxl" data-i18n="sizeXxl">🎨 XXL</button>
+              </div>
             </div>
-            <label class="check-pill">
-              <input id="show-numbers" type="checkbox" checked />
-              <span data-i18n="colorByNumber">🔢 Color by number</span>
-            </label>
-          </div>
-
-          <!-- Row 2: palette pills + help button -->
-          <div class="quick-row">
-            <div class="pill-group" role="group" aria-label="Palette">
-              <button type="button" class="palette-pill selected" data-palette="classic" data-i18n="paletteClassic">🖍️ Classic crayons</button>
-              <button type="button" class="palette-pill" data-palette="pastel" data-i18n="palettePastel">🌸 Soft pastels</button>
-              <button type="button" class="palette-pill" data-palette="nature" data-i18n="paletteNature">🌿 Nature</button>
+            <div class="control-row">
+              <span class="ctrl-label" data-i18n="colors">Colors</span>
+              <div class="pill-group" role="group">
+                <button type="button" class="count-pill" data-count="6">6</button>
+                <button type="button" class="count-pill selected" data-count="12">12</button>
+                <button type="button" class="count-pill" data-count="18">18</button>
+                <button type="button" class="count-pill" data-count="24">24</button>
+              </div>
+              <label class="check-pill">
+                <input id="show-numbers" type="checkbox" checked />
+                <span data-i18n="colorByNumber">🔢 Color by number</span>
+              </label>
             </div>
-            <button type="button" id="help-btn" class="help-btn" data-i18n="helpBtn">❓ How it works</button>
+            <div class="control-row">
+              <span class="ctrl-label" data-i18n="palette">Palette</span>
+              <div class="pill-group" role="group">
+                <button type="button" class="palette-pill selected" data-palette="classic" data-i18n="paletteClassic">🖍️ Classic crayons</button>
+                <button type="button" class="palette-pill" data-palette="pastel" data-i18n="palettePastel">🌸 Soft pastels</button>
+                <button type="button" class="palette-pill" data-palette="nature" data-i18n="paletteNature">🌿 Nature</button>
+              </div>
+              <button type="button" id="help-btn" class="help-btn" data-i18n="helpBtn">❓ How it works</button>
+            </div>
           </div>
 
           <!-- Collapsible help panel -->
@@ -150,6 +163,24 @@
         </aside>
       </section>
     </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="footer-logo-text">Lalabuba 🎨</span>
+          <span class="footer-desc" data-i18n="footerDesc">AI coloring pages · Free for kids</span>
+        </div>
+        <div class="footer-mid">
+          <div class="lang-selector footer-lang">
+            <button class="lang-btn active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="de">DE</button>
+            <button class="lang-btn" data-lang="ru">RU</button>
+            <button class="lang-btn" data-lang="fr">FR</button>
+          </div>
+        </div>
+        <p class="footer-copy">© 2025 Lalabuba · <span data-i18n="footerFun">Free &amp; fun for everyone 🌈</span></p>
+      </div>
+    </footer>
   </div>
 
   <div id="celebration" class="celebration hidden" aria-hidden="true">
@@ -164,6 +195,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=4" defer></script>
+  <script src="/app.js?v=5" defer></script>
 </body>
 </html>

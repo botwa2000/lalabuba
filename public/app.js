@@ -41,6 +41,9 @@ const TRANSLATIONS = {
     helpLine2: "🎨 Click Draw! and AI creates a coloring page just for you",
     helpLine3: "🔢 Tap a numbered area, then tap a color to fill it",
     helpLine4: "🖨️ Print or save your masterpiece when you're done!",
+    ctrlSize: "Size",
+    footerDesc: "AI coloring pages · Free for kids",
+    footerFun: "Free & fun for everyone 🌈",
   },
   de: {
     tagline: "Zeichne · Färbe · Liebe es 🌈",
@@ -81,6 +84,9 @@ const TRANSLATIONS = {
     helpLine2: "🎨 Klick auf Zeichnen! und die KI erstellt eine Malseite für dich",
     helpLine3: "🔢 Tippe auf einen nummerierten Bereich, dann auf eine Farbe",
     helpLine4: "🖨️ Drucke oder speichere dein Meisterwerk wenn du fertig bist!",
+    ctrlSize: "Größe",
+    footerDesc: "KI-Malseiten · Kostenlos für Kinder",
+    footerFun: "Kostenlos & Spaß für alle 🌈",
   },
   ru: {
     tagline: "Рисуй · Раскрашивай · Люби 🌈",
@@ -121,6 +127,9 @@ const TRANSLATIONS = {
     helpLine2: "🎨 Нажми Рисовать! и ИИ создаст раскраску специально для тебя",
     helpLine3: "🔢 Нажми на область с цифрой, потом выбери цвет",
     helpLine4: "🖨️ Распечатай или сохрани свой шедевр когда закончишь!",
+    ctrlSize: "Размер",
+    footerDesc: "ИИ-раскраски · Бесплатно для детей",
+    footerFun: "Бесплатно и весело для всех 🌈",
   },
   fr: {
     tagline: "Dessine · Colorie · Adore-le 🌈",
@@ -161,6 +170,9 @@ const TRANSLATIONS = {
     helpLine2: "🎨 Clique sur Dessiner! et l'IA crée une page de coloriage pour toi",
     helpLine3: "🔢 Touche une zone numérotée, puis choisis une couleur",
     helpLine4: "🖨️ Imprime ou sauvegarde ton chef-d'œuvre quand tu as fini!",
+    ctrlSize: "Taille",
+    footerDesc: "Pages de coloriage IA · Gratuit pour les enfants",
+    footerFun: "Gratuit & amusant pour tous 🌈",
   },
 };
 
@@ -1245,9 +1257,15 @@ document.querySelectorAll('.diff-pill').forEach(btn => {
     btn.classList.add('selected');
     difficultySelect.value = btn.dataset.diff;
     difficultySelect.dispatchEvent(new Event('change'));
-    // Auto-set color count based on difficulty
-    const diffColorCount = { easy: '6', medium: '12', hard: '18' };
-    colorCountSelect.value = diffColorCount[btn.dataset.diff] || '12';
+  });
+});
+
+// Color count pill event listeners
+document.querySelectorAll('.count-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.count-pill').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    colorCountSelect.value = btn.dataset.count;
     colorCountSelect.dispatchEvent(new Event('change'));
   });
 });
