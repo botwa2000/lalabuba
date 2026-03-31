@@ -1,3 +1,156 @@
+const DEBUG = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+// ─── i18n ────────────────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    tagline: "Draw it · Color it · Love it 🌈",
+    placeholder: "🦋 butterfly · 🐉 dragon · 🏰 castle · 🦄 unicorn…",
+    drawBtn: "Draw! ✨",
+    sizeSmall: "🤏 Small", sizeMedium: "📄 Medium", sizeLarge: "🖼️ Large", sizeXxl: "🎨 XXL",
+    colorByNumber: "🔢 Color by number",
+    moreOptions: "⚙️ More options",
+    difficulty: "Difficulty",
+    diffEasy: "Easy 🌟", diffMedium: "Medium 🌟🌟", diffHard: "Hard 🌟🌟🌟",
+    colors: "Colors",
+    colorsN: (n) => `${n} colors`,
+    palette: "Palette",
+    paletteClassic: "🖍️ Classic crayons", palettePastel: "🌸 Soft pastels", paletteNature: "🌿 Nature",
+    printBtn: "🖨️ Print", saveBtn: "💾 Save",
+    emptyHint: "Your picture will appear here!",
+    statusDefault: "Pick something to draw and tap Draw! 🎨",
+    celebTitle: "Well done!", celebMsg: "You colored the whole picture!",
+    celebKeep: "Keep coloring", celebNew: "Make a new one",
+    eraseMode: "Erase mode — click a colored area to clear it.",
+    selected: (name) => `Selected: ${name}. Click the picture to fill! 🎨`,
+    filled: (name) => `Filled with ${name}.`,
+    areaCleared: "Area cleared.",
+    notEnclosed: "That area isn't enclosed — try another spot or generate again.",
+    needsColor: (n, name) => `This area needs color ${n}: ${name}. Select it in the legend first.`,
+    generating: (s, d) => `Drawing "${s}" (${d})… may take a few seconds.`,
+    done: "Done! Click a numbered area then pick a color in the legend to fill it.",
+    typeFirst: "Type something to draw first.",
+    source: "Source",
+    srcBackend: "🖥️ Backend", srcDirect: "🌐 Direct", srcDemo: "🎭 Demo",
+  },
+  de: {
+    tagline: "Zeichne · Färbe · Liebe es 🌈",
+    placeholder: "🦋 Schmetterling · 🐉 Drache · 🏰 Schloss · 🦄 Einhorn…",
+    drawBtn: "Zeichnen! ✨",
+    sizeSmall: "🤏 Klein", sizeMedium: "📄 Mittel", sizeLarge: "🖼️ Groß", sizeXxl: "🎨 XXL",
+    colorByNumber: "🔢 Malen nach Zahlen",
+    moreOptions: "⚙️ Mehr Optionen",
+    difficulty: "Schwierigkeit",
+    diffEasy: "Leicht 🌟", diffMedium: "Mittel 🌟🌟", diffHard: "Schwer 🌟🌟🌟",
+    colors: "Farben",
+    colorsN: (n) => `${n} Farben`,
+    palette: "Palette",
+    paletteClassic: "🖍️ Klassische Buntstifte", palettePastel: "🌸 Sanfte Pastellfarben", paletteNature: "🌿 Natur",
+    printBtn: "🖨️ Drucken", saveBtn: "💾 Speichern",
+    emptyHint: "Dein Bild erscheint hier!",
+    statusDefault: "Wähle ein Motiv und tippe Zeichnen! 🎨",
+    celebTitle: "Super gemacht!", celebMsg: "Du hast das ganze Bild ausgemalt!",
+    celebKeep: "Weiter malen", celebNew: "Neues Bild",
+    eraseMode: "Radiermodus — klicke auf eine gefärbte Fläche zum Löschen.",
+    selected: (name) => `Ausgewählt: ${name}. Klicke auf das Bild! 🎨`,
+    filled: (name) => `Gefüllt mit ${name}.`,
+    areaCleared: "Bereich gelöscht.",
+    notEnclosed: "Dieser Bereich ist nicht geschlossen — versuche es woanders.",
+    needsColor: (n, name) => `Dieser Bereich braucht Farbe ${n}: ${name}. Zuerst auswählen.`,
+    generating: (s, d) => `Zeichne "${s}" (${d})… einen Moment bitte.`,
+    done: "Fertig! Klicke auf einen nummerierten Bereich und wähle eine Farbe.",
+    typeFirst: "Gib zuerst etwas zum Zeichnen ein.",
+    source: "Quelle",
+    srcBackend: "🖥️ Server", srcDirect: "🌐 Direkt", srcDemo: "🎭 Demo",
+  },
+  ru: {
+    tagline: "Рисуй · Раскрашивай · Люби 🌈",
+    placeholder: "🦋 бабочка · 🐉 дракон · 🏰 замок · 🦄 единорог…",
+    drawBtn: "Рисовать! ✨",
+    sizeSmall: "🤏 Маленький", sizeMedium: "📄 Средний", sizeLarge: "🖼️ Большой", sizeXxl: "🎨 XXL",
+    colorByNumber: "🔢 По номерам",
+    moreOptions: "⚙️ Ещё опции",
+    difficulty: "Сложность",
+    diffEasy: "Легко 🌟", diffMedium: "Средне 🌟🌟", diffHard: "Сложно 🌟🌟🌟",
+    colors: "Цвета",
+    colorsN: (n) => `${n} цветов`,
+    palette: "Палитра",
+    paletteClassic: "🖍️ Классика", palettePastel: "🌸 Пастельные", paletteNature: "🌿 Природа",
+    printBtn: "🖨️ Печать", saveBtn: "💾 Сохранить",
+    emptyHint: "Твой рисунок появится здесь!",
+    statusDefault: "Выбери тему и нажми Рисовать! 🎨",
+    celebTitle: "Отлично!", celebMsg: "Ты раскрасил всю картинку!",
+    celebKeep: "Продолжить", celebNew: "Новый рисунок",
+    eraseMode: "Режим стирания — нажми на закрашенную область.",
+    selected: (name) => `Выбрано: ${name}. Нажми на картинку! 🎨`,
+    filled: (name) => `Закрашено цветом ${name}.`,
+    areaCleared: "Область очищена.",
+    notEnclosed: "Эта область не замкнута — попробуй другое место.",
+    needsColor: (n, name) => `Здесь нужен цвет ${n}: ${name}. Сначала выбери его.`,
+    generating: (s, d) => `Рисую "${s}" (${d})… подожди немного.`,
+    done: "Готово! Нажми на область с цифрой и выбери цвет в палитре.",
+    typeFirst: "Сначала введи что-нибудь для рисования.",
+    source: "Источник",
+    srcBackend: "🖥️ Сервер", srcDirect: "🌐 Прямой", srcDemo: "🎭 Демо",
+  },
+  fr: {
+    tagline: "Dessine · Colorie · Adore-le 🌈",
+    placeholder: "🦋 papillon · 🐉 dragon · 🏰 château · 🦄 licorne…",
+    drawBtn: "Dessiner! ✨",
+    sizeSmall: "🤏 Petit", sizeMedium: "📄 Moyen", sizeLarge: "🖼️ Grand", sizeXxl: "🎨 XXL",
+    colorByNumber: "🔢 Colorier par numéro",
+    moreOptions: "⚙️ Plus d'options",
+    difficulty: "Difficulté",
+    diffEasy: "Facile 🌟", diffMedium: "Moyen 🌟🌟", diffHard: "Difficile 🌟🌟🌟",
+    colors: "Couleurs",
+    colorsN: (n) => `${n} couleurs`,
+    palette: "Palette",
+    paletteClassic: "🖍️ Crayons classiques", palettePastel: "🌸 Pastels doux", paletteNature: "🌿 Nature",
+    printBtn: "🖨️ Imprimer", saveBtn: "💾 Enregistrer",
+    emptyHint: "Votre image apparaîtra ici!",
+    statusDefault: "Choisissez un sujet et tapez Dessiner! 🎨",
+    celebTitle: "Bravo!", celebMsg: "Tu as colorié toute l'image!",
+    celebKeep: "Continuer à colorier", celebNew: "Nouveau dessin",
+    eraseMode: "Mode effacement — cliquez sur une zone colorée pour effacer.",
+    selected: (name) => `Sélectionné: ${name}. Cliquez sur l'image! 🎨`,
+    filled: (name) => `Rempli avec ${name}.`,
+    areaCleared: "Zone effacée.",
+    notEnclosed: "Cette zone n'est pas fermée — essayez un autre endroit.",
+    needsColor: (n, name) => `Cette zone a besoin de la couleur ${n}: ${name}. Sélectionnez-la d'abord.`,
+    generating: (s, d) => `Dessin de "${s}" (${d})… quelques secondes.`,
+    done: "Terminé! Cliquez sur une zone numérotée puis choisissez une couleur.",
+    typeFirst: "Tapez d'abord quelque chose à dessiner.",
+    source: "Source",
+    srcBackend: "🖥️ Serveur", srcDirect: "🌐 Direct", srcDemo: "🎭 Démo",
+  },
+};
+
+let currentLang = localStorage.getItem('lalabuba-lang') || 'en';
+
+function t(key, ...args) {
+  const val = TRANSLATIONS[currentLang]?.[key] ?? TRANSLATIONS.en[key];
+  return typeof val === 'function' ? val(...args) : (val ?? key);
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === currentLang);
+  });
+  // Update html lang attribute
+  document.documentElement.lang = currentLang;
+}
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('lalabuba-lang', lang);
+  applyTranslations();
+}
+
 const form = document.getElementById("generator-form");
 const subjectInput = document.getElementById("subject");
 const showNumbersInput = document.getElementById("show-numbers");
@@ -268,7 +421,7 @@ function renderLegend() {
   eraseItem.querySelector("button").addEventListener("click", () => {
     eraseMode = true;
     renderLegend();
-    setStatus("Erase mode — click a colored area to clear it.");
+    setStatus(t('eraseMode'));
   });
   legendList.appendChild(eraseItem);
 
@@ -280,7 +433,7 @@ function renderLegend() {
       eraseMode = false;
       selectedPaletteIndex = index;
       renderLegend();
-      setStatus(`Selected: ${entry.label}. Click the picture to fill! 🎨`);
+      setStatus(t('selected', entry.label));
     });
     legendList.appendChild(item);
   });
@@ -368,6 +521,7 @@ function drawBaseImage(image) {
   context.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
   context.drawImage(image, 0, 0, previewCanvas.width, previewCanvas.height);
   const raw = context.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+  closeOutlineGaps(raw);
   closeOutlineGaps(raw);
   context.putImageData(raw, 0, 0);
   baseImageData = context.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
@@ -748,10 +902,10 @@ async function renderGeneratedImage(imageBase64) {
 
 async function generatePage(subject) {
   const difficulty = difficultySelect.value;
-  setStatus(`Drawing "${subject}" (${difficulty})… may take a few seconds.`);
+  setStatus(t('generating', subject, difficulty));
   const imageUrl = await requestGeneratedImage(subject, difficulty);
   await renderGeneratedImage(imageUrl);
-  setStatus(`Done! Click a numbered area then pick a color in the legend to fill it.`);
+  setStatus(t('done'));
 }
 
 async function requestGeneratedImage(subject, difficulty = "medium") {
@@ -815,7 +969,7 @@ form.addEventListener("submit", async (event) => {
 
   const subject = sanitizeSubject(subjectInput.value);
   if (!subject) {
-    setStatus("Type something to draw first.", true);
+    setStatus(t('typeFirst'), true);
     return;
   }
 
@@ -908,7 +1062,7 @@ previewCanvas.addEventListener("click", (event) => {
 
   const regionId = findRegionAt(canvasX, canvasY);
 
-  if (debugPanel) {
+  if (DEBUG && debugPanel) {
     debugPanel.textContent = [
       `Clicked     : (${canvasX}, ${canvasY})`,
       `Region id   : ${regionId > 0 ? regionId : "none"}${regionId === backgroundRegionId ? " (bg)" : ""} (${regionPixels.get(regionId)?.length ?? 0} px)`,
@@ -918,7 +1072,7 @@ previewCanvas.addEventListener("click", (event) => {
   }
 
   if (!regionId) {
-    setStatus("That area isn't enclosed — try another spot or generate again.", true);
+    setStatus(t('notEnclosed'), true);
     return;
   }
 
@@ -935,7 +1089,7 @@ previewCanvas.addEventListener("click", (event) => {
       completedRegions.delete(regionId);
       celebrationShown = false;
       redrawCanvas();
-      setStatus("Area cleared.");
+      setStatus(t('areaCleared'));
     }
     return;
   }
@@ -945,7 +1099,7 @@ previewCanvas.addEventListener("click", (event) => {
     const required = regionColorMap.get(regionId);
     if (selectedPaletteIndex !== required) {
       const c = activePalette()[required];
-      setStatus(`This area needs color ${required + 1}: ${c.label}. Select it in the legend first.`, true);
+      setStatus(t('needsColor', required + 1, c.label), true);
       return;
     }
   }
@@ -954,7 +1108,7 @@ previewCanvas.addEventListener("click", (event) => {
   const fillColor = hexToRgb(palette[selectedPaletteIndex].color);
   completedRegions.add(regionId);
   fillRegion(regionId, fillColor);
-  setStatus(`Filled with ${palette[selectedPaletteIndex].label}.`);
+  setStatus(t('filled', palette[selectedPaletteIndex].label));
   checkCompletion();
 });
 
@@ -993,4 +1147,17 @@ document.querySelectorAll(".size-pill").forEach((btn) => {
   });
 });
 
+// Hide debug-only elements in production
+if (!DEBUG) {
+  const debugAside = document.getElementById('debug-aside');
+  if (debugAside) debugAside.style.display = 'none';
+  document.querySelectorAll('.debug-item').forEach(el => { el.style.display = 'none'; });
+}
+
 renderLegend();
+
+// Language selector
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+});
+applyTranslations();

@@ -14,10 +14,16 @@
   <div class="app">
 
     <header class="site-header">
+      <div class="lang-selector">
+        <button class="lang-btn active" data-lang="en">🇬🇧 EN</button>
+        <button class="lang-btn" data-lang="de">🇩🇪 DE</button>
+        <button class="lang-btn" data-lang="ru">🇷🇺 RU</button>
+        <button class="lang-btn" data-lang="fr">🇫🇷 FR</button>
+      </div>
       <h1 class="logo" aria-label="Lalabuba">
         <span style="--i:0">L</span><span style="--i:1">a</span><span style="--i:2">l</span><span style="--i:3">a</span><span style="--i:4">b</span><span style="--i:5">u</span><span style="--i:6">b</span><span style="--i:7">a</span>
       </h1>
-      <p class="tagline">Draw it · Color it · Love it 🌈</p>
+      <p class="tagline" data-i18n="tagline">Draw it · Color it · Love it 🌈</p>
     </header>
 
     <main>
@@ -30,52 +36,53 @@
               type="text"
               maxlength="80"
               placeholder="🦋 butterfly · 🐉 dragon · 🏰 castle · 🦄 unicorn…"
+              data-i18n-placeholder="placeholder"
               autocomplete="off"
               required
             />
-            <button id="generate-button" type="submit" class="go-btn">Draw! ✨</button>
+            <button id="generate-button" type="submit" class="go-btn" data-i18n="drawBtn">Draw! ✨</button>
           </div>
 
           <div class="quick-row">
             <div class="pill-group" role="group" aria-label="Picture size">
-              <button type="button" class="size-pill" data-size="small">🤏 Small</button>
-              <button type="button" class="size-pill selected" data-size="medium">📄 Medium</button>
-              <button type="button" class="size-pill" data-size="large">🖼️ Large</button>
-              <button type="button" class="size-pill" data-size="xxl">🎨 XXL</button>
+              <button type="button" class="size-pill" data-size="small" data-i18n="sizeSmall">🤏 Small</button>
+              <button type="button" class="size-pill selected" data-size="medium" data-i18n="sizeMedium">📄 Medium</button>
+              <button type="button" class="size-pill" data-size="large" data-i18n="sizeLarge">🖼️ Large</button>
+              <button type="button" class="size-pill" data-size="xxl" data-i18n="sizeXxl">🎨 XXL</button>
             </div>
             <label class="check-pill">
               <input id="show-numbers" type="checkbox" checked />
-              <span>🔢 Color by number</span>
+              <span data-i18n="colorByNumber">🔢 Color by number</span>
             </label>
           </div>
 
           <details class="more-opts">
-            <summary>⚙️ More options</summary>
+            <summary data-i18n="moreOptions">⚙️ More options</summary>
             <div class="opts-grid">
-              <label for="difficulty-select">Difficulty</label>
+              <label for="difficulty-select" data-i18n="difficulty">Difficulty</label>
               <select id="difficulty-select">
-                <option value="easy">Easy 🌟</option>
-                <option value="medium" selected>Medium 🌟🌟</option>
-                <option value="hard">Hard 🌟🌟🌟</option>
+                <option value="easy" data-i18n="diffEasy">Easy 🌟</option>
+                <option value="medium" selected data-i18n="diffMedium">Medium 🌟🌟</option>
+                <option value="hard" data-i18n="diffHard">Hard 🌟🌟🌟</option>
               </select>
-              <label for="color-count-select">Colors</label>
+              <label for="color-count-select" data-i18n="colors">Colors</label>
               <select id="color-count-select">
                 <option value="6">6 colors</option>
                 <option value="12" selected>12 colors</option>
                 <option value="18">18 colors</option>
                 <option value="24">24 colors</option>
               </select>
-              <label for="palette-select">Palette</label>
+              <label for="palette-select" data-i18n="palette">Palette</label>
               <select id="palette-select">
-                <option value="classic">🖍️ Classic crayons</option>
-                <option value="pastel">🌸 Soft pastels</option>
-                <option value="nature">🌿 Nature</option>
+                <option value="classic" data-i18n="paletteClassic">🖍️ Classic crayons</option>
+                <option value="pastel" data-i18n="palettePastel">🌸 Soft pastels</option>
+                <option value="nature" data-i18n="paletteNature">🌿 Nature</option>
               </select>
-              <label for="provider-select">Source</label>
-              <select id="provider-select">
-                <option value="backend" selected>🖥️ Backend</option>
-                <option value="direct">🌐 Direct</option>
-                <option value="demo">🎭 Demo</option>
+              <label for="provider-select" class="debug-item" data-i18n="source">Source</label>
+              <select id="provider-select" class="debug-item">
+                <option value="backend" selected data-i18n="srcBackend">🖥️ Backend</option>
+                <option value="direct" data-i18n="srcDirect">🌐 Direct</option>
+                <option value="demo" data-i18n="srcDemo">🎭 Demo</option>
               </select>
             </div>
           </details>
@@ -89,14 +96,14 @@
       <section class="workspace">
         <div class="canvas-wrapper">
           <div class="canvas-actions">
-            <button id="print-button"    type="button" disabled class="action-btn">🖨️ Print</button>
-            <button id="download-button" type="button" disabled class="action-btn">💾 Save</button>
+            <button id="print-button"    type="button" disabled class="action-btn" data-i18n="printBtn">🖨️ Print</button>
+            <button id="download-button" type="button" disabled class="action-btn" data-i18n="saveBtn">💾 Save</button>
           </div>
 
           <div id="preview-stage" class="preview-stage empty">
             <div class="empty-hint">
               <span class="empty-icon">🖌️</span>
-              <p>Your picture will appear here!</p>
+              <p data-i18n="emptyHint">Your picture will appear here!</p>
             </div>
             <canvas id="preview-canvas" width="1024" height="1024" hidden></canvas>
           </div>
@@ -106,7 +113,7 @@
           </div>
         </div>
 
-        <aside class="side-panel">
+        <aside class="side-panel" id="debug-aside">
           <details id="debug-details" class="debug-wrap">
             <summary>Debug</summary>
             <pre id="debug-panel" class="debug-panel">Click canvas to see info.</pre>
@@ -119,11 +126,11 @@
   <div id="celebration" class="celebration hidden" aria-hidden="true">
     <div class="celebration-card">
       <div class="celebration-art">🎨</div>
-      <h2>Well done!</h2>
-      <p>You colored the whole picture!</p>
+      <h2 data-i18n="celebTitle">Well done!</h2>
+      <p data-i18n="celebMsg">You colored the whole picture!</p>
       <div class="celebration-actions">
-        <button id="celebration-keep" type="button">Keep coloring</button>
-        <button id="celebration-new"  type="button">Make a new one</button>
+        <button id="celebration-keep" type="button" data-i18n="celebKeep">Keep coloring</button>
+        <button id="celebration-new"  type="button" data-i18n="celebNew">Make a new one</button>
       </div>
     </div>
   </div>
