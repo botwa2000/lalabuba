@@ -100,6 +100,41 @@ async function generateWithHuggingFace(prompt, width = 1024, height = 1024) {
   };
 }
 
+const BLOCKED_TERMS = new Set([
+  "nude","naked","nudity","blood","bloody","gore","gory","kill","killing",
+  "murder","murderer","dead","death","dying","corpse","weapon","weapons",
+  "gun","guns","rifle","pistol","knife","knives","bomb","bombs","explosive",
+  "sex","sexy","sexual","porn","pornography","erotic","erotica",
+  "violence","violent","torture","abuse","drug","drugs","cocaine","heroin",
+  "meth","terror","terrorist","suicide","rape","racist","racism","nazi",
+  "nackt","nackten","blut","blutig","töten","tötung","mord","mörder",
+  "tot","leiche","waffe","waffen","gewehr","messer","bombe","bomben",
+  "sexuell","pornografie","gewalt","folter","missbrauch","droge",
+  "drogen","selbstmord","vergewaltigung",
+  "голый","голая","голые","кровь","кровавый","убить","убийство","убийца",
+  "мертвый","мёртвый","труп","смерть","оружие","пистолет","нож","бомба",
+  "порно","насилие","пытка","наркотик","наркотики","террор",
+  "суицид","изнасилование","расизм",
+  "nu","nue","nus","nues","sang","sanglant","tuer","meurtre","meurtrier",
+  "mort","cadavre","arme","armes","pistolet","couteau","bombe","bombes",
+  "sexuel","pornographie","torture","abus","drogue","drogues",
+  "terreur","terroriste","viol","racisme",
+]);
+
+function isSafeSubject(subject) {
+  const words = subject.toLowerCase().split(/[\s,!?;:'"()\[\]{}\-_/@#]+/);
+  return !words.some(w => w.length > 0 && BLOCKED_TERMS.has(w));
+}
+
+function isQuotaError(err) {
+  const msg = (err.message || "").toLowerCase();
+  return msg.includes("402") || msg.includes("429") ||
+         msg.includes("credit") || msg.includes("quota") ||
+         msg.includes("limit") || msg.includes("exceeded") ||
+         msg.includes("payment") || msg.includes("billing") ||
+         msg.includes("depleted");
+}
+
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed." });
@@ -118,12 +153,28 @@ module.exports = async (req, res) => {
       return;
     }
 
+    if (!isSafeSubject(subject)) {
+      res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
+      return;
+    }
+
     const prompt = buildPrompt(subject, difficulty);
     let result;
+
     if (IMAGE_PROVIDER === "pollinations") {
       result = await generateWithPollinations(prompt, width, height);
     } else {
-      result = await generateWithHuggingFace(prompt, width, height);
+      // Try HuggingFace, fall back to Pollinations on quota/credit errors.
+      try {
+        result = await generateWithHuggingFace(prompt, width, height);
+      } catch (err) {
+        if (isQuotaError(err)) {
+          console.warn(`HuggingFace quota — falling back to Pollinations. (${err.message.slice(0, 80)})`);
+          result = await generateWithPollinations(prompt, width, height);
+        } else {
+          throw err;
+        }
+      }
     }
 
     res.setHeader("Content-Type", result.contentType);
