@@ -287,9 +287,11 @@ body {
 }
 .preview-stage canvas {
   display: block;
-  width: 100%;
-  height: auto;
+  max-width: 100%;
   max-height: 78vh;
+  width: auto;
+  height: auto;
+  margin: 0 auto;
   cursor: crosshair;
 }
 .preview-stage.empty {

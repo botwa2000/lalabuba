@@ -520,6 +520,12 @@ function overlayNumbers() {
         }
       }
 
+      // Always deduplicate, even when pixels were unavailable.
+      if (used.has(paletteIndex)) {
+        for (let k = 0; k < palette.length; k++) {
+          if (!used.has(k)) { paletteIndex = k; break; }
+        }
+      }
       used.add(paletteIndex);
       const mapId = regionMap?.[region.y * w + region.x];
       if (mapId > 0) regionColorMap.set(mapId, paletteIndex);
@@ -530,7 +536,19 @@ function overlayNumbers() {
   context.textBaseline = "middle";
 
   regions.forEach((region) => {
-    const mapId = regionMap?.[region.y * w + region.x];
+    // If centroid lands on an outline/background pixel, snap to nearest region pixel.
+    let mapId = regionMap?.[region.y * w + region.x];
+    if (!(mapId > 0) && regionMap) {
+      const snapR = 20;
+      outer: for (let dy = -snapR; dy <= snapR; dy++) {
+        for (let dx = -snapR; dx <= snapR; dx++) {
+          const nx = region.x + dx, ny = region.y + dy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= previewCanvas.height) continue;
+          const id = regionMap[ny * w + nx];
+          if (id > 0) { mapId = id; break outer; }
+        }
+      }
+    }
     // Hide badge once the region has been filled.
     if (mapId > 0 && completedRegions.has(mapId)) return;
     const paletteIndex = (mapId > 0 ? regionColorMap.get(mapId) : null) ?? 0;
