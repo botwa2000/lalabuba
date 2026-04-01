@@ -947,13 +947,26 @@ function precomputeRegions() {
   const src = baseImageData.data;
 
   // Build outline mask (br < 100): used as the CCA barrier.
-  // closeOutlineGaps() was already applied twice to baseImageData, so
-  // dark pixels near outlines are already slightly thickened.
-  const outlineMask = new Uint8Array(n);
+  let outlineMask = new Uint8Array(n);
   for (let i = 0; i < n; i++) {
     const o = i * 4;
     const br = (src[o] + src[o + 1] + src[o + 2]) / 3;
     outlineMask[i] = br < 100 ? 1 : 0;
+  }
+
+  // Dilate outlineMask 3× to close gaps up to 3 px inside the drawing.
+  // closeOutlineGaps() already ran 2× on baseImageData, so total effective
+  // dilation is 5 px — enough for thin gaps in detailed/uploaded images.
+  for (let pass = 0; pass < 3; pass++) {
+    const next = new Uint8Array(outlineMask);
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const i = y * width + x;
+        if (!outlineMask[i] && (outlineMask[i-1]||outlineMask[i+1]||outlineMask[i-width]||outlineMask[i+width]))
+          next[i] = 1;
+      }
+    }
+    outlineMask = next;
   }
 
   // Build label array: -1 for all outline pixels.
