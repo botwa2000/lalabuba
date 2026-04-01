@@ -50,6 +50,7 @@ const TRANSLATIONS = {
     customColorHint: "Pick any colour",
     customColorSelected: "Custom colour selected. Click a region to fill!",
     customColorLabel: "custom colour",
+    eraseBtn: "Erase",
   },
   de: {
     tagline: "Zeichne · Färbe · Liebe es 🌈",
@@ -99,6 +100,7 @@ const TRANSLATIONS = {
     customColorHint: "Eigene Farbe wählen",
     customColorSelected: "Eigene Farbe gewählt. Klicke auf einen Bereich!",
     customColorLabel: "eigene Farbe",
+    eraseBtn: "Löschen",
   },
   ru: {
     tagline: "Рисуй · Раскрашивай · Люби 🌈",
@@ -148,6 +150,7 @@ const TRANSLATIONS = {
     customColorHint: "Выбери любой цвет",
     customColorSelected: "Свой цвет выбран. Нажми на область!",
     customColorLabel: "свой цвет",
+    eraseBtn: "Стереть",
   },
   fr: {
     tagline: "Dessine · Colorie · Adore-le 🌈",
@@ -197,6 +200,7 @@ const TRANSLATIONS = {
     customColorHint: "Choisir une couleur",
     customColorSelected: "Couleur personnalisée. Clique sur une zone!",
     customColorLabel: "couleur personnalisée",
+    eraseBtn: "Effacer",
   },
 };
 
@@ -531,14 +535,19 @@ function renderLegend() {
   const palette = activePalette();
   legendList.innerHTML = "";
 
-  // Erase swatch (always first) — shown as eraser icon.
+  // ── Erase tool — full-width pill button, not a circle ──────────────
   const eraseItem = document.createElement("li");
-  eraseItem.innerHTML = `<button class="color-swatch erase-swatch${eraseMode ? " active" : ""}" title="Erase">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 22" width="24" height="17" aria-hidden="true">
-      <rect x="1" y="2" width="30" height="18" rx="3" fill="#ffd6e7" stroke="#e879a3" stroke-width="1.8"/>
-      <rect x="1" y="2" width="10" height="18" rx="3" fill="#ff84bc" stroke="#e879a3" stroke-width="1.8"/>
-      <line x1="11" y1="2" x2="11" y2="20" stroke="#e879a3" stroke-width="1.8"/>
+  eraseItem.className = "legend-tool-item";
+  eraseItem.innerHTML = `<button class="tool-btn erase-btn${eraseMode ? " active" : ""}" title="${t('eraseMode')}">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20" width="28" height="20" aria-hidden="true">
+      <rect x="8" y="1" width="19" height="12" rx="2.5" fill="#fff0ee" stroke="#ef9a9a" stroke-width="1.5"/>
+      <rect x="1" y="1" width="11" height="12" rx="2.5" fill="#ef9a9a" stroke="#e57373" stroke-width="1.5"/>
+      <line x1="9" y1="1.5" x2="9" y2="12.5" stroke="#e57373" stroke-width="1.5"/>
+      <rect x="1" y="13" width="19" height="2" rx="1" fill="none"/>
+      <line x1="4" y1="18" x2="24" y2="18" stroke="#ddd" stroke-width="2" stroke-linecap="round"/>
+      <line x1="4" y1="18" x2="12" y2="18" stroke="#ef9a9a" stroke-width="2" stroke-linecap="round"/>
     </svg>
+    <span>${t('eraseBtn')}</span>
   </button>`;
   eraseItem.querySelector("button").addEventListener("click", () => {
     eraseMode = true;
@@ -547,6 +556,13 @@ function renderLegend() {
   });
   legendList.appendChild(eraseItem);
 
+  // ── Separator ───────────────────────────────────────────────────────
+  const sep1 = document.createElement("li");
+  sep1.className = "legend-sep";
+  sep1.setAttribute("aria-hidden", "true");
+  legendList.appendChild(sep1);
+
+  // ── Colour swatches — numbered circles ─────────────────────────────
   palette.forEach((entry, index) => {
     const item = document.createElement("li");
     const active = !eraseMode && index === selectedPaletteIndex;
@@ -560,20 +576,37 @@ function renderLegend() {
     legendList.appendChild(item);
   });
 
-  // Custom color swatch (always last).
+  // ── Separator ───────────────────────────────────────────────────────
+  const sep2 = document.createElement("li");
+  sep2.className = "legend-sep";
+  sep2.setAttribute("aria-hidden", "true");
+  legendList.appendChild(sep2);
+
+  // ── Custom colour picker — full-width pill button, not a circle ─────
   const customItem = document.createElement("li");
+  customItem.className = "legend-tool-item";
   const isCustomActive = !eraseMode && selectedPaletteIndex === -1;
-  customItem.innerHTML = `<label class="color-swatch custom-color-swatch${isCustomActive ? " active" : ""}" style="--c:${customColor}" title="${t('customColorHint')}">
+  customItem.innerHTML = `<label class="tool-btn picker-btn${isCustomActive ? " active" : ""}" style="--c:${customColor}" title="${t('customColorHint')}">
     <input type="color" class="color-input-hidden" value="${customColor}">
-    <span class="swatch-num" style="font-size:.7rem;color:rgba(0,0,0,.6);text-shadow:0 1px 2px rgba(255,255,255,.8)">+</span>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <path d="M10 2C5.58 2 2 5.58 2 10c0 3.31 2 5 4 5 1.54 0 2-1 2-2 0-.55.45-1 1-1h3c2.76 0 5-2.24 5-5C17 5.13 13.87 2 10 2z" fill="rgba(255,255,255,.8)" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/>
+      <circle cx="6.5" cy="8.5" r="1.4" fill="#e74c3c"/>
+      <circle cx="9.5" cy="5.5" r="1.4" fill="#f39c12"/>
+      <circle cx="13.2" cy="7.2" r="1.4" fill="#27ae60"/>
+      <circle cx="14.2" cy="11" r="1.4" fill="#2980b9"/>
+    </svg>
+    <span class="picker-label">${t('customColorLabel')}</span>
+    <span class="picker-dot" style="background:${customColor}"></span>
   </label>`;
   const colorInput = customItem.querySelector('input');
   colorInput.addEventListener('input', (e) => {
     customColor = e.target.value;
     eraseMode = false;
     selectedPaletteIndex = -1;
-    customItem.querySelector('label').style.setProperty('--c', customColor);
-    customItem.querySelector('label').classList.add('active');
+    const lbl = customItem.querySelector('label');
+    lbl.style.setProperty('--c', customColor);
+    lbl.classList.add('active');
+    customItem.querySelector('.picker-dot').style.background = customColor;
   });
   colorInput.addEventListener('change', (e) => {
     customColor = e.target.value;

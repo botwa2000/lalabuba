@@ -621,19 +621,83 @@ body {
   max-width: 48px;
   text-overflow: ellipsis;
 }
-/* Erase swatch */
-.erase-swatch {
-  background: repeating-linear-gradient(
-    45deg, #ebebeb 0 4px, #d4d4d4 4px 8px
-  ) !important;
+/* ─── Legend tool buttons (Erase + Colour Picker) ─────────────────── */
+.legend-tool-item {
+  grid-column: 1 / -1;
+  list-style: none;
 }
-.erase-swatch svg { pointer-events: none; }
 
-/* Custom color picker swatch */
-.custom-color-swatch {
-  overflow: hidden;
-  position: relative;
+.tool-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 2px solid transparent;
   cursor: pointer;
+  font-family: var(--ff-brand);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  position: relative;
+  box-sizing: border-box;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .15s, background .15s;
+}
+.tool-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 14px rgba(0,0,0,.16);
+}
+.tool-btn svg { flex-shrink: 0; pointer-events: none; }
+
+/* Erase button */
+.erase-btn {
+  background: #f5f5f5;
+  color: #c62828;
+  border-color: #e5e5e5;
+}
+.erase-btn:hover { background: #fff0ee; border-color: #ffb3a0; }
+.erase-btn.active {
+  background: #fde8e4;
+  border-color: #e57373;
+  box-shadow: 0 0 0 3px rgba(229,115,115,.18);
+  transform: none;
+}
+
+/* Colour picker button */
+.picker-btn {
+  background: linear-gradient(120deg,
+    color-mix(in srgb, var(--c, #e91e63) 18%, #fff) 0%,
+    color-mix(in srgb, var(--c, #e91e63) 8%, #fff) 100%
+  );
+  color: rgba(0,0,0,.7);
+  border-color: color-mix(in srgb, var(--c, #e91e63) 30%, transparent);
+  overflow: hidden;
+}
+.picker-btn:hover {
+  border-color: color-mix(in srgb, var(--c, #e91e63) 55%, transparent);
+}
+.picker-btn.active {
+  border-color: var(--c, #e91e63);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c, #e91e63) 22%, transparent);
+  transform: none;
+}
+.picker-label {
+  flex: 1;
+  text-align: left;
+  pointer-events: none;
+  position: relative;
+  z-index: 1;
+}
+.picker-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.85);
+  box-shadow: 0 1px 4px rgba(0,0,0,.22);
+  flex-shrink: 0;
+  pointer-events: none;
 }
 .color-input-hidden {
   position: absolute;
@@ -644,6 +708,17 @@ body {
   cursor: pointer;
   border: none;
   padding: 0;
+  z-index: 2;
+}
+
+/* Legend section separator */
+.legend-sep {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin: 5px 2px;
+  background: linear-gradient(to right, transparent, rgba(0,0,0,.13), transparent);
+  list-style: none;
+  pointer-events: none;
 }
 
 /* ─── Side panel ─────────────────────────────────────────────────────────── */
@@ -733,8 +808,12 @@ body {
   .swatch-name { display: none; }
   .canvas-body { flex-direction: column; }
   .palette-sidebar { width: 100%; flex-direction: row; border-left: none; border-top: 1.5px solid var(--border); overflow-x: auto; overflow-y: visible; padding: 10px 12px; }
-  .palette-sidebar .palette-strip { display: flex; flex-direction: row; }
+  .palette-sidebar .palette-strip { display: flex; flex-direction: row; align-items: center; gap: 6px; }
   .palette-sidebar .color-swatch { width: 40px; aspect-ratio: 1; }
+  .legend-tool-item { grid-column: auto; }
+  .tool-btn { padding: 6px 9px; gap: 5px; font-size: .66rem; border-radius: 8px; white-space: nowrap; }
+  .picker-dot { width: 12px; height: 12px; }
+  .legend-sep { width: 1px; height: 32px; margin: 0 4px; background: linear-gradient(to bottom, transparent, rgba(0,0,0,.13), transparent); flex-shrink: 0; }
 }
 
 /* ─── Site footer ────────────────────────────────────────────────────────── */
