@@ -933,70 +933,47 @@ function hexToRgb(hex) {
 // Runs once per image load. Builds a per-pixel region map so a click looks up
 // and paints pre-identified pixels — fill can never leak across regions.
 //
-// Dual threshold strategy:
-//   sealMask (200)    — includes anti-aliased edges; used only for background BFS
-//   outlineMask (100) — outline + anti-aliased dark edge pixels; CCA barrier.
-// Pixels with brightness 100–200 (light anti-aliased fringe) join their adjacent
-// region → minimal unpainted fringe. Using 100 (not 40) prevents CCA from leaking
-// through dark-gray pixels in uploaded/compressed images.
+// Strategy:
+//   outlineMask (br < 100) — CCA barrier; dark + anti-aliased edge pixels.
+//   Virtual frame          — 1-px sealed border added to the label array so
+//                            areas open at the image edge (lake, sky, ground)
+//                            become enclosed regions instead of merging with
+//                            the outer background via border-seeding.
+//   Background detection   — largest CCA region (always the outer white space).
 
 function precomputeRegions() {
   const { width, height } = previewCanvas;
   const n = width * height;
   const src = baseImageData.data;
 
-  // Build both masks in one pass.
-  let sealMask     = new Uint8Array(n); // threshold 200
-  const outlineMask = new Uint8Array(n); // threshold 100
+  // Build outline mask (br < 100): used as the CCA barrier.
+  // closeOutlineGaps() was already applied twice to baseImageData, so
+  // dark pixels near outlines are already slightly thickened.
+  const outlineMask = new Uint8Array(n);
   for (let i = 0; i < n; i++) {
     const o = i * 4;
     const br = (src[o] + src[o + 1] + src[o + 2]) / 3;
-    sealMask[i]    = br < 200 ? 1 : 0;
     outlineMask[i] = br < 100 ? 1 : 0;
   }
 
-  // Dilate sealMask 4× to close gaps up to 4 px (segmentation copy only).
-  for (let pass = 0; pass < 4; pass++) {
-    const next = new Uint8Array(sealMask);
-    for (let y = 1; y < height - 1; y++) {
-      for (let x = 1; x < width - 1; x++) {
-        const i = y * width + x;
-        if (!sealMask[i] && (sealMask[i-1]||sealMask[i+1]||sealMask[i-width]||sealMask[i+width]))
-          next[i] = 1;
-      }
-    }
-    sealMask = next;
-  }
-
-  // Flood-fill from every border pixel through the sealed mask → background.
-  const inBg  = new Uint8Array(n);
-  const queue = new Int32Array(n);
-  let head = 0, tail = 0;
-
-  const seedBg = (i) => { if (!sealMask[i] && !inBg[i]) { inBg[i] = 1; queue[tail++] = i; } };
-  for (let x = 0; x < width; x++) { seedBg(x); seedBg((height - 1) * width + x); }
-  for (let y = 1; y < height - 1; y++) { seedBg(y * width); seedBg(y * width + width - 1); }
-  while (head < tail) {
-    const i = queue[head++];
-    const x = i % width, y = (i / width) | 0;
-    if (x > 0         && !sealMask[i-1]     && !inBg[i-1])     { inBg[i-1]=1;     queue[tail++]=i-1; }
-    if (x < width - 1 && !sealMask[i+1]     && !inBg[i+1])     { inBg[i+1]=1;     queue[tail++]=i+1; }
-    if (y > 0         && !sealMask[i-width] && !inBg[i-width]) { inBg[i-width]=1; queue[tail++]=i-width; }
-    if (y < height - 1&& !sealMask[i+width] && !inBg[i+width]) { inBg[i+width]=1; queue[tail++]=i+width; }
-  }
-
-  // Build label map using outlineMask (128) so anti-aliased pixels join regions.
-  const label    = new Int32Array(n);
-  const bgPixels = [];
+  // Build label array: -1 for all outline pixels.
+  const label = new Int32Array(n);
   for (let i = 0; i < n; i++) {
-    if (outlineMask[i])  { label[i] = -1; }           // true outline
-    else if (inBg[i])    { label[i] = -2; bgPixels.push(i); } // background (temp)
-    // else 0 = unvisited enclosed pixel
+    if (outlineMask[i]) label[i] = -1;
   }
 
-  // Connected-component labelling for enclosed pixels.
+  // Virtual sealed frame: mark the outermost pixel row/col as barriers.
+  // This closes any region that is "open" at the image boundary (e.g. a
+  // lake with no bottom outline, a sky open at the top) so the CCA treats
+  // it as an enclosed fillable region rather than outer background.
+  for (let x = 0; x < width;  x++) { label[x] = -1; label[(height-1)*width+x] = -1; }
+  for (let y = 0; y < height; y++) { label[y*width] = -1; label[y*width+width-1] = -1; }
+
+  // Connected-component labelling for all unvisited (non-barrier) pixels.
   regionPixels = new Map();
   let nextId = 1;
+  const queue = new Int32Array(n);
+  let head = 0, tail = 0;
 
   for (let start = 0; start < n; start++) {
     if (label[start] !== 0) continue;
@@ -1020,14 +997,27 @@ function precomputeRegions() {
       regionPixels.set(nextId, buf);
       nextId++;
     } else {
-      for (const p of buf) { label[p] = -2; bgPixels.push(p); } // fold tiny specks into background
+      for (const p of buf) label[p] = -1;  // tiny specks → treat as outline
     }
   }
 
-  // Register the background as its own fillable region.
-  backgroundRegionId = nextId;
-  for (const p of bgPixels) label[p] = nextId;
-  regionPixels.set(nextId, bgPixels);
+  // Background = the region at the top-left inner corner (1,1) — almost
+  // always the outer white space surrounding the drawing.  Fall back to the
+  // largest region if the corner is dark (drawing fills the corner).
+  backgroundRegionId = 0;
+  outer:
+  for (let dy = 1; dy <= 4; dy++) {
+    for (let dx = 1; dx <= 4; dx++) {
+      const id = label[dy * width + dx];
+      if (id > 0) { backgroundRegionId = id; break outer; }
+    }
+  }
+  if (!backgroundRegionId) {
+    let maxSize = 0;
+    for (const [id, pixels] of regionPixels) {
+      if (pixels.length > maxSize) { maxSize = pixels.length; backgroundRegionId = id; }
+    }
+  }
 
   regionMap = label;
 }
