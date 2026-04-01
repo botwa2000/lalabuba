@@ -1,0 +1,190 @@
+/* ─── Palette area (hidden legacy) ──────────────────────────────────────── */
+.palette-area { display: none; }
+
+/* ─── Side panel ─────────────────────────────────────────────────────────── */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.debug-wrap {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: var(--sh-sm);
+  border: 2px solid var(--border);
+  font-size: .82rem;
+}
+.debug-wrap summary { cursor: pointer; color: var(--muted); font-weight: 700; }
+.debug-panel {
+  margin: 8px 0 0;
+  padding: 10px;
+  background: #1a1a2e;
+  color: #a8ff78;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: .76rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ─── Celebration ────────────────────────────────────────────────────────── */
+.celebration {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.48);
+  display: grid;
+  place-items: center;
+  z-index: 200;
+  animation: celebFadeIn .25s ease;
+}
+.celebration.hidden { display: none; }
+
+.celebration-card {
+  background: var(--card);
+  border-radius: 28px;
+  padding: 44px 48px;
+  text-align: center;
+  max-width: 380px;
+  width: calc(100vw - 48px);
+  box-shadow: var(--sh-lg);
+  animation: celebPop .4s cubic-bezier(.34,1.56,.64,1);
+  font-family: var(--ff-brand);
+}
+.celebration-art { font-size: 4rem; margin-bottom: 12px; animation: floatIcon 2s ease-in-out infinite; }
+.celebration-card h2 { font-size: 2.4rem; color: var(--ink); margin-bottom: 8px; }
+.celebration-card p  { font-size: 1.1rem; color: var(--muted); font-family: var(--ff-body); }
+.celebration-actions { display: flex; gap: 12px; margin-top: 26px; justify-content: center; flex-wrap: wrap; }
+.celebration-actions button {
+  font-family: var(--ff-brand);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 12px 26px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.celebration-actions button:first-child { background: var(--bg); color: var(--muted); border: 2px solid var(--border); }
+.celebration-actions button:last-child  { background: linear-gradient(135deg, var(--orange), var(--red)); color: #fff; box-shadow: 0 4px 16px rgba(255,71,87,.35); }
+.celebration-actions button:hover { transform: translateY(-2px); }
+
+@keyframes celebFadeIn { from { opacity:0 } to { opacity:1 } }
+@keyframes celebPop    { from { transform:scale(.6); opacity:0 } to { transform:scale(1); opacity:1 } }
+
+/* ─── Share modal ────────────────────────────────────────────────────────── */
+.share-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 201;
+  padding: 20px;
+}
+.share-modal.hidden { display: none; }
+
+.share-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 26px 26px 22px;
+  box-shadow: var(--sh-lg);
+  max-width: 360px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: celebPop .3s cubic-bezier(.34,1.56,.64,1);
+}
+
+.share-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.share-header h3 {
+  font-family: var(--ff-brand);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.share-close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background .15s;
+  line-height: 1;
+}
+.share-close:hover { background: var(--bg); color: var(--ink); }
+
+.share-desc {
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  margin: 0;
+}
+.share-note {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--purple);
+  text-align: center;
+  margin: 0;
+}
+
+.qr-box {
+  display: flex;
+  justify-content: center;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  border: 2px solid var(--border);
+}
+.qr-img {
+  width: 200px;
+  height: 200px;
+  display: block;
+  border-radius: 4px;
+}
+
+.share-link-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.share-link-input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--ff-body);
+  font-size: .76rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  outline: none;
+  cursor: text;
+}
+.copy-btn {
+  font-family: var(--ff-body);
+  font-size: .85rem;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s, transform .15s;
+  flex-shrink: 0;
+}
+.copy-btn:hover { opacity: .88; transform: translateY(-1px); }

@@ -1,0 +1,68 @@
+/* ─── Header / Logo ──────────────────────────────────────────────────────── */
+.site-header {
+  text-align: center;
+  padding: 12px 0 4px;
+}
+
+.logo {
+  font-family: var(--ff-brand);
+  font-size: clamp(3.2rem, 11vw, 6.4rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  display: inline-block;
+}
+
+.logo span {
+  display: inline-block;
+  animation: letterBounce 2s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.13s);
+}
+.logo span:nth-child(1) { color: var(--red);    }
+.logo span:nth-child(2) { color: var(--orange);  }
+.logo span:nth-child(3) { color: var(--yellow);  }
+.logo span:nth-child(4) { color: var(--green);   }
+.logo span:nth-child(5) { color: var(--blue);    }
+.logo span:nth-child(6) { color: var(--purple);  }
+.logo span:nth-child(7) { color: var(--pink);    }
+.logo span:nth-child(8) { color: var(--coral);   }
+
+@keyframes letterBounce {
+  0%, 70%, 100% { transform: translateY(0) rotate(0deg); }
+  35%           { transform: translateY(-14px) rotate(4deg); }
+}
+
+/* ─── Language selector ──────────────────────────────────────────────────── */
+.lang-selector {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  padding: 8px 0 0;
+}
+
+.lang-btn {
+  font-family: var(--ff-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 50px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.lang-btn:hover { border-color: var(--blue); color: var(--blue); }
+.lang-btn.active {
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  color: #fff;
+  border-color: transparent;
+}
+
+.tagline {
+  margin-top: 6px;
+  font-size: clamp(0.95rem, 2.5vw, 1.25rem);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}

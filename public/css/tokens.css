@@ -1,0 +1,44 @@
+/* ─── Fonts & tokens ─────────────────────────────────────────────────────── */
+:root {
+  --ff-brand: 'Fredoka', sans-serif;
+  --ff-body:  'Nunito', sans-serif;
+
+  --bg:      #eef6ff;
+  --card:    #ffffff;
+  --ink:     #1e1b2e;
+  --muted:   #7a7a9a;
+  --border:  rgba(0,0,0,0.07);
+  --radius:  22px;
+  --sh-sm:   0 2px 8px rgba(0,0,0,0.07);
+  --sh-md:   0 8px 28px rgba(0,0,0,0.11);
+  --sh-lg:   0 20px 60px rgba(0,0,0,0.15);
+
+  --red:    #ff4757;
+  --orange: #ff7043;
+  --yellow: #ffca28;
+  --green:  #26c281;
+  --blue:   #1e90ff;
+  --purple: #7c4dff;
+  --pink:   #f06292;
+  --coral:  #ff6b6b;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--ff-body);
+  color: var(--ink);
+  background: var(--bg);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ─── Shell ──────────────────────────────────────────────────────────────── */
+.app {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 20px 18px 60px;
+}
+
+/* ─── Screen-reader only utility ─────────────────────────────────────────── */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
