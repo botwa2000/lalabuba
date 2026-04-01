@@ -83,7 +83,7 @@ export const DIFFICULTY = {
   easy:    { minArea: 2000 },
   medium:  { minArea:  600 },
   hard:    { minArea:  200 },
-  extreme: { minArea:  100 },
+  extreme: { minArea:   40 },
 };
 
 export const SIZE_DIMS = {
