@@ -954,16 +954,30 @@ function precomputeRegions() {
     outlineMask[i] = br < 100 ? 1 : 0;
   }
 
-  // Dilate outlineMask 3× to close gaps up to 3 px inside the drawing.
-  // closeOutlineGaps() already ran 2× on baseImageData, so total effective
-  // dilation is 5 px — enough for thin gaps in detailed/uploaded images.
-  for (let pass = 0; pass < 3; pass++) {
+  // Morphological close (dilate N then erode N) on outlineMask.
+  // This bridges genuine gaps in outlines (shoreline junctions, thin breaks)
+  // WITHOUT permanently thickening the barrier, so thin regions like ripple
+  // rings or narrow foreground areas are not consumed.
+  // N=4 closes gaps up to ~8 px across; the erosion restores original width.
+  const CLOSE_R = 4;
+  for (let pass = 0; pass < CLOSE_R; pass++) {
     const next = new Uint8Array(outlineMask);
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {
         const i = y * width + x;
         if (!outlineMask[i] && (outlineMask[i-1]||outlineMask[i+1]||outlineMask[i-width]||outlineMask[i+width]))
           next[i] = 1;
+      }
+    }
+    outlineMask = next;
+  }
+  for (let pass = 0; pass < CLOSE_R; pass++) {
+    const next = new Uint8Array(outlineMask);
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const i = y * width + x;
+        if (outlineMask[i] && (!outlineMask[i-1]||!outlineMask[i+1]||!outlineMask[i-width]||!outlineMask[i+width]))
+          next[i] = 0;
       }
     }
     outlineMask = next;
