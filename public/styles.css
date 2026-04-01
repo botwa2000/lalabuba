@@ -294,14 +294,16 @@ body {
 .count-pill:hover    { border-color: var(--green); color: var(--green); transform: translateY(-1px); }
 .count-pill.selected { background: linear-gradient(135deg, var(--green), var(--blue)); border-color: transparent; color: #fff; box-shadow: 0 3px 14px rgba(38,194,129,.35); }
 
-/* Custom color count number input */
-.count-input {
+/* Custom color count number input — hidden until a custom value is active */
+.count-input { display: none; }
+.count-input.visible {
+  display: inline-block;
   font-family: var(--ff-body);
   font-size: .85rem;
   font-weight: 800;
   padding: 7px 10px;
   border-radius: 50px;
-  border: 2.5px solid var(--border);
+  border: 2.5px solid var(--green);
   background: var(--bg);
   color: var(--ink);
   width: 62px;
@@ -310,9 +312,9 @@ body {
   transition: border-color .2s, box-shadow .2s;
   -moz-appearance: textfield;
 }
-.count-input::-webkit-outer-spin-button,
-.count-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.count-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(38,194,129,.15); }
+.count-input.visible::-webkit-outer-spin-button,
+.count-input.visible::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.count-input.visible:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(38,194,129,.15); }
 
 /* Quick row kept for backwards compat */
 .quick-row {

@@ -52,12 +52,14 @@ const TRANSLATIONS = {
     customColorLabel: "custom colour",
     eraseBtn: "Erase",
     countMax: "Max",
+    countCustom: "✏️",
+    diffExtreme: "Extreme 🔥",
     shareBtn: "🔗 Share",
     shareTitle: "Share & Compete!",
-    shareDesc: "Scan the QR code to color the same picture!",
+    shareDesc: "Share the link or scan the QR — everyone colors the same picture!",
     shareCopy: "Copy",
     shareCopied: "Copied!",
-    shareNote: "Both players start with the same picture — who finishes first? 🏆",
+    shareNote: "Anyone who opens the link starts with the same picture — who finishes first? 🏆",
   },
   de: {
     tagline: "Zeichne · Färbe · Liebe es 🌈",
@@ -67,7 +69,7 @@ const TRANSLATIONS = {
     colorByNumber: "🔢 Malen nach Zahlen",
     moreOptions: "⚙️ Mehr Optionen",
     difficulty: "Schwierigkeit",
-    diffEasy: "Leicht 🌟", diffMedium: "Mittel 🌟🌟", diffHard: "Schwer 🌟🌟🌟",
+    diffEasy: "Leicht 🌟", diffMedium: "Mittel 🌟🌟", diffHard: "Schwer 🌟🌟🌟", diffExtreme: "Extrem 🔥",
     colors: "Farben",
     colorsN: (n) => `${n} Farben`,
     palette: "Palette",
@@ -109,12 +111,13 @@ const TRANSLATIONS = {
     customColorLabel: "eigene Farbe",
     eraseBtn: "Löschen",
     countMax: "Max",
+    countCustom: "✏️",
     shareBtn: "🔗 Teilen",
     shareTitle: "Teilen & Wettkampf!",
-    shareDesc: "QR-Code scannen und dasselbe Bild ausmalen!",
+    shareDesc: "Link teilen oder QR scannen — alle malen dasselbe Bild!",
     shareCopy: "Kopieren",
     shareCopied: "Kopiert!",
-    shareNote: "Beide Spieler starten mit demselben Bild — wer ist zuerst fertig? 🏆",
+    shareNote: "Wer den Link öffnet, startet mit demselben Bild — wer ist zuerst fertig? 🏆",
   },
   ru: {
     tagline: "Рисуй · Раскрашивай · Люби 🌈",
@@ -124,7 +127,7 @@ const TRANSLATIONS = {
     colorByNumber: "🔢 По номерам",
     moreOptions: "⚙️ Ещё опции",
     difficulty: "Сложность",
-    diffEasy: "Легко 🌟", diffMedium: "Средне 🌟🌟", diffHard: "Сложно 🌟🌟🌟",
+    diffEasy: "Легко 🌟", diffMedium: "Средне 🌟🌟", diffHard: "Сложно 🌟🌟🌟", diffExtreme: "Экстрим 🔥",
     colors: "Цвета",
     colorsN: (n) => `${n} цветов`,
     palette: "Палитра",
@@ -166,12 +169,13 @@ const TRANSLATIONS = {
     customColorLabel: "свой цвет",
     eraseBtn: "Стереть",
     countMax: "Макс",
+    countCustom: "✏️",
     shareBtn: "🔗 Поделиться",
     shareTitle: "Поделись и соревнуйся!",
-    shareDesc: "Отсканируй QR-код и раскрась ту же картинку!",
+    shareDesc: "Поделись ссылкой или сканируй QR — все раскрашивают одну картинку!",
     shareCopy: "Копировать",
     shareCopied: "Скопировано!",
-    shareNote: "Оба игрока начинают с одной картинки — кто быстрее? 🏆",
+    shareNote: "Кто откроет ссылку — начинает ту же картинку. Кто быстрее? 🏆",
   },
   fr: {
     tagline: "Dessine · Colorie · Adore-le 🌈",
@@ -181,7 +185,7 @@ const TRANSLATIONS = {
     colorByNumber: "🔢 Colorier par numéro",
     moreOptions: "⚙️ Plus d'options",
     difficulty: "Difficulté",
-    diffEasy: "Facile 🌟", diffMedium: "Moyen 🌟🌟", diffHard: "Difficile 🌟🌟🌟",
+    diffEasy: "Facile 🌟", diffMedium: "Moyen 🌟🌟", diffHard: "Difficile 🌟🌟🌟", diffExtreme: "Extrême 🔥",
     colors: "Couleurs",
     colorsN: (n) => `${n} couleurs`,
     palette: "Palette",
@@ -223,12 +227,13 @@ const TRANSLATIONS = {
     customColorLabel: "couleur personnalisée",
     eraseBtn: "Effacer",
     countMax: "Max",
+    countCustom: "✏️",
     shareBtn: "🔗 Partager",
     shareTitle: "Partager & Compétition!",
-    shareDesc: "Scanne le QR code pour colorier la même image!",
+    shareDesc: "Partage le lien ou scanne le QR — tout le monde colorie la même image!",
     shareCopy: "Copier",
     shareCopied: "Copié!",
-    shareNote: "Les deux joueurs commencent avec la même image — qui finit en premier? 🏆",
+    shareNote: "Quiconque ouvre le lien commence avec la même image — qui finit en premier? 🏆",
   },
 };
 
@@ -366,9 +371,10 @@ const PALETTES = {
 };
 
 const DIFFICULTY = {
-  easy:   { minArea: 2000 },
-  medium: { minArea:  600 },
-  hard:   { minArea:  200 },
+  easy:    { minArea: 2000 },
+  medium:  { minArea:  600 },
+  hard:    { minArea:  200 },
+  extreme: { minArea:   40 },
 };
 
 let colorCount = 12;   // decoupled from difficulty; set by setColorCount()
@@ -438,9 +444,10 @@ function isSafeSubject(subject) {
 
 function buildPrompt(subject, difficulty = "medium") {
   const diffHint = {
-    easy:   "only 3-4 very large simple shapes, no small details, toddler coloring book",
-    medium: "simple cartoon with 6-10 clearly enclosed regions",
-    hard:   "detailed cartoon with many small fully enclosed decorative regions",
+    easy:    "only 3-4 very large simple shapes, no small details, toddler coloring book",
+    medium:  "simple cartoon with 6-10 clearly enclosed regions",
+    hard:    "detailed cartoon with many small fully enclosed decorative regions",
+    extreme: "ultra-intricate zentangle-style illustration with dozens of tiny fully enclosed cells and dense ornamental patterns covering every surface, maximum complexity, expert coloring book",
   }[difficulty] || "simple cartoon with 6-10 clearly enclosed regions";
 
   return [
@@ -1438,10 +1445,17 @@ function setColorCount(n, isMax) {
   colorCount = n;
   const inp = document.getElementById('color-count-input');
   if (inp) inp.value = n;
+
+  const presets = [6, 12, 24];
+  const isCustom = !isMax && !presets.includes(n);
+  if (inp) inp.classList.toggle('visible', isCustom);
+
   const pills = document.querySelectorAll('.count-pill');
   pills.forEach(b => {
     if (b.classList.contains('count-max-pill')) {
       b.classList.toggle('selected', isMax === true || n === maxN);
+    } else if (b.classList.contains('count-custom-toggle')) {
+      b.classList.toggle('selected', isCustom);
     } else {
       b.classList.toggle('selected', isMax !== true && Number(b.dataset.count) === n);
     }
@@ -1472,6 +1486,19 @@ if (colorCountInput) {
   colorCountInput.addEventListener('change', () => {
     const v = parseInt(colorCountInput.value, 10);
     setColorCount(isNaN(v) ? 12 : v);
+  });
+}
+const countCustomToggle = document.getElementById('count-custom-toggle');
+if (countCustomToggle) {
+  countCustomToggle.addEventListener('click', () => {
+    const inp = document.getElementById('color-count-input');
+    if (inp) {
+      inp.classList.add('visible');
+      inp.focus();
+      inp.select();
+    }
+    document.querySelectorAll('.count-pill').forEach(b => b.classList.remove('selected'));
+    countCustomToggle.classList.add('selected');
   });
 }
 
@@ -1663,7 +1690,7 @@ function loadFromShare() {
 
   subjectInput.value = q;
 
-  if (['easy', 'medium', 'hard'].includes(d)) {
+  if (['easy', 'medium', 'hard', 'extreme'].includes(d)) {
     document.querySelectorAll('.diff-pill').forEach(b => b.classList.toggle('selected', b.dataset.diff === d));
     difficultySelect.value = d;
   }

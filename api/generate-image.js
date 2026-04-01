@@ -13,9 +13,10 @@ function sanitizeSubject(value) {
 
 function buildPrompt(subject, difficulty = "medium") {
   const diffHint = {
-    easy:   "only 3-4 very large simple shapes, no small details, toddler coloring book",
-    medium: "simple cartoon with 6-10 clearly enclosed regions",
-    hard:   "detailed cartoon with many small fully enclosed decorative regions",
+    easy:    "only 3-4 very large simple shapes, no small details, toddler coloring book",
+    medium:  "simple cartoon with 6-10 clearly enclosed regions",
+    hard:    "detailed cartoon with many small fully enclosed decorative regions",
+    extreme: "ultra-intricate zentangle-style illustration with dozens of tiny fully enclosed cells and dense ornamental patterns covering every surface, maximum complexity, expert coloring book",
   }[difficulty] || "simple cartoon with 6-10 clearly enclosed regions";
 
   return [
@@ -145,7 +146,7 @@ module.exports = async (req, res) => {
   try {
     const body = req.body || {};
     const subject    = sanitizeSubject(body.subject);
-    const difficulty = ["easy", "medium", "hard"].includes(body.difficulty) ? body.difficulty : "medium";
+    const difficulty = ["easy", "medium", "hard", "extreme"].includes(body.difficulty) ? body.difficulty : "medium";
     const width      = [512, 768, 1024].includes(body.width)  ? body.width  : 1024;
     const height     = [512, 768, 1024].includes(body.height) ? body.height : 1024;
     const seedRaw    = Number(body.seed);
