@@ -294,6 +294,26 @@ body {
 .count-pill:hover    { border-color: var(--green); color: var(--green); transform: translateY(-1px); }
 .count-pill.selected { background: linear-gradient(135deg, var(--green), var(--blue)); border-color: transparent; color: #fff; box-shadow: 0 3px 14px rgba(38,194,129,.35); }
 
+/* Custom color count number input */
+.count-input {
+  font-family: var(--ff-body);
+  font-size: .85rem;
+  font-weight: 800;
+  padding: 7px 10px;
+  border-radius: 50px;
+  border: 2.5px solid var(--border);
+  background: var(--bg);
+  color: var(--ink);
+  width: 62px;
+  text-align: center;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  -moz-appearance: textfield;
+}
+.count-input::-webkit-outer-spin-button,
+.count-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.count-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(38,194,129,.15); }
+
 /* Quick row kept for backwards compat */
 .quick-row {
   display: flex;
@@ -402,6 +422,8 @@ body {
 .action-btn:hover:not(:disabled) { border-color: var(--orange); color: var(--orange); transform: translateY(-1px); }
 .action-btn:disabled { opacity: .4; cursor: not-allowed; }
 .action-btn.active { border-color: var(--purple); color: var(--purple); background: rgba(124,77,255,0.09); }
+.share-action-btn { color: var(--purple); border-color: rgba(124,77,255,.25); }
+.share-action-btn:hover:not(:disabled) { border-color: var(--purple) !important; color: var(--purple) !important; background: rgba(124,77,255,.08); transform: translateY(-1px); }
 
 /* Preview stage */
 .preview-stage {
@@ -873,6 +895,121 @@ body {
   .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
   .footer-copy { white-space: normal; }
 }
+
+/* ─── Share modal ────────────────────────────────────────────────────────── */
+.share-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 201;
+  padding: 20px;
+}
+.share-modal.hidden { display: none; }
+
+.share-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 26px 26px 22px;
+  box-shadow: var(--sh-lg);
+  max-width: 360px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: celebPop .3s cubic-bezier(.34,1.56,.64,1);
+}
+
+.share-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.share-header h3 {
+  font-family: var(--ff-brand);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.share-close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background .15s;
+  line-height: 1;
+}
+.share-close:hover { background: var(--bg); color: var(--ink); }
+
+.share-desc {
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  margin: 0;
+}
+.share-note {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--purple);
+  text-align: center;
+  margin: 0;
+}
+
+.qr-box {
+  display: flex;
+  justify-content: center;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  border: 2px solid var(--border);
+}
+.qr-img {
+  width: 200px;
+  height: 200px;
+  display: block;
+  border-radius: 4px;
+}
+
+.share-link-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.share-link-input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--ff-body);
+  font-size: .76rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  outline: none;
+  cursor: text;
+}
+.copy-btn {
+  font-family: var(--ff-body);
+  font-size: .85rem;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s, transform .15s;
+  flex-shrink: 0;
+}
+.copy-btn:hover { opacity: .88; transform: translateY(-1px); }
 
 /* ─── Print ──────────────────────────────────────────────────────────────── */
 @media print {

@@ -42,7 +42,7 @@ function buildPrompt(subject, difficulty = "medium") {
   ].join(", ");
 }
 
-async function generateWithPollinations(prompt, width = 1024, height = 1024) {
+async function generateWithPollinations(prompt, width = 1024, height = 1024, seed) {
   const u = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
   u.searchParams.set("width",   String(width));
   u.searchParams.set("height",  String(height));
@@ -50,7 +50,7 @@ async function generateWithPollinations(prompt, width = 1024, height = 1024) {
   u.searchParams.set("model",   "flux");
   u.searchParams.set("enhance", "false");
   u.searchParams.set("safe",    "true");
-  u.searchParams.set("seed",    String(Math.floor(Math.random() * 2_000_000_000)));
+  u.searchParams.set("seed",    String(seed));
   u.searchParams.set("referrer","lalabuba");
 
   const upstream = await fetch(u.toString(), {
@@ -68,7 +68,7 @@ async function generateWithPollinations(prompt, width = 1024, height = 1024) {
   };
 }
 
-async function generateWithHuggingFace(prompt, width = 1024, height = 1024) {
+async function generateWithHuggingFace(prompt, width = 1024, height = 1024, seed) {
   if (!HF_TOKEN) {
     throw new Error(
       "No HF_TOKEN set. Add your Hugging Face token in Vercel Environment Variables."
@@ -85,7 +85,7 @@ async function generateWithHuggingFace(prompt, width = 1024, height = 1024) {
       },
       body: JSON.stringify({
         inputs: prompt,
-        parameters: { width, height, guidance_scale: 3.5, num_inference_steps: 8 },
+        parameters: { width, height, guidance_scale: 3.5, num_inference_steps: 8, seed },
       }),
     }
   );
@@ -148,6 +148,8 @@ module.exports = async (req, res) => {
     const difficulty = ["easy", "medium", "hard"].includes(body.difficulty) ? body.difficulty : "medium";
     const width      = [512, 768, 1024].includes(body.width)  ? body.width  : 1024;
     const height     = [512, 768, 1024].includes(body.height) ? body.height : 1024;
+    const seedRaw    = Number(body.seed);
+    const seed       = (Number.isFinite(seedRaw) && seedRaw > 0) ? Math.floor(seedRaw) : Math.floor(Math.random() * 2_000_000_000);
 
     if (!subject) {
       res.status(400).json({ error: "Please provide a subject to draw." });
@@ -163,15 +165,15 @@ module.exports = async (req, res) => {
     let result;
 
     if (IMAGE_PROVIDER === "pollinations") {
-      result = await generateWithPollinations(prompt, width, height);
+      result = await generateWithPollinations(prompt, width, height, seed);
     } else {
       // Try HuggingFace, fall back to Pollinations on quota/credit errors.
       try {
-        result = await generateWithHuggingFace(prompt, width, height);
+        result = await generateWithHuggingFace(prompt, width, height, seed);
       } catch (err) {
         if (isQuotaError(err)) {
           console.warn(`HuggingFace quota — falling back to Pollinations. (${err.message.slice(0, 80)})`);
-          result = await generateWithPollinations(prompt, width, height);
+          result = await generateWithPollinations(prompt, width, height, seed);
         } else {
           throw err;
         }
@@ -180,6 +182,8 @@ module.exports = async (req, res) => {
 
     res.setHeader("Content-Type", result.contentType);
     res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Image-Seed", String(seed));
+    res.setHeader("Access-Control-Expose-Headers", "X-Image-Seed");
     res.status(200).send(result.buffer);
   } catch (error) {
     res.status(500).json({ error: error.message || "Image generation failed." });

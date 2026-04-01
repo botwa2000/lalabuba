@@ -51,6 +51,13 @@ const TRANSLATIONS = {
     customColorSelected: "Custom colour selected. Click a region to fill!",
     customColorLabel: "custom colour",
     eraseBtn: "Erase",
+    countMax: "Max",
+    shareBtn: "🔗 Share",
+    shareTitle: "Share & Compete!",
+    shareDesc: "Scan the QR code to color the same picture!",
+    shareCopy: "Copy",
+    shareCopied: "Copied!",
+    shareNote: "Both players start with the same picture — who finishes first? 🏆",
   },
   de: {
     tagline: "Zeichne · Färbe · Liebe es 🌈",
@@ -101,6 +108,13 @@ const TRANSLATIONS = {
     customColorSelected: "Eigene Farbe gewählt. Klicke auf einen Bereich!",
     customColorLabel: "eigene Farbe",
     eraseBtn: "Löschen",
+    countMax: "Max",
+    shareBtn: "🔗 Teilen",
+    shareTitle: "Teilen & Wettkampf!",
+    shareDesc: "QR-Code scannen und dasselbe Bild ausmalen!",
+    shareCopy: "Kopieren",
+    shareCopied: "Kopiert!",
+    shareNote: "Beide Spieler starten mit demselben Bild — wer ist zuerst fertig? 🏆",
   },
   ru: {
     tagline: "Рисуй · Раскрашивай · Люби 🌈",
@@ -151,6 +165,13 @@ const TRANSLATIONS = {
     customColorSelected: "Свой цвет выбран. Нажми на область!",
     customColorLabel: "свой цвет",
     eraseBtn: "Стереть",
+    countMax: "Макс",
+    shareBtn: "🔗 Поделиться",
+    shareTitle: "Поделись и соревнуйся!",
+    shareDesc: "Отсканируй QR-код и раскрась ту же картинку!",
+    shareCopy: "Копировать",
+    shareCopied: "Скопировано!",
+    shareNote: "Оба игрока начинают с одной картинки — кто быстрее? 🏆",
   },
   fr: {
     tagline: "Dessine · Colorie · Adore-le 🌈",
@@ -201,6 +222,13 @@ const TRANSLATIONS = {
     customColorSelected: "Couleur personnalisée. Clique sur une zone!",
     customColorLabel: "couleur personnalisée",
     eraseBtn: "Effacer",
+    countMax: "Max",
+    shareBtn: "🔗 Partager",
+    shareTitle: "Partager & Compétition!",
+    shareDesc: "Scanne le QR code pour colorier la même image!",
+    shareCopy: "Copier",
+    shareCopied: "Copié!",
+    shareNote: "Les deux joueurs commencent avec la même image — qui finit en premier? 🏆",
   },
 };
 
@@ -338,14 +366,16 @@ const PALETTES = {
 };
 
 const DIFFICULTY = {
-  easy:   { minArea: 2000, maxRegions:  8 },
-  medium: { minArea:  600, maxRegions: 16 },
-  hard:   { minArea:  250, maxRegions: 24 },
+  easy:   { minArea: 2000 },
+  medium: { minArea:  600 },
+  hard:   { minArea:  200 },
 };
 
+let colorCount = 12;   // decoupled from difficulty; set by setColorCount()
+let lastSeed   = null; // seed used for last generation; stored for share URL
+
 function activePalette() {
-  const count = parseInt(colorCountSelect.value, 10) || 6;
-  return PALETTES[paletteSelect.value].slice(0, count);
+  return PALETTES[paletteSelect.value].slice(0, colorCount);
 }
 
 let currentImage = null;
@@ -834,7 +864,7 @@ function overlayNumbers() {
   // Always use base image data so numbers are stable regardless of user fills.
   const mask = buildWalkableMask(baseImageData.data, previewCanvas.width, previewCanvas.height);
   const diff = DIFFICULTY[difficultySelect.value] || DIFFICULTY.medium;
-  const regions = findRegions(mask, previewCanvas.width, previewCanvas.height, diff.minArea, diff.maxRegions);
+  const regions = findRegions(mask, previewCanvas.width, previewCanvas.height, diff.minArea, colorCount);
   const palette = activePalette();
   const src = baseImageData.data;
   const w = previewCanvas.width;
@@ -1100,6 +1130,8 @@ async function renderGeneratedImage(imageBase64) {
 
   printButton.disabled = false;
   downloadButton.disabled = false;
+  const shareButton = document.getElementById('share-button');
+  if (shareButton) shareButton.disabled = false;
 }
 
 let loadingTimer1 = null, loadingTimer2 = null, loadingShownAt = 0;
@@ -1132,13 +1164,13 @@ function hideLoading() {
   }
 }
 
-async function generatePage(subject) {
+async function generatePage(subject, seedOverride = null) {
   const difficulty = difficultySelect.value;
   setStatus(t('generating', subject, difficulty));
   showLoading();
   await new Promise(r => requestAnimationFrame(r));
   try {
-    const imageUrl = await requestGeneratedImage(subject, difficulty);
+    const imageUrl = await requestGeneratedImage(subject, difficulty, seedOverride);
     await renderGeneratedImage(imageUrl);
     setStatus(t('done'));
     document.getElementById('regen-button').disabled = false;
@@ -1147,8 +1179,12 @@ async function generatePage(subject) {
   }
 }
 
-async function requestGeneratedImage(subject, difficulty = "medium") {
+async function requestGeneratedImage(subject, difficulty = "medium", seedOverride = null) {
   const provider = providerSelect.value;
+  const seed = (seedOverride !== null && Number.isFinite(seedOverride))
+    ? Math.floor(seedOverride)
+    : Math.floor(Math.random() * 2_000_000_000);
+  lastSeed = seed;
 
   if (provider === "demo") {
     return buildDemoImage(subject);
@@ -1156,28 +1192,26 @@ async function requestGeneratedImage(subject, difficulty = "medium") {
 
   if (provider === "direct") {
     const prompt = buildPrompt(subject, difficulty);
-    const seed = Math.floor(Math.random() * 2_000_000_000);
-    const url = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
     const dims = SIZE_DIMS[selectedSize] || SIZE_DIMS.medium;
-    url.searchParams.set("width",  String(dims.w));
-    url.searchParams.set("height", String(dims.h));
-    url.searchParams.set("nologo", "true");
-    url.searchParams.set("model", "flux");
+    const url = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
+    url.searchParams.set("width",   String(dims.w));
+    url.searchParams.set("height",  String(dims.h));
+    url.searchParams.set("nologo",  "true");
+    url.searchParams.set("model",   "flux");
     url.searchParams.set("enhance", "false");
-    url.searchParams.set("safe", "true");
-    url.searchParams.set("seed", String(seed));
+    url.searchParams.set("safe",    "true");
+    url.searchParams.set("seed",    String(seed));
     return fetchToDataUrl(url.toString());
   }
 
   if (provider === "backend") {
     const response = await fetch("/api/generate-image", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         subject,
         difficulty,
+        seed,
         width:  (SIZE_DIMS[selectedSize] || SIZE_DIMS.medium).w,
         height: (SIZE_DIMS[selectedSize] || SIZE_DIMS.medium).h,
       }),
@@ -1187,14 +1221,14 @@ async function requestGeneratedImage(subject, difficulty = "medium") {
       let message = `Image request failed (${response.status}).`;
       try {
         const payload = await response.json();
-        if (payload?.error) {
-          message = payload.error;
-        }
-      } catch {
-        // Ignore JSON parse errors and keep the generic message.
-      }
+        if (payload?.error) message = payload.error;
+      } catch { /* keep generic message */ }
       throw new Error(message);
     }
+
+    // Server echoes the seed it used; update lastSeed to match.
+    const echoedSeed = response.headers.get('X-Image-Seed');
+    if (echoedSeed) lastSeed = parseInt(echoedSeed, 10);
 
     const blob = await response.blob();
     return URL.createObjectURL(blob);
@@ -1262,16 +1296,7 @@ providerSelect.addEventListener("change", () => {
   setStatus(hints[providerSelect.value] || "Ready.");
 });
 
-colorCountSelect.addEventListener("change", () => {
-  const palette = activePalette();
-  if (selectedPaletteIndex >= palette.length) selectedPaletteIndex = 0;
-  renderLegend();
-  if (currentImage && showNumbersInput.checked) {
-    renderGeneratedImage(currentImage).catch((error) => {
-      setStatus(error.message || "Failed to redraw preview.", true);
-    });
-  }
-});
+// colorCountSelect change listener removed — setColorCount() handles all updates.
 
 difficultySelect.addEventListener("change", () => {
   // Clamp selectedPaletteIndex to new palette size.
@@ -1406,15 +1431,49 @@ document.querySelectorAll('.diff-pill').forEach(btn => {
   });
 });
 
-// Color count pill event listeners
-document.querySelectorAll('.count-pill').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.count-pill').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    colorCountSelect.value = btn.dataset.count;
-    colorCountSelect.dispatchEvent(new Event('change'));
+// ─── setColorCount — single source of truth for color count ─────────────────
+function setColorCount(n, isMax) {
+  const maxN = PALETTES[paletteSelect.value].length;
+  n = Math.max(2, Math.min(Math.round(n), maxN));
+  colorCount = n;
+  const inp = document.getElementById('color-count-input');
+  if (inp) inp.value = n;
+  const pills = document.querySelectorAll('.count-pill');
+  pills.forEach(b => {
+    if (b.classList.contains('count-max-pill')) {
+      b.classList.toggle('selected', isMax === true || n === maxN);
+    } else {
+      b.classList.toggle('selected', isMax !== true && Number(b.dataset.count) === n);
+    }
   });
+  if (selectedPaletteIndex >= colorCount) selectedPaletteIndex = 0;
+  renderLegend();
+  if (currentImage && showNumbersInput.checked) {
+    renderGeneratedImage(currentImage).catch(err => setStatus(err.message, true));
+  }
+}
+
+// Color count pill event listeners
+document.querySelectorAll('.count-pill[data-count]').forEach(btn => {
+  btn.addEventListener('click', () => setColorCount(Number(btn.dataset.count)));
 });
+const countMaxPill = document.querySelector('.count-max-pill');
+if (countMaxPill) {
+  countMaxPill.addEventListener('click', () => {
+    setColorCount(PALETTES[paletteSelect.value].length, true);
+  });
+}
+const colorCountInput = document.getElementById('color-count-input');
+if (colorCountInput) {
+  colorCountInput.addEventListener('input', () => {
+    const v = parseInt(colorCountInput.value, 10);
+    if (!isNaN(v) && v >= 2) setColorCount(v);
+  });
+  colorCountInput.addEventListener('change', () => {
+    const v = parseInt(colorCountInput.value, 10);
+    setColorCount(isNaN(v) ? 12 : v);
+  });
+}
 
 // Palette pill event listeners
 document.querySelectorAll('.palette-pill').forEach(btn => {
@@ -1532,6 +1591,106 @@ drawCanvas.addEventListener('touchend',   pencilEnd);
 
 // ─── End pencil tool ─────────────────────────────────────────────────────────
 
+// ─── Share feature ───────────────────────────────────────────────────────────
+
+function buildShareUrl() {
+  const base = window.location.origin + window.location.pathname;
+  const params = new URLSearchParams({
+    s:    '1',
+    q:    subjectInput.value.trim(),
+    d:    difficultySelect.value,
+    p:    paletteSelect.value,
+    c:    String(colorCount),
+    seed: String(lastSeed ?? 0),
+  });
+  return `${base}?${params}`;
+}
+
+function openShareModal() {
+  const url = buildShareUrl();
+  // QR code via free public API — no JS library needed
+  const qrImg = document.getElementById('qr-image');
+  qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}&margin=10&color=1e1b2e&bgcolor=ffffff`;
+  document.getElementById('share-link-input').value = url;
+  const modal = document.getElementById('share-modal');
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+document.getElementById('share-button').addEventListener('click', openShareModal);
+
+document.getElementById('close-share-modal').addEventListener('click', () => {
+  const modal = document.getElementById('share-modal');
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+});
+
+// Close on backdrop click
+document.getElementById('share-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'share-modal') {
+    e.target.classList.add('hidden');
+    e.target.setAttribute('aria-hidden', 'true');
+  }
+});
+
+document.getElementById('copy-share-btn').addEventListener('click', async () => {
+  const link = document.getElementById('share-link-input').value;
+  const btn  = document.getElementById('copy-share-btn');
+  try {
+    await navigator.clipboard.writeText(link);
+  } catch {
+    // Fallback for browsers without clipboard permission
+    const inp = document.getElementById('share-link-input');
+    inp.select();
+    document.execCommand('copy');
+  }
+  btn.textContent = t('shareCopied');
+  setTimeout(() => { btn.textContent = t('shareCopy'); }, 2000);
+});
+
+// Load shared image when URL contains ?s=1
+function loadFromShare() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('s') !== '1') return;
+
+  const q    = params.get('q');
+  const d    = params.get('d');
+  const p    = params.get('p');
+  const c    = parseInt(params.get('c'), 10);
+  const seed = parseInt(params.get('seed'), 10);
+
+  if (!q || !seed) return;
+
+  subjectInput.value = q;
+
+  if (['easy', 'medium', 'hard'].includes(d)) {
+    document.querySelectorAll('.diff-pill').forEach(b => b.classList.toggle('selected', b.dataset.diff === d));
+    difficultySelect.value = d;
+  }
+  if (['classic', 'pastel', 'nature'].includes(p)) {
+    document.querySelectorAll('.palette-pill').forEach(b => b.classList.toggle('selected', b.dataset.palette === p));
+    paletteSelect.value = p;
+  }
+  if (!isNaN(c) && c >= 2) setColorCount(c);
+
+  // Force direct/Pollinations mode so seed is deterministic across users
+  providerSelect.value = 'direct';
+
+  setTimeout(async () => {
+    const submitBtn = document.getElementById('generate-button');
+    submitBtn.disabled = true;
+    try {
+      await generatePage(q, seed);
+    } catch (err) {
+      setStatus(err.message || 'Failed to load shared picture.', true);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  }, 80);
+}
+
+// ─── End share feature ───────────────────────────────────────────────────────
+
 // Hide debug-only elements in production
 if (!DEBUG) {
   const debugAside = document.getElementById('debug-aside');
@@ -1546,6 +1705,7 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
 });
 applyTranslations();
+loadFromShare();
 
 // ─── Layout debug (always runs — open browser console F12 to see) ────────────
 setTimeout(() => {

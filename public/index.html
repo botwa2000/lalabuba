@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=7" />
+  <link rel="stylesheet" href="/styles.css?v=8" />
 </head>
 <body>
   <div class="app">
@@ -64,11 +64,12 @@
             </div>
             <div class="control-row">
               <span class="ctrl-label" data-i18n="colors">Colors</span>
-              <div class="pill-group" role="group">
+              <div class="pill-group count-group" role="group">
                 <button type="button" class="count-pill" data-count="6">6</button>
                 <button type="button" class="count-pill selected" data-count="12">12</button>
-                <button type="button" class="count-pill" data-count="18">18</button>
                 <button type="button" class="count-pill" data-count="24">24</button>
+                <button type="button" class="count-pill count-max-pill" data-i18n="countMax">Max</button>
+                <input type="number" id="color-count-input" class="count-input" min="2" max="24" value="12" aria-label="Custom color count">
               </div>
               <label class="check-pill">
                 <input id="show-numbers" type="checkbox" checked />
@@ -105,6 +106,7 @@
             <option value="12" selected>12 colors</option>
             <option value="18">18 colors</option>
             <option value="24">24 colors</option>
+            <option value="max">Max</option>
           </select>
           <select id="palette-select" class="sr-only" aria-hidden="true">
             <option value="classic" data-i18n="paletteClassic">🖍️ Classic crayons</option>
@@ -128,6 +130,7 @@
             <button id="clear-pencil-button" type="button" disabled class="action-btn" data-i18n="clearPencilBtn">🗑️ Clear</button>
             <button id="print-button"        type="button" disabled class="action-btn" data-i18n="printBtn">🖨️ Print</button>
             <button id="download-button"     type="button" disabled class="action-btn" data-i18n="saveBtn">💾 Save</button>
+            <button id="share-button"        type="button" disabled class="action-btn share-action-btn" data-i18n="shareBtn">🔗 Share</button>
           </div>
 
           <div class="canvas-body">
@@ -200,6 +203,24 @@
     </div>
   </div>
 
-  <script src="/app.js?v=6" defer></script>
+  <div id="share-modal" class="share-modal hidden" aria-hidden="true">
+    <div class="share-card">
+      <div class="share-header">
+        <h3 data-i18n="shareTitle">Share &amp; Compete!</h3>
+        <button id="close-share-modal" class="share-close" aria-label="Close">✕</button>
+      </div>
+      <p class="share-desc" data-i18n="shareDesc">Scan the QR code to color the same picture!</p>
+      <div class="qr-box">
+        <img id="qr-image" class="qr-img" alt="QR code" />
+      </div>
+      <div class="share-link-row">
+        <input id="share-link-input" type="text" class="share-link-input" readonly />
+        <button id="copy-share-btn" class="copy-btn" data-i18n="shareCopy">Copy</button>
+      </div>
+      <p class="share-note" data-i18n="shareNote">Both players start with the same picture — who finishes first? 🏆</p>
+    </div>
+  </div>
+
+  <script src="/app.js?v=8" defer></script>
 </body>
 </html>

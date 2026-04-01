@@ -106,26 +106,21 @@ function buildPrompt(subject, difficulty = "medium") {
   ].join(", ");
 }
 
-function buildPollinationsUrl(prompt) {
+function buildPollinationsUrl(prompt, width, height, seed) {
   const url = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-  url.searchParams.set("width", "1024");
-  url.searchParams.set("height", "1024");
-  url.searchParams.set("nologo", "true");
-  url.searchParams.set("model", "flux");
+  url.searchParams.set("width",   String(width));
+  url.searchParams.set("height",  String(height));
+  url.searchParams.set("nologo",  "true");
+  url.searchParams.set("model",   "flux");
   url.searchParams.set("enhance", "false");
-  url.searchParams.set("safe", "true");
-  url.searchParams.set("seed", String(Math.floor(Math.random() * 2_000_000_000)));
-  url.searchParams.set("referrer", "valepic");
+  url.searchParams.set("safe",    "true");
+  url.searchParams.set("seed",    String(seed));
+  url.searchParams.set("referrer","valepic");
   return url.toString();
 }
 
-async function generateWithPollinations(prompt, width = 1024, height = 1024) {
-  const url = buildPollinationsUrl(prompt);
-  // override dimensions
-  const u = new URL(url);
-  u.searchParams.set("width",  String(width));
-  u.searchParams.set("height", String(height));
-  const upstream = await fetch(u.toString(), {
+async function generateWithPollinations(prompt, width = 1024, height = 1024, seed) {
+  const upstream = await fetch(buildPollinationsUrl(prompt, width, height, seed), {
     headers: {
       Accept: "image/*",
       "User-Agent": "Mozilla/5.0 (compatible; Valepic/0.1)",
@@ -144,7 +139,7 @@ async function generateWithPollinations(prompt, width = 1024, height = 1024) {
   };
 }
 
-async function generateWithHuggingFace(prompt, width = 1024, height = 1024) {
+async function generateWithHuggingFace(prompt, width = 1024, height = 1024, seed) {
   if (!HF_TOKEN) {
     throw new Error(
       "No HF_TOKEN set. Add your free Hugging Face token to the .env file. " +
@@ -165,6 +160,7 @@ async function generateWithHuggingFace(prompt, width = 1024, height = 1024) {
         height,
         guidance_scale: 3.5,
         num_inference_steps: 8,
+        seed,
       },
     }),
   });
@@ -188,18 +184,18 @@ function isQuotaError(err) {
          msg.includes("payment") || msg.includes("billing");
 }
 
-async function generateImage(prompt, width = 1024, height = 1024) {
+async function generateImage(prompt, width = 1024, height = 1024, seed) {
   if (IMAGE_PROVIDER === "pollinations") {
-    return generateWithPollinations(prompt, width, height);
+    return generateWithPollinations(prompt, width, height, seed);
   }
 
   // HuggingFace with automatic Pollinations fallback on quota/limit errors.
   try {
-    return await generateWithHuggingFace(prompt, width, height);
+    return await generateWithHuggingFace(prompt, width, height, seed);
   } catch (err) {
     if (isQuotaError(err)) {
       console.warn(`HuggingFace quota error — falling back to Pollinations. (${err.message.slice(0, 80)})`);
-      return generateWithPollinations(prompt, width, height);
+      return generateWithPollinations(prompt, width, height, seed);
     }
     throw err;
   }
@@ -265,10 +261,12 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && parsedUrl.pathname === "/api/generate-image") {
     try {
       const body = await readJsonBody(req);
-      const subject = sanitizeSubject(body.subject);
+      const subject    = sanitizeSubject(body.subject);
       const difficulty = ["easy", "medium", "hard"].includes(body.difficulty) ? body.difficulty : "medium";
-      const width  = [512, 768, 1024].includes(body.width)  ? body.width  : 1024;
-      const height = [512, 768, 1024].includes(body.height) ? body.height : 1024;
+      const width      = [512, 768, 1024].includes(body.width)  ? body.width  : 1024;
+      const height     = [512, 768, 1024].includes(body.height) ? body.height : 1024;
+      const seedRaw    = Number(body.seed);
+      const seed       = (Number.isFinite(seedRaw) && seedRaw > 0) ? Math.floor(seedRaw) : Math.floor(Math.random() * 2_000_000_000);
 
       if (!subject) {
         sendJson(res, 400, { error: "Please provide a subject to draw." });
@@ -281,10 +279,12 @@ const server = http.createServer(async (req, res) => {
       }
 
       const prompt = buildPrompt(subject, difficulty);
-      const result = await generateImage(prompt, width, height);
+      const result = await generateImage(prompt, width, height, seed);
       res.writeHead(200, {
         "Content-Type": result.contentType,
         "Cache-Control": "no-store",
+        "X-Image-Seed": String(seed),
+        "Access-Control-Expose-Headers": "X-Image-Seed",
       });
       res.end(result.buffer);
     } catch (error) {
