@@ -218,14 +218,16 @@ export function buildPrompt(subject, difficulty = "medium") {
   if (difficulty === "extreme") {
     return [
       `ultra-detailed adult coloring book page of ${subject}`,
-      "intricate zentangle and mandala illustration style",
-      "bold continuous black outlines",
+      "intricate mandala-inspired style with complex ornamental cell borders",
+      "bold continuous black outline-only lines",
       ...base,
       "every interior line forms a fully closed loop",
-      "dozens of tiny fully enclosed ornamental cells covering every surface",
-      "dense geometric and floral patterns filling every shape",
+      "no filled black areas anywhere in the image",
+      "all interiors remain white with only black boundary lines",
+      "dozens of tiny white-filled enclosed cells covering every region",
+      "dense geometric and floral border patterns creating many fillable white areas",
       "maximum intricacy throughout the entire image",
-      "expert adult coloring book",
+      "expert adult coloring book for skilled colorers",
     ].join(", ");
   }
 

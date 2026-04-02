@@ -248,21 +248,27 @@ export function precomputeRegions() {
   const { width, height } = previewCanvas;
   const n = width * height;
   const src = state.baseImageData.data;
+  const difficulty = document.getElementById('difficulty-select')?.value || 'medium';
+  const isHardPlus = difficulty === 'hard' || difficulty === 'extreme';
 
-  // Build outline mask (br < 100): used as the CCA barrier.
+  // Barrier threshold: higher for hard/extreme to also catch anti-aliased gray
+  // edges that bridge what should be separate regions in intricate patterns.
+  const BARRIER_BR = isHardPlus ? 130 : 100;
+
+  // Build outline mask: used as the CCA barrier.
   let outlineMask = new Uint8Array(n);
   for (let i = 0; i < n; i++) {
     const o = i * 4;
     const br = (src[o] + src[o + 1] + src[o + 2]) / 3;
-    outlineMask[i] = br < 100 ? 1 : 0;
+    outlineMask[i] = br < BARRIER_BR ? 1 : 0;
   }
 
   // Morphological close (dilate N then erode N) on outlineMask.
   // This bridges genuine gaps in outlines (shoreline junctions, thin breaks)
   // WITHOUT permanently thickening the barrier, so thin regions like ripple
   // rings or narrow foreground areas are not consumed.
-  // N=4 closes gaps up to ~8 px across; the erosion restores original width.
-  const CLOSE_R = 4;
+  // Extreme/hard use a larger radius to seal the finer gaps in intricate patterns.
+  const CLOSE_R = difficulty === 'extreme' ? 8 : isHardPlus ? 6 : 4;
   for (let pass = 0; pass < CLOSE_R; pass++) {
     const next = new Uint8Array(outlineMask);
     for (let y = 1; y < height - 1; y++) {
