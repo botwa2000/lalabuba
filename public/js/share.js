@@ -15,8 +15,12 @@ export function buildShareUrl() {
     c:    String(state.colorCount),
     seed: String(state.lastSeed ?? 0),
   });
-  // Include persistent blob URL so recipients get the exact image instantly.
-  if (state.lastImageUrl) params.set('img', state.lastImageUrl);
+  // Include persistent blob URL + 7-day expiry so recipients get the exact
+  // image instantly and old links are clearly invalid after a week.
+  if (state.lastImageUrl) {
+    params.set('img', state.lastImageUrl);
+    params.set('exp', String(Date.now() + 7 * 24 * 60 * 60 * 1000));
+  }
   return `${base}?${params}`;
 }
 
@@ -41,8 +45,16 @@ export function loadFromShare() {
   const c      = parseInt(params.get('c'), 10);
   const seed   = parseInt(params.get('seed'), 10);
   const imgUrl = params.get('img');
+  const exp    = parseInt(params.get('exp'), 10);
 
   if (!q) return;
+
+  // Expired link — restore the subject so the user can regenerate easily.
+  if (imgUrl && exp && Date.now() > exp) {
+    subjectInput.value = q;
+    setStatus('This shared link has expired — generate a new coloring page! 🎨', true);
+    return;
+  }
 
   subjectInput.value = q;
 

@@ -2,12 +2,37 @@ const { sanitizeSubject, isSafeSubject } = require("../lib/content-safety");
 const { buildPrompt, generateImage } = require("../lib/image-providers");
 
 // Vercel Blob — optional; only active when BLOB_READ_WRITE_TOKEN is set.
-let blobPut = null;
-try { blobPut = require("@vercel/blob").put; } catch { /* not installed */ }
+let blobPut = null, blobList = null, blobDel = null;
+try {
+  const vb = require("@vercel/blob");
+  blobPut = vb.put; blobList = vb.list; blobDel = vb.del;
+} catch { /* not installed — sharing degrades to seed-based fallback */ }
 
 const HF_TOKEN = process.env.HF_TOKEN;
 const HF_MODEL = process.env.HF_MODEL || "black-forest-labs/FLUX.1-schnell";
 const IMAGE_PROVIDER = process.env.IMAGE_PROVIDER || "huggingface";
+
+// Shared images expire after this many days (blobs are deleted, links show expiry message).
+const SHARE_TTL_DAYS = 7;
+const SHARE_TTL_MS   = SHARE_TTL_DAYS * 24 * 60 * 60 * 1000;
+
+// Delete blobs uploaded more than SHARE_TTL_DAYS ago. Fire-and-forget — never awaited.
+async function cleanupOldBlobs() {
+  if (!blobList || !blobDel || !process.env.BLOB_READ_WRITE_TOKEN) return;
+  const cutoff = Date.now() - SHARE_TTL_MS;
+  try {
+    let cursor;
+    do {
+      const page = await blobList({ prefix: "coloring/", cursor, limit: 100 });
+      const expired = page.blobs.filter(b => new Date(b.uploadedAt).getTime() < cutoff);
+      if (expired.length) await blobDel(expired.map(b => b.url));
+      cursor = page.cursor;
+      if (!page.hasMore) break;
+    } while (cursor);
+  } catch (err) {
+    console.error("Blob cleanup error (non-fatal):", err.message);
+  }
+}
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
@@ -35,29 +60,30 @@ module.exports = async (req, res) => {
     }
 
     const prompt = buildPrompt(subject, difficulty);
-    const result = await generateImage(prompt, width, height, seed, {
+    const generated = await generateImage(prompt, width, height, seed, {
       provider: IMAGE_PROVIDER,
       hfToken: HF_TOKEN,
       hfModel: HF_MODEL,
     });
 
-    // Upload to Vercel Blob for instant zero-cost sharing (no re-generation needed).
+    // Upload to Vercel Blob for instant sharing; clean up expired blobs asynchronously.
     let imageUrl = null;
     if (blobPut && process.env.BLOB_READ_WRITE_TOKEN) {
       try {
-        const blob = await blobPut(`coloring/${seed}`, result.buffer, {
+        const blob = await blobPut(`coloring/${seed}`, generated.buffer, {
           access: "public",
-          contentType: result.contentType,
+          contentType: generated.contentType,
           addRandomSuffix: false,
         });
         imageUrl = blob.url;
+        cleanupOldBlobs(); // fire-and-forget
       } catch (blobErr) {
         console.error("Blob upload failed (non-fatal):", blobErr.message);
       }
     }
 
     const exposedHeaders = ["X-Image-Seed"];
-    res.setHeader("Content-Type", result.contentType);
+    res.setHeader("Content-Type", generated.contentType);
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Image-Seed", String(seed));
     if (imageUrl) {
@@ -65,7 +91,7 @@ module.exports = async (req, res) => {
       exposedHeaders.push("X-Image-Url");
     }
     res.setHeader("Access-Control-Expose-Headers", exposedHeaders.join(", "));
-    res.status(200).send(result.buffer);
+    res.status(200).send(generated.buffer);
   } catch (error) {
     res.status(500).json({ error: error.message || "Image generation failed." });
   }
