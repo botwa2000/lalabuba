@@ -1,7 +1,8 @@
 import { state } from './state.js';
-import { subjectInput, difficultySelect, paletteSelect, providerSelect } from './dom.js';
-import { setColorCount, setStatus } from './ui.js';
+import { subjectInput, difficultySelect, paletteSelect } from './dom.js';
+import { setColorCount, setStatus, showLoading, hideLoading } from './ui.js';
 import { generatePage } from './generate.js';
+import { renderGeneratedImage } from './canvas.js';
 import { t } from './i18n.js';
 
 export function buildShareUrl() {
@@ -14,6 +15,8 @@ export function buildShareUrl() {
     c:    String(state.colorCount),
     seed: String(state.lastSeed ?? 0),
   });
+  // Include persistent blob URL so recipients get the exact image instantly.
+  if (state.lastImageUrl) params.set('img', state.lastImageUrl);
   return `${base}?${params}`;
 }
 
@@ -32,13 +35,14 @@ export function loadFromShare() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('s') !== '1') return;
 
-  const q    = params.get('q');
-  const d    = params.get('d');
-  const p    = params.get('p');
-  const c    = parseInt(params.get('c'), 10);
-  const seed = parseInt(params.get('seed'), 10);
+  const q      = params.get('q');
+  const d      = params.get('d');
+  const p      = params.get('p');
+  const c      = parseInt(params.get('c'), 10);
+  const seed   = parseInt(params.get('seed'), 10);
+  const imgUrl = params.get('img');
 
-  if (!q || !seed) return;
+  if (!q) return;
 
   subjectInput.value = q;
 
@@ -51,18 +55,27 @@ export function loadFromShare() {
     paletteSelect.value = p;
   }
   if (!isNaN(c) && c >= 2) setColorCount(c);
-
-  // Force direct/Pollinations mode so seed is deterministic across users
-  providerSelect.value = 'direct';
+  if (Number.isFinite(seed)) state.lastSeed = seed;
 
   setTimeout(async () => {
     const submitBtn = document.getElementById('generate-button');
     submitBtn.disabled = true;
+    showLoading();
     try {
-      await generatePage(q, seed);
+      if (imgUrl) {
+        // Exact shared image — fetch directly from CDN, no AI call.
+        await renderGeneratedImage(imgUrl);
+        state.lastImageUrl = imgUrl;
+        setStatus(t('done'));
+        document.getElementById('regen-button').disabled = false;
+      } else if (Number.isFinite(seed)) {
+        // Legacy share link without stored image — regenerate using seed.
+        await generatePage(q, seed);
+      }
     } catch (err) {
       setStatus(err.message || 'Failed to load shared picture.', true);
     } finally {
+      hideLoading();
       submitBtn.disabled = false;
     }
   }, 80);

@@ -161,9 +161,10 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
       throw new Error(message);
     }
 
-    // Server echoes the seed it used; update lastSeed to match.
+    // Server echoes the seed and (when Blob is configured) a persistent image URL.
     const echoedSeed = response.headers.get('X-Image-Seed');
     if (echoedSeed) state.lastSeed = parseInt(echoedSeed, 10);
+    state.lastImageUrl = response.headers.get('X-Image-Url') || null;
 
     const blob = await response.blob();
     return URL.createObjectURL(blob);

@@ -5,5 +5,8 @@
   "description": "Kid-friendly coloring page generator with optional color-by-number overlays.",
   "scripts": {
     "start": "node server.js"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.3.3"
   }
 }

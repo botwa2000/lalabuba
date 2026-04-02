@@ -1,6 +1,10 @@
 const { sanitizeSubject, isSafeSubject } = require("../lib/content-safety");
 const { buildPrompt, generateImage } = require("../lib/image-providers");
 
+// Vercel Blob — optional; only active when BLOB_READ_WRITE_TOKEN is set.
+let blobPut = null;
+try { blobPut = require("@vercel/blob").put; } catch { /* not installed */ }
+
 const HF_TOKEN = process.env.HF_TOKEN;
 const HF_MODEL = process.env.HF_MODEL || "black-forest-labs/FLUX.1-schnell";
 const IMAGE_PROVIDER = process.env.IMAGE_PROVIDER || "huggingface";
@@ -37,10 +41,30 @@ module.exports = async (req, res) => {
       hfModel: HF_MODEL,
     });
 
+    // Upload to Vercel Blob for instant zero-cost sharing (no re-generation needed).
+    let imageUrl = null;
+    if (blobPut && process.env.BLOB_READ_WRITE_TOKEN) {
+      try {
+        const blob = await blobPut(`coloring/${seed}`, result.buffer, {
+          access: "public",
+          contentType: result.contentType,
+          addRandomSuffix: false,
+        });
+        imageUrl = blob.url;
+      } catch (blobErr) {
+        console.error("Blob upload failed (non-fatal):", blobErr.message);
+      }
+    }
+
+    const exposedHeaders = ["X-Image-Seed"];
     res.setHeader("Content-Type", result.contentType);
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Image-Seed", String(seed));
-    res.setHeader("Access-Control-Expose-Headers", "X-Image-Seed");
+    if (imageUrl) {
+      res.setHeader("X-Image-Url", imageUrl);
+      exposedHeaders.push("X-Image-Url");
+    }
+    res.setHeader("Access-Control-Expose-Headers", exposedHeaders.join(", "));
     res.status(200).send(result.buffer);
   } catch (error) {
     res.status(500).json({ error: error.message || "Image generation failed." });

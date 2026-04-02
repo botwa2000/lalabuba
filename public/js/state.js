@@ -13,6 +13,7 @@ export const state = {
   celebrationShown: false,
   colorCount: 12,
   lastSeed: null,
+  lastImageUrl: null,
   selectedPaletteIndex: 0,
   selectedSize: 'medium',
   pencilMode: false,
