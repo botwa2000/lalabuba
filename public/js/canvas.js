@@ -359,15 +359,47 @@ export function precomputeRegions() {
 }
 
 // Paint every pixel in regionId with fillColor, then redraw.
+// After filling the region, bleed 2 pixels outward into the anti-aliased
+// edge zone (pixels that are gray but not truly black) so there is no white
+// fringe between the fill colour and the black outline.
 export function fillRegion(regionId, fillColor) {
   const pixels = state.regionPixels.get(regionId);
   if (!pixels) return false;
-  const data = state.paintedImageData.data;
+
+  const paint = state.paintedImageData.data;
+  const base  = state.baseImageData.data;   // brightness source — unaffected by fills
   const { r, g, b } = fillColor;
+  const { width, height } = previewCanvas;
+  const n = width * height;
+
+  // Track which pixels have been painted in this call to avoid double-work.
+  const painted = new Uint8Array(n);
+
   for (const idx of pixels) {
     const o = idx * 4;
-    data[o] = r; data[o + 1] = g; data[o + 2] = b; data[o + 3] = 255;
+    paint[o] = r; paint[o + 1] = g; paint[o + 2] = b; paint[o + 3] = 255;
+    painted[idx] = 1;
   }
+
+  // 2-pass dilation into adjacent non-black pixels.
+  // MIN_BR = 50 — truly black outline pixels are left untouched;
+  // anti-aliased gray pixels (br 50-BARRIER_BR) are painted to eliminate the fringe.
+  // Black outlines (typically 4-10 px wide) stop the bleed from crossing into
+  // neighbouring regions even with 2 passes.
+  const MIN_BR = 50;
+  let frontier = pixels;
+  for (let pass = 0; pass < 2; pass++) {
+    const next = [];
+    for (const idx of frontier) {
+      const x = idx % width, y = (idx / width) | 0;
+      if (x > 0)          { const ni = idx - 1;     if (!painted[ni]) { const o=ni*4; const br=(base[o]+base[o+1]+base[o+2])/3; if(br>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; next.push(ni); } } }
+      if (x < width - 1)  { const ni = idx + 1;     if (!painted[ni]) { const o=ni*4; const br=(base[o]+base[o+1]+base[o+2])/3; if(br>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; next.push(ni); } } }
+      if (y > 0)          { const ni = idx - width; if (!painted[ni]) { const o=ni*4; const br=(base[o]+base[o+1]+base[o+2])/3; if(br>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; next.push(ni); } } }
+      if (y < height - 1) { const ni = idx + width; if (!painted[ni]) { const o=ni*4; const br=(base[o]+base[o+1]+base[o+2])/3; if(br>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; next.push(ni); } } }
+    }
+    frontier = next;
+  }
+
   redrawCanvas();
   return true;
 }
