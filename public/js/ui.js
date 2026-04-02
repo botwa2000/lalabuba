@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { PALETTES } from './data.js';
+import { PALETTES, buildMaxPalette } from './data.js';
 import { t } from './i18n.js';
 import { legendList, paletteSelect, statusElement, showNumbersInput } from './dom.js';
 import { renderGeneratedImage, setPaletteContext } from './canvas.js';
@@ -139,6 +139,63 @@ export function hideLoading() {
   } else {
     doHide();
   }
+}
+
+// ─── Max colour picker (16 × 16 grid modal) ──────────────────────────────────
+export function openMaxPicker() {
+  closeMaxPicker();
+  const colors = buildMaxPalette();
+  const currentHex = (state.selectedPaletteIndex === -1 ? state.customColor : '').toLowerCase();
+
+  const backdrop = document.createElement('div');
+  backdrop.id = 'max-picker-backdrop';
+  backdrop.className = 'max-picker-backdrop';
+
+  const cells = colors.map(c => {
+    const sel = c.toLowerCase() === currentHex;
+    return `<button class="max-cell${sel ? ' selected' : ''}" style="background:${c}" data-color="${c}" aria-label="${c}"></button>`;
+  }).join('');
+
+  backdrop.innerHTML = `
+    <div class="max-picker-panel" role="dialog" aria-modal="true" aria-label="Pick a color">
+      <div class="max-picker-header">
+        <div>
+          <div class="max-picker-title">🎨 Pick a color!</div>
+          <div class="max-picker-hint">Tap any color to paint with it</div>
+        </div>
+        <button class="max-picker-close" id="max-picker-close" aria-label="Close">✕</button>
+      </div>
+      <div class="max-picker-grid">${cells}</div>
+    </div>`;
+
+  document.body.appendChild(backdrop);
+
+  backdrop.querySelector('.max-picker-grid').addEventListener('click', e => {
+    const btn = e.target.closest('.max-cell');
+    if (!btn) return;
+    state.customColor = btn.dataset.color;
+    state.eraseMode = false;
+    state.selectedPaletteIndex = -1;
+    renderLegend();
+    closeMaxPicker();
+  });
+
+  document.getElementById('max-picker-close').addEventListener('click', closeMaxPicker);
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) closeMaxPicker(); });
+
+  const onKey = e => {
+    if (e.key === 'Escape') { closeMaxPicker(); document.removeEventListener('keydown', onKey); }
+  };
+  document.addEventListener('keydown', onKey);
+
+  requestAnimationFrame(() => backdrop.classList.add('open'));
+}
+
+export function closeMaxPicker() {
+  const el = document.getElementById('max-picker-backdrop');
+  if (!el) return;
+  el.classList.remove('open');
+  el.addEventListener('transitionend', () => el.remove(), { once: true });
 }
 
 export function setColorCount(n, isMax) {

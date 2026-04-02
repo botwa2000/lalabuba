@@ -12,6 +12,7 @@ import {
 } from './canvas.js';
 import {
   activePalette, setStatus, renderLegend, setColorCount, showLoading, hideLoading,
+  openMaxPicker, closeMaxPicker,
 } from './ui.js';
 import { generatePage, requestGeneratedImage } from './generate.js';
 import { initDrawingTool } from './drawing.js';
@@ -220,12 +221,16 @@ document.querySelectorAll('.diff-pill').forEach(btn => {
 
 // ─── Count pills ──────────────────────────────────────────────────────────────
 document.querySelectorAll('.count-pill[data-count]').forEach(btn => {
-  btn.addEventListener('click', () => setColorCount(Number(btn.dataset.count)));
+  btn.addEventListener('click', () => {
+    closeMaxPicker();
+    setColorCount(Number(btn.dataset.count));
+  });
 });
 const countMaxPill = document.querySelector('.count-max-pill');
 if (countMaxPill) {
   countMaxPill.addEventListener('click', () => {
     setColorCount(PALETTES[paletteSelect.value].length, true);
+    openMaxPicker();
   });
 }
 const colorCountInput = document.getElementById('color-count-input');

@@ -131,6 +131,51 @@ export function isSafeSubject(subject) {
   return !words.some(w => w.length > 0 && BLOCKED_TERMS.has(w));
 }
 
+// ─── Max-mode color grid (16 × 16 = 256 programmatically generated) ──────────
+function hsl2hex(h, s, l) {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => { const k = (n + h / 30) % 12; return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); };
+  return '#' + [f(0), f(8), f(4)].map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('');
+}
+
+export function buildMaxPalette() {
+  const N = 16;
+  const hues = Array.from({ length: N }, (_, i) => i * (360 / N));
+  // 12 rows: vivid → light → rich → dark
+  const rows = [
+    [100, 50], [100, 62], [88, 72], [75, 80],
+    [60,  87], [45,  92],
+    [100, 42], [90,  34],
+    [80,  26], [65,  19],
+    [50,  13], [35,   8],
+  ];
+  const colors = [];
+  for (const [s, l] of rows) hues.forEach(h => colors.push(hsl2hex(h, s, l)));
+  // Warm skin / earth tones row
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1);
+    colors.push(hsl2hex(15 + t * 20, 70 - t * 30, 92 - t * 68));
+  }
+  // Brown / neutral row
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1);
+    colors.push(hsl2hex(28 - t * 8, 50 - t * 20, 80 - t * 55));
+  }
+  // Grays: white → black
+  for (let i = 0; i < N; i++) {
+    const v = Math.round(255 * (1 - i / (N - 1)));
+    const h = v.toString(16).padStart(2, '0');
+    colors.push(`#${h}${h}${h}`);
+  }
+  // Specials / metallics row
+  colors.push(
+    '#FFD700','#FFA500','#FF4500','#FF1493','#FF69B4','#DA70D6','#9400D3','#4169E1',
+    '#00BFFF','#00CED1','#00FF7F','#7FFF00','#C0C0C0','#A0A0A0','#696969','#1C1C1C'
+  );
+  return colors; // 16 × 16 = 256
+}
+
 export function buildPrompt(subject, difficulty = "medium") {
   const base = [
     "every outline is a fully closed loop",
