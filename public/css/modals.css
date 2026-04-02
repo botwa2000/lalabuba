@@ -56,6 +56,20 @@
 .celebration-art { font-size: 4rem; margin-bottom: 12px; animation: floatIcon 2s ease-in-out infinite; }
 .celebration-card h2 { font-size: 2.4rem; color: var(--ink); margin-bottom: 8px; }
 .celebration-card p  { font-size: 1.1rem; color: var(--muted); font-family: var(--ff-body); }
+.celebration-time {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 8px 22px;
+  background: linear-gradient(135deg, #fff9e6, #fff3c4);
+  border: 2px solid #f9c74f;
+  border-radius: 50px;
+  font-family: var(--ff-brand);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #b8860b;
+  letter-spacing: .04em;
+}
+.celebration-time:empty { display: none; }
 .celebration-actions { display: flex; gap: 12px; margin-top: 26px; justify-content: center; flex-wrap: wrap; }
 .celebration-actions button {
   font-family: var(--ff-brand);

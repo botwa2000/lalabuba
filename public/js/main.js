@@ -18,10 +18,22 @@ import { generatePage, requestGeneratedImage } from './generate.js';
 import { initDrawingTool } from './drawing.js';
 import { initShareHandlers, loadFromShare } from './share.js';
 
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
 function checkCompletion() {
   if (state.celebrationShown || !showNumbersInput.checked || !state.regionColorMap || state.regionColorMap.size === 0) return;
   if ([...state.regionColorMap.keys()].every((id) => state.completedRegions.has(id))) {
     state.celebrationShown = true;
+    const elapsed = state.coloringStartTime ? Date.now() - state.coloringStartTime : 0;
+    const timeEl = document.getElementById("celebration-time");
+    if (timeEl) timeEl.textContent = elapsed > 0 ? t('celebTime', formatTime(elapsed)) : '';
     document.getElementById("celebration").classList.remove("hidden");
     document.getElementById("celebration").setAttribute("aria-hidden", "false");
   }
@@ -166,6 +178,7 @@ previewCanvas.addEventListener("click", (event) => {
     fillColor = hexToRgb(palette[state.selectedPaletteIndex].color);
   }
 
+  if (!state.coloringStartTime) state.coloringStartTime = Date.now();
   state.completedRegions.add(regionId);
   fillRegion(regionId, fillColor);
   const label = state.selectedPaletteIndex === -1 ? t('customColorLabel') : activePalette()[state.selectedPaletteIndex].label;

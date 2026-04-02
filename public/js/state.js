@@ -14,6 +14,7 @@ export const state = {
   colorCount: 12,
   lastSeed: null,
   lastImageUrl: null,
+  coloringStartTime: null,
   selectedPaletteIndex: 0,
   selectedSize: 'medium',
   pencilMode: false,

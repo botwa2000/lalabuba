@@ -508,6 +508,7 @@ export function drawBaseImage(image) {
   state.eraseMode = false;
   state.completedRegions = new Set();
   state.celebrationShown = false;
+  state.coloringStartTime = null;
   precomputeRegions();
 }
 
