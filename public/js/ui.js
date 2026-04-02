@@ -202,19 +202,11 @@ export function setColorCount(n, isMax) {
   const maxN = PALETTES[paletteSelect.value].length;
   n = Math.max(2, Math.min(Math.round(n), maxN));
   state.colorCount = n;
-  const inp = document.getElementById('color-count-input');
-  if (inp) inp.value = n;
-
-  const presets = [6, 12, 18, 24];
-  const isCustom = !isMax && !presets.includes(n);
-  if (inp) inp.classList.toggle('visible', isCustom);
 
   const pills = document.querySelectorAll('.count-pill');
   pills.forEach(b => {
     if (b.classList.contains('count-max-pill')) {
       b.classList.toggle('selected', isMax === true || n === maxN);
-    } else if (b.classList.contains('count-custom-toggle')) {
-      b.classList.toggle('selected', isCustom);
     } else {
       b.classList.toggle('selected', isMax !== true && Number(b.dataset.count) === n);
     }

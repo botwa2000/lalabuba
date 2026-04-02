@@ -233,30 +233,6 @@ if (countMaxPill) {
     openMaxPicker();
   });
 }
-const colorCountInput = document.getElementById('color-count-input');
-if (colorCountInput) {
-  colorCountInput.addEventListener('input', () => {
-    const v = parseInt(colorCountInput.value, 10);
-    if (!isNaN(v) && v >= 2) setColorCount(v);
-  });
-  colorCountInput.addEventListener('change', () => {
-    const v = parseInt(colorCountInput.value, 10);
-    setColorCount(isNaN(v) ? 12 : v);
-  });
-}
-const countCustomToggle = document.getElementById('count-custom-toggle');
-if (countCustomToggle) {
-  countCustomToggle.addEventListener('click', () => {
-    const inp = document.getElementById('color-count-input');
-    if (inp) {
-      inp.classList.add('visible');
-      inp.focus();
-      inp.select();
-    }
-    document.querySelectorAll('.count-pill').forEach(b => b.classList.remove('selected'));
-    countCustomToggle.classList.add('selected');
-  });
-}
 
 // ─── Palette pills ────────────────────────────────────────────────────────────
 document.querySelectorAll('.palette-pill').forEach(btn => {
