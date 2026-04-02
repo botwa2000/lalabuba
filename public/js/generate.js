@@ -131,10 +131,15 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
     url.searchParams.set("enhance", "false");
     url.searchParams.set("safe",    "true");
     url.searchParams.set("seed",    String(seed));
-    return fetchToDataUrl(url.toString());
+    try {
+      return await fetchToDataUrl(url.toString());
+    } catch {
+      // Pollinations unavailable — silently fall through to the backend
+      setStatus('Direct source unavailable — trying backend…');
+    }
   }
 
-  if (provider === "backend") {
+  if (provider === "backend" || provider === "direct") {
     const response = await fetch("/api/generate-image", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

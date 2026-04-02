@@ -427,10 +427,7 @@ export async function imageFromUrl(url) {
 export async function fetchToDataUrl(url) {
   const response = await fetch(url, { mode: "cors", cache: "no-store" });
   if (!response.ok) {
-    throw new Error(
-      `Pollinations returned ${response.status}. ` +
-      `Check your connection or switch to "Backend server".`
-    );
+    throw new Error(`Pollinations returned ${response.status}.`);
   }
   const blob = await response.blob();
   return new Promise((resolve, reject) => {
