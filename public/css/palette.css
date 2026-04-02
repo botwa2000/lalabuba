@@ -75,6 +75,7 @@
   color: rgba(0,0,0,.7);
   border-color: color-mix(in srgb, var(--c, #e91e63) 30%, transparent);
   overflow: hidden;
+  position: relative;
 }
 .picker-btn:hover { border-color: color-mix(in srgb, var(--c, #e91e63) 55%, transparent); }
 .picker-btn.active { border-color: var(--c, #e91e63); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c, #e91e63) 22%, transparent); transform: none; }
