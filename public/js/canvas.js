@@ -403,6 +403,32 @@ export function fillRegion(regionId, fillColor) {
     frontier = next;
   }
 
+  // Orphan fill: flood through bright label=-1 pockets that are enclosed within
+  // this region. These are tiny connected components (< 30 px) that were merged into
+  // the barrier map during precomputeRegions and appear as white specks inside a
+  // filled area. Stops at true black pixels (br <= MIN_BR) and at pixels that belong
+  // to a different positive-label region, so the flood cannot cross outlines into the
+  // outer background or adjacent colourable regions.
+  if (state.regionMap) {
+    const orphanQ = [];
+    for (const idx of pixels) {
+      const x = idx % width, y = (idx / width) | 0;
+      if (x > 0)          { const ni=idx-1;     if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (x < width - 1)  { const ni=idx+1;     if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (y > 0)          { const ni=idx-width; if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (y < height - 1) { const ni=idx+width; if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+    }
+    let qi = 0;
+    while (qi < orphanQ.length) {
+      const idx = orphanQ[qi++];
+      const x = idx % width, y = (idx / width) | 0;
+      if (x > 0)          { const ni=idx-1;     if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (x < width - 1)  { const ni=idx+1;     if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (y > 0)          { const ni=idx-width; if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (y < height - 1) { const ni=idx+width; if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+    }
+  }
+
   redrawCanvas();
   return true;
 }
