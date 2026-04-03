@@ -147,7 +147,10 @@ export function overlayNumbers() {
   // Always use base image data so numbers are stable regardless of user fills.
   const mask = buildWalkableMask(state.baseImageData.data, previewCanvas.width, previewCanvas.height);
   const diff = DIFFICULTY[document.getElementById('difficulty-select').value] || DIFFICULTY.medium;
-  const regions = findRegions(mask, previewCanvas.width, previewCanvas.height, diff.minArea, colorCount);
+  // Scale minArea proportionally to image pixel count so region density is
+  // consistent across canvas sizes (same difficulty = same relative region count).
+  const scaledMinArea = Math.round(diff.minArea * (previewCanvas.width * previewCanvas.height) / (1024 * 1024));
+  const regions = findRegions(mask, previewCanvas.width, previewCanvas.height, scaledMinArea, colorCount);
   const src = state.baseImageData.data;
   const w = previewCanvas.width;
 

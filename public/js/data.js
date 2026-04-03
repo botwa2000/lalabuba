@@ -176,7 +176,7 @@ export function buildMaxPalette() {
   return colors; // 16 × 16 = 256
 }
 
-export function buildPrompt(subject, difficulty = "medium") {
+export function buildPrompt(subject, difficulty = "medium", size = "medium") {
   const base = [
     "every outline is a fully closed loop",
     "no open line ends",
@@ -189,6 +189,15 @@ export function buildPrompt(subject, difficulty = "medium") {
     "no watermark",
   ];
 
+  // Size controls compositional scope: small = zoomed-in single subject,
+  // large/xxl = wide scene with background elements filling the canvas.
+  const sizeHints = {
+    small: ["single centered subject", "sparse simple layout"],
+    large: ["wide scene filling the full canvas", "include background elements"],
+    xxl:   ["panoramic wide scene filling the entire canvas", "rich background detail throughout"],
+  };
+  const extra = sizeHints[size] || [];
+
   if (difficulty === "easy") {
     return [
       `coloring book page of ${subject}`,
@@ -199,6 +208,7 @@ export function buildPrompt(subject, difficulty = "medium") {
       "absolutely no interior lines or details whatsoever",
       "maximum simplicity",
       "clean toddler coloring page",
+      ...extra,
     ].join(", ");
   }
 
@@ -212,6 +222,7 @@ export function buildPrompt(subject, difficulty = "medium") {
       "decorative interior lines that form fully closed sub-regions",
       "no hatching or crosshatching",
       "professional detailed coloring book illustration",
+      ...extra,
     ].join(", ");
   }
 
@@ -228,6 +239,7 @@ export function buildPrompt(subject, difficulty = "medium") {
       "dense geometric and floral border patterns creating many fillable white areas",
       "maximum intricacy throughout the entire image",
       "expert adult coloring book for skilled colorers",
+      ...extra,
     ].join(", ");
   }
 
@@ -240,5 +252,6 @@ export function buildPrompt(subject, difficulty = "medium") {
     "6 to 10 clearly enclosed regions",
     "absolutely no interior texture or detail lines",
     "clean professional coloring book illustration",
+    ...extra,
   ].join(", ");
 }

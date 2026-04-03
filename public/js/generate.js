@@ -121,7 +121,7 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
   }
 
   if (provider === "direct") {
-    const prompt = buildPrompt(subject, difficulty);
+    const prompt = buildPrompt(subject, difficulty, state.selectedSize);
     const dims = SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium;
     const url = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
     url.searchParams.set("width",   String(dims.w));
@@ -146,6 +146,7 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
       body: JSON.stringify({
         subject,
         difficulty,
+        size: state.selectedSize,
         seed,
         width:  (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).w,
         height: (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).h,

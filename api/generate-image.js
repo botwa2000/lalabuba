@@ -44,6 +44,7 @@ module.exports = async (req, res) => {
     const body = req.body || {};
     const subject    = sanitizeSubject(body.subject);
     const difficulty = ["easy", "medium", "hard", "extreme"].includes(body.difficulty) ? body.difficulty : "medium";
+    const size       = ["small", "medium", "large", "xxl"].includes(body.size) ? body.size : "medium";
     const width      = [512, 768, 1024].includes(body.width)  ? body.width  : 1024;
     const height     = [512, 768, 1024].includes(body.height) ? body.height : 1024;
     const seedRaw    = Number(body.seed);
@@ -59,7 +60,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const prompt = buildPrompt(subject, difficulty);
+    const prompt = buildPrompt(subject, difficulty, size);
     const generated = await generateImage(prompt, width, height, seed, {
       provider: IMAGE_PROVIDER,
       hfToken: HF_TOKEN,
