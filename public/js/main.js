@@ -285,9 +285,28 @@ document.getElementById('help-btn').addEventListener('click', () => {
   panel.hidden = !panel.hidden;
 });
 
-// ─── Language buttons ─────────────────────────────────────────────────────────
-document.querySelectorAll('.lang-btn').forEach(btn => {
-  btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+// ─── Language picker ──────────────────────────────────────────────────────────
+const langToggle   = document.getElementById('lang-toggle');
+const langDropdown = document.getElementById('lang-dropdown');
+
+langToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const opening = langDropdown.hidden;
+  langDropdown.hidden = !opening;
+  langToggle.setAttribute('aria-expanded', String(opening));
+});
+
+document.addEventListener('click', () => {
+  langDropdown.hidden = true;
+  langToggle.setAttribute('aria-expanded', 'false');
+});
+
+document.querySelectorAll('.lang-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setLanguage(btn.dataset.lang);
+    langDropdown.hidden = true;
+    langToggle.setAttribute('aria-expanded', 'false');
+  });
 });
 
 // ─── Drawing tool ─────────────────────────────────────────────────────────────

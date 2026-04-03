@@ -16,25 +16,37 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=5" />
-  <link rel="stylesheet" href="/css/header.css?v=5" />
-  <link rel="stylesheet" href="/css/hero.css?v=5" />
-  <link rel="stylesheet" href="/css/generator.css?v=5" />
-  <link rel="stylesheet" href="/css/workspace.css?v=5" />
-  <link rel="stylesheet" href="/css/palette.css?v=5" />
-  <link rel="stylesheet" href="/css/modals.css?v=5" />
-  <link rel="stylesheet" href="/css/footer.css?v=5" />
-  <link rel="stylesheet" href="/css/print.css?v=5" />
+  <link rel="stylesheet" href="/css/tokens.css?v=6" />
+  <link rel="stylesheet" href="/css/header.css?v=6" />
+  <link rel="stylesheet" href="/css/hero.css?v=6" />
+  <link rel="stylesheet" href="/css/generator.css?v=6" />
+  <link rel="stylesheet" href="/css/workspace.css?v=6" />
+  <link rel="stylesheet" href="/css/palette.css?v=6" />
+  <link rel="stylesheet" href="/css/modals.css?v=6" />
+  <link rel="stylesheet" href="/css/footer.css?v=6" />
+  <link rel="stylesheet" href="/css/print.css?v=6" />
 </head>
 <body>
   <div class="app">
 
     <header class="site-header">
-      <div class="lang-selector">
-        <button class="lang-btn active" data-lang="en">EN</button>
-        <button class="lang-btn" data-lang="de">DE</button>
-        <button class="lang-btn" data-lang="ru">RU</button>
-        <button class="lang-btn" data-lang="fr">FR</button>
+      <div class="lang-picker">
+        <button id="lang-toggle" class="lang-toggle-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose language">
+          <span id="lang-current-flag">🇬🇧</span>
+          <span id="lang-current-code">EN</span>
+          <svg class="lang-caret" viewBox="0 0 10 6" width="9" height="6" aria-hidden="true"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>
+        </button>
+        <div class="lang-dropdown" id="lang-dropdown" hidden role="listbox" aria-label="Language">
+          <button class="lang-option" data-lang="en" data-flag="🇬🇧" data-code="EN" role="option">🇬🇧 English</button>
+          <button class="lang-option" data-lang="de" data-flag="🇩🇪" data-code="DE" role="option">🇩🇪 Deutsch</button>
+          <button class="lang-option" data-lang="ru" data-flag="🇷🇺" data-code="RU" role="option">🇷🇺 Русский</button>
+          <button class="lang-option" data-lang="fr" data-flag="🇫🇷" data-code="FR" role="option">🇫🇷 Français</button>
+          <button class="lang-option" data-lang="es" data-flag="🇪🇸" data-code="ES" role="option">🇪🇸 Español</button>
+          <button class="lang-option" data-lang="pt" data-flag="🇧🇷" data-code="PT" role="option">🇧🇷 Português</button>
+          <button class="lang-option" data-lang="it" data-flag="🇮🇹" data-code="IT" role="option">🇮🇹 Italiano</button>
+          <button class="lang-option" data-lang="nl" data-flag="🇳🇱" data-code="NL" role="option">🇳🇱 Nederlands</button>
+          <button class="lang-option" data-lang="pl" data-flag="🇵🇱" data-code="PL" role="option">🇵🇱 Polski</button>
+        </div>
       </div>
       <h1 class="logo" aria-label="Lalabuba">
         <span style="--i:0">L</span><span style="--i:1">a</span><span style="--i:2">l</span><span style="--i:3">a</span><span style="--i:4">b</span><span style="--i:5">u</span><span style="--i:6">b</span><span style="--i:7">a</span>
@@ -63,7 +75,7 @@
               autocomplete="off"
               required
             />
-            <button id="surprise-button" type="button" class="surprise-btn" title="Surprise me!" aria-label="Surprise me">💡</button>
+            <button id="surprise-button" type="button" class="surprise-btn" data-i18n-title="surpriseBtn" data-i18n-aria-label="surpriseBtn" aria-label="Surprise me">💡</button>
             <button id="generate-button" type="submit" class="go-btn" data-i18n="drawBtn">Draw! ✨</button>
             <button id="regen-button" type="button" class="regen-btn" disabled data-i18n="regenBtn">🎲 Again!</button>
           </div>
@@ -250,6 +262,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/main.js?v=5"></script>
+  <script type="module" src="/js/main.js?v=6"></script>
 </body>
 </html>

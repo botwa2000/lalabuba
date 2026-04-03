@@ -32,31 +32,106 @@
   35%           { transform: translateY(-14px) rotate(4deg); }
 }
 
-/* ─── Language selector ──────────────────────────────────────────────────── */
-.lang-selector {
+/* ─── Language picker ────────────────────────────────────────────────────── */
+.lang-picker {
+  position: relative;
   display: flex;
-  gap: 6px;
   justify-content: flex-end;
   padding: 8px 0 0;
 }
 
-.lang-btn {
+/* Trigger button — shows current flag + ISO code + caret */
+.lang-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-family: var(--ff-body);
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 700;
-  padding: 4px 10px;
+  padding: 6px 12px 6px 10px;
   border-radius: 50px;
   border: 2px solid var(--border);
   background: var(--card);
-  color: var(--muted);
+  color: var(--ink);
   cursor: pointer;
-  transition: all 0.18s;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  white-space: nowrap;
+  box-shadow: var(--sh-sm);
 }
-.lang-btn:hover { border-color: var(--blue); color: var(--blue); }
-.lang-btn.active {
-  background: linear-gradient(135deg, var(--blue), var(--purple));
-  color: #fff;
-  border-color: transparent;
+.lang-toggle-btn:hover {
+  border-color: var(--blue);
+  box-shadow: 0 3px 12px rgba(30,144,255,.18);
+}
+#lang-current-flag { font-size: 1.2em; line-height: 1; }
+#lang-current-code { color: var(--ink); }
+.lang-caret {
+  color: var(--muted);
+  transition: transform 0.18s;
+  flex-shrink: 0;
+}
+.lang-toggle-btn[aria-expanded="true"] .lang-caret { transform: rotate(180deg); }
+
+/* Dropdown panel */
+.lang-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 300;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--sh-lg);
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  min-width: 240px;
+  animation: dropIn 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.lang-dropdown[hidden] { display: none; }
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* Individual language option */
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: none;
+  color: var(--ink);
+  font-family: var(--ff-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s;
+  text-align: left;
+  white-space: nowrap;
+}
+.lang-option:hover {
+  background: rgba(30,144,255,.07);
+  border-color: rgba(30,144,255,.2);
+}
+.lang-option.active {
+  background: linear-gradient(135deg, rgba(30,144,255,.12), rgba(124,77,255,.1));
+  border-color: var(--blue);
+  color: var(--blue);
+  font-weight: 700;
+}
+
+/* Mobile: dropdown aligns to left edge of screen on very small viewports */
+@media (max-width: 400px) {
+  .lang-dropdown {
+    right: auto;
+    left: 0;
+    grid-template-columns: repeat(2, 1fr);
+    min-width: 200px;
+  }
 }
 
 .tagline {
