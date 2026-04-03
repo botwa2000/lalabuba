@@ -62,8 +62,46 @@
   border-color: var(--blue);
   box-shadow: 0 3px 12px rgba(30,144,255,.18);
 }
-#lang-current-flag { font-size: 1.2em; line-height: 1; }
 #lang-current-code { color: var(--ink); }
+
+/* CSS flag badges — tiny rectangles with country-colour gradients.
+   Works on all platforms including Windows where flag emoji render as letter pairs. */
+.lang-flag {
+  display: inline-block;
+  width: 22px;
+  height: 15px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  vertical-align: middle;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+  border: 1px solid rgba(0,0,0,.08);
+  background: #ccc;
+}
+/* UK: blue with white-red cross */
+.lang-flag[data-lang="en"] {
+  background:
+    linear-gradient(to bottom, transparent 40%, #c8102e 40%, #c8102e 60%, transparent 60%),
+    linear-gradient(to right, transparent 40%, #c8102e 40%, #c8102e 60%, transparent 60%),
+    linear-gradient(to bottom, transparent 35%, #fff 35%, #fff 65%, transparent 65%),
+    linear-gradient(to right, transparent 35%, #fff 35%, #fff 65%, transparent 65%),
+    #012169;
+}
+/* Germany: black-red-gold */
+.lang-flag[data-lang="de"] { background: linear-gradient(to bottom, #000 33.3%, #d00 33.3%, #d00 66.7%, #fc0 66.7%); }
+/* Russia: white-blue-red */
+.lang-flag[data-lang="ru"] { background: linear-gradient(to bottom, #fff 33.3%, #0039a6 33.3%, #0039a6 66.7%, #d52b1e 66.7%); }
+/* France: blue-white-red vertical */
+.lang-flag[data-lang="fr"] { background: linear-gradient(to right, #002395 33.3%, #fff 33.3%, #fff 66.7%, #ed2939 66.7%); }
+/* Spain: red-yellow-red */
+.lang-flag[data-lang="es"] { background: linear-gradient(to bottom, #c60b1e 25%, #ffc400 25%, #ffc400 75%, #c60b1e 75%); }
+/* Brazil: green-yellow */
+.lang-flag[data-lang="pt"] { background: linear-gradient(to right, #009c3b 40%, #ffdf00 40%); }
+/* Italy: green-white-red vertical */
+.lang-flag[data-lang="it"] { background: linear-gradient(to right, #009246 33.3%, #fff 33.3%, #fff 66.7%, #ce2b37 66.7%); }
+/* Netherlands: red-white-blue */
+.lang-flag[data-lang="nl"] { background: linear-gradient(to bottom, #ae1c28 33.3%, #fff 33.3%, #fff 66.7%, #21468b 66.7%); }
+/* Poland: white-red */
+.lang-flag[data-lang="pl"] { background: linear-gradient(to bottom, #fff 50%, #dc143c 50%); }
 .lang-caret {
   color: var(--muted);
   transition: transform 0.18s;

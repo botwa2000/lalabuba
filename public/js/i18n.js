@@ -603,7 +603,7 @@ export function applyTranslations() {
   const activeOption = document.querySelector(`.lang-option[data-lang="${currentLang}"]`);
   const flagEl = document.getElementById('lang-current-flag');
   const codeEl = document.getElementById('lang-current-code');
-  if (activeOption && flagEl) flagEl.textContent = activeOption.dataset.flag;
+  if (flagEl) flagEl.dataset.lang = currentLang;   // CSS gradient keyed off data-lang
   if (activeOption && codeEl) codeEl.textContent = activeOption.dataset.code;
   document.querySelectorAll('.lang-option').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.lang === currentLang);

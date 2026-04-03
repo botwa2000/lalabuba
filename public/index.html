@@ -32,20 +32,20 @@
     <header class="site-header">
       <div class="lang-picker">
         <button id="lang-toggle" class="lang-toggle-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose language">
-          <span id="lang-current-flag">🇬🇧</span>
+          <span class="lang-flag" id="lang-current-flag" data-lang="en"></span>
           <span id="lang-current-code">EN</span>
           <svg class="lang-caret" viewBox="0 0 10 6" width="9" height="6" aria-hidden="true"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>
         </button>
         <div class="lang-dropdown" id="lang-dropdown" hidden role="listbox" aria-label="Language">
-          <button class="lang-option" data-lang="en" data-flag="🇬🇧" data-code="EN" role="option">🇬🇧 English</button>
-          <button class="lang-option" data-lang="de" data-flag="🇩🇪" data-code="DE" role="option">🇩🇪 Deutsch</button>
-          <button class="lang-option" data-lang="ru" data-flag="🇷🇺" data-code="RU" role="option">🇷🇺 Русский</button>
-          <button class="lang-option" data-lang="fr" data-flag="🇫🇷" data-code="FR" role="option">🇫🇷 Français</button>
-          <button class="lang-option" data-lang="es" data-flag="🇪🇸" data-code="ES" role="option">🇪🇸 Español</button>
-          <button class="lang-option" data-lang="pt" data-flag="🇧🇷" data-code="PT" role="option">🇧🇷 Português</button>
-          <button class="lang-option" data-lang="it" data-flag="🇮🇹" data-code="IT" role="option">🇮🇹 Italiano</button>
-          <button class="lang-option" data-lang="nl" data-flag="🇳🇱" data-code="NL" role="option">🇳🇱 Nederlands</button>
-          <button class="lang-option" data-lang="pl" data-flag="🇵🇱" data-code="PL" role="option">🇵🇱 Polski</button>
+          <button class="lang-option" data-lang="en" data-code="EN" role="option"><span class="lang-flag" data-lang="en"></span> English</button>
+          <button class="lang-option" data-lang="de" data-code="DE" role="option"><span class="lang-flag" data-lang="de"></span> Deutsch</button>
+          <button class="lang-option" data-lang="ru" data-code="RU" role="option"><span class="lang-flag" data-lang="ru"></span> Русский</button>
+          <button class="lang-option" data-lang="fr" data-code="FR" role="option"><span class="lang-flag" data-lang="fr"></span> Français</button>
+          <button class="lang-option" data-lang="es" data-code="ES" role="option"><span class="lang-flag" data-lang="es"></span> Español</button>
+          <button class="lang-option" data-lang="pt" data-code="PT" role="option"><span class="lang-flag" data-lang="pt"></span> Português</button>
+          <button class="lang-option" data-lang="it" data-code="IT" role="option"><span class="lang-flag" data-lang="it"></span> Italiano</button>
+          <button class="lang-option" data-lang="nl" data-code="NL" role="option"><span class="lang-flag" data-lang="nl"></span> Nederlands</button>
+          <button class="lang-option" data-lang="pl" data-code="PL" role="option"><span class="lang-flag" data-lang="pl"></span> Polski</button>
         </div>
       </div>
       <h1 class="logo" aria-label="Lalabuba">
