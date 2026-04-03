@@ -119,6 +119,38 @@ export const BLOCKED_TERMS = new Set([
   "drogues","terreur","terroriste","suicide","viol","racisme",
 ]);
 
+// Structured pool used for both the hero suggestion cards and the surprise button.
+// Each entry has the subject text (sent to the AI) and a representative emoji.
+export const EXAMPLE_SUGGESTIONS = [
+  { subject: "butterfly",               emoji: "🦋" },
+  { subject: "dragon",                   emoji: "🐉" },
+  { subject: "castle",                   emoji: "🏰" },
+  { subject: "rocket ship",             emoji: "🚀" },
+  { subject: "cat",                      emoji: "🐱" },
+  { subject: "unicorn",                  emoji: "🦄" },
+  { subject: "dinosaur eating pizza",   emoji: "🦖" },
+  { subject: "dragon baking cookies",   emoji: "🍪" },
+  { subject: "cat riding a bicycle",    emoji: "🚲" },
+  { subject: "castle on a cloud",       emoji: "☁️" },
+  { subject: "robot puppy",             emoji: "🤖" },
+  { subject: "mermaid at school",       emoji: "🧜" },
+  { subject: "pirate octopus",          emoji: "🐙" },
+  { subject: "superhero penguin",       emoji: "🐧" },
+  { subject: "wizard casting spells",   emoji: "🧙" },
+  { subject: "flying whale",            emoji: "🐋" },
+  { subject: "princess on a dragon",   emoji: "👸" },
+  { subject: "bunny astronaut",         emoji: "🐰" },
+  { subject: "shark playing guitar",    emoji: "🦈" },
+  { subject: "bear having a tea party", emoji: "🐻" },
+  { subject: "giraffe driving a bus",   emoji: "🦒" },
+  { subject: "fox in a spaceship",      emoji: "🦊" },
+  { subject: "lion reading a book",     emoji: "🦁" },
+  { subject: "elephant playing piano",  emoji: "🐘" },
+  { subject: "turtle racing a rocket",  emoji: "🐢" },
+  { subject: "owl baking a cake",       emoji: "🦉" },
+  { subject: "panda painting a rainbow",emoji: "🐼" },
+];
+
 export const SURPRISE_SUBJECTS = [
   "dinosaur eating pizza",
   "unicorn in space",

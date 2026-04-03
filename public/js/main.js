@@ -1,5 +1,5 @@
 import { state, DEBUG } from './state.js';
-import { PALETTES, SURPRISE_SUBJECTS } from './data.js';
+import { PALETTES, SURPRISE_SUBJECTS, EXAMPLE_SUGGESTIONS } from './data.js';
 import { sanitizeSubject, isSafeSubject } from './data.js';
 import { t, applyTranslations, setLanguage } from './i18n.js';
 import {
@@ -355,4 +355,43 @@ if (!DEBUG) {
 renderLegend();
 applyTranslations();
 loadFromShare();
+
+// ─── Hero suggestion cards ────────────────────────────────────────────────────
+const CARD_GRADIENTS = [
+  'linear-gradient(135deg,#ff9a9e,#fecfef)',
+  'linear-gradient(135deg,#a1c4fd,#c2e9fb)',
+  'linear-gradient(135deg,#d4fc79,#96e6a1)',
+  'linear-gradient(135deg,#ffecd2,#fcb69f)',
+  'linear-gradient(135deg,#e0c3fc,#8ec5fc)',
+  'linear-gradient(135deg,#fddb92,#d1fdff)',
+  'linear-gradient(135deg,#f9f,#c6f)',
+  'linear-gradient(135deg,#b2f5ea,#81e6d9)',
+];
+
+(function renderExamples() {
+  const grid = document.getElementById('examples-grid');
+  if (!grid) return;
+  // Fisher-Yates shuffle, pick first 4
+  const pool = [...EXAMPLE_SUGGESTIONS];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const picks = pool.slice(0, 4);
+  grid.innerHTML = picks.map((item, idx) => {
+    const label = item.subject.charAt(0).toUpperCase() + item.subject.slice(1);
+    return `<button class="example-card" data-subject="${item.subject}" type="button" aria-label="Draw ${label}">
+      <div class="example-card-art" style="background:${CARD_GRADIENTS[idx % CARD_GRADIENTS.length]}">
+        <span class="example-emoji">${item.emoji}</span>
+      </div>
+      <p class="example-label">${label}</p>
+    </button>`;
+  }).join('');
+  grid.querySelectorAll('.example-card').forEach(card => {
+    card.addEventListener('click', () => {
+      subjectInput.value = card.dataset.subject;
+      form.requestSubmit();
+    });
+  });
+}());
 
