@@ -119,6 +119,34 @@ export const BLOCKED_TERMS = new Set([
   "drogues","terreur","terroriste","suicide","viol","racisme",
 ]);
 
+export const SURPRISE_SUBJECTS = [
+  "dinosaur eating pizza",
+  "unicorn in space",
+  "dragon baking cookies",
+  "cat riding a bicycle",
+  "castle on a cloud",
+  "robot puppy",
+  "mermaid at school",
+  "pirate octopus",
+  "superhero penguin",
+  "wizard casting spells",
+  "flying whale",
+  "princess on a dragon",
+  "submarine adventure",
+  "alien playground",
+  "magic treehouse",
+  "bunny astronaut",
+  "shark playing guitar",
+  "bear having a tea party",
+  "giraffe driving a bus",
+  "fox in a spaceship",
+  "lion reading a book",
+  "elephant playing piano",
+  "turtle racing a rocket",
+  "owl baking a cake",
+  "panda painting a rainbow",
+];
+
 export function sanitizeSubject(value) {
   return String(value || "")
     .replace(/\s+/g, " ")

@@ -217,3 +217,14 @@ export function setColorCount(n, isMax) {
     renderGeneratedImage(state.currentImage).catch(err => setStatus(err.message, true));
   }
 }
+
+export function flashPaletteSwatch(index) {
+  const swatches = legendList.querySelectorAll('.color-swatch');
+  const target = swatches[index];
+  if (!target) return;
+  target.classList.remove('flash');
+  // Force reflow so re-adding the class triggers the animation again
+  void target.offsetWidth;
+  target.classList.add('flash');
+  setTimeout(() => target.classList.remove('flash'), 750);
+}

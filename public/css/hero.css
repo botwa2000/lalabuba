@@ -1,0 +1,60 @@
+/* ─── Hero section ───────────────────────────────────────────────────────── */
+.hero-section {
+  text-align: center;
+  padding: 4px 0 20px;
+}
+
+.hero-tagline {
+  font-family: var(--ff-body);
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 20px;
+  letter-spacing: .01em;
+}
+
+.examples-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.example-card {
+  background: var(--card);
+  border-radius: 18px;
+  padding: 10px 10px 6px;
+  box-shadow: var(--sh-md);
+  border: 2px solid var(--border);
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
+  cursor: default;
+  user-select: none;
+}
+.example-card:hover {
+  transform: translateY(-5px) rotate(-1deg);
+  box-shadow: var(--sh-lg);
+}
+.example-card svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 10px;
+}
+.example-label {
+  font-family: var(--ff-brand);
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 5px;
+  padding-bottom: 2px;
+}
+
+@media (max-width: 600px) {
+  .examples-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 340px; }
+  .hero-tagline { font-size: .95rem; }
+}
+@media (max-width: 360px) {
+  .examples-grid { gap: 8px; }
+}

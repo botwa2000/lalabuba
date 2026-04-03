@@ -103,6 +103,11 @@ export async function generatePage(subject, seedOverride = null) {
     const imageUrl = await requestGeneratedImage(subject, difficulty, seedOverride);
     await renderGeneratedImage(imageUrl);
     setStatus(t('done'));
+    // Show coloring hint and challenge strip
+    const coloringHint = document.getElementById('coloring-hint');
+    if (coloringHint) coloringHint.hidden = false;
+    const challengeStrip = document.getElementById('challenge-strip');
+    if (challengeStrip) challengeStrip.hidden = false;
     document.getElementById('regen-button').disabled = false;
   } finally {
     hideLoading();

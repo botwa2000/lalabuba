@@ -189,3 +189,83 @@
   .go-btn { flex: 1; }
   .regen-btn { flex: 1; }
 }
+
+/* ─── Coloring hint banner ───────────────────────────────────────────────── */
+.coloring-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #f0f7ff, #f5f0ff);
+  border-bottom: 1.5px solid rgba(124,77,255,.15);
+  font-family: var(--ff-body);
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.coloring-hint[hidden] { display: none; }
+.dismiss-hint-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: .9rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.dismiss-hint-btn:hover { background: rgba(0,0,0,.06); }
+
+/* ─── Challenge strip ────────────────────────────────────────────────────── */
+.challenge-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #fff8e1, #fff3e0);
+  border-top: 1.5px solid rgba(255,112,67,.2);
+  font-family: var(--ff-body);
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.challenge-strip[hidden] { display: none; }
+.challenge-strip-btn {
+  font-family: var(--ff-brand);
+  font-size: .88rem;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 50px;
+  border: none;
+  background: linear-gradient(135deg, var(--orange), var(--red));
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 3px 12px rgba(255,71,87,.3);
+  transition: transform .15s, box-shadow .15s;
+}
+.challenge-strip-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(255,71,87,.4); }
+
+/* ─── Empty state (improved) ─────────────────────────────────────────────── */
+.empty-hint { opacity: .7; }
+.empty-icon { font-size: 5rem; }
+.empty-hint p { font-size: 1.1rem; }
+
+/* ─── Share action button (prominent) ───────────────────────────────────── */
+.share-action-btn {
+  background: linear-gradient(135deg, var(--orange), var(--red)) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 3px 12px rgba(255,71,87,.3);
+}
+.share-action-btn:hover:not(:disabled) {
+  border-color: transparent !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, var(--orange), var(--red)) !important;
+  box-shadow: 0 6px 20px rgba(255,71,87,.45) !important;
+  transform: translateY(-2px) !important;
+}

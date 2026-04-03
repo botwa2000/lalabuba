@@ -1,5 +1,5 @@
 import { state, DEBUG } from './state.js';
-import { PALETTES } from './data.js';
+import { PALETTES, SURPRISE_SUBJECTS } from './data.js';
 import { sanitizeSubject, isSafeSubject } from './data.js';
 import { t, applyTranslations, setLanguage } from './i18n.js';
 import {
@@ -12,7 +12,7 @@ import {
 } from './canvas.js';
 import {
   activePalette, setStatus, renderLegend, setColorCount, showLoading, hideLoading,
-  openMaxPicker, closeMaxPicker,
+  openMaxPicker, closeMaxPicker, flashPaletteSwatch,
 } from './ui.js';
 import { generatePage, requestGeneratedImage } from './generate.js';
 import { initDrawingTool } from './drawing.js';
@@ -170,7 +170,8 @@ previewCanvas.addEventListener("click", (event) => {
       const required = state.regionColorMap.get(regionId);
       if (state.selectedPaletteIndex !== required) {
         const c = activePalette()[required];
-        setStatus(t('needsColor', required + 1, c.label), true);
+        setStatus(t('needsColor', required + 1, c.label), false);
+        flashPaletteSwatch(required);
         return;
       }
     }
@@ -184,6 +185,9 @@ previewCanvas.addEventListener("click", (event) => {
   const label = state.selectedPaletteIndex === -1 ? t('customColorLabel') : activePalette()[state.selectedPaletteIndex].label;
   setStatus(t('filled', label));
   checkCompletion();
+  // Hide coloring hint on first successful fill
+  const hint = document.getElementById('coloring-hint');
+  if (hint) hint.hidden = true;
 });
 
 // ─── Print button ────────────────────────────────────────────────────────────
@@ -306,6 +310,39 @@ initDrawingTool();
 // ─── Share handlers ───────────────────────────────────────────────────────────
 initShareHandlers();
 
+// ─── Options toggle ───────────────────────────────────────────────────────────
+document.getElementById('options-toggle').addEventListener('click', () => {
+  const panel = document.getElementById('options-panel');
+  const btn   = document.getElementById('options-toggle');
+  const opening = panel.hidden;
+  panel.hidden = !opening;
+  btn.classList.toggle('open', opening);
+});
+
+// ─── Surprise button ──────────────────────────────────────────────────────────
+document.getElementById('surprise-button').addEventListener('click', () => {
+  const subjects = SURPRISE_SUBJECTS;
+  subjectInput.value = subjects[Math.floor(Math.random() * subjects.length)];
+  subjectInput.focus();
+});
+
+// ─── Coloring hint dismiss ────────────────────────────────────────────────────
+const dismissHintBtn = document.getElementById('dismiss-hint');
+if (dismissHintBtn) {
+  dismissHintBtn.addEventListener('click', () => {
+    const hint = document.getElementById('coloring-hint');
+    if (hint) hint.hidden = true;
+  });
+}
+
+// ─── Challenge strip share button ────────────────────────────────────────────
+const challengeShareBtn = document.getElementById('challenge-share-btn');
+if (challengeShareBtn) {
+  challengeShareBtn.addEventListener('click', () => {
+    document.getElementById('share-button').click();
+  });
+}
+
 // ─── Initialization ───────────────────────────────────────────────────────────
 
 // Hide debug-only elements in production
@@ -319,38 +356,3 @@ renderLegend();
 applyTranslations();
 loadFromShare();
 
-// ─── Layout debug (always runs — open browser console F12 to see) ────────────
-setTimeout(() => {
-  const stage   = document.getElementById('preview-stage');
-  const hint    = document.querySelector('.empty-hint');
-  const wrapper = document.querySelector('.canvas-wrapper');
-
-  function rect(el, name) {
-    const r  = el.getBoundingClientRect();
-    const cs = getComputedStyle(el);
-    console.log(`[layout] ${name}`, {
-      x: Math.round(r.x), y: Math.round(r.y),
-      w: Math.round(r.width), h: Math.round(r.height),
-      display:   cs.display,
-      position:  cs.position,
-      top:       cs.top,
-      left:      cs.left,
-      transform: cs.transform,
-    });
-  }
-
-  rect(wrapper, 'canvas-wrapper');
-  rect(stage,   'preview-stage');
-  rect(hint,    'empty-hint');
-
-  // Expected: empty-hint center ≈ preview-stage center
-  const sr = stage.getBoundingClientRect();
-  const hr = hint.getBoundingClientRect();
-  const stageCx = Math.round(sr.x + sr.width  / 2);
-  const stageCy = Math.round(sr.y + sr.height / 2);
-  const hintCx  = Math.round(hr.x + hr.width  / 2);
-  const hintCy  = Math.round(hr.y + hr.height / 2);
-  console.log(`[layout] stage center  = (${stageCx}, ${stageCy})`);
-  console.log(`[layout] hint  center  = (${hintCx},  ${hintCy})`);
-  console.log(`[layout] offset from center: dx=${hintCx - stageCx}px  dy=${hintCy - stageCy}px`);
-}, 300);
