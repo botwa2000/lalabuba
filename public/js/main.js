@@ -1,7 +1,7 @@
 import { state, DEBUG } from './state.js';
 import { PALETTES, SURPRISE_SUBJECTS, EXAMPLE_SUGGESTIONS } from './data.js';
 import { sanitizeSubject, isSafeSubject } from './data.js';
-import { t, applyTranslations, setLanguage } from './i18n.js';
+import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
 import {
   form, subjectInput, showNumbersInput, difficultySelect, providerSelect,
   paletteSelect, previewCanvas, drawCanvas, printButton, downloadButton,
@@ -304,6 +304,7 @@ document.addEventListener('click', () => {
 document.querySelectorAll('.lang-option').forEach(btn => {
   btn.addEventListener('click', () => {
     setLanguage(btn.dataset.lang);
+    renderExamples();
     langDropdown.hidden = true;
     langToggle.setAttribute('aria-expanded', 'false');
   });
@@ -373,19 +374,26 @@ const CARD_GRADIENTS = [
   'linear-gradient(135deg,#b2f5ea,#81e6d9)',
 ];
 
-(function renderExamples() {
+// Shuffled once per visit; re-rendered on language change to update labels.
+let examplePicks = null;
+
+function renderExamples() {
   const grid = document.getElementById('examples-grid');
   if (!grid) return;
-  // Fisher-Yates shuffle, pick first 4
-  const pool = [...EXAMPLE_SUGGESTIONS];
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+  // Shuffle once per session, reuse on subsequent renders
+  if (!examplePicks) {
+    const pool = [...EXAMPLE_SUGGESTIONS];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    examplePicks = pool.slice(0, 4);
   }
-  const picks = pool.slice(0, 4);
-  grid.innerHTML = picks.map((item, idx) => {
-    const label = item.subject.charAt(0).toUpperCase() + item.subject.slice(1);
-    return `<button class="example-card" data-subject="${item.subject}" type="button" aria-label="Draw ${label}">
+  const lang = getCurrentLang();
+  grid.innerHTML = examplePicks.map((item, idx) => {
+    const label = item.labels?.[lang]
+      || (item.subject.charAt(0).toUpperCase() + item.subject.slice(1));
+    return `<button class="example-card" data-subject="${item.subject}" type="button" aria-label="${label}">
       <div class="example-card-art" style="background:${CARD_GRADIENTS[idx % CARD_GRADIENTS.length]}">
         <span class="example-emoji">${item.emoji}</span>
       </div>
@@ -398,5 +406,6 @@ const CARD_GRADIENTS = [
       form.requestSubmit();
     });
   });
-}());
+}
+renderExamples();
 
