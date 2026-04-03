@@ -285,20 +285,6 @@ document.getElementById('help-btn').addEventListener('click', () => {
   panel.hidden = !panel.hidden;
 });
 
-// ─── Size pills ───────────────────────────────────────────────────────────────
-const canvasWrapper = document.querySelector(".canvas-wrapper");
-canvasWrapper.classList.add("size-medium");
-
-document.querySelectorAll(".size-pill").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".size-pill").forEach((b) => b.classList.remove("selected"));
-    btn.classList.add("selected");
-    state.selectedSize = btn.dataset.size;
-    canvasWrapper.classList.remove("size-small", "size-medium", "size-large", "size-xxl");
-    canvasWrapper.classList.add(`size-${btn.dataset.size}`);
-  });
-});
-
 // ─── Language buttons ─────────────────────────────────────────────────────────
 document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', () => setLanguage(btn.dataset.lang));

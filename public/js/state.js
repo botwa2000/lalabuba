@@ -16,7 +16,7 @@ export const state = {
   lastImageUrl: null,
   coloringStartTime: null,
   selectedPaletteIndex: 0,
-  selectedSize: 'medium',
+  selectedSize: 'xxl',
   pencilMode: false,
   pencilDrawing: false,
   customColor: '#e91e63',

@@ -1,21 +1,27 @@
-/* ─── Palette sidebar ─────────────────────────────────────────────────────── */
+/* ─── Palette sidebar — standalone card next to canvas-wrapper ─────────────── */
 .palette-sidebar {
-  width: 138px;
-  flex-shrink: 0;
-  background: linear-gradient(to bottom, #fff 0%, #f4f6fb 100%);
-  border-left: 1.5px solid var(--border);
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  box-shadow: var(--sh-md);
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: 10px 8px;
+  padding: 12px 10px;
   overflow-y: auto;
+  overflow-x: visible; /* allow active swatch ring to show without clipping */
+  /* Stick to top of viewport when scrolling */
+  position: sticky;
+  top: 16px;
+  max-height: 90vh;
 }
 
 .palette-strip {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
+  gap: 6px;
   list-style: none;
+  padding: 2px 4px; /* inner breathing room so active ring never clips card edge */
 }
 
 .color-swatch {
@@ -106,16 +112,36 @@
   pointer-events: none;
 }
 
-/* Mobile: horizontal strip */
-@media (max-width: 560px) {
-  .canvas-body { flex-direction: column; }
-  .palette-sidebar { width: 100%; flex-direction: row; border-left: none; border-top: 1.5px solid var(--border); overflow-x: auto; overflow-y: visible; padding: 8px 10px; }
-  .palette-strip { display: flex; flex-direction: row; align-items: center; gap: 5px; }
-  .color-swatch { width: 36px; height: 36px; aspect-ratio: 1; }
-  .legend-tool-item { grid-column: auto; }
-  .tool-btn { padding: 5px 8px; gap: 5px; font-size: .64rem; border-radius: 7px; white-space: nowrap; }
+/* Mobile: full-width horizontal strip below canvas */
+@media (max-width: 640px) {
+  .palette-sidebar {
+    position: static; /* no sticky on mobile */
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 10px 12px;
+    max-height: none;
+    align-items: center;
+    gap: 0;
+    border-radius: var(--radius);
+  }
+  .palette-strip {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 2px;
+    flex-wrap: nowrap;
+  }
+  .color-swatch { width: 40px; height: 40px; flex-shrink: 0; }
+  .legend-tool-item { grid-column: auto; flex-shrink: 0; }
+  .tool-btn { padding: 6px 10px; gap: 5px; font-size: .68rem; border-radius: 8px; white-space: nowrap; }
   .picker-dot { width: 11px; height: 11px; }
-  .legend-sep { width: 1px; height: 30px; margin: 0 3px; background: linear-gradient(to bottom, transparent, rgba(0,0,0,.13), transparent); flex-shrink: 0; }
+  .legend-sep {
+    width: 1px; height: 32px; flex-shrink: 0;
+    margin: 0 4px;
+    background: linear-gradient(to bottom, transparent, rgba(0,0,0,.13), transparent);
+  }
 }
 
 /* ─── Max colour-picker modal (16 × 16 grid) ─────────────────────────────── */

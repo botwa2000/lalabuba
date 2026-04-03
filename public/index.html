@@ -16,15 +16,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=4" />
-  <link rel="stylesheet" href="/css/header.css?v=4" />
-  <link rel="stylesheet" href="/css/hero.css?v=4" />
-  <link rel="stylesheet" href="/css/generator.css?v=4" />
-  <link rel="stylesheet" href="/css/workspace.css?v=4" />
-  <link rel="stylesheet" href="/css/palette.css?v=4" />
-  <link rel="stylesheet" href="/css/modals.css?v=4" />
-  <link rel="stylesheet" href="/css/footer.css?v=4" />
-  <link rel="stylesheet" href="/css/print.css?v=4" />
+  <link rel="stylesheet" href="/css/tokens.css?v=5" />
+  <link rel="stylesheet" href="/css/header.css?v=5" />
+  <link rel="stylesheet" href="/css/hero.css?v=5" />
+  <link rel="stylesheet" href="/css/generator.css?v=5" />
+  <link rel="stylesheet" href="/css/workspace.css?v=5" />
+  <link rel="stylesheet" href="/css/palette.css?v=5" />
+  <link rel="stylesheet" href="/css/modals.css?v=5" />
+  <link rel="stylesheet" href="/css/footer.css?v=5" />
+  <link rel="stylesheet" href="/css/print.css?v=5" />
 </head>
 <body>
   <div class="app">
@@ -84,15 +84,6 @@
                   <button type="button" class="diff-pill selected" data-diff="medium" data-i18n="diffMedium">Medium 🌟🌟</button>
                   <button type="button" class="diff-pill" data-diff="hard" data-i18n="diffHard">Hard 🌟🌟🌟</button>
                   <button type="button" class="diff-pill" data-diff="extreme" data-i18n="diffExtreme">Extreme 🔥</button>
-                </div>
-              </div>
-              <div class="control-row">
-                <span class="ctrl-label" data-i18n="ctrlSize">Size</span>
-                <div class="pill-group" role="group">
-                  <button type="button" class="size-pill" data-size="small" data-i18n="sizeSmall">🤏 Small</button>
-                  <button type="button" class="size-pill selected" data-size="medium" data-i18n="sizeMedium">📄 Medium</button>
-                  <button type="button" class="size-pill" data-size="large" data-i18n="sizeLarge">🖼️ Large</button>
-                  <button type="button" class="size-pill" data-size="xxl" data-i18n="sizeXxl">🎨 XXL</button>
                 </div>
               </div>
               <div class="control-row">
@@ -199,10 +190,6 @@
                 <canvas id="draw-canvas" width="1024" height="1024" hidden></canvas>
               </div>
             </div>
-
-            <div class="palette-sidebar">
-              <ul id="legend-list" class="palette-strip" role="listbox" aria-label="Colour palette"></ul>
-            </div>
           </div>
 
           <!-- Challenge strip (shown after generation) -->
@@ -211,6 +198,11 @@
             <button id="challenge-share-btn" type="button" class="challenge-strip-btn" data-i18n="challengeShare">Share →</button>
           </div>
 
+        </div>
+
+        <!-- Palette sidebar — sits beside canvas-wrapper in the workspace grid -->
+        <div class="palette-sidebar">
+          <ul id="legend-list" class="palette-strip" role="listbox" aria-label="Colour palette"></ul>
         </div>
 
         <aside class="side-panel" id="debug-aside">
@@ -258,6 +250,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/main.js?v=4"></script>
+  <script type="module" src="/js/main.js?v=5"></script>
 </body>
 </html>
