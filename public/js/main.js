@@ -183,7 +183,15 @@ previewCanvas.addEventListener("click", (event) => {
   state.completedRegions.add(regionId);
   fillRegion(regionId, fillColor);
   const label = state.selectedPaletteIndex === -1 ? t('customColorLabel') : activePalette()[state.selectedPaletteIndex].label;
-  setStatus(t('filled', label));
+
+  // Show progress counter when in numbers mode
+  if (showNumbersInput.checked && state.regionColorMap && state.regionColorMap.size > 0) {
+    const total = state.regionColorMap.size;
+    const done = [...state.regionColorMap.keys()].filter(id => state.completedRegions.has(id)).length;
+    setStatus(done < total ? t('filledProgress', label, done, total) : t('filled', label));
+  } else {
+    setStatus(t('filled', label));
+  }
   checkCompletion();
   // Hide coloring hint on first successful fill
   const hint = document.getElementById('coloring-hint');

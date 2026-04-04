@@ -161,7 +161,23 @@ export function overlayNumbers() {
 
     regions.forEach((region, index) => {
       let paletteIndex = index % palette.length;
-      const pixels = state.regionMap ? state.regionPixels?.get(state.regionMap[region.y * w + region.x]) : null;
+
+      // Snap centroid to nearest positive region (same logic as badge drawing)
+      // so regionColorMap stays in sync with visible badges.
+      let mapId = state.regionMap?.[region.y * w + region.x];
+      if (!(mapId > 0) && state.regionMap) {
+        const snapR = 20;
+        snap: for (let dy = -snapR; dy <= snapR; dy++) {
+          for (let dx = -snapR; dx <= snapR; dx++) {
+            const nx = region.x + dx, ny = region.y + dy;
+            if (nx < 0 || ny < 0 || nx >= w || ny >= previewCanvas.height) continue;
+            const id = state.regionMap[ny * w + nx];
+            if (id > 0) { mapId = id; break snap; }
+          }
+        }
+      }
+
+      const pixels = mapId > 0 ? state.regionPixels?.get(mapId) : null;
       if (pixels && pixels.length > 0) {
         let sumR = 0, sumG = 0, sumB = 0;
         const step = Math.max(1, Math.floor(pixels.length / 200));
@@ -176,7 +192,6 @@ export function overlayNumbers() {
           paletteIndex = nearestPaletteIndex(sumR/count, sumG/count, sumB/count, palette);
         }
       }
-      const mapId = state.regionMap?.[region.y * w + region.x];
       if (mapId > 0) state.regionColorMap.set(mapId, paletteIndex);
     });
   }
@@ -410,22 +425,32 @@ export function fillRegion(regionId, fillColor) {
   // to a different positive-label region, so the flood cannot cross outlines into the
   // outer background or adjacent colourable regions.
   if (state.regionMap) {
+    // Can the orphan BFS absorb pixel ni? True for barrier pixels (label < 1)
+    // AND small non-numbered regions (< 500 px, not in regionColorMap).
+    const absorbable = (ni) => {
+      const lbl = state.regionMap[ni];
+      if (lbl < 1) return true;
+      const rpx = state.regionPixels?.get(lbl);
+      return rpx && rpx.length < 500 && !state.regionColorMap?.has(lbl);
+    };
+
     const orphanQ = [];
-    for (const idx of pixels) {
+    // Seed from both original region pixels AND fringe-bleed frontier
+    for (const list of [pixels, frontier]) for (const idx of list) {
       const x = idx % width, y = (idx / width) | 0;
-      if (x > 0)          { const ni=idx-1;     if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (x < width - 1)  { const ni=idx+1;     if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (y > 0)          { const ni=idx-width; if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (y < height - 1) { const ni=idx+width; if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (x > 0)          { const ni=idx-1;     if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (x < width - 1)  { const ni=idx+1;     if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (y > 0)          { const ni=idx-width; if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (y < height - 1) { const ni=idx+width; if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
     }
     let qi = 0;
     while (qi < orphanQ.length) {
       const idx = orphanQ[qi++];
       const x = idx % width, y = (idx / width) | 0;
-      if (x > 0)          { const ni=idx-1;     if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (x < width - 1)  { const ni=idx+1;     if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (y > 0)          { const ni=idx-width; if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (y < height - 1) { const ni=idx+width; if (!painted[ni] && state.regionMap[ni] < 1) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (x > 0)          { const ni=idx-1;     if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (x < width - 1)  { const ni=idx+1;     if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (y > 0)          { const ni=idx-width; if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (y < height - 1) { const ni=idx+width; if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
     }
   }
 
