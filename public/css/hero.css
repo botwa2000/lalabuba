@@ -77,6 +77,52 @@
   text-align: center;
 }
 
+/* Shuffle button */
+.shuffle-cards-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+  width: 44px;
+  height: 44px;
+  font-size: 1.5rem;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+  cursor: pointer;
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s, border-color .15s;
+  appearance: none;
+  -webkit-appearance: none;
+  line-height: 1;
+}
+.shuffle-cards-btn:hover {
+  transform: scale(1.12);
+  box-shadow: var(--sh-md);
+  border-color: rgba(124,77,255,.35);
+}
+.shuffle-cards-btn:active {
+  transform: scale(.92);
+  transition-duration: .08s;
+}
+.shuffle-cards-btn.spinning {
+  animation: diceSpin .45s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes diceSpin {
+  0%   { transform: rotate(0deg) scale(1); }
+  40%  { transform: rotate(220deg) scale(1.2); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Card deal-in animation */
+.example-card.deal-in {
+  animation: cardDeal .35s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes cardDeal {
+  0%   { opacity: 0; transform: translateY(18px) scale(.85) rotate(-4deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+
 @media (max-width: 600px) {
   .examples-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 340px; }
   .hero-tagline { font-size: .95rem; }

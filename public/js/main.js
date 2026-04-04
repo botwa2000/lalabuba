@@ -417,3 +417,21 @@ function renderExamples() {
 }
 renderExamples();
 
+// ─── Shuffle suggestions button ──────────────────────────────────────────────
+document.getElementById('shuffle-cards-btn').addEventListener('click', () => {
+  const btn = document.getElementById('shuffle-cards-btn');
+  btn.classList.remove('spinning');
+  void btn.offsetWidth;          // reflow to restart animation
+  btn.classList.add('spinning');
+
+  examplePicks = null;           // force fresh shuffle
+  renderExamples();
+
+  // Stagger card deal-in animation
+  document.querySelectorAll('.example-card').forEach((card, i) => {
+    card.style.animationDelay = `${i * 0.07}s`;
+    card.classList.add('deal-in');
+    card.addEventListener('animationend', () => card.classList.remove('deal-in'), { once: true });
+  });
+});
+
