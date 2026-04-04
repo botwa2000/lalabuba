@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fef9ef"/>
+      <stop offset="100%" stop-color="#fce4ec"/>
+    </linearGradient>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff9a9e"/><stop offset="100%" stop-color="#fecfef"/></linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a1c4fd"/><stop offset="100%" stop-color="#c2e9fb"/></linearGradient>
+    <linearGradient id="g3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d4fc79"/><stop offset="100%" stop-color="#96e6a1"/></linearGradient>
+    <linearGradient id="g4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffecd2"/><stop offset="100%" stop-color="#fcb69f"/></linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)" rx="0"/>
+
+  <!-- Decorative dots -->
+  <circle cx="80" cy="80" r="20" fill="#fce4ec" opacity=".6"/>
+  <circle cx="1120" cy="550" r="30" fill="#e3f2fd" opacity=".5"/>
+  <circle cx="1050" cy="90" r="15" fill="#f3e5f5" opacity=".6"/>
+  <circle cx="150" cy="520" r="25" fill="#e8f5e9" opacity=".5"/>
+  <circle cx="600" cy="50" r="12" fill="#fff3e0" opacity=".7"/>
+
+  <!-- Logo -->
+  <text x="600" y="145" text-anchor="middle" font-family="Fredoka, Nunito, sans-serif" font-weight="700" font-size="88" letter-spacing="2">
+    <tspan fill="#e63946">L</tspan><tspan fill="#f77f00">a</tspan><tspan fill="#f4d35e">l</tspan><tspan fill="#6a994e">a</tspan><tspan fill="#3f88c5">b</tspan><tspan fill="#7b2cbf">u</tspan><tspan fill="#e07ab0">b</tspan><tspan fill="#2a9d8f">a</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="600" y="200" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="700" font-size="30" fill="#666">
+    Free AI Coloring Pages for Kids
+  </text>
+
+  <!-- Four sample cards -->
+  <!-- Card 1: Butterfly -->
+  <g transform="translate(195,250)">
+    <rect width="180" height="210" rx="20" fill="url(#g1)" stroke="#fff" stroke-width="3"/>
+    <text x="90" y="110" text-anchor="middle" font-size="72">🦋</text>
+    <rect y="160" width="180" height="50" rx="0 0 20 20" fill="rgba(255,255,255,.85)"/>
+    <rect y="160" width="180" height="50" rx="0" fill="rgba(255,255,255,.85)"/>
+    <text x="90" y="193" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="22" fill="#333">Butterfly</text>
+  </g>
+
+  <!-- Card 2: Dragon -->
+  <g transform="translate(415,250)">
+    <rect width="180" height="210" rx="20" fill="url(#g2)" stroke="#fff" stroke-width="3"/>
+    <text x="90" y="110" text-anchor="middle" font-size="72">🐉</text>
+    <rect y="160" width="180" height="50" fill="rgba(255,255,255,.85)"/>
+    <text x="90" y="193" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="22" fill="#333">Dragon</text>
+  </g>
+
+  <!-- Card 3: Castle -->
+  <g transform="translate(635,250)">
+    <rect width="180" height="210" rx="20" fill="url(#g3)" stroke="#fff" stroke-width="3"/>
+    <text x="90" y="110" text-anchor="middle" font-size="72">🏰</text>
+    <rect y="160" width="180" height="50" fill="rgba(255,255,255,.85)"/>
+    <text x="90" y="193" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="22" fill="#333">Castle</text>
+  </g>
+
+  <!-- Card 4: Unicorn -->
+  <g transform="translate(855,250)">
+    <rect width="180" height="210" rx="20" fill="url(#g4)" stroke="#fff" stroke-width="3"/>
+    <text x="90" y="110" text-anchor="middle" font-size="72">🦄</text>
+    <rect y="160" width="180" height="50" fill="rgba(255,255,255,.85)"/>
+    <text x="90" y="193" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="22" fill="#333">Unicorn</text>
+  </g>
+
+  <!-- CTA -->
+  <rect x="390" y="510" width="420" height="60" rx="30" fill="#7c4dff" opacity=".9"/>
+  <text x="600" y="550" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="26" fill="#fff" letter-spacing=".5">
+    lalabuba.com
+  </text>
+
+  <!-- Palette dots row -->
+  <circle cx="430" cy="490" r="8" fill="#e63946"/>
+  <circle cx="460" cy="490" r="8" fill="#f77f00"/>
+  <circle cx="490" cy="490" r="8" fill="#f4d35e"/>
+  <circle cx="520" cy="490" r="8" fill="#6a994e"/>
+  <circle cx="550" cy="490" r="8" fill="#3f88c5"/>
+  <circle cx="580" cy="490" r="8" fill="#7b2cbf"/>
+  <circle cx="610" cy="490" r="8" fill="#e07ab0"/>
+  <circle cx="640" cy="490" r="8" fill="#8c5e3c"/>
+  <circle cx="670" cy="490" r="8" fill="#2a9d8f"/>
+  <circle cx="700" cy="490" r="8" fill="#48cae4"/>
+  <circle cx="730" cy="490" r="8" fill="#90be6d"/>
+  <circle cx="760" cy="490" r="8" fill="#f9c74f"/>
+</svg>

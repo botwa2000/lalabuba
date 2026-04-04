@@ -1,0 +1,29 @@
+{
+  "name": "Lalabuba — Free AI Coloring Pages for Kids",
+  "short_name": "Lalabuba",
+  "description": "Type anything and get a free AI-generated coloring page instantly. Color by number, print, or challenge a friend!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fef9ef",
+  "theme_color": "#7c4dff",
+  "orientation": "any",
+  "categories": ["kids", "education", "entertainment", "games"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
