@@ -28,7 +28,8 @@ workflows:
         script: |
           app-store-connect fetch-signing-files com.lalabuba.lalabuba \
             --type IOS_APP_STORE \
-            --create
+            --create \
+            --certificate-key @env:CM_CERTIFICATE_PRIVATE_KEY
 
       - name: Add certificates to keychain
         script: keychain add-certificates
