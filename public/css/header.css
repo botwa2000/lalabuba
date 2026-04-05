@@ -4,6 +4,26 @@
   padding: 12px 0 4px;
 }
 
+.logo-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.05em;
+  justify-content: center;
+}
+
+.logo-mascot {
+  height: clamp(3rem, 10vw, 6rem);
+  width: auto;
+  flex-shrink: 0;
+  mix-blend-mode: multiply;
+  animation: mascotFloat 3s ease-in-out infinite;
+}
+
+@keyframes mascotFloat {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%       { transform: translateY(-10px) rotate(3deg); }
+}
+
 .logo {
   font-family: var(--ff-brand);
   font-size: clamp(3.2rem, 11vw, 6.4rem);
