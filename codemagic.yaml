@@ -14,7 +14,7 @@ workflows:
       vars:
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
-        APP_STORE_APPLE_ID: "YOUR_APP_APPLE_ID"  # ← from App Store Connect → Your App → Apple ID (numeric)
+        APP_STORE_APPLE_ID: "6761691648"
       node: latest
 
     scripts:
