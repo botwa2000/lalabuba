@@ -34,7 +34,26 @@ async function cleanupOldBlobs() {
   }
 }
 
+const ALLOWED_ORIGINS = [
+  "https://lalabuba.com",
+  "http://localhost:3000",
+  "capacitor://localhost",
+  "ionic://localhost",
+];
+
 module.exports = async (req, res) => {
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  }
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed." });
     return;

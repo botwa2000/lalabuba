@@ -145,7 +145,10 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
   }
 
   if (provider === "backend" || provider === "direct") {
-    const response = await fetch("/api/generate-image", {
+    const apiBase = (window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:')
+      ? 'https://lalabuba.com'
+      : '';
+    const response = await fetch(`${apiBase}/api/generate-image`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

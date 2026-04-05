@@ -6,7 +6,8 @@ import { renderGeneratedImage } from './canvas.js';
 import { t } from './i18n.js';
 
 export function buildShareUrl() {
-  const base = window.location.origin + window.location.pathname;
+  const isNative = window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:';
+  const base = isNative ? 'https://lalabuba.com/' : window.location.origin + window.location.pathname;
   const params = new URLSearchParams({
     s:    '1',
     q:    subjectInput.value.trim(),

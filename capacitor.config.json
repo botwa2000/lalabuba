@@ -1,0 +1,9 @@
+{
+  "appId": "com.lalabuba.app",
+  "appName": "Lalabuba",
+  "webDir": "public",
+  "ios": {
+    "contentInset": "automatic",
+    "backgroundColor": "#fef9ef"
+  }
+}
