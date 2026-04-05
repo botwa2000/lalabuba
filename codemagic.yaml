@@ -5,7 +5,7 @@ workflows:
     instance_type: mac_mini_m2
 
     integrations:
-      app_store_connect: codemagic  # ← name of your App Store Connect key in Codemagic
+      app_store_connect: codemagic
 
     environment:
       ios_signing:
@@ -24,7 +24,19 @@ workflows:
       - name: Sync Capacitor web assets
         script: npx cap sync ios
 
-      - name: Set up code signing
+      - name: Set up keychain
+        script: keychain initialize
+
+      - name: Fetch or create signing certificate & provisioning profile
+        script: |
+          app-store-connect fetch-signing-files com.lalabuba.lalabuba \
+            --type IOS_APP_STORE \
+            --create
+
+      - name: Add certificates to keychain
+        script: keychain add-certificates
+
+      - name: Apply signing profiles to Xcode project
         script: xcode-project use-profiles
 
       - name: Build & archive
@@ -53,4 +65,4 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
-        submit_to_app_store: false  # flip to true when ready for full release
+        submit_to_app_store: false
