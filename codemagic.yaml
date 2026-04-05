@@ -8,6 +8,8 @@ workflows:
       app_store_connect: Bonistock ASC
 
     environment:
+      groups:
+        - ios-signing
       vars:
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
