@@ -46,8 +46,6 @@ window.onTurnstileLoad = () => {
   if (!el || state.turnstileWidgetId != null) return;
   state.turnstileWidgetId = window.turnstile.render(el, {
     sitekey: el.dataset.sitekey,
-    execution: 'execute',
-    appearance: 'interaction-only',
     callback: (token) => { state.turnstileToken = token; },
   });
 };
@@ -68,7 +66,6 @@ function getTurnstileToken() {
     const poll = setInterval(() => {
       if (state.turnstileToken) { clearInterval(poll); resolve(state.turnstileToken); }
     }, 100);
-    window.turnstile.execute(state.turnstileWidgetId);
     setTimeout(() => { clearInterval(poll); resolve(null); }, 8000); // timeout fallback
   });
 }
