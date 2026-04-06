@@ -122,6 +122,25 @@
 .lang-flag[data-lang="nl"] { background: linear-gradient(to bottom, #ae1c28 33.3%, #fff 33.3%, #fff 66.7%, #21468b 66.7%); }
 /* Poland: white-red */
 .lang-flag[data-lang="pl"] { background: linear-gradient(to bottom, #fff 50%, #dc143c 50%); }
+/* Turkey: red with white crescent (radial gradient approximation) */
+.lang-flag[data-lang="tr"] {
+  background:
+    radial-gradient(circle at 62% 50%, #e30a17 28%, transparent 28%),
+    radial-gradient(circle at 50% 50%, #fff 32%, #e30a17 32%),
+    #e30a17;
+}
+/* China: red with yellow star */
+.lang-flag[data-lang="zh"] {
+  background:
+    radial-gradient(circle at 28% 38%, #ffde00 18%, transparent 18%),
+    #de2910;
+}
+/* India: saffron-white-green tricolor with navy Ashoka Chakra dot */
+.lang-flag[data-lang="hi"] {
+  background:
+    radial-gradient(circle at 50% 50%, #000080 10%, transparent 10%),
+    linear-gradient(to bottom, #ff9933 33.3%, #fff 33.3%, #fff 66.7%, #138808 66.7%);
+}
 .lang-caret {
   color: var(--muted);
   transition: transform 0.18s;
