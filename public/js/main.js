@@ -40,33 +40,25 @@ function checkCompletion() {
 }
 
 // ─── Turnstile ───────────────────────────────────────────────────────────────
-// Initialize widget once Turnstile script has loaded
-window.onTurnstileLoad = () => {
-  const el = document.getElementById('turnstile-widget');
-  if (!el || state.turnstileWidgetId != null) return;
-  state.turnstileWidgetId = window.turnstile.render(el, {
-    sitekey: el.dataset.sitekey,
-    callback: (token) => { state.turnstileToken = token; },
-  });
-};
-// Hook into the async script load
-document.querySelector('script[src*="turnstile"]')?.addEventListener('load', window.onTurnstileLoad);
+// Auto-render uses data-callback="onTurnstileSuccess" on the widget div.
+// This fires regardless of script/module load order — no manual render needed.
+window.onTurnstileSuccess = (token) => { state.turnstileToken = token; };
 
 function getTurnstileToken() {
-  // Skip in native app or if Turnstile not loaded
   const isNative = window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:';
-  if (isNative || !window.turnstile || state.turnstileWidgetId == null) return Promise.resolve(null);
-
+  if (isNative || !window.turnstile) return Promise.resolve(null);
+  // Token already stored from auto-render callback
+  if (state.turnstileToken) return Promise.resolve(state.turnstileToken);
+  // Token might be available in the widget but callback fired before state was ready
+  const el = document.getElementById('turnstile-widget');
+  const existing = el ? window.turnstile.getResponse(el) : null;
+  if (existing) return Promise.resolve(existing);
+  // Poll — covers the case where user needs to complete a checkbox challenge
   return new Promise((resolve) => {
-    // Already have a fresh token
-    if (state.turnstileToken) { resolve(state.turnstileToken); return; }
-    // Request a new token and wait for callback
-    const orig = window.turnstile.getResponse(state.turnstileWidgetId);
-    if (orig) { resolve(orig); return; }
     const poll = setInterval(() => {
       if (state.turnstileToken) { clearInterval(poll); resolve(state.turnstileToken); }
     }, 100);
-    setTimeout(() => { clearInterval(poll); resolve(null); }, 8000); // timeout fallback
+    setTimeout(() => { clearInterval(poll); resolve(null); }, 10000);
   });
 }
 
@@ -97,9 +89,8 @@ form.addEventListener("submit", async (event) => {
     submitButton.disabled = false;
     // Reset token so next submission gets a fresh one
     state.turnstileToken = null;
-    if (window.turnstile && state.turnstileWidgetId != null) {
-      window.turnstile.reset(state.turnstileWidgetId);
-    }
+    const tsEl = document.getElementById('turnstile-widget');
+    if (window.turnstile && tsEl) window.turnstile.reset(tsEl);
   }
 });
 

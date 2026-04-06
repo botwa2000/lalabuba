@@ -74,6 +74,7 @@ async function verifyTurnstile(token, ip) {
 
 const ALLOWED_ORIGINS = [
   "https://lalabuba.com",
+  "https://www.lalabuba.com",
   "http://localhost:3000",
   "capacitor://localhost",
   "ionic://localhost",
