@@ -34,6 +34,44 @@ async function cleanupOldBlobs() {
   }
 }
 
+// ─── Rate limiting (per serverless instance) ─────────────────────────────────
+const rateLimitMap = new Map();
+const RATE_LIMIT_MAX    = 15;
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    if (rateLimitMap.size > 5000) {
+      for (const [k, v] of rateLimitMap) if (now > v.resetAt) rateLimitMap.delete(k);
+    }
+    return false;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return true;
+  entry.count++;
+  return false;
+}
+
+// ─── Turnstile verification ───────────────────────────────────────────────────
+async function verifyTurnstile(token, ip) {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) return true;          // not configured — skip (dev mode)
+  if (!token) return false;
+  try {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ secret, response: token, remoteip: ip }),
+    });
+    const data = await res.json();
+    return data.success === true;
+  } catch {
+    return true; // if Cloudflare is unreachable, don't block users
+  }
+}
+
 const ALLOWED_ORIGINS = [
   "https://lalabuba.com",
   "http://localhost:3000",
@@ -59,8 +97,25 @@ module.exports = async (req, res) => {
     return;
   }
 
+  // Rate limiting
+  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+  if (isRateLimited(ip)) {
+    res.status(429).json({ error: "Too many requests — please wait a while before trying again." });
+    return;
+  }
+
   try {
     const body = req.body || {};
+
+    // Turnstile verification — skip for native app origins
+    const isNative = origin === 'capacitor://localhost' || origin === 'ionic://localhost';
+    if (!isNative) {
+      const ok = await verifyTurnstile(body.turnstileToken, ip);
+      if (!ok) {
+        res.status(403).json({ error: "Bot check failed — please try again." });
+        return;
+      }
+    }
     const subject    = sanitizeSubject(body.subject);
     const difficulty = ["easy", "medium", "hard", "extreme"].includes(body.difficulty) ? body.difficulty : "medium";
     const size       = ["small", "medium", "large", "xxl"].includes(body.size) ? body.size : "medium";

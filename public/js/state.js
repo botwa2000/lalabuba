@@ -20,4 +20,6 @@ export const state = {
   pencilMode: false,
   pencilDrawing: false,
   customColor: '#e91e63',
+  turnstileToken: null,
+  turnstileWidgetId: null,
 };

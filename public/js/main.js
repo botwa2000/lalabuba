@@ -39,6 +39,40 @@ function checkCompletion() {
   }
 }
 
+// ─── Turnstile ───────────────────────────────────────────────────────────────
+// Initialize widget once Turnstile script has loaded
+window.onTurnstileLoad = () => {
+  const el = document.getElementById('turnstile-widget');
+  if (!el || state.turnstileWidgetId != null) return;
+  state.turnstileWidgetId = window.turnstile.render(el, {
+    sitekey: el.dataset.sitekey,
+    execution: 'execute',
+    appearance: 'interaction-only',
+    callback: (token) => { state.turnstileToken = token; },
+  });
+};
+// Hook into the async script load
+document.querySelector('script[src*="turnstile"]')?.addEventListener('load', window.onTurnstileLoad);
+
+function getTurnstileToken() {
+  // Skip in native app or if Turnstile not loaded
+  const isNative = window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:';
+  if (isNative || !window.turnstile || state.turnstileWidgetId == null) return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+    // Already have a fresh token
+    if (state.turnstileToken) { resolve(state.turnstileToken); return; }
+    // Request a new token and wait for callback
+    const orig = window.turnstile.getResponse(state.turnstileWidgetId);
+    if (orig) { resolve(orig); return; }
+    const poll = setInterval(() => {
+      if (state.turnstileToken) { clearInterval(poll); resolve(state.turnstileToken); }
+    }, 100);
+    window.turnstile.execute(state.turnstileWidgetId);
+    setTimeout(() => { clearInterval(poll); resolve(null); }, 8000); // timeout fallback
+  });
+}
+
 // ─── Form submit ─────────────────────────────────────────────────────────────
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -58,11 +92,17 @@ form.addEventListener("submit", async (event) => {
   submitButton.disabled = true;
 
   try {
+    state.turnstileToken = await getTurnstileToken();
     await generatePage(subject);
   } catch (error) {
     setStatus(error.message || "Something went wrong.", true);
   } finally {
     submitButton.disabled = false;
+    // Reset token so next submission gets a fresh one
+    state.turnstileToken = null;
+    if (window.turnstile && state.turnstileWidgetId != null) {
+      window.turnstile.reset(state.turnstileWidgetId);
+    }
   }
 });
 

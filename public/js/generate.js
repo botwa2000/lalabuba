@@ -158,6 +158,7 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
         seed,
         width:  (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).w,
         height: (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).h,
+        turnstileToken: state.turnstileToken || undefined,
       }),
     });
 
