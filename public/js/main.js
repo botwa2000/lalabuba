@@ -1,6 +1,7 @@
 import { state, DEBUG } from './state.js';
-import { PALETTES, SURPRISE_SUBJECTS, EXAMPLE_SUGGESTIONS } from './data.js';
+import { PALETTES, SURPRISE_SUBJECTS, EXAMPLE_SUGGESTIONS, getDailyChallenge } from './data.js';
 import { sanitizeSubject, isSafeSubject } from './data.js';
+import { saveArtwork, initGalleryHandlers } from './gallery.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
 import {
   form, subjectInput, showNumbersInput, difficultySelect, providerSelect,
@@ -8,7 +9,7 @@ import {
   debugPanel,
 } from './dom.js';
 import {
-  renderGeneratedImage, findRegionAt, fillRegion, hexToRgb, redrawCanvas,
+  renderGeneratedImage, findRegionAt, fillRegion, undoLastFill, hexToRgb, redrawCanvas,
 } from './canvas.js';
 import {
   activePalette, setStatus, renderLegend, setColorCount, showLoading, hideLoading,
@@ -17,6 +18,7 @@ import {
 import { generatePage, requestGeneratedImage } from './generate.js';
 import { initDrawingTool } from './drawing.js';
 import { initShareHandlers, loadFromShare } from './share.js';
+import { initZoom, getCanvasCoords } from './zoom.js';
 
 function formatTime(ms) {
   const s = Math.floor(ms / 1000);
@@ -36,6 +38,14 @@ function checkCompletion() {
     if (timeEl) timeEl.textContent = elapsed > 0 ? t('celebTime', formatTime(elapsed)) : '';
     document.getElementById("celebration").classList.remove("hidden");
     document.getElementById("celebration").setAttribute("aria-hidden", "false");
+    // Auto-save completed artwork to local gallery
+    saveArtwork({
+      subject: subjectInput.value.trim() || '?',
+      difficulty: difficultySelect.value,
+      colorCount: state.colorCount,
+      previewCanvas,
+      drawCanvas,
+    }).then(() => setStatus(t('gallerySaved'))).catch(() => {});
   }
 }
 
@@ -63,6 +73,8 @@ function getTurnstileToken() {
 }
 
 // ─── Form submit ─────────────────────────────────────────────────────────────
+let _pendingSeedOverride = null;
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -82,7 +94,9 @@ form.addEventListener("submit", async (event) => {
 
   try {
     state.turnstileToken = await getTurnstileToken();
-    await generatePage(subject);
+    const seedOverride = _pendingSeedOverride;
+    _pendingSeedOverride = null;
+    await generatePage(subject, seedOverride);
   } catch (error) {
     setStatus(error.message || "Something went wrong.", true);
   } finally {
@@ -146,13 +160,45 @@ difficultySelect.addEventListener("change", () => {
   }
 });
 
+// ─── Undo helpers ─────────────────────────────────────────────────────────────
+const UNDO_MAX = 10;
+const undoButton = document.getElementById('undo-button');
+
+function pushUndo(regionId, fillResult, completedBefore) {
+  if (!fillResult.success) return;
+  state.undoStack.push({ regionId, record: fillResult.record, completedBefore });
+  if (state.undoStack.length > UNDO_MAX) state.undoStack.shift();
+  if (undoButton) undoButton.disabled = false;
+}
+
+function doUndo() {
+  if (!state.undoStack.length) return;
+  undoLastFill();
+  if (undoButton) undoButton.disabled = state.undoStack.length === 0;
+  setStatus(t('undoBtn'));
+  updateUndoBtn();
+}
+
+function updateUndoBtn() {
+  if (undoButton) undoButton.disabled = state.undoStack.length === 0;
+}
+
+if (undoButton) undoButton.addEventListener('click', doUndo);
+
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    doUndo();
+  }
+});
+
 // ─── Canvas click ─────────────────────────────────────────────────────────────
+let _lastClickMs = 0, _lastClickId = 0;
+
 previewCanvas.addEventListener("click", (event) => {
   if (!state.regionMap) return;
 
-  const rect = previewCanvas.getBoundingClientRect();
-  const canvasX = Math.floor((event.clientX - rect.left) * (previewCanvas.width / rect.width));
-  const canvasY = Math.floor((event.clientY - rect.top) * (previewCanvas.height / rect.height));
+  const { x: canvasX, y: canvasY } = getCanvasCoords(event);
 
   const regionId = findRegionAt(canvasX, canvasY);
 
@@ -176,24 +222,36 @@ previewCanvas.addEventListener("click", (event) => {
     if (pixels) {
       const paint = state.paintedImageData.data;
       const base  = state.baseImageData.data;
+      // Record undo entry for erase too
+      const undoEntries = [];
       for (const idx of pixels) {
         const o = idx * 4;
+        undoEntries.push(idx, paint[o], paint[o+1], paint[o+2], paint[o+3]);
         paint[o] = base[o]; paint[o+1] = base[o+1]; paint[o+2] = base[o+2]; paint[o+3] = base[o+3];
       }
+      const completedBefore = state.completedRegions.has(regionId);
       state.completedRegions.delete(regionId);
       state.celebrationShown = false;
       redrawCanvas();
       setStatus(t('areaCleared'));
+      // Pack erase as undo record
+      const count = undoEntries.length / 5;
+      const record = new Uint8Array(count * 7);
+      for (let i = 0, b = 0; i < undoEntries.length; i += 5, b += 7) {
+        const idx = undoEntries[i];
+        record[b] = idx & 0xff; record[b+1] = (idx>>8)&0xff; record[b+2] = (idx>>16)&0xff;
+        record[b+3] = undoEntries[i+1]; record[b+4] = undoEntries[i+2];
+        record[b+5] = undoEntries[i+3]; record[b+6] = undoEntries[i+4];
+      }
+      pushUndo(regionId, { success: true, record }, completedBefore);
     }
     return;
   }
 
   let fillColor;
   if (state.selectedPaletteIndex === -1) {
-    // Custom color — no constraint enforced, fills freely.
     fillColor = hexToRgb(state.customColor);
   } else {
-    // Color-constraint: when numbers are shown, enforce the assigned palette color.
     if (showNumbersInput.checked && state.regionColorMap && state.regionColorMap.has(regionId)) {
       const required = state.regionColorMap.get(regionId);
       if (state.selectedPaletteIndex !== required) {
@@ -203,16 +261,49 @@ previewCanvas.addEventListener("click", (event) => {
         return;
       }
     }
-    const palette = activePalette();
-    fillColor = hexToRgb(palette[state.selectedPaletteIndex].color);
+    fillColor = hexToRgb(activePalette()[state.selectedPaletteIndex].color);
+  }
+
+  // ── Double-click/tap: fill ALL regions of the same color number ──────────
+  const now = Date.now();
+  const isDouble = (now - _lastClickMs) < 400 && _lastClickId === regionId;
+  _lastClickMs = now; _lastClickId = regionId;
+
+  if (isDouble && showNumbersInput.checked && state.regionColorMap?.has(regionId)) {
+    const colorNum = state.regionColorMap.get(regionId);
+    const batchRecords = [];
+    if (!state.coloringStartTime) state.coloringStartTime = Date.now();
+    for (const [rid, num] of state.regionColorMap) {
+      if (num === colorNum && !state.completedRegions.has(rid)) {
+        const completedBefore = state.completedRegions.has(rid);
+        state.completedRegions.add(rid);
+        const result = fillRegion(rid, fillColor);
+        if (result.success) batchRecords.push({ regionId: rid, record: result.record, completedBefore });
+      }
+    }
+    if (batchRecords.length) {
+      // Push as a single batch entry (array of records) — undo reverts all at once
+      state.undoStack.push({ batch: batchRecords });
+      if (state.undoStack.length > UNDO_MAX) state.undoStack.shift();
+      updateUndoBtn();
+    }
+    const label = activePalette()[colorNum]?.label ?? '';
+    const total = state.regionColorMap.size;
+    const done = [...state.regionColorMap.keys()].filter(id => state.completedRegions.has(id)).length;
+    setStatus(done < total ? t('filledProgress', label, done, total) : t('filled', label));
+    checkCompletion();
+    const hint = document.getElementById('coloring-hint');
+    if (hint) hint.hidden = true;
+    return;
   }
 
   if (!state.coloringStartTime) state.coloringStartTime = Date.now();
+  const completedBefore = state.completedRegions.has(regionId);
   state.completedRegions.add(regionId);
-  fillRegion(regionId, fillColor);
-  const label = state.selectedPaletteIndex === -1 ? t('customColorLabel') : activePalette()[state.selectedPaletteIndex].label;
+  const fillResult = fillRegion(regionId, fillColor);
+  pushUndo(regionId, fillResult, completedBefore);
 
-  // Show progress counter when in numbers mode
+  const label = state.selectedPaletteIndex === -1 ? t('customColorLabel') : activePalette()[state.selectedPaletteIndex].label;
   if (showNumbersInput.checked && state.regionColorMap && state.regionColorMap.size > 0) {
     const total = state.regionColorMap.size;
     const done = [...state.regionColorMap.keys()].filter(id => state.completedRegions.has(id)).length;
@@ -221,7 +312,6 @@ previewCanvas.addEventListener("click", (event) => {
     setStatus(t('filled', label));
   }
   checkCompletion();
-  // Hide coloring hint on first successful fill
   const hint = document.getElementById('coloring-hint');
   if (hint) hint.hidden = true;
 });
@@ -248,6 +338,45 @@ downloadButton.addEventListener("click", () => {
   link.download = `${subjectInput.value.trim().replace(/\s+/g, "-").toLowerCase() || "coloring-page"}.png`;
   link.click();
 });
+
+// ─── Share artwork button ─────────────────────────────────────────────────────
+const shareArtworkBtn = document.getElementById('share-artwork-btn');
+if (shareArtworkBtn) {
+  shareArtworkBtn.addEventListener('click', async () => {
+    if (!state.currentImage) return;
+
+    const tmp = document.createElement('canvas');
+    tmp.width  = previewCanvas.width;
+    tmp.height = previewCanvas.height;
+    const ctx  = tmp.getContext('2d');
+    ctx.drawImage(previewCanvas, 0, 0);
+    ctx.drawImage(drawCanvas, 0, 0);
+
+    const subject  = subjectInput.value.trim().replace(/\s+/g, '-').toLowerCase() || 'coloring-page';
+    const filename = `${subject}.png`;
+
+    // Try Web Share API (mobile)
+    if (navigator.share && navigator.canShare) {
+      try {
+        const blob = await new Promise(r => tmp.toBlob(r, 'image/png'));
+        const file = new File([blob], filename, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Lalabuba — my coloring', text: '🎨 Look what I colored!' });
+          return;
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') { /* fall through to download */ }
+        else return;
+      }
+    }
+
+    // Desktop fallback: download PNG
+    const link    = document.createElement('a');
+    link.href     = tmp.toDataURL('image/png');
+    link.download = filename;
+    link.click();
+  });
+}
 
 // ─── Celebration buttons ─────────────────────────────────────────────────────
 document.getElementById("celebration-keep").addEventListener("click", () => {
@@ -349,6 +478,10 @@ document.querySelectorAll('.lang-option').forEach(btn => {
 // ─── Drawing tool ─────────────────────────────────────────────────────────────
 initDrawingTool();
 
+// ─── Zoom ─────────────────────────────────────────────────────────────────────
+const canvasFrame = document.querySelector('.canvas-frame');
+if (canvasFrame) initZoom(canvasFrame, previewCanvas);
+
 // ─── Share handlers ───────────────────────────────────────────────────────────
 initShareHandlers();
 
@@ -385,6 +518,20 @@ if (challengeShareBtn) {
   });
 }
 
+// ─── Daily word button ────────────────────────────────────────────────────────
+const dailyWordBtn = document.getElementById('daily-word-btn');
+const dailyWordValue = document.getElementById('daily-word-value');
+const { word: dailyWord, seed: dailySeed } = getDailyChallenge();
+if (dailyWordBtn && dailyWordValue) {
+  dailyWordValue.textContent = dailyWord;
+  dailyWordBtn.hidden = false;
+  dailyWordBtn.addEventListener('click', () => {
+    subjectInput.value = dailyWord;
+    _pendingSeedOverride = dailySeed;
+    form.requestSubmit();
+  });
+}
+
 // ─── Initialization ───────────────────────────────────────────────────────────
 
 // Hide debug-only elements in production
@@ -397,6 +544,7 @@ if (!DEBUG) {
 renderLegend();
 applyTranslations();
 loadFromShare();
+initGalleryHandlers();
 
 // ─── Hero suggestion cards ────────────────────────────────────────────────────
 const CARD_GRADIENTS = [

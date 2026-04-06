@@ -380,9 +380,11 @@ export function precomputeRegions() {
 // After filling the region, bleed 2 pixels outward into the anti-aliased
 // edge zone (pixels that are gray but not truly black) so there is no white
 // fringe between the fill colour and the black outline.
+// Returns { success: true, record } where record is a Uint8Array encoding
+// every touched pixel's previous RGBA so it can be undone.
 export function fillRegion(regionId, fillColor) {
   const pixels = state.regionPixels.get(regionId);
-  if (!pixels) return false;
+  if (!pixels) return { success: false };
 
   const paint = state.paintedImageData.data;
   const base  = state.baseImageData.data;   // brightness source — unaffected by fills
@@ -392,28 +394,37 @@ export function fillRegion(regionId, fillColor) {
 
   // Track which pixels have been painted in this call to avoid double-work.
   const painted = new Uint8Array(n);
+  // Record touched pixels for undo: [idx_lo, idx_hi, prevR, prevG, prevB, prevA, ...]
+  // idx stored as two Uint16 bytes (little-endian) — max pixel index 1024*1024 = 1M < 2^20, fits in 3 bytes
+  // Simpler: store as Float32 index + 4 bytes RGBA in a growing array, then compact.
+  const undoEntries = []; // each entry: [pixelIndex, prevR, prevG, prevB, prevA]
 
-  for (const idx of pixels) {
+  function paintPixel(idx) {
+    if (painted[idx]) return;
     const o = idx * 4;
-    paint[o] = r; paint[o + 1] = g; paint[o + 2] = b; paint[o + 3] = 255;
+    undoEntries.push(idx, paint[o], paint[o+1], paint[o+2], paint[o+3]);
+    paint[o] = r; paint[o+1] = g; paint[o+2] = b; paint[o+3] = 255;
     painted[idx] = 1;
   }
 
+  for (const idx of pixels) paintPixel(idx);
+
   // 2-pass dilation into adjacent non-black pixels.
-  // MIN_BR = 50 — truly black outline pixels are left untouched;
-  // anti-aliased gray pixels (br 50-BARRIER_BR) are painted to eliminate the fringe.
-  // Black outlines (typically 4-10 px wide) stop the bleed from crossing into
-  // neighbouring regions even with 2 passes.
   const MIN_BR = 50;
   let frontier = pixels;
   for (let pass = 0; pass < 2; pass++) {
     const next = [];
     for (const idx of frontier) {
       const x = idx % width, y = (idx / width) | 0;
-      if (x > 0)          { const ni = idx - 1;     if (!painted[ni]) { const o=ni*4; const br=(base[o]+base[o+1]+base[o+2])/3; if(br>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; next.push(ni); } } }
-      if (x < width - 1)  { const ni = idx + 1;     if (!painted[ni]) { const o=ni*4; const br=(base[o]+base[o+1]+base[o+2])/3; if(br>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; next.push(ni); } } }
-      if (y > 0)          { const ni = idx - width; if (!painted[ni]) { const o=ni*4; const br=(base[o]+base[o+1]+base[o+2])/3; if(br>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; next.push(ni); } } }
-      if (y < height - 1) { const ni = idx + width; if (!painted[ni]) { const o=ni*4; const br=(base[o]+base[o+1]+base[o+2])/3; if(br>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; next.push(ni); } } }
+      const tryBleed = (ni) => {
+        if (painted[ni]) return;
+        const o = ni*4; const br=(base[o]+base[o+1]+base[o+2])/3;
+        if (br > MIN_BR) { paintPixel(ni); next.push(ni); }
+      };
+      if (x > 0)          tryBleed(idx - 1);
+      if (x < width - 1)  tryBleed(idx + 1);
+      if (y > 0)          tryBleed(idx - width);
+      if (y < height - 1) tryBleed(idx + width);
     }
     frontier = next;
   }
@@ -425,35 +436,87 @@ export function fillRegion(regionId, fillColor) {
   // to a different positive-label region, so the flood cannot cross outlines into the
   // outer background or adjacent colourable regions.
   if (state.regionMap) {
-    // Can the orphan BFS absorb pixel ni? True for barrier pixels (label < 1)
-    // AND small non-numbered regions (< 500 px, not in regionColorMap).
     const absorbable = (ni) => {
       const lbl = state.regionMap[ni];
       if (lbl < 1) return true;
       const rpx = state.regionPixels?.get(lbl);
       return rpx && rpx.length < 500 && !state.regionColorMap?.has(lbl);
     };
-
+    const tryOrphan = (ni) => {
+      if (painted[ni] || !absorbable(ni)) return null;
+      const o = ni*4;
+      if ((base[o]+base[o+1]+base[o+2])/3 > MIN_BR) { paintPixel(ni); return ni; }
+      return null;
+    };
     const orphanQ = [];
-    // Seed from both original region pixels AND fringe-bleed frontier
     for (const list of [pixels, frontier]) for (const idx of list) {
       const x = idx % width, y = (idx / width) | 0;
-      if (x > 0)          { const ni=idx-1;     if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (x < width - 1)  { const ni=idx+1;     if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (y > 0)          { const ni=idx-width; if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (y < height - 1) { const ni=idx+width; if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (x > 0)          { const ni=tryOrphan(idx-1);     if(ni!=null) orphanQ.push(ni); }
+      if (x < width - 1)  { const ni=tryOrphan(idx+1);     if(ni!=null) orphanQ.push(ni); }
+      if (y > 0)          { const ni=tryOrphan(idx-width);  if(ni!=null) orphanQ.push(ni); }
+      if (y < height - 1) { const ni=tryOrphan(idx+width);  if(ni!=null) orphanQ.push(ni); }
     }
     let qi = 0;
     while (qi < orphanQ.length) {
       const idx = orphanQ[qi++];
       const x = idx % width, y = (idx / width) | 0;
-      if (x > 0)          { const ni=idx-1;     if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (x < width - 1)  { const ni=idx+1;     if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (y > 0)          { const ni=idx-width; if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
-      if (y < height - 1) { const ni=idx+width; if (!painted[ni] && absorbable(ni)) { const o=ni*4; if((base[o]+base[o+1]+base[o+2])/3>MIN_BR){ paint[o]=r;paint[o+1]=g;paint[o+2]=b;paint[o+3]=255; painted[ni]=1; orphanQ.push(ni); } } }
+      if (x > 0)          { const ni=tryOrphan(idx-1);     if(ni!=null) orphanQ.push(ni); }
+      if (x < width - 1)  { const ni=tryOrphan(idx+1);     if(ni!=null) orphanQ.push(ni); }
+      if (y > 0)          { const ni=tryOrphan(idx-width);  if(ni!=null) orphanQ.push(ni); }
+      if (y < height - 1) { const ni=tryOrphan(idx+width);  if(ni!=null) orphanQ.push(ni); }
     }
   }
 
+  redrawCanvas();
+  // Pack undo record: [pixelIndex(4B LE), r, g, b, a] per touched pixel
+  const record = new Uint8Array(undoEntries.length);
+  for (let i = 0; i < undoEntries.length; i++) record[i] = undoEntries[i] & 0xff;
+  // Store pixel indices as 4-byte groups (entries are [idx, r, g, b, a] groups of 5)
+  return { success: true, record: packUndoRecord(undoEntries) };
+}
+
+// Pack [idx, r, g, b, a, idx, r, g, b, a, ...] into compact Uint8Array
+// idx stored as 3 bytes LE (max 1024*1024 = 1048576 < 16M)
+function packUndoRecord(entries) {
+  const count = entries.length / 5;
+  const buf = new Uint8Array(count * 7); // 3 bytes idx + 4 bytes RGBA
+  for (let i = 0, b = 0; i < entries.length; i += 5, b += 7) {
+    const idx = entries[i];
+    buf[b]   = idx & 0xff;
+    buf[b+1] = (idx >> 8) & 0xff;
+    buf[b+2] = (idx >> 16) & 0xff;
+    buf[b+3] = entries[i+1]; // prevR
+    buf[b+4] = entries[i+2]; // prevG
+    buf[b+5] = entries[i+3]; // prevB
+    buf[b+6] = entries[i+4]; // prevA
+  }
+  return buf;
+}
+
+// Undo the last fill (or batch fill) by restoring pixel colors from packed records.
+export function undoLastFill() {
+  const entry = state.undoStack.pop();
+  if (!entry) return false;
+  const paint = state.paintedImageData.data;
+
+  function applyRecord({ record, regionId, completedBefore }) {
+    for (let b = 0; b < record.length; b += 7) {
+      const idx = record[b] | (record[b+1] << 8) | (record[b+2] << 16);
+      const o = idx * 4;
+      paint[o]   = record[b+3];
+      paint[o+1] = record[b+4];
+      paint[o+2] = record[b+5];
+      paint[o+3] = record[b+6];
+    }
+    if (!completedBefore) state.completedRegions.delete(regionId);
+  }
+
+  if (entry.batch) {
+    for (const r of entry.batch) applyRecord(r);
+  } else {
+    applyRecord(entry);
+  }
+  state.celebrationShown = false;
   redrawCanvas();
   return true;
 }
@@ -585,4 +648,6 @@ export async function renderGeneratedImage(imageBase64) {
   downloadButton.disabled = false;
   const shareButton = document.getElementById('share-button');
   if (shareButton) shareButton.disabled = false;
+  const shareArtworkBtn = document.getElementById('share-artwork-btn');
+  if (shareArtworkBtn) shareArtworkBtn.disabled = false;
 }

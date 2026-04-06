@@ -237,6 +237,27 @@ export function buildMaxPalette() {
   return colors; // 16 × 16 = 256
 }
 
+// ─── Daily Word Challenge ──────────────────────────────────────────────────────
+export const DAILY_WORDS = [
+  "butterfly","dragon","castle","rocket ship","cat","unicorn","dinosaur","elephant","robot","mermaid",
+  "pirate","wizard","fairy","knight","princess","phoenix","tiger","panda","koala","giraffe",
+  "penguin","dolphin","turtle","fox","bear","lion","owl","parrot","octopus","seahorse",
+  "treehouse","submarine","spaceship","lighthouse","hot air balloon","train","fire truck","pirate ship","igloo","windmill",
+  "rainbow","waterfall","volcano","iceberg","cave","garden","jungle","desert","snowflake","tornado",
+  "birthday cake","ice cream sundae","pizza","cookie","cupcake","lollipop","donut","sandwich","popcorn","sushi",
+  "teddy bear","kite","bicycle","skateboard","guitar","drum kit","telescope","microscope","camera","crown",
+  "bunny","hamster","puppy","kitten","goldfish","frog","snail","ladybug","bee","firefly",
+  "superhero","astronaut","chef","firefighter","explorer","inventor","time traveler","ninja","cowboy","detective",
+  "magic wand","treasure chest","map","compass","lantern","hourglass","crystal ball","flying carpet","magic lamp","portal",
+];
+
+export function getDailyChallenge() {
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  const word = DAILY_WORDS[dayIndex % DAILY_WORDS.length];
+  const seed = (dayIndex * 1000003) % 2147483647;
+  return { word, seed };
+}
+
 export function buildPrompt(subject, difficulty = "medium", size = "medium") {
   const base = [
     "every outline is a fully closed loop",

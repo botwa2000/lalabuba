@@ -72,21 +72,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=6" />
-  <link rel="stylesheet" href="/css/header.css?v=6" />
-  <link rel="stylesheet" href="/css/hero.css?v=6" />
-  <link rel="stylesheet" href="/css/generator.css?v=6" />
-  <link rel="stylesheet" href="/css/workspace.css?v=6" />
-  <link rel="stylesheet" href="/css/palette.css?v=6" />
-  <link rel="stylesheet" href="/css/modals.css?v=6" />
-  <link rel="stylesheet" href="/css/footer.css?v=6" />
-  <link rel="stylesheet" href="/css/print.css?v=6" />
+  <link rel="stylesheet" href="/css/tokens.css?v=7" />
+  <link rel="stylesheet" href="/css/header.css?v=7" />
+  <link rel="stylesheet" href="/css/hero.css?v=7" />
+  <link rel="stylesheet" href="/css/generator.css?v=7" />
+  <link rel="stylesheet" href="/css/workspace.css?v=7" />
+  <link rel="stylesheet" href="/css/palette.css?v=7" />
+  <link rel="stylesheet" href="/css/modals.css?v=7" />
+  <link rel="stylesheet" href="/css/footer.css?v=7" />
+  <link rel="stylesheet" href="/css/print.css?v=7" />
 </head>
 <body>
   <div class="app">
 
     <header class="site-header">
       <div class="lang-picker">
+        <button id="gallery-btn" class="gallery-header-btn" type="button" data-i18n="galleryBtn" aria-label="Gallery">🖼️ Gallery</button>
         <button id="lang-toggle" class="lang-toggle-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose language">
           <span class="lang-flag" id="lang-current-flag" data-lang="en"></span>
           <span id="lang-current-code">EN</span>
@@ -120,6 +121,11 @@
       <!-- ─── Hero: tagline + random suggestion cards (populated by JS) ────── -->
       <section class="hero-section">
         <p class="hero-tagline" data-i18n="tagline">Draw it · Color it · Love it 🌈</p>
+        <button id="daily-word-btn" class="daily-word-pill" type="button" hidden>
+          <span class="daily-word-label" data-i18n="dailyWord">Today's word</span>
+          <span>·</span>
+          <span id="daily-word-value" class="daily-word-value"></span>
+        </button>
         <div id="examples-grid" class="examples-grid"></div>
         <button id="shuffle-cards-btn" class="shuffle-cards-btn" type="button" aria-label="Shuffle suggestions">🎲</button>
       </section>
@@ -235,10 +241,12 @@
           </div>
 
           <div class="canvas-actions">
+            <button id="undo-button"         type="button" disabled class="action-btn" data-i18n="undoBtn">↩ Undo</button>
             <button id="pencil-button"       type="button" disabled class="action-btn" data-i18n="pencilBtn">✏️ Draw</button>
             <button id="clear-pencil-button" type="button" disabled class="action-btn" data-i18n="clearPencilBtn">🗑️ Clear</button>
             <button id="print-button"        type="button" disabled class="action-btn" data-i18n="printBtn">🖨️ Print</button>
             <button id="download-button"     type="button" disabled class="action-btn" data-i18n="saveBtn">💾 Save</button>
+            <button id="share-artwork-btn"   type="button" disabled class="action-btn" data-i18n="shareArtBtn">🖼️ Share art</button>
             <button id="share-button"        type="button" disabled class="action-btn share-action-btn" data-i18n="shareBtn">🏆 Challenge!</button>
           </div>
 
@@ -325,6 +333,22 @@
     </div>
   </div>
 
+  <!-- Gallery modal -->
+  <div id="gallery-modal" class="gallery-modal hidden" aria-hidden="true">
+    <div class="gallery-modal-card">
+      <div class="gallery-header">
+        <h3 data-i18n="galleryTitle">My Gallery</h3>
+        <button id="close-gallery-modal" class="gallery-close" aria-label="Close">✕</button>
+      </div>
+      <div id="gallery-grid" class="gallery-grid"></div>
+    </div>
+  </div>
+
+  <!-- Gallery lightbox -->
+  <div id="gallery-lightbox" class="gallery-lightbox hidden" aria-hidden="true">
+    <img class="lightbox-img" src="" alt="" />
+  </div>
+
   <!-- Cloudflare Turnstile (managed bot protection) -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <div id="turnstile-widget"
@@ -333,6 +357,6 @@
        data-callback="onTurnstileSuccess">
   </div>
 
-  <script type="module" src="/js/main.js?v=6"></script>
+  <script type="module" src="/js/main.js?v=7"></script>
 </body>
 </html>

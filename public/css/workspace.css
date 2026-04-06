@@ -60,6 +60,8 @@
   max-width: 100%;
   line-height: 0;
   margin: 0 auto;
+  touch-action: none;
+  overflow: visible;
 }
 #preview-canvas {
   display: block;

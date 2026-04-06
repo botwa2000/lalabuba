@@ -102,6 +102,10 @@ export async function generatePage(subject, seedOverride = null) {
   try {
     const imageUrl = await requestGeneratedImage(subject, difficulty, seedOverride);
     await renderGeneratedImage(imageUrl);
+    // Clear undo stack for new image
+    state.undoStack = [];
+    const undoBtn = document.getElementById('undo-button');
+    if (undoBtn) undoBtn.disabled = true;
     setStatus(t('done'));
     // Show coloring hint and challenge strip
     const coloringHint = document.getElementById('coloring-hint');

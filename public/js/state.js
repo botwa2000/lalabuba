@@ -22,4 +22,5 @@ export const state = {
   customColor: '#e91e63',
   turnstileToken: null,
   turnstileWidgetId: null,
+  undoStack: [],        // [{regionId, record: Uint8Array, completedBefore: boolean}]
 };
