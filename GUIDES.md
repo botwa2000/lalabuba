@@ -18,7 +18,7 @@ Support URL: https://lalabuba.com
 
 **Promotional Text (136 chars):**
 ```
-Type any word → get a unique AI coloring page in seconds. Free! Daily challenge, personal gallery, challenge friends via QR code.
+Type any word > get a unique AI coloring page in seconds. Free! Daily challenge, personal gallery, challenge friends via QR code.
 ```
 
 **Keywords (93 chars):**
@@ -33,9 +33,9 @@ Lalabuba turns any word into a color-by-number coloring page in seconds - comple
 Simply type any subject - a dragon, a unicorn, a castle, a butterfly - and our AI instantly creates a custom coloring page just for you.
 
 HOW IT WORKS
-✏️ Type anything you want to draw
+✏ Type anything you want to draw
 🎨 Tap numbered regions and fill them with color
-🖨️ Print your masterpiece or save it to your camera roll
+🖨 Print your masterpiece or save it to your camera roll
 🏆 Challenge a friend - share the same picture and race to finish first!
 
 FEATURES
@@ -61,7 +61,7 @@ Perfect for kids ages 3-12 and creative people of all ages!
 
 **Promotional Text (141 chars):**
 ```
-Gib ein Wort ein → sofort eine einzigartige KI-Malseite. Kostenlos! Tägliche Herausforderung, Galerie und Freunde-Challenge per QR-Code.
+Gib ein Wort ein > sofort eine einzigartige KI-Malseite. Kostenlos! Tägliche Herausforderung, Galerie und Freunde-Challenge per QR-Code.
 ```
 
 **Keywords (81 chars):**
@@ -76,9 +76,9 @@ Lalabuba verwandelt jedes Wort in eine Malen-nach-Zahlen-Seite - kostenlos und s
 Gib einfach ein Thema ein - einen Drachen, ein Einhorn, ein Schloss, einen Schmetterling - und unsere KI erstellt sofort eine individuelle Malseite für dich.
 
 SO FUNKTIONIERT ES
-✏️ Tippe ein, was du zeichnen möchtest
+✏ Tippe ein, was du zeichnen möchtest
 🎨 Tippe auf nummerierte Felder und fülle sie mit Farbe
-🖨️ Drucke dein Kunstwerk aus oder speichere es als Bild
+🖨 Drucke dein Kunstwerk aus oder speichere es als Bild
 🏆 Fordere einen Freund heraus - teile das gleiche Bild und wer malt zuerst fertig?
 
 FUNKTIONEN
@@ -104,7 +104,7 @@ Perfekt für Kinder von 3-12 Jahren und kreative Menschen jeden Alters!
 
 **Promotional Text (134 chars):**
 ```
-Введи слово → мгновенно получи уникальную раскраску. Бесплатно! Ежедневное задание, личная галерея и соревнование с другом по QR-коду.
+Введи слово > мгновенно получи уникальную раскраску. Бесплатно! Ежедневное задание, личная галерея и соревнование с другом по QR-коду.
 ```
 
 **Keywords (80 chars):**
@@ -119,9 +119,9 @@ Lalabuba превращает любое слово в раскраску по �
 Просто введи любую тему - дракон, единорог, замок, бабочка - и наш ИИ мгновенно создаст уникальную раскраску специально для тебя.
 
 КАК ЭТО РАБОТАЕТ
-✏️ Введи что угодно - любую тему
+✏ Введи что угодно - любую тему
 🎨 Нажимай на пронумерованные области и закрашивай их
-🖨️ Распечатай шедевр или сохрани как изображение
+🖨 Распечатай шедевр или сохрани как изображение
 🏆 Соревнуйся с другом - поделись картинкой и кто первым закрасит?
 
 ВОЗМОЖНОСТИ
@@ -147,7 +147,7 @@ Lalabuba превращает любое слово в раскраску по �
 
 **Promotional Text (141 chars):**
 ```
-Tape un mot → une page de coloriage IA unique en secondes. Gratuit ! Défi quotidien, galerie perso et compétition avec amis par QR code.
+Tape un mot > une page de coloriage IA unique en secondes. Gratuit ! Défi quotidien, galerie perso et compétition avec amis par QR code.
 ```
 
 **Keywords (78 chars):**
@@ -162,9 +162,9 @@ Lalabuba transforme n'importe quel mot en page de coloriage numérotée en quelq
 Tape simplement n'importe quel sujet - un dragon, une licorne, un château, un papillon - et notre IA crée instantanément une page de coloriage personnalisée rien que pour toi.
 
 COMMENT ÇA MARCHE
-✏️ Tape ce que tu veux dessiner
+✏ Tape ce que tu veux dessiner
 🎨 Appuie sur les zones numérotées et remplis-les de couleur
-🖨️ Imprime ton chef-d'œuvre ou sauvegarde-le
+🖨 Imprime ton chef-d'œuvre ou sauvegarde-le
 🏆 Défie un ami - partagez la même image et voyez qui finit en premier !
 
 FONCTIONNALITÉS
@@ -190,7 +190,7 @@ Parfait pour les enfants de 3 à 12 ans et les personnes créatives de tout âge
 
 **Promotional Text (137 chars):**
 ```
-¡Escribe una palabra → lámina IA única al instante. Gratis! Reto diario, galería personal y desafía a amigos con un código QR.
+¡Escribe una palabra > lámina IA única al instante. Gratis! Reto diario, galería personal y desafía a amigos con un código QR.
 ```
 
 **Keywords (79 chars):**
@@ -205,9 +205,9 @@ dibujo,número,unicornio,dragón,castillo,mariposa,imprimir,creativo,niño,pintu
 Escribe cualquier tema - un dragón, un unicornio, un castillo, una mariposa - y nuestra IA crea al instante una lámina personalizada solo para ti.
 
 CÓMO FUNCIONA
-✏️ Escribe lo que quieres dibujar
+✏ Escribe lo que quieres dibujar
 🎨 Toca las zonas numeradas y rellénalas de color
-🖨️ Imprime tu obra maestra o guárdala como imagen
+🖨 Imprime tu obra maestra o guárdala como imagen
 🏆 Reta a un amigo - compartid la misma imagen y ¿quién termina primero?
 
 CARACTERÍSTICAS
@@ -233,7 +233,7 @@ CARACTERÍSTICAS
 
 **Promotional Text (132 chars):**
 ```
-Escreve uma palavra → obtém uma página IA única em segundos. Grátis! Desafio diário, galeria e desafia amigos com código QR.
+Escreve uma palavra > obtém uma página IA única em segundos. Grátis! Desafio diário, galeria e desafia amigos com código QR.
 ```
 
 **Keywords (82 chars):**
@@ -248,9 +248,9 @@ O Lalabuba transforma qualquer palavra numa página para colorir por números em
 Escreve qualquer tema - um dragão, um unicórnio, um castelo, uma borboleta - e a nossa IA cria instantaneamente uma página personalizada só para ti.
 
 COMO FUNCIONA
-✏️ Escreve o que queres desenhar
+✏ Escreve o que queres desenhar
 🎨 Toca nas zonas numeradas e preenche-as com cor
-🖨️ Imprime a tua obra-prima ou guarda-a como imagem
+🖨 Imprime a tua obra-prima ou guarda-a como imagem
 🏆 Desafia um amigo - partilha a mesma imagem e vê quem termina primeiro!
 
 FUNCIONALIDADES
@@ -276,7 +276,7 @@ Perfeito para crianças dos 3 aos 12 anos e pessoas criativas de todas as idades
 
 **Promotional Text (138 chars):**
 ```
-Scrivi una parola → pagina da colorare IA unica in secondi. Gratis! Sfida quotidiana, galleria personale e sfida amici via QR code.
+Scrivi una parola > pagina da colorare IA unica in secondi. Gratis! Sfida quotidiana, galleria personale e sfida amici via QR code.
 ```
 
 **Keywords (80 chars):**
@@ -291,9 +291,9 @@ Lalabuba trasforma qualsiasi parola in una pagina da colorare per numeri in poch
 Inserisci qualsiasi soggetto - un drago, un unicorno, un castello, una farfalla - e la nostra IA crea istantaneamente una pagina personalizzata solo per te.
 
 COME FUNZIONA
-✏️ Inserisci quello che vuoi disegnare
+✏ Inserisci quello che vuoi disegnare
 🎨 Tocca le zone numerate e riempile di colore
-🖨️ Stampa il tuo capolavoro o salvalo come immagine
+🖨 Stampa il tuo capolavoro o salvalo come immagine
 🏆 Sfida un amico - condividete la stessa immagine e gareggiate a chi finisce prima!
 
 CARATTERISTICHE
@@ -319,7 +319,7 @@ Perfetto per bambini dai 3 ai 12 anni e per persone creative di tutte le età!
 
 **Promotional Text (140 chars):**
 ```
-Typ een woord → direct een unieke AI-kleurplaat. Gratis! Dagelijkse uitdaging, persoonlijke galerij en daag vrienden uit via QR-code.
+Typ een woord > direct een unieke AI-kleurplaat. Gratis! Dagelijkse uitdaging, persoonlijke galerij en daag vrienden uit via QR-code.
 ```
 
 **Keywords (81 chars):**
@@ -334,9 +334,9 @@ Lalabuba verandert elk woord in een kleurplaat op nummer in seconden - volledig 
 Typ gewoon een onderwerp - een draak, een eenhoorn, een kasteel, een vlinder - en onze AI maakt direct een gepersonaliseerde kleurplaat speciaal voor jou.
 
 HOE HET WERKT
-✏️ Typ wat je wilt tekenen
+✏ Typ wat je wilt tekenen
 🎨 Tik op genummerde gebieden en vul ze met kleur
-🖨️ Druk je meesterwerk af of sla het op als afbeelding
+🖨 Druk je meesterwerk af of sla het op als afbeelding
 🏆 Daag een vriend uit - deel dezelfde afbeelding en wie is er als eerste klaar?
 
 FUNCTIES
@@ -362,7 +362,7 @@ Ideaal voor kinderen van 3 tot 12 jaar en creatieve mensen van alle leeftijden!
 
 **Promotional Text (139 chars):**
 ```
-Wpisz słowo → unikalna kolorowanka AI w sekundy. Bezpłatnie! Dzienne wyzwanie, galeria i rywalizacja z przyjaciółmi przez kod QR.
+Wpisz słowo > unikalna kolorowanka AI w sekundy. Bezpłatnie! Dzienne wyzwanie, galeria i rywalizacja z przyjaciółmi przez kod QR.
 ```
 
 **Keywords (76 chars):**
@@ -377,9 +377,9 @@ Lalabuba zamienia każde słowo w kolorowankę według numerów w kilka sekund -
 Wpisz dowolny temat - smok, jednorożec, zamek, motyl - a nasza sztuczna inteligencja natychmiast stworzy dla Ciebie spersonalizowaną kolorowankę.
 
 JAK TO DZIAŁA
-✏️ Wpisz co chcesz narysować
+✏ Wpisz co chcesz narysować
 🎨 Dotknij ponumerowanych obszarów i wypełnij je kolorem
-🖨️ Wydrukuj swoje arcydzieło lub zapisz jako obraz
+🖨 Wydrukuj swoje arcydzieło lub zapisz jako obraz
 🏆 Wyzwij przyjaciela - udostępnij ten sam rysunek i kto pokoloruje pierwszy?
 
 FUNKCJE
@@ -405,7 +405,7 @@ Idealne dla dzieci w wieku 3-12 lat i kreatywnych osób w każdym wieku!
 
 **Promotional Text (133 chars):**
 ```
-Bir kelime yaz → saniyeler içinde benzersiz AI boyama sayfası al. Ücretsiz! Günlük kelime, galeri ve QR ile arkadaşlarla yarış.
+Bir kelime yaz > saniyeler içinde benzersiz AI boyama sayfası al. Ücretsiz! Günlük kelime, galeri ve QR ile arkadaşlarla yarış.
 ```
 
 **Keywords (76 chars):**
@@ -420,9 +420,9 @@ Lalabuba herhangi bir kelimeyi saniyeler içinde numaralı boyama sayfasına dö
 İstediğin konuyu yaz - bir ejderha, tek boynuzlu at, kale, kelebek - ve yapay zekamız anında senin için özel bir boyama sayfası oluşturur.
 
 NASIL ÇALIŞIR
-✏️ Boyamak istediğini yaz
+✏ Boyamak istediğini yaz
 🎨 Numaralı alanlara dokun ve renk doldur
-🖨️ Şaheserini yazdır veya resim olarak kaydet
+🖨 Şaheserini yazdır veya resim olarak kaydet
 🏆 Arkadaşını meydan okumaya davet et - aynı resmi paylaş ve kim önce bitirir?
 
 ÖZELLİKLER
@@ -463,9 +463,9 @@ Lalabuba 能在数秒内将任意词语变成数字涂色页 -  - 完全免费�
 只需输入任何主题 -  - 龙、独角兽、城堡、蝴蝶 -  - 我们的 AI 立即为你生成专属涂色页。
 
 使用方法
-✏️ 输入你想画的内容
+✏ 输入你想画的内容
 🎨 点击编号区域并填上颜色
-🖨️ 打印你的杰作或保存到相册
+🖨 打印你的杰作或保存到相册
 🏆 挑战朋友 -  - 分享同一张图，看谁先完成！
 
 功能特点
@@ -491,7 +491,7 @@ Lalabuba 能在数秒内将任意词语变成数字涂色页 -  - 完全免费�
 
 **Promotional Text (130 chars):**
 ```
-कोई भी शब्द टाइप करें → तुरंत AI रंग भरने की पेज पाएं। मुफ़्त! दैनिक चुनौती, गैलरी और QR से दोस्तों के साथ मुकाबला।
+कोई भी शब्द टाइप करें > तुरंत AI रंग भरने की पेज पाएं। मुफ़्त! दैनिक चुनौती, गैलरी और QR से दोस्तों के साथ मुकाबला।
 ```
 
 **Keywords (78 chars):**
@@ -506,9 +506,9 @@ Lalabuba किसी भी शब्द को सेकंडों में
 बस कोई भी विषय टाइप करें - ड्रैगन, यूनिकॉर्न, किला, तितली - और हमारी AI तुरंत आपके लिए एक कस्टम पेज बनाती है।
 
 यह कैसे काम करता है
-✏️ जो बनाना हो वो टाइप करें
+✏ जो बनाना हो वो टाइप करें
 🎨 नंबर वाले क्षेत्रों पर टैप करें और रंग भरें
-🖨️ अपनी कृति प्रिंट करें या फ़ोटो के रूप में सहेजें
+🖨 अपनी कृति प्रिंट करें या फ़ोटो के रूप में सहेजें
 🏆 दोस्त को चुनौती दें - एक ही चित्र साझा करें और देखें कौन पहले पूरा करता है!
 
 विशेषताएं
@@ -573,35 +573,35 @@ You are now on the App Information page. Scroll down - you will see several
 editable sections. Find and fill in:
 
 APP NAME (at the top of the page):
-  → Click the text field next to "Name"
-  → Value: Lalabuba
+  > Click the text field next to "Name"
+  > Value: Lalabuba
   (This is already set when you created the app - just verify it)
 
 SUBTITLE:
-  → Find the "Subtitle" field below App Name
-  → Click it and type: AI Coloring Pages for Kids
+  > Find the "Subtitle" field below App Name
+  > Click it and type: AI Coloring Pages for Kids
   (This shows under the app name on the App Store listing - max 30 chars)
 
 PRIMARY CATEGORY:
-  → Find the "Primary Category" dropdown
-  → Click it → scroll to "Education" → select it
+  > Find the "Primary Category" dropdown
+  > Click it > scroll to "Education" > select it
 
 SECONDARY CATEGORY:
-  → Find the "Secondary Category" dropdown
-  → Click it → scroll to "Entertainment" → select it
+  > Find the "Secondary Category" dropdown
+  > Click it > scroll to "Entertainment" > select it
   NOTE: Do NOT select "Kids" - it would disable Google Analytics and external APIs
 
 PRIVACY POLICY URL:
-  → Scroll down to find "Privacy Policy URL"
-  → Click the text field
-  → Type: https://lalabuba.com/privacy
+  > Scroll down to find "Privacy Policy URL"
+  > Click the text field
+  > Type: https://lalabuba.com/privacy
 
 CONTENT RIGHTS:
-  → Scroll to the "Content Rights" section
-  → Check the box: "This app does not use third-party content"
+  > Scroll to the "Content Rights" section
+  > Check the box: "This app does not use third-party content"
   OR if you see "I have rights to use all content" - check that box
 
-→ Click the blue "Save" button in the top-right corner of the page
+> Click the blue "Save" button in the top-right corner of the page
 
 ---
 
@@ -615,23 +615,23 @@ NAVIGATION:
 This opens an interview with multiple-choice questions. Answer every single
 question as "None" or "No":
 
-  Cartoon or Fantasy Violence           → None
-  Realistic Violence                    → None
-  Prolonged Graphic or Sadistic Violence → None
-  Profanity or Crude Humor              → None
-  Mature/Suggestive Themes              → None
-  Horror/Fear Themes for Children       → None
-  Medical/Treatment Information         → None
-  Alcohol, Tobacco, or Drug Use or References → None
-  Simulated Gambling                    → None
-  Sexual Content or Nudity              → None
-  Graphic Sexual Content and Nudity     → None
-  Unrestricted Web Access               → None
+  Cartoon or Fantasy Violence           > None
+  Realistic Violence                    > None
+  Prolonged Graphic or Sadistic Violence > None
+  Profanity or Crude Humor              > None
+  Mature/Suggestive Themes              > None
+  Horror/Fear Themes for Children       > None
+  Medical/Treatment Information         > None
+  Alcohol, Tobacco, or Drug Use or References > None
+  Simulated Gambling                    > None
+  Sexual Content or Nudity              > None
+  Graphic Sexual Content and Nudity     > None
+  Unrestricted Web Access               > None
     ↑ This asks about in-app browsers. API calls in the background do NOT count.
 
-→ Click "Done" at the bottom
-→ Result will show: Rating: 4+
-→ Click "Save" (top-right)
+> Click "Done" at the bottom
+> Result will show: Rating: 4+
+> Click "Save" (top-right)
 
 ---
 
@@ -643,18 +643,18 @@ NAVIGATION:
 On this page:
 
 PRICE:
-  → Under "Base Price", click the dropdown that may say "Paid" or show a price
-  → Select "Free" (it will say $0.00 / Tier 0)
+  > Under "Base Price", click the dropdown that may say "Paid" or show a price
+  > Select "Free" (it will say $0.00 / Tier 0)
 
 AVAILABILITY:
-  → Under "Availability" you will see a list of territories
-  → If you want all countries: click "Select All" or leave it as-is (default is all)
-  → If you want to exclude specific countries: uncheck them individually
+  > Under "Availability" you will see a list of territories
+  > If you want all countries: click "Select All" or leave it as-is (default is all)
+  > If you want to exclude specific countries: uncheck them individually
 
 PRE-ORDER:
-  → Leave "Make available for pre-order" unchecked
+  > Leave "Make available for pre-order" unchecked
 
-→ Click "Save" (top-right)
+> Click "Save" (top-right)
 
 ---
 
@@ -679,18 +679,18 @@ You will see device size tabs. Look for these two slots:
   - "iPad Pro (6th Gen) 12.9" Display"   ← required
 
 HOW TO UPLOAD SCREENSHOTS:
-  → Click the device tab "iPhone 6.7" Display""
-  → You see a grey dashed upload area
-  → Click the "+" button or drag-and-drop files onto the grey area
-  → In the file picker, navigate to: app-store-assets\en\iphone\
-  → Select all 3 files: 1-create.png, 2-color-by-number.png, 3-challenge.png
-  → Click Open - they upload and appear as thumbnails
-  → Drag to reorder if needed (left = first screenshot shown on App Store)
+  > Click the device tab "iPhone 6.7" Display""
+  > You see a grey dashed upload area
+  > Click the "+" button or drag-and-drop files onto the grey area
+  > In the file picker, navigate to: app-store-assets\en\iphone\
+  > Select all 3 files: 1-create.png, 2-color-by-number.png, 3-challenge.png
+  > Click Open - they upload and appear as thumbnails
+  > Drag to reorder if needed (left = first screenshot shown on App Store)
 
-  → Click the tab "iPad Pro (6th Gen) 12.9" Display""
-  → Repeat the same process
-  → Navigate to: app-store-assets\en\ipad\
-  → Upload all 3 files
+  > Click the tab "iPad Pro (6th Gen) 12.9" Display""
+  > Repeat the same process
+  > Navigate to: app-store-assets\en\ipad\
+  > Upload all 3 files
 
 NOTE: If you don't see the iPad tab, scroll right - device tabs can overflow.
 
@@ -707,19 +707,19 @@ or add a short line like:
 4c. DESCRIPTION
 ────────────────────────────────────────
 
-  → Find the large "Description" text area
-  → Click inside it
-  → Select all existing text (Ctrl+A) and delete it
-  → Paste the English description from PART 1 of this file
+  > Find the large "Description" text area
+  > Click inside it
+  > Select all existing text (Ctrl+A) and delete it
+  > Paste the English description from PART 1 of this file
      (everything inside the code block under "Description:")
 
 ────────────────────────────────────────
 4d. KEYWORDS
 ────────────────────────────────────────
 
-  → Find the "Keywords" field (single-line text box)
-  → Click inside it, clear any existing text
-  → Paste the English keywords from PART 1 of this file
+  > Find the "Keywords" field (single-line text box)
+  > Click inside it, clear any existing text
+  > Paste the English keywords from PART 1 of this file
      (the line inside the code block under "Keywords:")
   ⚠️  No spaces after commas. Max 100 characters total including commas.
 
@@ -727,50 +727,50 @@ or add a short line like:
 4e. SUPPORT URL
 ────────────────────────────────────────
 
-  → Find "Support URL" field
-  → Type: https://lalabuba.com
+  > Find "Support URL" field
+  > Type: https://lalabuba.com
 
 ────────────────────────────────────────
 4f. MARKETING URL (optional)
 ────────────────────────────────────────
 
-  → Find "Marketing URL" field
-  → Type: https://lalabuba.com  (or leave blank)
+  > Find "Marketing URL" field
+  > Type: https://lalabuba.com  (or leave blank)
 
 ────────────────────────────────────────
 4g. APP ICON (1024×1024)
 ────────────────────────────────────────
 
-  → Scroll up to the very top of the listing page
-  → You will see a small square labelled "App Icon" (1024×1024 px)
-  → Click the "+" or the icon area
-  → Pick: app-store-assets\app-icon-1024.png
+  > Scroll up to the very top of the listing page
+  > You will see a small square labelled "App Icon" (1024×1024 px)
+  > Click the "+" or the icon area
+  > Pick: app-store-assets\app-icon-1024.png
 
-→ Click "Save" (top-right corner) before moving on
+> Click "Save" (top-right corner) before moving on
 
 ---
 
 ## STEP 5 - SELECT BUILD (attach the Codemagic build)
 
-Still on the "App Store" → version page (1.0 Prepare for Submission).
+Still on the "App Store" > version page (1.0 Prepare for Submission).
 
 NAVIGATION:
-  → Scroll DOWN the page past all the listing fields
-  → Find the section called "Build"
-  → It shows a grey box with a "+" (plus) button and text "No builds selected"
-  → Click the "+" button
+  > Scroll DOWN the page past all the listing fields
+  > Find the section called "Build"
+  > It shows a grey box with a "+" (plus) button and text "No builds selected"
+  > Click the "+" button
 
 A popup appears listing all TestFlight builds:
-  → Find the build Codemagic uploaded (shows build number and upload date)
-  → Click on it to select it
-  → Click "Done"
+  > Find the build Codemagic uploaded (shows build number and upload date)
+  > Click on it to select it
+  > Click "Done"
 
 The build now appears in the Build section with its version and build number.
 
 IF NO BUILD APPEARS:
-  → The Codemagic build may still be processing. TestFlight processing takes
+  > The Codemagic build may still be processing. TestFlight processing takes
     5-15 minutes after Codemagic finishes. Check:
-    Left sidebar → "TestFlight" → "iOS Builds" → look for the build status.
+    Left sidebar > "TestFlight" > "iOS Builds" > look for the build status.
     Wait until it shows "Ready to Submit" then come back to App Store and try again.
 
 ---
@@ -780,22 +780,22 @@ IF NO BUILD APPEARS:
 Still on the version page. Scroll further down past the Build section.
 
 NAVIGATION:
-  → Find the section "App Review Information"
+  > Find the section "App Review Information"
 
 Fill in these fields:
 
   Sign-In Required:
-    → Leave "Sign-in required" toggle OFF (app has no login)
+    > Leave "Sign-in required" toggle OFF (app has no login)
 
   Contact Information:
-    → First Name: your first name
-    → Last Name: your last name
-    → Phone Number: your phone number with country code (e.g. +49 151 12345678)
-    → Email: your email address
+    > First Name: your first name
+    > Last Name: your last name
+    > Phone Number: your phone number with country code (e.g. +49 151 12345678)
+    > Email: your email address
 
   Notes for App Reviewer:
-    → Click the Notes text area
-    → Type or paste:
+    > Click the Notes text area
+    > Type or paste:
 
       No account or login is required. Open the app, type any subject
       (e.g. "dragon" or "butterfly"), and tap the Draw button to generate
@@ -807,7 +807,7 @@ Fill in these fields:
       The app is free, contains no ads and no in-app purchases.
 
   Attachment (optional):
-    → You can skip this for a simple app
+    > You can skip this for a simple app
 
 ---
 
@@ -816,18 +816,18 @@ Fill in these fields:
 Still scrolling down the version page.
 
 NAVIGATION:
-  → Find the section "Version Release"
+  > Find the section "Version Release"
 
 Choose one option:
   ○ "Manually release this version"
-      → You control exactly when it goes live after Apple approves it.
+      > You control exactly when it goes live after Apple approves it.
         You still need to click "Release This Version" after approval.
   ● "Automatically release this version after App Review approval" (RECOMMENDED)
-      → Goes live immediately once Apple approves. Best for first release.
+      > Goes live immediately once Apple approves. Best for first release.
   ○ "Automatically release this version no earlier than [date]"
-      → Scheduled release - not needed here.
+      > Scheduled release - not needed here.
 
-→ Select the AUTOMATIC option (second radio button)
+> Select the AUTOMATIC option (second radio button)
 
 ---
 
@@ -835,9 +835,9 @@ Choose one option:
 
 Still on the version page. Find the section "Export Compliance".
 
-  → You will see the question: "Does your app use encryption beyond
+  > You will see the question: "Does your app use encryption beyond
     what Apple provides?"
-  → Select: "No" / "None of the above"
+  > Select: "No" / "None of the above"
 
 This means no additional export documentation is needed. If Apple's popup
 asks at submission time, choose the same answer.
@@ -847,16 +847,16 @@ asks at submission time, choose the same answer.
 ## STEP 9 - SAVE AND SUBMIT
 
 1. Click the blue "Save" button (top-right corner)
-   → Make sure it saves without errors. If you see red error indicators,
+   > Make sure it saves without errors. If you see red error indicators,
      click on them - they tell you which required field is missing.
 
 2. Click "Add for Review" button (appears after Save, top-right area)
-   → If the button says "Submit for Review" instead, click that.
+   > If the button says "Submit for Review" instead, click that.
 
 3. A confirmation dialog appears. It may ask:
-   → "Export Compliance" - answer No
-   → "Advertising Identifier (IDFA)" - select No (app does not use IDFA)
-   → Confirm you have the right to publish this app
+   > "Export Compliance" - answer No
+   > "Advertising Identifier (IDFA)" - select No (app does not use IDFA)
+   > Confirm you have the right to publish this app
 
 4. Click "Submit to App Review"
 
@@ -871,7 +871,7 @@ You can do this BEFORE or AFTER submitting - localized listings don't
 require re-submission if added after the app is live.
 
 NAVIGATION TO ADD A NEW LANGUAGE:
-1. LEFT SIDEBAR → click "App Store"
+1. LEFT SIDEBAR > click "App Store"
 2. On the version page, look at the TOP AREA for a language dropdown
    It currently shows "English (U.S.)" with a small arrow/dropdown
 3. Click that dropdown
@@ -882,11 +882,11 @@ NAVIGATION TO ADD A NEW LANGUAGE:
 
 The page reloads with the new language selected. Now fill in the same
 fields as you did for English:
-  → Screenshots: upload from app-store-assets\{lang}\iphone\ and \ipad\
-  → Description: paste from PART 1
-  → Keywords: paste from PART 1
-  → Subtitle: paste from PART 1
-  → Support URL: https://lalabuba.com
+  > Screenshots: upload from app-store-assets\{lang}\iphone\ and \ipad\
+  > Description: paste from PART 1
+  > Keywords: paste from PART 1
+  > Subtitle: paste from PART 1
+  > Support URL: https://lalabuba.com
 
 Repeat for each language:
 
@@ -901,33 +901,33 @@ Repeat for each language:
 | Dutch                    | nl   | app-store-assets\nl | 🇳🇱 DUTCH     |
 | Polish                   | pl   | app-store-assets\pl | 🇵🇱 POLISH    |
 
-→ Click "Save" after completing each language
+> Click "Save" after completing each language
 
 ---
 
 ## STEP 11 - AFTER APPROVAL
 
 If you chose AUTOMATIC release in Step 7:
-  → Nothing to do. The app goes live on the App Store automatically.
-  → You receive an email: "Your app Lalabuba is now live on the App Store"
+  > Nothing to do. The app goes live on the App Store automatically.
+  > You receive an email: "Your app Lalabuba is now live on the App Store"
 
 If you chose MANUAL release:
-  → Go to appstoreconnect.apple.com
-  → Click "My Apps" → click Lalabuba
-  → You will see a yellow banner at the top: "This version is ready for sale"
-  → Click the blue "Release This Version" button
-  → Confirm → the app goes live within minutes
+  > Go to appstoreconnect.apple.com
+  > Click "My Apps" > click Lalabuba
+  > You will see a yellow banner at the top: "This version is ready for sale"
+  > Click the blue "Release This Version" button
+  > Confirm > the app goes live within minutes
 
 ---
 
 ## STEP 12 - POST-LAUNCH CHECKLIST
 
-- [ ] Share App Store link with testers (find it under App Store tab → App Store URL)
+- [ ] Share App Store link with testers (find it under App Store tab > App Store URL)
 - [ ] Add App Store download link to the lalabuba.com website footer
-- [ ] Monitor reviews: LEFT SIDEBAR → "Ratings and Reviews"
-- [ ] Monitor crashes: LEFT SIDEBAR → "Crashes" (under App Analytics)
-- [ ] Set up review notifications: top-right user icon → Notifications
-- [ ] Respond to user reviews: Ratings and Reviews → click a review → "Reply"
+- [ ] Monitor reviews: LEFT SIDEBAR > "Ratings and Reviews"
+- [ ] Monitor crashes: LEFT SIDEBAR > "Crashes" (under App Analytics)
+- [ ] Set up review notifications: top-right user icon > Notifications
+- [ ] Respond to user reviews: Ratings and Reviews > click a review > "Reply"
 
 ---
 
@@ -936,16 +936,16 @@ If you chose MANUAL release:
 1. Make code changes and push to GitHub (git push origin main)
 2. Codemagic auto-builds and uploads the new build to TestFlight automatically
 3. In App Store Connect:
-   → LEFT SIDEBAR → App Store
-   → Top-right of version page → click the "+" button next to the version number
+   > LEFT SIDEBAR > App Store
+   > Top-right of version page > click the "+" button next to the version number
      (or look for "Create New Version")
-   → Type the new version number (e.g. 1.1)
-   → Click "Create"
+   > Type the new version number (e.g. 1.1)
+   > Click "Create"
 4. On the new version page:
-   → Scroll to "Build" section → click "+" → select the new Codemagic build
-   → Update screenshots if needed
-   → Add "What's New in This Version" text (short summary of changes)
-5. Click Save → Submit for Review
+   > Scroll to "Build" section > click "+" > select the new Codemagic build
+   > Update screenshots if needed
+   > Add "What's New in This Version" text (short summary of changes)
+5. Click Save > Submit for Review
 
 ---
 
@@ -972,7 +972,7 @@ The app uses a chain of image generation services - free ones first, paid only a
 resort. When one service is busy or hits its limit, the app silently moves to the next.
 Users never see which one is active.
 
-Current order: **Pollinations → Together AI → Cloudflare Workers AI → Novita.ai**
+Current order: **Pollinations > Together AI > Cloudflare Workers AI > Novita.ai**
 
 To add a provider: complete its sign-up below, then paste the key(s) to me in chat.
 I handle all the technical wiring.
@@ -998,14 +998,14 @@ The free tier has a daily request limit; when it runs out the app moves to the n
 
 1. Go to: https://api.together.ai
 2. Click "Sign Up" - use GitHub, Google, or email
-3. After login, click your profile icon (top-right) → "Settings" → "API Keys"
+3. After login, click your profile icon (top-right) > "Settings" > "API Keys"
 4. Click "Create API Key", give it a name (e.g. "lalabuba"), click Create
 5. Copy the key - it starts with `together-` - **you only see it once**
 6. Paste the key to me in chat
 
 ### Check usage
 
-- https://api.together.ai → "Usage" tab - shows daily requests used vs. free limit
+- https://api.together.ai > "Usage" tab - shows daily requests used vs. free limit
 
 ---
 
@@ -1021,14 +1021,14 @@ If you want the app to keep using Cloudflare even after the daily free budget ru
 (instead of falling through to Novita), enable billing on Cloudflare:
 
 1. Go to: https://dash.cloudflare.com
-2. Left sidebar → "Workers & Pages" → "Plans"
+2. Left sidebar > "Workers & Pages" > "Plans"
 3. Upgrade to the "Workers Paid" plan ($5/month)
    - this unlocks paid overage for AI at very low per-image cost
    - you are only charged for what you use beyond the free daily budget
 
 ### Check usage
 
-- https://dash.cloudflare.com → "Workers & Pages" → "AI" → usage graph
+- https://dash.cloudflare.com > "Workers & Pages" > "AI" > usage graph
 
 ---
 
@@ -1040,7 +1040,7 @@ Already signed up and active. You topped up $10 which covers thousands of images
 
 ### Check usage and top up
 
-- https://novita.ai → avatar (top-right) → "Billing"
+- https://novita.ai > avatar (top-right) > "Billing"
 - Shows credit balance and per-image cost history
 - Click "Add Credits" to top up when balance runs low
 
@@ -1051,8 +1051,8 @@ Already signed up and active. You topped up $10 which covers thousands of images
 Vercel logs show in real time which provider handled each request:
 
 1. Go to: https://vercel.com/dashboard
-2. Click "lalabuba" → "Deployments" tab → click the latest deployment
-3. Click "Functions" → click `api/generate-image`
+2. Click "lalabuba" > "Deployments" tab > click the latest deployment
+3. Click "Functions" > click `api/generate-image`
 4. Live log lines appear here - look for lines like "Pollinations busy - trying Cloudflare"
 
 ---
