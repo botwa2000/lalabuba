@@ -793,408 +793,94 @@ If you chose MANUAL release:
 ---
 
 # PART 3: AI IMAGE PROVIDER SETUP GUIDE
-# Multi-tier free-then-paid fallback chain for zero-cost image generation
+
+The app uses a chain of image generation services — free ones first, paid only as a last
+resort. When one service is busy or hits its limit, the app silently moves to the next.
+Users never see which one is active.
+
+Current order: **Pollinations → Together AI → Cloudflare Workers AI → Novita.ai**
+
+To add a provider: complete its sign-up below, then paste the key(s) to me in chat.
+I handle all the technical wiring.
 
 ---
 
-## OVERVIEW
+## TIER 1 — POLLINATIONS
 
-Lalabuba is a free app — image generation costs must stay as close to $0 as possible.
-The strategy is a waterfall of providers, each tried in order:
+**Already active. Nothing to do.**
 
-```
-Pollinations  →  Together AI  →  Cloudflare Workers AI  →  Novita.ai
-(always free)    (free tier)     (free tier + cheap)       (cheapest paid)
-```
-
-Each provider uses FLUX.1-schnell — same model, same output quality across all tiers.
-Users never see which provider is active. Failover is silent.
-
-At typical indie scale (a few hundred images/day):
-- Pollinations absorbs the majority for free
-- Together AI + Cloudflare cover overflow, also free
-- Novita.ai only kicks in when everything else is exhausted — cost ≈ $0.001–$0.003/image
+Free public service, no account needed.
 
 ---
 
-## TIER 1 — POLLINATIONS (free, no key required)
+## TIER 2 — TOGETHER AI
 
-**Already integrated. No signup needed.**
+**Free tier — no credit card required.**
 
-Pollinations is a free public API that runs FLUX.1-schnell. It has a shared queue
-and rate-limits by IP, which is why it occasionally returns 429 errors. It should
-always be tried first since it costs nothing.
-
-Current status: active as fallback in `lib/image-providers.js`.
-
-No environment variables required.
-
----
-
-## TIER 2 — TOGETHER AI (free tier for open-source models)
-
-Together AI offers the FLUX.1-schnell model for free under an open-source tier.
-No credit card required to start.
+Together AI gives free access to open-source AI models including the one the app uses.
+The free tier has a daily request limit; when it runs out the app moves to the next tier.
 
 ### Sign up
 
 1. Go to: https://api.together.ai
-2. Click "Sign Up" — use GitHub or Google, or create an account with email
-3. After login, click your account icon (top-right) → "Settings" → "API Keys"
-4. Click "Create API Key"
-5. Give it a name (e.g. "lalabuba-prod") and click Create
-6. Copy the key — it starts with `together-` — you only see it once
+2. Click "Sign Up" — use GitHub, Google, or email
+3. After login, click your profile icon (top-right) → "Settings" → "API Keys"
+4. Click "Create API Key", give it a name (e.g. "lalabuba"), click Create
+5. Copy the key — it starts with `together-` — **you only see it once**
+6. Paste the key to me in chat
 
-### Model to use
+### Check usage
 
-```
-black-forest-labs/FLUX.1-schnell-Free
-```
-
-The `-Free` suffix is the open-source free version. It has no rate-limit fee but
-Together AI may apply daily free limits per account. When the free limit is hit,
-Together AI returns a 429 — the code falls through to Tier 3.
-
-### API call format
-
-```
-POST https://api.together.xyz/v1/images/generations
-Authorization: Bearer {TOGETHER_API_KEY}
-Content-Type: application/json
-
-{
-  "model": "black-forest-labs/FLUX.1-schnell-Free",
-  "prompt": "...",
-  "width": 1024,
-  "height": 1024,
-  "steps": 4,
-  "seed": 12345,
-  "n": 1,
-  "response_format": "b64_json"
-}
-```
-
-Response: `data[0].b64_json` contains the base64-encoded PNG.
-
-### Environment variable
-
-```
-TOGETHER_API_KEY=your_key_here
-```
+- https://api.together.ai → "Usage" tab — shows daily requests used vs. free limit
 
 ---
 
-## TIER 3 — CLOUDFLARE WORKERS AI (free tier + cheap overage)
+## TIER 3 — CLOUDFLARE WORKERS AI
 
-Cloudflare runs FLUX.1-schnell on its global edge network. The Workers free plan
-includes a daily AI budget — roughly 30–40 full-resolution images per day for free.
-After the free budget: ~$0.003/image.
+**Free tier (~35 images/day free, then very cheap overage).**
 
-### Sign up
+Already signed up (your account ID is on file). This tier is active.
 
-1. Go to: https://cloudflare.com
-2. Click "Sign Up" → create a free account (no credit card needed for free tier)
-3. After login, look at the left sidebar → "Workers & Pages" → "Overview"
-4. Note your **Account ID**: shown in the right sidebar of the Workers overview page.
-   It is a 32-character hex string like `a1b2c3d4e5f6...`
-5. Go to: https://dash.cloudflare.com/profile/api-tokens
-6. Click "Create Token"
-7. Click "Use template" next to "Edit Cloudflare Workers"
-   → Change "Account Resources" to your account
-   → Change "Zone Resources" to "All zones" (or none — AI calls don't need zones)
-   → Click "Continue to summary" → "Create Token"
-8. Copy the token — you only see it once
+### To enable paid overage (optional)
 
-### API call format
+If you want the app to keep using Cloudflare even after the daily free budget runs out
+(instead of falling through to Novita), enable billing on Cloudflare:
 
-```
-POST https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell
-Authorization: Bearer {CF_API_TOKEN}
-Content-Type: application/json
+1. Go to: https://dash.cloudflare.com
+2. Left sidebar → "Workers & Pages" → "Plans"
+3. Upgrade to the "Workers Paid" plan ($5/month)
+   — this unlocks paid overage for AI at very low per-image cost
+   — you are only charged for what you use beyond the free daily budget
 
-{
-  "prompt": "...",
-  "num_steps": 8,
-  "width": 1024,
-  "height": 1024,
-  "seed": 12345
-}
-```
+### Check usage
 
-Response: binary image stream (PNG). Check `response.headers.get('content-type')`.
-
-### Environment variables
-
-```
-CF_ACCOUNT_ID=your_32char_account_id
-CF_API_TOKEN=your_token_here
-```
-
-### Free tier details
-
-- Free plan: ~10,000 "neurons" per day
-- FLUX.1-schnell at 1024×1024, 8 steps ≈ 250–280 neurons per image
-- Free daily capacity: ~35–40 images
-- Overage rate: $0.011 per 1,000 neurons ≈ $0.003 per image
-- To enable paid overage: Workers dashboard → "Usage & Billing" → enable paid plan
-  (only charged for what you actually use beyond the free budget)
+- https://dash.cloudflare.com → "Workers & Pages" → "AI" → usage graph
 
 ---
 
-## TIER 4 — NOVITA.AI (cheapest paid fallback)
+## TIER 4 — NOVITA.AI
 
-Novita.ai is a specialized image generation API with the lowest per-image pricing
-among paid providers. It is only used when all free tiers are exhausted.
+**Paid — pay as you go, no monthly fee.**
 
-### Sign up
+Already signed up and active. You topped up $10 which covers thousands of images.
 
-1. Go to: https://novita.ai
-2. Click "Sign Up" → use Google or email
-3. After login, click your avatar (top-right) → "API Keys"
-4. Click "Create API Key" → give it a name → Copy the key
-5. Add credits: click "Billing" → "Add Credits" → minimum top-up is usually $5–10
-   (covers thousands of images — no monthly fee, pay only for what you use)
+### Check usage and top up
 
-### Model to use
-
-```
-black-forest-labs/flux-schnell
-```
-
-### API call format
-
-Novita follows the OpenAI image generation format:
-
-```
-POST https://api.novita.ai/v3/openai/images/generations
-Authorization: Bearer {NOVITA_API_KEY}
-Content-Type: application/json
-
-{
-  "model": "black-forest-labs/flux-schnell",
-  "prompt": "...",
-  "width": 1024,
-  "height": 1024,
-  "steps": 4,
-  "seed": 12345,
-  "n": 1,
-  "response_format": "b64_json"
-}
-```
-
-Response: `data[0].b64_json` contains the base64-encoded image.
-
-### Pricing (as of April 2026)
-
-| Model                          | Cost per image |
-|-------------------------------|---------------|
-| FLUX.1-schnell                 | ~$0.001–$0.003 |
-| FLUX.1-dev                     | ~$0.022        |
-
-### Environment variable
-
-```
-NOVITA_API_KEY=your_key_here
-```
+- https://novita.ai → avatar (top-right) → "Billing"
+- Shows credit balance and per-image cost history
+- Click "Add Credits" to top up when balance runs low
 
 ---
 
-## IMPLEMENTATION: lib/image-providers.js
+## MONITORING (which tier is being used)
 
-Once you have the keys, add the following providers to `lib/image-providers.js`
-and update `generateImage()` to chain them in order.
-
-### Step 1 — Add Together AI generator
-
-```js
-async function generateWithTogetherAI(prompt, width, height, seed, apiKey) {
-  const res = await fetch('https://api.together.xyz/v1/images/generations', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'black-forest-labs/FLUX.1-schnell-Free',
-      prompt, width, height, steps: 4, seed, n: 1,
-      response_format: 'b64_json',
-    }),
-  });
-  if (!res.ok) {
-    if (res.status === 429) throw new Error('__QUOTA__');
-    throw new Error(`Together AI failed (${res.status})`);
-  }
-  const json = await res.json();
-  const buf = Buffer.from(json.data[0].b64_json, 'base64');
-  return { contentType: 'image/png', buffer: buf };
-}
-```
-
-### Step 2 — Add Cloudflare Workers AI generator
-
-```js
-async function generateWithCloudflare(prompt, width, height, seed, accountId, apiToken) {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, num_steps: 8, width, height, seed }),
-  });
-  if (!res.ok) {
-    if (res.status === 429) throw new Error('__QUOTA__');
-    throw new Error(`Cloudflare AI failed (${res.status})`);
-  }
-  return { contentType: res.headers.get('content-type') || 'image/png',
-           buffer: Buffer.from(await res.arrayBuffer()) };
-}
-```
-
-### Step 3 — Add Novita.ai generator
-
-```js
-async function generateWithNovita(prompt, width, height, seed, apiKey) {
-  const res = await fetch('https://api.novita.ai/v3/openai/images/generations', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'black-forest-labs/flux-schnell',
-      prompt, width, height, steps: 4, seed, n: 1,
-      response_format: 'b64_json',
-    }),
-  });
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    throw new Error(`Novita.ai failed (${res.status}): ${detail.slice(0, 120)}`);
-  }
-  const json = await res.json();
-  const buf = Buffer.from(json.data[0].b64_json, 'base64');
-  return { contentType: 'image/png', buffer: buf };
-}
-```
-
-### Step 4 — Update generateImage() waterfall
-
-Replace the existing `generateImage()` function with this chain:
-
-```js
-async function generateImage(prompt, width = 1024, height = 1024, seed, opts = {}) {
-  const { hfToken, hfModel = 'black-forest-labs/FLUX.1-schnell' } = opts;
-
-  const togetherKey  = process.env.TOGETHER_API_KEY;
-  const cfAccountId  = process.env.CF_ACCOUNT_ID;
-  const cfToken      = process.env.CF_API_TOKEN;
-  const novitaKey    = process.env.NOVITA_API_KEY;
-
-  // Tier 1: Pollinations (always free, no key)
-  try {
-    return await generateWithPollinations(prompt, width, height, seed);
-  } catch (err) {
-    if (!isQuotaOrBusy(err)) throw err;
-    console.warn('Pollinations busy — trying Together AI');
-  }
-
-  // Tier 2: Together AI free tier
-  if (togetherKey) {
-    try {
-      return await generateWithTogetherAI(prompt, width, height, seed, togetherKey);
-    } catch (err) {
-      if (!isQuotaOrBusy(err)) throw err;
-      console.warn('Together AI quota — trying Cloudflare');
-    }
-  }
-
-  // Tier 3: Cloudflare Workers AI (free tier + cheap overage)
-  if (cfAccountId && cfToken) {
-    try {
-      return await generateWithCloudflare(prompt, width, height, seed, cfAccountId, cfToken);
-    } catch (err) {
-      if (!isQuotaOrBusy(err)) throw err;
-      console.warn('Cloudflare quota — trying Novita.ai');
-    }
-  }
-
-  // Tier 4: Novita.ai (paid, cheapest)
-  if (novitaKey) {
-    return await generateWithNovita(prompt, width, height, seed, novitaKey);
-  }
-
-  // Absolute last resort: HuggingFace (current fallback)
-  if (hfToken) {
-    return await generateWithHuggingFace(prompt, width, height, seed, hfToken, hfModel);
-  }
-
-  throw new Error('All image providers are unavailable. Please try again later.');
-}
-```
-
-Also update `isQuotaOrBusy` to catch the sentinel thrown by the new providers:
-
-```js
-function isQuotaOrBusy(err) {
-  if (err.message === '__QUOTA__') return true;
-  const msg = (err.message || '').toLowerCase();
-  return msg.includes('429') || msg.includes('busy') || msg.includes('quota') ||
-         msg.includes('limit') || msg.includes('exceeded') || msg.includes('credit') ||
-         msg.includes('payment') || msg.includes('billing') || msg.includes('depleted');
-}
-```
-
----
-
-## ENVIRONMENT VARIABLES — COMPLETE LIST
-
-Add these to your Vercel project environment:
-**Vercel Dashboard → Your Project → Settings → Environment Variables**
-
-| Variable          | Required | Description                                   |
-|-------------------|----------|-----------------------------------------------|
-| `TOGETHER_API_KEY`| Optional | Together AI key — enables Tier 2              |
-| `CF_ACCOUNT_ID`   | Optional | Cloudflare account ID — enables Tier 3        |
-| `CF_API_TOKEN`    | Optional | Cloudflare API token — enables Tier 3         |
-| `NOVITA_API_KEY`  | Optional | Novita.ai key — enables Tier 4 (paid)         |
-| `HF_TOKEN`        | Optional | HuggingFace token — legacy fallback           |
-| `TURNSTILE_SECRET_KEY` | Recommended | Cloudflare Turnstile bot protection    |
-| `BLOB_READ_WRITE_TOKEN` | Optional | Vercel Blob for persistent image sharing |
-
-The system works with any subset of these set. Tiers without a key are silently
-skipped. Only `NOVITA_API_KEY` costs money when used.
-
----
-
-## VERCEL DEPLOYMENT — WHERE TO SET ENVIRONMENT VARIABLES
+Vercel logs show in real time which provider handled each request:
 
 1. Go to: https://vercel.com/dashboard
-2. Click on the "lalabuba" project
-3. Click the "Settings" tab
-4. In the left sidebar, click "Environment Variables"
-5. For each variable above:
-   → Click "Add New"
-   → Key: paste the variable name (e.g. `TOGETHER_API_KEY`)
-   → Value: paste your key
-   → Environment: check "Production" (and "Preview" if you want it in staging too)
-   → Click "Save"
-6. After adding all variables, go to the "Deployments" tab
-7. Click the three-dot menu on the latest deployment → "Redeploy"
-   (Environment variables only take effect after a fresh deployment)
+2. Click "lalabuba" → "Deployments" tab → click the latest deployment
+3. Click "Functions" → click `api/generate-image`
+4. Live log lines appear here — look for lines like "Pollinations busy — trying Cloudflare"
 
 ---
 
-## MONITORING USAGE
-
-### Together AI
-- Dashboard: https://api.together.ai → "Usage" tab
-- Shows daily request count and free tier remaining
-
-### Cloudflare Workers AI
-- Dashboard: https://dash.cloudflare.com → Workers & Pages → your account → AI
-- Shows neuron usage per day and cost breakdown
-
-### Novita.ai
-- Dashboard: https://novita.ai → "Billing" tab
-- Shows per-request cost history and remaining credits
-
-### Vercel function logs (see which tier is being used)
-- Vercel Dashboard → Deployments → latest → "Functions" tab → click `api/generate-image`
-- The `console.warn` lines ("Pollinations busy — trying Together AI" etc.)
-  appear here in real time
-
----
-
-*Provider guide written April 2026 — verify current pricing and API formats before use*
+*Last updated April 2026*
