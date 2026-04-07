@@ -596,6 +596,11 @@ PRIVACY POLICY URL:
   > Click the text field
   > Type: https://lalabuba.com/privacy
 
+COPYRIGHT:
+  > Find the "Copyright" field (required - app cannot be submitted without it)
+  > Type: © 2026 Bonifatus
+  (To type ©: hold Alt and press 0169 on the numpad, or copy from here: ©)
+
 CONTENT RIGHTS:
   > Scroll to the "Content Rights" section
   > Check the box: "This app does not use third-party content"
