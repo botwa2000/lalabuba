@@ -112,35 +112,42 @@
   pointer-events: none;
 }
 
-/* Mobile: full-width horizontal strip below canvas */
+/* Mobile: compact wrap grid below canvas — no scrolling */
 @media (max-width: 640px) {
   .palette-sidebar {
-    position: static; /* no sticky on mobile */
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: visible;
-    padding: 10px 12px;
+    position: static;
+    flex-direction: column;
+    overflow: visible;
+    padding: 10px 14px 14px;
     max-height: none;
-    align-items: center;
-    gap: 0;
+    align-items: stretch;
+    gap: 8px;
     border-radius: var(--radius);
   }
   .palette-strip {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 2px;
-    flex-wrap: nowrap;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 7px;
+    padding: 2px;
   }
-  .color-swatch { width: 40px; height: 40px; flex-shrink: 0; }
-  .legend-tool-item { grid-column: auto; flex-shrink: 0; }
-  .tool-btn { padding: 6px 10px; gap: 5px; font-size: .68rem; border-radius: 8px; white-space: nowrap; }
-  .picker-dot { width: 11px; height: 11px; }
+  .color-swatch {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    flex-shrink: unset;
+  }
+  /* Tools span full width, sit below the color grid */
+  .legend-tool-item {
+    grid-column: 1 / -1;
+    flex-shrink: unset;
+  }
+  .tool-btn { padding: 8px 12px; gap: 6px; font-size: .76rem; border-radius: 10px; }
+  .picker-dot { width: 12px; height: 12px; }
+  /* Separator becomes a horizontal line */
   .legend-sep {
-    width: 1px; height: 32px; flex-shrink: 0;
-    margin: 0 4px;
-    background: linear-gradient(to bottom, transparent, rgba(0,0,0,.13), transparent);
+    width: auto; height: 1px; flex-shrink: unset;
+    margin: 0;
+    background: linear-gradient(to right, transparent, rgba(0,0,0,.13), transparent);
   }
 }
 

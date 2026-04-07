@@ -21,9 +21,9 @@ function openDB() {
   });
 }
 
-export async function saveArtwork({ subject, difficulty, colorCount, previewCanvas, drawCanvas }) {
+export async function saveArtwork({ subject, difficulty, colorCount, previewCanvas, drawCanvas, lineArtDataUrl, fillDataUrl, completedRegions }) {
   const db = await openDB();
-  // Composite both canvases into one JPEG
+  // Composite both canvases into one JPEG thumbnail
   const tmp = document.createElement('canvas');
   tmp.width = previewCanvas.width; tmp.height = previewCanvas.height;
   const ctx = tmp.getContext('2d');
@@ -38,6 +38,10 @@ export async function saveArtwork({ subject, difficulty, colorCount, previewCanv
     colorCount: colorCount || 12,
     created: new Date().toISOString(),
     jpeg,
+    // Restoration data (present on new saves only)
+    lineArtDataUrl: lineArtDataUrl || null,
+    fillDataUrl: fillDataUrl || null,
+    completedRegions: completedRegions || [],
   };
 
   await new Promise((res, rej) => {
@@ -80,7 +84,7 @@ export async function deleteArtwork(id) {
 
 import { t } from './i18n.js';
 
-export async function openGalleryModal() {
+export async function openGalleryModal(onContinue) {
   const modal = document.getElementById('gallery-modal');
   if (!modal) return;
   modal.classList.remove('hidden');
@@ -97,14 +101,24 @@ export async function openGalleryModal() {
 
   grid.innerHTML = '';
   for (const item of items) {
+    const canContinue = !!(item.lineArtDataUrl && item.fillDataUrl);
     const card = document.createElement('div');
     card.className = 'gallery-card';
     card.innerHTML = `
       <img class="gallery-thumb" src="${item.jpeg}" alt="${item.subject}" loading="lazy">
       <div class="gallery-label">${item.subject}</div>
-      <button class="gallery-delete" data-id="${item.id}" aria-label="Delete">✕</button>
+      ${canContinue ? `<button class="gallery-continue" aria-label="${t('galleryContinue')}">🖌️</button>` : ''}
+      <button class="gallery-delete" aria-label="Delete">✕</button>
     `;
     card.querySelector('.gallery-thumb').addEventListener('click', () => openLightbox(item.jpeg, item.subject));
+    if (canContinue) {
+      card.querySelector('.gallery-continue').addEventListener('click', (e) => {
+        e.stopPropagation();
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+        if (onContinue) onContinue(item);
+      });
+    }
     card.querySelector('.gallery-delete').addEventListener('click', async (e) => {
       e.stopPropagation();
       await deleteArtwork(item.id);
@@ -126,9 +140,9 @@ function openLightbox(src, alt) {
   lb.setAttribute('aria-hidden', 'false');
 }
 
-export function initGalleryHandlers() {
+export function initGalleryHandlers(onContinue) {
   const btn = document.getElementById('gallery-btn');
-  if (btn) btn.addEventListener('click', openGalleryModal);
+  if (btn) btn.addEventListener('click', () => openGalleryModal(onContinue));
 
   const closeBtn = document.getElementById('close-gallery-modal');
   if (closeBtn) closeBtn.addEventListener('click', () => {

@@ -121,11 +121,19 @@
       <!-- ─── Hero: tagline + random suggestion cards (populated by JS) ────── -->
       <section class="hero-section">
         <p class="hero-tagline" data-i18n="tagline">Draw it · Color it · Love it 🌈</p>
-        <button id="daily-word-btn" class="daily-word-pill" type="button" hidden>
-          <span class="daily-word-label" data-i18n="dailyWord">Today's word</span>
-          <span>·</span>
-          <span id="daily-word-value" class="daily-word-value"></span>
-        </button>
+        <div class="daily-word-row" id="daily-word-row" hidden>
+          <button id="daily-word-btn" class="daily-word-pill" type="button">
+            <span class="daily-word-label" data-i18n="dailyWord">Today's word</span>
+            <span>·</span>
+            <span id="daily-word-value" class="daily-word-value"></span>
+          </button>
+          <button id="daily-word-info-btn" class="daily-info-btn" type="button" aria-label="What is this?">?</button>
+          <div id="daily-info-popup" class="daily-info-popup hidden" role="tooltip">
+            <div class="daily-info-icon">🌟</div>
+            <h4 class="daily-info-title" data-i18n="dailyInfoTitle">Daily Challenge!</h4>
+            <p class="daily-info-body" data-i18n="dailyInfoBody">Every day everyone gets the same word to color. Race your friends!</p>
+          </div>
+        </div>
         <div id="examples-grid" class="examples-grid"></div>
         <button id="shuffle-cards-btn" class="shuffle-cards-btn" type="button" aria-label="Shuffle suggestions">🎲</button>
       </section>

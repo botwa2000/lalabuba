@@ -1,5 +1,5 @@
 import { state, DEBUG } from './state.js';
-import { PALETTES, SURPRISE_SUBJECTS, EXAMPLE_SUGGESTIONS, getDailyChallenge } from './data.js';
+import { PALETTES, SURPRISE_SUBJECTS, EXAMPLE_SUGGESTIONS, getDailyChallenge, getTranslatedDailyWord } from './data.js';
 import { sanitizeSubject, isSafeSubject } from './data.js';
 import { saveArtwork, initGalleryHandlers } from './gallery.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
@@ -38,13 +38,29 @@ function checkCompletion() {
     if (timeEl) timeEl.textContent = elapsed > 0 ? t('celebTime', formatTime(elapsed)) : '';
     document.getElementById("celebration").classList.remove("hidden");
     document.getElementById("celebration").setAttribute("aria-hidden", "false");
-    // Auto-save completed artwork to local gallery
+    // Auto-save completed artwork to local gallery (with restoration data)
+    let lineArtDataUrl = null;
+    let fillDataUrl = null;
+    if (state.baseImageData && state.paintedImageData) {
+      const artC = document.createElement('canvas');
+      artC.width = previewCanvas.width; artC.height = previewCanvas.height;
+      artC.getContext('2d').putImageData(state.baseImageData, 0, 0);
+      lineArtDataUrl = artC.toDataURL('image/png');
+
+      const fillC = document.createElement('canvas');
+      fillC.width = previewCanvas.width; fillC.height = previewCanvas.height;
+      fillC.getContext('2d').putImageData(state.paintedImageData, 0, 0);
+      fillDataUrl = fillC.toDataURL('image/png');
+    }
     saveArtwork({
       subject: subjectInput.value.trim() || '?',
       difficulty: difficultySelect.value,
       colorCount: state.colorCount,
       previewCanvas,
       drawCanvas,
+      lineArtDataUrl,
+      fillDataUrl,
+      completedRegions: [...state.completedRegions],
     }).then(() => setStatus(t('gallerySaved'))).catch(() => {});
   }
 }
@@ -470,6 +486,9 @@ document.querySelectorAll('.lang-option').forEach(btn => {
   btn.addEventListener('click', () => {
     setLanguage(btn.dataset.lang);
     renderExamples();
+    if (dailyWordValue) {
+      dailyWordValue.textContent = getTranslatedDailyWord(dailyWord, getCurrentLang());
+    }
     langDropdown.hidden = true;
     langToggle.setAttribute('aria-expanded', 'false');
   });
@@ -519,17 +538,33 @@ if (challengeShareBtn) {
 }
 
 // ─── Daily word button ────────────────────────────────────────────────────────
-const dailyWordBtn = document.getElementById('daily-word-btn');
+const dailyWordRow   = document.getElementById('daily-word-row');
+const dailyWordBtn   = document.getElementById('daily-word-btn');
 const dailyWordValue = document.getElementById('daily-word-value');
+const dailyInfoBtn   = document.getElementById('daily-word-info-btn');
+const dailyInfoPopup = document.getElementById('daily-info-popup');
 const { word: dailyWord, seed: dailySeed } = getDailyChallenge();
-if (dailyWordBtn && dailyWordValue) {
-  dailyWordValue.textContent = dailyWord;
-  dailyWordBtn.hidden = false;
+if (dailyWordRow && dailyWordBtn && dailyWordValue) {
+  dailyWordValue.textContent = getTranslatedDailyWord(dailyWord, getCurrentLang());
+  dailyWordRow.hidden = false;
   dailyWordBtn.addEventListener('click', () => {
-    subjectInput.value = dailyWord;
+    subjectInput.value = dailyWord; // always English for the AI prompt
     _pendingSeedOverride = dailySeed;
     form.requestSubmit();
   });
+}
+if (dailyInfoBtn && dailyInfoPopup) {
+  dailyInfoBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = !dailyInfoPopup.classList.contains('hidden');
+    dailyInfoPopup.classList.toggle('hidden', isOpen);
+    dailyInfoBtn.classList.toggle('active', !isOpen);
+  });
+  document.addEventListener('click', () => {
+    dailyInfoPopup.classList.add('hidden');
+    dailyInfoBtn.classList.remove('active');
+  });
+  dailyInfoPopup.addEventListener('click', (e) => e.stopPropagation());
 }
 
 // ─── Initialization ───────────────────────────────────────────────────────────
@@ -544,7 +579,56 @@ if (!DEBUG) {
 renderLegend();
 applyTranslations();
 loadFromShare();
-initGalleryHandlers();
+
+// ─── Gallery: continue drawing ────────────────────────────────────────────────
+async function continueArtwork(item) {
+  showLoading();
+  try {
+    // 1. Restore clean line art (rebuilds baseImageData + regionMap via drawBaseImage)
+    await renderGeneratedImage(item.lineArtDataUrl);
+
+    // 2. Overwrite paintedImageData with the saved fill state
+    const fillImg = await new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = rej;
+      img.src = item.fillDataUrl;
+    });
+    const fillC = document.createElement('canvas');
+    fillC.width = previewCanvas.width;
+    fillC.height = previewCanvas.height;
+    fillC.getContext('2d').drawImage(fillImg, 0, 0, fillC.width, fillC.height);
+    state.paintedImageData = fillC.getContext('2d').getImageData(0, 0, fillC.width, fillC.height);
+
+    // 3. Restore which regions were already completed
+    state.completedRegions = new Set(item.completedRegions || []);
+    state.celebrationShown = false;
+    state.coloringStartTime = Date.now();
+
+    // 4. Reset undo stack (history from a previous session isn't replayable)
+    state.undoStack = [];
+    const undoBtn = document.getElementById('undo-button');
+    if (undoBtn) undoBtn.disabled = true;
+
+    // 5. Draw the restored fill state
+    redrawCanvas();
+
+    // 6. Show coloring UI elements
+    const coloringHint = document.getElementById('coloring-hint');
+    if (coloringHint) coloringHint.hidden = false;
+    const challengeStrip = document.getElementById('challenge-strip');
+    if (challengeStrip) challengeStrip.hidden = false;
+
+    setStatus(t('done'));
+  } catch {
+    setStatus('Could not restore artwork — please generate a new one.', true);
+  } finally {
+    hideLoading();
+    document.querySelector('.workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+initGalleryHandlers(continueArtwork);
 
 // ─── Hero suggestion cards ────────────────────────────────────────────────────
 const CARD_GRADIENTS = [
