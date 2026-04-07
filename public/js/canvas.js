@@ -194,6 +194,57 @@ export function overlayNumbers() {
       }
       if (mapId > 0) state.regionColorMap.set(mapId, paletteIndex);
     });
+
+    // ── Graph coloring: ensure no two adjacent regions share a color ─────────
+    // Build adjacency by scanning barrier pixels (rm[i] === -1) and collecting
+    // all distinct positive-region neighbours touching that barrier pixel.
+    if (state.regionMap) {
+      const rm = state.regionMap;
+      const H  = previewCanvas.height;
+      const adj = new Map();
+      for (const [id] of state.regionColorMap) adj.set(id, new Set());
+
+      for (let i = 0; i < rm.length; i++) {
+        if (rm[i] >= 0) continue; // only barrier pixels
+        const x = i % w, y = (i / w) | 0;
+        const ids = [];
+        if (x > 0     && rm[i - 1] > 0) ids.push(rm[i - 1]);
+        if (x < w - 1 && rm[i + 1] > 0) ids.push(rm[i + 1]);
+        if (y > 0     && rm[i - w] > 0) ids.push(rm[i - w]);
+        if (y < H - 1 && rm[i + w] > 0) ids.push(rm[i + w]);
+        for (let a = 0; a < ids.length - 1; a++) {
+          for (let b = a + 1; b < ids.length; b++) {
+            if (ids[a] !== ids[b]) {
+              if (adj.has(ids[a])) adj.get(ids[a]).add(ids[b]);
+              if (adj.has(ids[b])) adj.get(ids[b]).add(ids[a]);
+            }
+          }
+        }
+      }
+
+      // Welsh-Powell: process most-connected regions first.
+      const order = [...state.regionColorMap.keys()]
+        .sort((a, b) => (adj.get(b)?.size || 0) - (adj.get(a)?.size || 0));
+
+      const final = new Map();
+      for (const id of order) {
+        const neighborColors = new Set();
+        for (const nid of (adj.get(id) || [])) {
+          if (final.has(nid)) neighborColors.add(final.get(nid));
+        }
+        const preferred = state.regionColorMap.get(id) ?? 0;
+        if (!neighborColors.has(preferred)) {
+          final.set(id, preferred);
+        } else {
+          let assigned = preferred;
+          for (let c = 0; c < palette.length; c++) {
+            if (!neighborColors.has(c)) { assigned = c; break; }
+          }
+          final.set(id, assigned);
+        }
+      }
+      state.regionColorMap = final;
+    }
   }
 
   context.textAlign = "center";
@@ -286,7 +337,7 @@ export function precomputeRegions() {
   // WITHOUT permanently thickening the barrier, so thin regions like ripple
   // rings or narrow foreground areas are not consumed.
   // Extreme/hard use a larger radius to seal the finer gaps in intricate patterns.
-  const CLOSE_R = difficulty === 'extreme' ? 8 : isHardPlus ? 6 : 4;
+  const CLOSE_R = difficulty === 'extreme' ? 10 : isHardPlus ? 8 : 6;
   for (let pass = 0; pass < CLOSE_R; pass++) {
     const next = new Uint8Array(outlineMask);
     for (let y = 1; y < height - 1; y++) {
