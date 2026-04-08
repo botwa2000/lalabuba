@@ -1168,62 +1168,154 @@ Google Play App Signing lets Google re-sign your app for optimised delivery:
 
 ## STEP 7 — Complete the Play Store listing
 
-In Play Console > your app > fill in:
+All assets are pre-generated in `android/play-store-listing/`.
 
-### Store listing
-- **App name**: Lalabuba
-- **Short description** (80 chars max): Free AI coloring pages - type any word and color it!
-- **Full description** (4000 chars max): Use the English description from PART 1 of this guide
-- **App icon**: 512 x 512 PNG (no rounded corners — Play Store rounds them)
-- **Feature graphic**: 1024 x 500 PNG (banner shown at top of Play listing)
-- **Screenshots**: at least 2 phone screenshots (recommended: 1080 x 1920 or 1080 x 2340)
+### App name (max 30 chars)
+```
+Lalabuba
+```
+
+### Short description (max 80 chars)
+```
+Type any word — free AI coloring page instantly. Color, print, race a friend!
+```
+
+### Full description (English — copy from `descriptions/en.txt`)
+```
+Lalabuba turns any word into a color-by-number coloring page in seconds - completely free!
+
+Simply type any subject - a dragon, a unicorn, a castle, a butterfly - and our AI instantly creates a custom coloring page just for you.
+
+HOW IT WORKS
+Type anything you want to draw
+Tap numbered regions and fill them with color
+Print your masterpiece or save it to your camera roll
+Challenge a friend - share the same picture and race to finish first!
+
+FEATURES
+- AI-generated coloring pages - endless creativity
+- Color by number with 6 to 24 colors
+- 4 difficulty levels: Easy, Medium, Hard, Extreme
+- Classic crayons, soft pastels, and nature palette options
+- Print or save your finished artwork
+- Challenge mode: share and compete with friends via QR code or link
+- Available in 9 languages
+- Works on Android phones and tablets
+- 100% free - no account needed, no ads
+
+Perfect for kids ages 3-12 and creative people of all ages!
+```
+
+### Assets to upload
+| Field | File |
+|---|---|
+| App icon (512×512) | `android/play-store-listing/app-icon-512.png` |
+| Feature graphic (1024×500) | `android/play-store-listing/feature-graphic-1024x500.png` |
+| Phone screenshots | `android/play-store-listing/screenshots/en/` (5 files, 1080×1920) |
+
+### Privacy policy URL
+```
+https://lalabuba.com/privacy
+```
+
+### Contact email
+```
+info@lalabuba.com
+```
 
 ### Content rating
-- Complete the questionnaire (Lalabuba: no violence, no sexual content, suitable for all ages)
-- Expected rating: **Everyone** (ESRB) / **3+** (PEGI)
+- Complete the questionnaire: no violence, no sexual content, no profanity, no drugs
+- Expected rating: **Everyone** (ESRB) / **PEGI 3**
 
 ### Target audience
-- Target age group: **5 and up** (or "All ages")
-- Primary category: **Educational** or **Entertainment**
+- Primary: **Kids (ages 5–8, 9–12)**
+- Secondary: under 13
+
+### Category
+```
+Education
+```
 
 ### Pricing
-- Free (no in-app purchases)
+- Free, no in-app purchases, no ads
+
+### Translations (other 11 languages)
+In Play Console > Store listing > Add language, then paste from:
+- Short description: `android/play-store-listing/descriptions/{lang}-short.txt`
+- Full description: `android/play-store-listing/descriptions/{lang}.txt`
+- Screenshots: `android/play-store-listing/screenshots/{lang}/`
+
+Languages: de, es, fr, hi, it, nl, pl, pt, ru, tr, zh
+
+### Data safety
+- Data collected: **None**
+- Data shared: **None**
+- Data encrypted in transit: **Yes**
+- Users can request deletion: N/A (no account)
 
 ---
 
-## STEP 8 — First upload (manual, for initial release)
+## STEP 8 — First upload (manual, one-time only)
 
-The first AAB upload must be done manually:
+Google Play API requires the first AAB to be uploaded manually via the UI.
+After that, GitHub Actions publishes automatically on every push to `main`.
 
-1. In Codemagic, run the **android-release** workflow to build the AAB
-2. Download the AAB from the Codemagic build artifacts
-3. In Play Console > your app > **Internal testing** > Create new release
-4. Upload the AAB
-5. After internal testing passes, promote to **Production**
+1. Go to GitHub → botwa2000/lalabuba → **Actions → Android — Google Play**
+2. Open the latest successful build → **Artifacts** → download `lalabuba-release.aab.zip`
+3. Unzip to get `app-release.aab`
+4. In Play Console > Lalabuba > **Testing → Internal testing → Create new release**
+5. Upload `app-release.aab`
+6. Release name: `1.0`
+7. Release notes (English):
+```
+First internal test release.
+```
+8. Save → Review release → **Start rollout to Internal testing**
 
-Subsequent releases: Codemagic publishes automatically to Internal testing track.
+### Add yourself as internal tester
+1. Internal testing → **Testers** tab → Manage testers → add your Google account email
+2. Copy the opt-in URL
+3. Open the opt-in URL on your Galaxy → **Become a tester** → install from Play Store
+
+Subsequent releases publish automatically to internal track as draft.
 
 ---
 
 ## STEP 9 — Screenshots for Android
 
-Phone screenshots must be at least **1080 x 1920 px** (portrait).
-You can reuse the iOS screenshots after resizing:
-- Recommended: 1080 x 2340 (9:19.5 ratio, modern Android)
-- Minimum: 1080 x 1920
+Pre-generated at **1080×1920 px** (from iOS originals). Use:
+```
+android/play-store-listing/screenshots/en/
+  1-create.png
+  2-color-by-number.png
+  3-gallery.png
+  4-daily-challenge.png
+  5-challenge.png
+```
+Upload all 5. Repeat with each language folder for localized listings.
 
-Tablet screenshots (optional but recommended for visibility):
-- 7-inch: 1200 x 1920
-- 10-inch: 1600 x 2560
+---
+
+## GitHub Actions secrets (required in repo settings)
+
+Go to GitHub → botwa2000/lalabuba → **Settings → Secrets and variables → Actions**
+
+| Secret name | Where to find the value |
+|---|---|
+| `CM_KEYSTORE` | Contents of `C:\Users\Alexa\OneDrive\Dev\bonifatus-secrets\lalabuba-release.keystore.b64` |
+| `CM_KEYSTORE_PASSWORD` | See `KEYSTORE-CREDENTIALS.txt` |
+| `CM_KEY_ALIAS` | `lalabuba` |
+| `CM_KEY_PASSWORD` | See `KEYSTORE-CREDENTIALS.txt` |
+| `GCLOUD_SERVICE_ACCOUNT_CREDENTIALS` | Full JSON contents of `C:\Users\Alexa\Downloads\lalabuba-74f1f4a3b53a.json` |
 
 ---
 
 ## MONITORING Android builds
 
-1. Go to https://codemagic.io/apps
-2. Click Lalabuba > **android-release** workflow
-3. View build logs, download AAB/APK artifacts
-4. Check Google Play Console > Android vitals for crash reports
+1. Go to https://github.com/botwa2000/lalabuba/actions
+2. Click **Android — Google Play** workflow
+3. View logs, download AAB artifact (kept 30 days)
+4. Check Google Play Console > Android vitals for crash reports after going live
 
 ---
 
