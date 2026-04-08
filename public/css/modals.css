@@ -153,6 +153,35 @@
   margin: 0;
 }
 
+/* App Store nudge inside share modal */
+.share-appstore-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ff-body);
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 50px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  transition: color .15s, border-color .15s, background .15s;
+  margin-top: 4px;
+}
+.share-appstore-link:hover {
+  color: var(--ink);
+  border-color: rgba(0,0,0,.25);
+  background: rgba(0,0,0,.04);
+}
+.share-apple-icon {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
 .qr-box {
   display: flex;
   justify-content: center;

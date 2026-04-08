@@ -1,8 +1,12 @@
-/* ─── Site footer (minimal) ──────────────────────────────────────────────── */
+/* ─── Site footer ────────────────────────────────────────────────────────── */
 .site-footer {
   text-align: center;
-  padding: 28px 20px 20px;
+  padding: 28px 20px 24px;
   margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
 }
 .footer-copy {
   font-family: var(--ff-body);
@@ -10,4 +14,49 @@
   font-weight: 700;
   color: var(--muted);
   opacity: .7;
+}
+
+/* ─── App Store badge ────────────────────────────────────────────────────── */
+.appstore-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #000;
+  color: #fff;
+  border-radius: 11px;
+  padding: 9px 18px 9px 14px;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,.15);
+  box-shadow: 0 2px 12px rgba(0,0,0,.22);
+  transition: opacity .18s, transform .18s;
+}
+.appstore-badge:hover {
+  opacity: .85;
+  transform: translateY(-2px);
+}
+.appstore-badge:active {
+  transform: translateY(0);
+  opacity: .7;
+}
+.appstore-apple-icon {
+  width: 22px;
+  height: 22px;
+  fill: #fff;
+  flex-shrink: 0;
+}
+.appstore-badge-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.appstore-badge-sub {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: .02em;
+}
+.appstore-badge-title {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -.01em;
 }
