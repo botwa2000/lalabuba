@@ -16,6 +16,41 @@
   opacity: .7;
 }
 
+/* ─── Legal navigation ───────────────────────────────────────────────────── */
+.footer-legal {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-family: var(--ff-body);
+  font-size: 0.78rem;
+  color: var(--muted);
+  opacity: 0.7;
+}
+.footer-legal a {
+  color: inherit;
+  text-decoration: none;
+}
+.footer-legal a:hover {
+  text-decoration: underline;
+}
+.footer-cookie-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-family: var(--ff-body);
+  font-size: 0.78rem;
+  color: inherit;
+  cursor: pointer;
+  line-height: inherit;
+}
+.footer-cookie-btn:hover {
+  text-decoration: underline;
+}
+
 /* ─── App Store badge ────────────────────────────────────────────────────── */
 .appstore-badge {
   display: inline-flex;

@@ -32,11 +32,11 @@
 
 <h2>2. Information That Is Collected</h2>
 
-<p><strong>Usage analytics (Google Analytics):</strong> We use Google Analytics to understand how the app is used in aggregate — e.g. which features are popular and what languages users prefer. Google Analytics collects anonymised data such as browser type, device type, and pages visited. No personally identifiable information is sent. You can opt out via the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics opt-out browser add-on</a>.</p>
+<p><strong>Usage analytics (Google Analytics):</strong> We use Google Analytics to understand how the app is used in aggregate — e.g. which features are popular and what languages users prefer. Google Analytics is only loaded after you accept cookies via our consent banner. It collects anonymised data such as browser type, device type, and pages visited. No personally identifiable information is sent. You can withdraw consent at any time by clicking "Cookie settings" in the footer, or opt out via the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics opt-out browser add-on</a>.</p>
 
 <p><strong>Bot protection (Cloudflare Turnstile):</strong> When you click "Draw!", a Cloudflare Turnstile challenge verifies the request comes from a human. Turnstile processes your request without setting tracking cookies. See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare's Privacy Policy</a> for details.</p>
 
-<p><strong>AI image generation:</strong> The subject text you type (e.g. "dragon", "butterfly") is sent to our server and forwarded to an AI image generation service (HuggingFace) to create your coloring page. This text is not stored beyond the duration of the request.</p>
+<p><strong>AI image generation:</strong> We use a cascade of AI image generation services including Pollinations.ai, Together AI, Cloudflare Workers AI, and Novita.ai. The subject text you type is forwarded to generate your coloring page. It is not stored beyond the duration of the request.</p>
 
 <p><strong>Shared coloring pages:</strong> If you use the "Challenge a friend" feature, your coloring page image is temporarily stored (up to 7 days) on Vercel Blob storage to generate a shareable link. It is automatically deleted after 7 days.</p>
 
@@ -47,12 +47,27 @@
 <ul>
   <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Analytics</a> — anonymised usage statistics</li>
   <li><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare Turnstile</a> — bot protection</li>
-  <li><a href="https://huggingface.co/privacy" target="_blank" rel="noopener">HuggingFace</a> — AI image generation</li>
+  <li><a href="https://pollinations.ai/privacy" target="_blank" rel="noopener">Pollinations.ai</a> — AI image generation</li>
+  <li><a href="https://www.together.ai/privacy" target="_blank" rel="noopener">Together AI</a> — AI image generation</li>
+  <li><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare Workers AI</a> — AI image generation</li>
+  <li><a href="https://novita.ai/privacy-policy" target="_blank" rel="noopener">Novita.ai</a> — AI image generation</li>
   <li><a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener">Vercel</a> — hosting and temporary image storage</li>
 </ul>
 
-<h2>5. Cookies</h2>
-<p>Lalabuba uses minimal cookies. Google Analytics sets anonymised analytics cookies. Cloudflare Turnstile does not set tracking cookies. No marketing or advertising cookies are used.</p>
+<h2>5. Cookies &amp; Local Storage</h2>
+
+<p><strong>Essential (no consent required):</strong></p>
+<ul>
+  <li><strong>Cloudflare Turnstile</strong> — sets a short-lived session token to verify that requests come from humans. No tracking cookies are set. See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare's Privacy Policy</a>.</li>
+  <li><strong>localStorage (gallery &amp; preferences)</strong> — Lalabuba stores your saved coloring pages and app preferences (language, options) locally in your browser's localStorage. This data never leaves your device and is not transmitted to us.</li>
+</ul>
+
+<p><strong>Analytics (opt-in only):</strong></p>
+<ul>
+  <li><strong>Google Analytics</strong> — only loaded after you explicitly accept cookies via our cookie consent banner. Google Analytics collects anonymised data such as browser type, device type, and pages visited. No personally identifiable information is sent. You can opt out at any time via the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics opt-out browser add-on</a>.</li>
+</ul>
+
+<p>You can withdraw analytics consent at any time by clicking "Cookie settings" in the footer.</p>
 
 <h2>6. Data Retention</h2>
 <p>Shared coloring page images are deleted automatically after 7 days. Analytics data is retained by Google for 26 months per their standard policy. No other data is stored by us.</p>
