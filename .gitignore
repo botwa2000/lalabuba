@@ -7,3 +7,8 @@ node_modules/
 
 app-store-assets/
 generate-screenshots.js
+
+# Android build artifacts
+*.aab
+*.aab.zip
+*.apk
