@@ -80,7 +80,7 @@ workflows:
       vars:
         PACKAGE_NAME: "com.lalabuba.lalabuba"
       node: latest
-      java: 17
+      java: 21
 
     scripts:
       - name: Install npm dependencies
