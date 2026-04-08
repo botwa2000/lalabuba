@@ -5,5 +5,11 @@
   "ios": {
     "contentInset": "automatic",
     "backgroundColor": "#fef9ef"
+  },
+  "android": {
+    "backgroundColor": "#fef9ef",
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
   }
 }

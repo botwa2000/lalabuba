@@ -1,5 +1,5 @@
 # Lalabuba - Operations & Release Guides
-# iOS App Store · AI Image Providers · (Android coming later)
+# iOS App Store · Android Play Store · AI Image Providers
 
 Generated: April 2026
 Privacy Policy URL: https://lalabuba.com/privacy
@@ -1059,6 +1059,171 @@ Vercel logs show in real time which provider handled each request:
 2. Click "lalabuba" > "Deployments" tab > click the latest deployment
 3. Click "Functions" > click `api/generate-image`
 4. Live log lines appear here - look for lines like "Pollinations busy - trying Cloudflare"
+
+---
+
+---
+
+# PART 4 — ANDROID / GOOGLE PLAY STORE GUIDE
+
+## Overview
+
+The Android app is built with Capacitor (same web code as iOS) and published via Codemagic CI/CD to Google Play Store. Build: AAB (Android App Bundle) signed with a Java keystore.
+
+---
+
+## STEP 1 — Create Google Play Console account
+
+1. Go to https://play.google.com/console
+2. Sign in with your Google account
+3. Pay the one-time $25 developer registration fee
+4. Fill in developer profile (name: **Alexander Perel**, contact: info@lalabuba.com)
+5. Accept the Developer Distribution Agreement
+
+---
+
+## STEP 2 — Create the app in Google Play Console
+
+1. Click "Create app"
+2. App name: **Lalabuba**
+3. Default language: **English (United States)**
+4. App or Game: **App**
+5. Free or Paid: **Free**
+6. Declarations: check both boxes
+7. Click "Create app"
+
+Note the **Package name**: `com.lalabuba.lalabuba` (already set in the code)
+
+---
+
+## STEP 3 — Generate your Android signing keystore (do this once, keep it safe)
+
+Run this command on your computer (requires Java — install from https://adoptium.net if needed):
+
+```
+keytool -genkey -v \
+  -keystore lalabuba-release.keystore \
+  -alias lalabuba \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000 \
+  -dname "CN=Alexander Perel, OU=Bonifatus, O=Bonifatus, L=Bad Homburg, ST=Hesse, C=DE"
+```
+
+When prompted, set a strong password. **Keep this keystore file and its password safe forever** — you cannot update the app on Google Play without the original keystore.
+
+Then base64-encode it for Codemagic:
+```
+base64 lalabuba-release.keystore
+```
+Copy the entire output — you will paste it into Codemagic.
+
+---
+
+## STEP 4 — Set up Codemagic environment group for signing
+
+1. Go to https://codemagic.io > Teams > your team > **Global variables and secrets**
+2. Create a group named exactly: **`android-signing`**
+3. Add these variables (all marked as **secret/encrypted**):
+
+| Variable | Value |
+|---|---|
+| `CM_KEYSTORE` | The base64 output from Step 3 |
+| `CM_KEYSTORE_PASSWORD` | The password you chose in Step 3 |
+| `CM_KEY_ALIAS` | `lalabuba` |
+| `CM_KEY_PASSWORD` | Same password (or separate key password if you set one) |
+
+---
+
+## STEP 5 — Set up Google Play API credentials for Codemagic
+
+This lets Codemagic publish AABs to the Play Store automatically.
+
+1. Go to https://play.google.com/console > Setup > **API access**
+2. Click "Link to a Google Cloud project" > create or link a project
+3. In Google Cloud Console (https://console.cloud.google.com):
+   - Go to **IAM & Admin > Service Accounts**
+   - Create a service account (name: `codemagic-publisher`)
+   - Click the service account > **Keys** > Add Key > JSON
+   - Download the JSON file
+4. Back in Play Console > API access > find your service account > **Grant access**
+   - Set permissions: **Release manager** (or Admin)
+5. Copy the entire contents of the downloaded JSON file
+
+6. In Codemagic > Teams > **Global variables and secrets**:
+   - Create a group named: **`google-play`**
+   - Add variable: `GCLOUD_SERVICE_ACCOUNT_CREDENTIALS` = paste the entire JSON (mark as secret)
+
+---
+
+## STEP 6 — Set up app signing in Google Play (optional but recommended)
+
+Google Play App Signing lets Google re-sign your app for optimised delivery:
+
+1. In Play Console > your app > **Setup > App integrity**
+2. Click "App signing" > "Use Google Play app signing" > follow the wizard
+3. If using Play App Signing, you upload your keystore to Google once — they manage distribution signing
+
+---
+
+## STEP 7 — Complete the Play Store listing
+
+In Play Console > your app > fill in:
+
+### Store listing
+- **App name**: Lalabuba
+- **Short description** (80 chars max): Free AI coloring pages - type any word and color it!
+- **Full description** (4000 chars max): Use the English description from PART 1 of this guide
+- **App icon**: 512 x 512 PNG (no rounded corners — Play Store rounds them)
+- **Feature graphic**: 1024 x 500 PNG (banner shown at top of Play listing)
+- **Screenshots**: at least 2 phone screenshots (recommended: 1080 x 1920 or 1080 x 2340)
+
+### Content rating
+- Complete the questionnaire (Lalabuba: no violence, no sexual content, suitable for all ages)
+- Expected rating: **Everyone** (ESRB) / **3+** (PEGI)
+
+### Target audience
+- Target age group: **5 and up** (or "All ages")
+- Primary category: **Educational** or **Entertainment**
+
+### Pricing
+- Free (no in-app purchases)
+
+---
+
+## STEP 8 — First upload (manual, for initial release)
+
+The first AAB upload must be done manually:
+
+1. In Codemagic, run the **android-release** workflow to build the AAB
+2. Download the AAB from the Codemagic build artifacts
+3. In Play Console > your app > **Internal testing** > Create new release
+4. Upload the AAB
+5. After internal testing passes, promote to **Production**
+
+Subsequent releases: Codemagic publishes automatically to Internal testing track.
+
+---
+
+## STEP 9 — Screenshots for Android
+
+Phone screenshots must be at least **1080 x 1920 px** (portrait).
+You can reuse the iOS screenshots after resizing:
+- Recommended: 1080 x 2340 (9:19.5 ratio, modern Android)
+- Minimum: 1080 x 1920
+
+Tablet screenshots (optional but recommended for visibility):
+- 7-inch: 1200 x 1920
+- 10-inch: 1600 x 2560
+
+---
+
+## MONITORING Android builds
+
+1. Go to https://codemagic.io/apps
+2. Click Lalabuba > **android-release** workflow
+3. View build logs, download AAB/APK artifacts
+4. Check Google Play Console > Android vitals for crash reports
 
 ---
 
