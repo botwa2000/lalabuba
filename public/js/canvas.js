@@ -681,16 +681,27 @@ export function drawBaseImage(image) {
 }
 
 export async function renderGeneratedImage(imageBase64) {
-  const image = imageBase64.startsWith("data:")
-    ? await new Promise((resolve, reject) => {
-        const dataImage = new Image();
-        dataImage.onload = () => resolve(dataImage);
-        dataImage.onerror = () => reject(new Error("Failed to decode generated image."));
-        dataImage.src = imageBase64;
-      })
-    : imageBase64.startsWith("http") || imageBase64.startsWith("blob:")
-      ? await imageFromUrl(imageBase64)
-      : await imageFromBase64(imageBase64);
+  let image;
+  if (imageBase64.startsWith("data:")) {
+    image = await new Promise((resolve, reject) => {
+      const dataImage = new Image();
+      dataImage.onload = () => resolve(dataImage);
+      dataImage.onerror = () => reject(new Error("Failed to decode generated image."));
+      dataImage.src = imageBase64;
+    });
+  } else if (imageBase64.startsWith("blob:")) {
+    // Load blob URLs directly — re-fetching blob: URLs with CORS mode fails on Android WebView
+    image = await new Promise((resolve, reject) => {
+      const blobImage = new Image();
+      blobImage.onload = () => resolve(blobImage);
+      blobImage.onerror = () => reject(new Error("Failed to decode generated image."));
+      blobImage.src = imageBase64;
+    });
+  } else if (imageBase64.startsWith("http")) {
+    image = await imageFromUrl(imageBase64);
+  } else {
+    image = await imageFromBase64(imageBase64);
+  }
   state.currentImage = imageBase64;
   drawBaseImage(image);
   redrawCanvas();
