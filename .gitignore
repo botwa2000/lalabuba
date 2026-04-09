@@ -9,6 +9,7 @@ app-store-assets/
 generate-screenshots.js
 !android/generate-screenshots.js
 !android/generate-icon.js
+!android/generate-tablet-screenshots.js
 
 # Android build artifacts
 *.aab
