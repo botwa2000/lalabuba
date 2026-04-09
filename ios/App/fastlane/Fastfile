@@ -1,0 +1,42 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    # App Store Connect API key (avoids 2FA prompts on CI)
+    api_key = app_store_connect_api_key(
+      key_id:                  ENV["ASC_KEY_ID"],
+      issuer_id:               ENV["ASC_ISSUER_ID"],
+      key_content:             ENV["ASC_PRIVATE_KEY"],
+      is_key_content_base64:   true,
+    )
+
+    # Build signed IPA
+    gym(
+      project:        "App.xcodeproj",
+      scheme:         "App",
+      configuration:  "Release",
+      export_method:  "app-store",
+      export_options: {
+        teamID:               ENV["IOS_TEAM_ID"],
+        provisioningProfiles: {
+          "com.lalabuba.lalabuba" => ENV["IOS_PROFILE_NAME"],
+        },
+        signingStyle:      "manual",
+        signingCertificate: "Apple Distribution",
+      },
+      # SPM: resolve packages before building
+      xcargs:             "-resolvePackageDependencies",
+      output_directory:   "/tmp/ipa",
+      output_name:        "App.ipa",
+    )
+
+    # Upload to TestFlight (internal testing, no review needed)
+    pilot(
+      api_key:                           api_key,
+      ipa:                               "/tmp/ipa/App.ipa",
+      skip_waiting_for_build_processing: true,
+      distribute_external:               false,
+    )
+  end
+end
