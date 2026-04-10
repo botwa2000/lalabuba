@@ -51,6 +51,16 @@
   text-decoration: underline;
 }
 
+/* ─── Store badges row ───────────────────────────────────────────────────── */
+.store-badges {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 /* ─── App Store badge ────────────────────────────────────────────────────── */
 .appstore-badge {
   display: inline-flex;
@@ -94,4 +104,11 @@
   font-size: 19px;
   font-weight: 600;
   letter-spacing: -.01em;
+}
+
+/* ─── Google Play badge ──────────────────────────────────────────────────── */
+.googleplay-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
