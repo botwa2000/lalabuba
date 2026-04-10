@@ -57,8 +57,7 @@ jobs:
             -Pandroid.injected.signing.store.file=/tmp/lalabuba-release.keystore \
             -Pandroid.injected.signing.store.password="${{ secrets.CM_KEYSTORE_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias="${{ secrets.CM_KEY_ALIAS }}" \
-            -Pandroid.injected.signing.key.password="${{ secrets.CM_KEY_PASSWORD }}" \
-            -Pandroid.injected.version.code=${{ github.run_number }}
+            -Pandroid.injected.signing.key.password="${{ secrets.CM_KEY_PASSWORD }}"
 
       # ── Upload AAB as build artifact (always) ───────────────────────────
       - name: Upload AAB artifact
