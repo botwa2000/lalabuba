@@ -180,7 +180,14 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
     if (echoedSeed) state.lastSeed = parseInt(echoedSeed, 10);
     state.lastImageUrl = response.headers.get('X-Image-Url') || null;
 
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.startsWith('image/')) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`Server returned non-image response (${contentType}): ${text.slice(0, 120)}`);
+    }
+
     const blob = await response.blob();
+    if (blob.size === 0) throw new Error("Server returned an empty image. Please try again.");
     return URL.createObjectURL(blob);
   }
 
