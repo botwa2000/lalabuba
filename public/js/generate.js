@@ -149,9 +149,12 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
   }
 
   if (provider === "backend" || provider === "direct") {
-    const apiBase = (window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:')
-      ? 'https://lalabuba.com'
-      : '';
+    // Capacitor 4+ uses https://localhost on Android (not capacitor://), so
+    // protocol sniffing fails. Use Capacitor.isNativePlatform() instead.
+    const isNative = window.Capacitor?.isNativePlatform?.() ||
+                     window.location.protocol === 'capacitor:' ||
+                     window.location.protocol === 'ionic:';
+    const apiBase = isNative ? 'https://lalabuba.com' : '';
     const response = await fetch(`${apiBase}/api/generate-image`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
