@@ -172,6 +172,37 @@
   50%     { transform: translateY(-14px); }
 }
 
+/* ─── Zoom controls (B4) ─────────────────────────────────────────────────── */
+.zoom-controls {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  justify-content: flex-end;
+  background: var(--bg);
+  border-bottom: 1.5px solid var(--border);
+}
+.zoom-controls[hidden] { display: none; }
+.zoom-btn {
+  font-family: var(--ff-brand);
+  font-size: 1.1rem;
+  font-weight: 800;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.zoom-btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); transform: scale(1.1); }
+.zoom-btn:disabled { opacity: .35; cursor: not-allowed; }
+
 /* ─── Canvas body (flex row: preview-stage + palette-sidebar) ────────────── */
 .canvas-body {
   display: flex;

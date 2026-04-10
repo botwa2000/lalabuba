@@ -298,6 +298,47 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Draw button pulse (A1: guides eye after chip/card tap) ──────────────── */
+@keyframes drawPulse {
+  0%   { box-shadow: 0 5px 18px rgba(255,71,87,.35), 0 0 0 0 rgba(255,71,87,.55); transform: translateY(0) scale(1); }
+  40%  { box-shadow: 0 8px 24px rgba(255,71,87,.5),  0 0 0 10px rgba(255,71,87,.0); transform: translateY(-3px) scale(1.06); }
+  100% { box-shadow: 0 5px 18px rgba(255,71,87,.35), 0 0 0 0 rgba(255,71,87,0); transform: translateY(0) scale(1); }
+}
+.go-btn.pulse { animation: drawPulse .4s ease-out; }
+
+/* ─── Settings chips row (A2) ────────────────────────────────────────────── */
+.settings-chips {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.setting-chip {
+  font-family: var(--ff-body);
+  font-size: .88rem;
+  font-weight: 800;
+  padding: 8px 16px;
+  min-height: 36px;
+  border-radius: 50px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .18s;
+  flex-shrink: 0;
+}
+.setting-chip:hover { border-color: var(--blue); color: var(--blue); transform: translateY(-1px); }
+.setting-chip--on {
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(38,194,129,.3);
+}
+.setting-chip--on:hover { border-color: transparent; color: #fff; opacity: .9; }
+
 /* ─── Surprise button ────────────────────────────────────────────────────── */
 .surprise-btn {
   font-size: 1.2rem;

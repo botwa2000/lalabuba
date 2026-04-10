@@ -67,15 +67,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=7" />
-  <link rel="stylesheet" href="/css/header.css?v=7" />
-  <link rel="stylesheet" href="/css/hero.css?v=7" />
-  <link rel="stylesheet" href="/css/generator.css?v=7" />
-  <link rel="stylesheet" href="/css/workspace.css?v=7" />
-  <link rel="stylesheet" href="/css/palette.css?v=7" />
-  <link rel="stylesheet" href="/css/modals.css?v=7" />
-  <link rel="stylesheet" href="/css/footer.css?v=7" />
-  <link rel="stylesheet" href="/css/print.css?v=7" />
+  <link rel="stylesheet" href="/css/tokens.css?v=8" />
+  <link rel="stylesheet" href="/css/header.css?v=8" />
+  <link rel="stylesheet" href="/css/hero.css?v=8" />
+  <link rel="stylesheet" href="/css/generator.css?v=8" />
+  <link rel="stylesheet" href="/css/workspace.css?v=8" />
+  <link rel="stylesheet" href="/css/palette.css?v=8" />
+  <link rel="stylesheet" href="/css/modals.css?v=8" />
+  <link rel="stylesheet" href="/css/footer.css?v=8" />
+  <link rel="stylesheet" href="/css/print.css?v=8" />
   <link rel="stylesheet" href="/css/cookies.css?v=1" />
   <script src="/js/cookies.js?v=1"></script>
 </head>
@@ -154,57 +154,25 @@
             <button id="regen-button" type="button" class="regen-btn" disabled data-i18n="regenBtn">🎲 Again!</button>
           </div>
 
-          <div class="options-row">
-            <button type="button" id="options-toggle" class="options-toggle-btn">
-              <span data-i18n="optionsBtn">⚙️ Options</span>
-              <span class="options-arrow">▾</span>
-            </button>
+          <!-- A2: Always-visible settings chips — tap to cycle/toggle -->
+          <div class="settings-chips" id="settings-chips">
+            <button type="button" class="setting-chip" id="chip-diff">⭐⭐</button>
+            <button type="button" class="setting-chip" id="chip-count">🎨 12</button>
+            <button type="button" class="setting-chip" id="chip-palette">🖍️</button>
+            <button type="button" class="setting-chip setting-chip--on" id="chip-numbers">🔢 ●</button>
+            <button type="button" id="help-btn" class="help-btn" data-i18n="helpBtn">❓ How it works</button>
           </div>
 
-          <div id="options-panel" class="options-panel" hidden>
-            <div class="controls-grid">
-              <div class="control-row">
-                <span class="ctrl-label" data-i18n="difficulty">Difficulty</span>
-                <div class="pill-group" role="group">
-                  <button type="button" class="diff-pill" data-diff="easy" data-i18n="diffEasy">Easy 🌟</button>
-                  <button type="button" class="diff-pill selected" data-diff="medium" data-i18n="diffMedium">Medium 🌟🌟</button>
-                  <button type="button" class="diff-pill" data-diff="hard" data-i18n="diffHard">Hard 🌟🌟🌟</button>
-                  <button type="button" class="diff-pill" data-diff="extreme" data-i18n="diffExtreme">Extreme 🔥</button>
-                </div>
-              </div>
-              <div class="control-row">
-                <span class="ctrl-label" data-i18n="colors">Colors</span>
-                <div class="pill-group count-group" role="group">
-                  <button type="button" class="count-pill" data-count="6">6</button>
-                  <button type="button" class="count-pill selected" data-count="12">12</button>
-                  <button type="button" class="count-pill" data-count="18">18</button>
-                  <button type="button" class="count-pill" data-count="24">24</button>
-                  <button type="button" class="count-pill count-max-pill" data-i18n="countMax">Max</button>
-                </div>
-                <label class="check-pill">
-                  <input id="show-numbers" type="checkbox" checked />
-                  <span data-i18n="colorByNumber">🔢 Color by number</span>
-                </label>
-              </div>
-              <div class="control-row">
-                <span class="ctrl-label" data-i18n="palette">Palette</span>
-                <div class="pill-group" role="group">
-                  <button type="button" class="palette-pill selected" data-palette="classic" data-i18n="paletteClassic">🖍️ Classic crayons</button>
-                  <button type="button" class="palette-pill" data-palette="pastel" data-i18n="palettePastel">🌸 Soft pastels</button>
-                  <button type="button" class="palette-pill" data-palette="nature" data-i18n="paletteNature">🌿 Nature</button>
-                </div>
-                <button type="button" id="help-btn" class="help-btn" data-i18n="helpBtn">❓ How it works</button>
-              </div>
-            </div>
-
-            <!-- Collapsible help panel -->
-            <div id="help-panel" class="help-panel" hidden>
-              <div class="help-step" data-i18n="helpLine1">✏️ Type anything to draw — a cat, a dragon, a rocket ship…</div>
-              <div class="help-step" data-i18n="helpLine2">🎨 Click Draw! and AI creates a coloring page just for you</div>
-              <div class="help-step" data-i18n="helpLine3">🔢 Tap a numbered area, then tap a color to fill it</div>
-              <div class="help-step" data-i18n="helpLine4">🖨️ Print or save your masterpiece when you're done!</div>
-            </div>
+          <!-- Help panel (toggled by help button) -->
+          <div id="help-panel" class="help-panel" hidden>
+            <div class="help-step" data-i18n="helpLine1">✏️ Type anything to draw — a cat, a dragon, a rocket ship…</div>
+            <div class="help-step" data-i18n="helpLine2">🎨 Click Draw! and AI creates a coloring page just for you</div>
+            <div class="help-step" data-i18n="helpLine3">🔢 Tap a numbered area, then tap a color to fill it</div>
+            <div class="help-step" data-i18n="helpLine4">🖨️ Print or save your masterpiece when you're done!</div>
           </div>
+
+          <!-- Hidden inputs kept for JS compatibility -->
+          <input id="show-numbers" type="checkbox" checked class="sr-only" aria-hidden="true" />
 
           <!-- Hidden selects kept for JS compatibility -->
           <select id="difficulty-select" class="sr-only" aria-hidden="true">
@@ -253,6 +221,13 @@
             <button id="download-button"     type="button" disabled class="action-btn" data-i18n="saveBtn">💾 Save</button>
             <button id="share-artwork-btn"   type="button" disabled class="action-btn" data-i18n="shareArtBtn">🖼️ Share art</button>
             <button id="share-button"        type="button" disabled class="action-btn share-action-btn" data-i18n="shareBtn">🏆 Challenge!</button>
+          </div>
+
+          <!-- B4: Zoom controls — shown after first image generates -->
+          <div class="zoom-controls" id="zoom-controls" hidden>
+            <button type="button" class="zoom-btn" id="zoom-in-btn" aria-label="Zoom in">+</button>
+            <button type="button" class="zoom-btn" id="zoom-reset-btn" aria-label="Reset zoom">⊡</button>
+            <button type="button" class="zoom-btn" id="zoom-out-btn" aria-label="Zoom out">−</button>
           </div>
 
           <div class="canvas-body">
@@ -387,13 +362,15 @@
     <img class="lightbox-img" src="" alt="" />
   </div>
 
-  <!-- Cookie consent banner -->
+  <!-- Cookie consent banner (B2: i18n via data-i18n, translated by applyTranslations) -->
   <div id="cookie-banner" class="cookie-banner" aria-live="polite" aria-label="Cookie consent" hidden>
     <div class="cookie-banner-inner">
-      <p class="cookie-text">🍪 We use cookies to understand how you use Lalabuba. <a href="/privacy.html" class="cookie-link">Learn more</a></p>
+      <p class="cookie-text">
+        <span data-i18n="cookieText">🍪 We use cookies to understand how you use Lalabuba. </span><a href="/privacy.html" class="cookie-link" data-i18n="cookieLearnMore">Learn more</a>
+      </p>
       <div class="cookie-actions">
-        <button id="cookie-accept" class="cookie-btn cookie-btn-accept">Accept cookies 🍪</button>
-        <button id="cookie-decline" class="cookie-btn cookie-btn-decline">No thanks</button>
+        <button id="cookie-accept" class="cookie-btn cookie-btn-accept" data-i18n="cookieAccept">Accept cookies 🍪</button>
+        <button id="cookie-decline" class="cookie-btn cookie-btn-decline" data-i18n="cookieDecline">No thanks</button>
       </div>
     </div>
   </div>
@@ -406,6 +383,6 @@
        data-callback="onTurnstileSuccess">
   </div>
 
-  <script type="module" src="/js/main.js?v=7"></script>
+  <script type="module" src="/js/main.js?v=8"></script>
 </body>
 </html>

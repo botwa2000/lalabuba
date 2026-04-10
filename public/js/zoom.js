@@ -19,9 +19,29 @@ function applyTransform() {
   canvasFrame.style.transform = `scale(${scale}) translate(${panX}px, ${panY}px)`;
 }
 
-function resetZoom() {
+export function resetZoom() {
   scale = 1; panX = 0; panY = 0;
   applyTransform();
+}
+
+export function zoomIn() {
+  scale = clamp(scale * 1.25, MIN_SCALE, MAX_SCALE);
+  applyTransform();
+  _updateZoomButtons();
+}
+
+export function zoomOut() {
+  scale = clamp(scale / 1.25, MIN_SCALE, MAX_SCALE);
+  if (scale <= MIN_SCALE) { scale = MIN_SCALE; panX = 0; panY = 0; }
+  applyTransform();
+  _updateZoomButtons();
+}
+
+function _updateZoomButtons() {
+  const inBtn  = document.getElementById('zoom-in-btn');
+  const outBtn = document.getElementById('zoom-out-btn');
+  if (inBtn)  inBtn.disabled  = scale >= MAX_SCALE;
+  if (outBtn) outBtn.disabled = scale <= MIN_SCALE;
 }
 
 // Convert a click event's client coords to canvas pixel coords, accounting for zoom/pan.
@@ -57,6 +77,9 @@ export function initZoom(frame, canvas) {
   let lastMid = { x: 0, y: 0 };
   let tapCount = 0;
   let tapTimer = null;
+  // Single-finger pan tracking
+  let panTouch = null;
+  let panTouchStartPan = null;
 
   function getTouches(e) {
     return Array.from(e.touches).slice(0, 2);
@@ -77,8 +100,16 @@ export function initZoom(frame, canvas) {
       clearTimeout(tapTimer);
       tapTimer = setTimeout(() => { tapCount = 0; }, 350);
       if (tapCount >= 2) { tapCount = 0; resetZoom(); return; }
+      // Single-finger pan when zoomed in
+      if (scale > MIN_SCALE) {
+        panTouch = { id: ts[0].identifier, x: ts[0].clientX, y: ts[0].clientY };
+        panTouchStartPan = { x: panX, y: panY };
+      } else {
+        panTouch = null;
+      }
     }
     if (ts.length === 2) {
+      panTouch = null; // cancel 1-finger pan when second finger joins
       e.preventDefault();
       initDist = dist(ts[0], ts[1]);
       initScale = scale;
@@ -90,6 +121,14 @@ export function initZoom(frame, canvas) {
 
   canvas.addEventListener('touchmove', (e) => {
     const ts = getTouches(e);
+    // Single-finger pan when zoomed in
+    if (ts.length === 1 && panTouch && scale > MIN_SCALE) {
+      e.preventDefault();
+      panX = panTouchStartPan.x + (ts[0].clientX - panTouch.x) / scale;
+      panY = panTouchStartPan.y + (ts[0].clientY - panTouch.y) / scale;
+      applyTransform();
+      return;
+    }
     if (ts.length === 2 && initDist) {
       e.preventDefault();
       const newDist = dist(ts[0], ts[1]);
@@ -106,6 +145,13 @@ export function initZoom(frame, canvas) {
 
   canvas.addEventListener('touchend', (e) => {
     if (e.touches.length < 2) initDist = null;
+    if (e.touches.length === 0) panTouch = null;
     if (scale <= MIN_SCALE) { scale = MIN_SCALE; panX = 0; panY = 0; applyTransform(); }
+    _updateZoomButtons();
   });
+
+  // ── +/− zoom buttons ──────────────────────────────────────────────────────
+  document.getElementById('zoom-in-btn')?.addEventListener('click', () => zoomIn());
+  document.getElementById('zoom-out-btn')?.addEventListener('click', () => zoomOut());
+  document.getElementById('zoom-reset-btn')?.addEventListener('click', () => { resetZoom(); _updateZoomButtons(); });
 }

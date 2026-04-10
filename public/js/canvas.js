@@ -4,6 +4,7 @@ import {
   previewCanvas, drawCanvas, context, drawCtx,
   previewStage, showNumbersInput, printButton, downloadButton, pencilBtn, clearPencilBtn,
 } from './dom.js';
+import { resetZoom } from './zoom.js';
 
 // Module-level palette context, set by setPaletteContext() from ui.js
 let _palette = [];
@@ -677,10 +678,15 @@ export function drawBaseImage(image) {
   state.completedRegions = new Set();
   state.celebrationShown = false;
   state.coloringStartTime = null;
+  state.undoStack = [];
   precomputeRegions();
 }
 
 export async function renderGeneratedImage(imageBase64) {
+  resetZoom(); // B3: reset pan/zoom state on each new image
+  // Show zoom controls after first image loads
+  const zoomControls = document.getElementById('zoom-controls');
+  if (zoomControls) zoomControls.hidden = false;
   let image;
   if (imageBase64.startsWith("data:")) {
     image = await new Promise((resolve, reject) => {

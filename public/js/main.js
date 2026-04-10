@@ -140,6 +140,8 @@ showNumbersInput.addEventListener("change", async () => {
 // ─── Palette select ──────────────────────────────────────────────────────────
 paletteSelect.addEventListener("change", async () => {
   renderLegend();
+  updatePaletteChip();
+  updateCountChip();
 
   if (!state.currentImage) {
     return;
@@ -168,6 +170,7 @@ difficultySelect.addEventListener("change", () => {
     state.selectedPaletteIndex = 0;
   }
   renderLegend();
+  updateDiffChip();
 
   if (state.currentImage && showNumbersInput.checked) {
     renderGeneratedImage(state.currentImage).catch((error) => {
@@ -489,6 +492,7 @@ document.querySelectorAll('.lang-option').forEach(btn => {
     if (dailyWordValue) {
       dailyWordValue.textContent = getTranslatedDailyWord(dailyWord, getCurrentLang());
     }
+    updateDiffChip(); updatePaletteChip(); // refresh translated chip titles
     langDropdown.hidden = true;
     langToggle.setAttribute('aria-expanded', 'false');
   });
@@ -504,20 +508,93 @@ if (canvasFrame) initZoom(canvasFrame, previewCanvas);
 // ─── Share handlers ───────────────────────────────────────────────────────────
 initShareHandlers();
 
-// ─── Options toggle ───────────────────────────────────────────────────────────
-document.getElementById('options-toggle').addEventListener('click', () => {
-  const panel = document.getElementById('options-panel');
-  const btn   = document.getElementById('options-toggle');
-  const opening = panel.hidden;
-  panel.hidden = !opening;
-  btn.classList.toggle('open', opening);
+// ─── Settings chips (A2) ──────────────────────────────────────────────────────
+const DIFF_CYCLE    = ['easy', 'medium', 'hard', 'extreme'];
+const COUNT_CYCLE   = [6, 12, 18, 24, 'max'];
+const PALETTE_CYCLE = ['classic', 'pastel', 'nature'];
+const DIFF_EMOJI    = { easy: '🌟', medium: '🌟🌟', hard: '🌟🌟🌟', extreme: '🔥' };
+const PALETTE_EMOJI = { classic: '🖍️', pastel: '🌸', nature: '🌿' };
+
+const chipDiff    = document.getElementById('chip-diff');
+const chipCount   = document.getElementById('chip-count');
+const chipPalette = document.getElementById('chip-palette');
+const chipNumbers = document.getElementById('chip-numbers');
+
+function updateDiffChip() {
+  if (!chipDiff) return;
+  chipDiff.textContent = DIFF_EMOJI[difficultySelect.value] || '⭐';
+  chipDiff.title = t('difficulty') + ': ' + t('diff' + difficultySelect.value.charAt(0).toUpperCase() + difficultySelect.value.slice(1));
+}
+function updateCountChip() {
+  if (!chipCount) return;
+  chipCount.textContent = state.colorCount >= (PALETTES[paletteSelect.value]?.length || 24)
+    ? `🎨 Max`
+    : `🎨 ${state.colorCount}`;
+}
+function updatePaletteChip() {
+  if (!chipPalette) return;
+  chipPalette.textContent = PALETTE_EMOJI[paletteSelect.value] || '🖍️';
+  chipPalette.title = t('palette') + ': ' + t('palette' + paletteSelect.value.charAt(0).toUpperCase() + paletteSelect.value.slice(1));
+}
+function updateNumbersChip() {
+  if (!chipNumbers) return;
+  const on = showNumbersInput.checked;
+  chipNumbers.textContent = on ? '🔢 ●' : '🔢 ○';
+  chipNumbers.classList.toggle('setting-chip--on', on);
+}
+function updateAllChips() {
+  updateDiffChip(); updateCountChip(); updatePaletteChip(); updateNumbersChip();
+}
+
+if (chipDiff) chipDiff.addEventListener('click', () => {
+  const cur = DIFF_CYCLE.indexOf(difficultySelect.value);
+  difficultySelect.value = DIFF_CYCLE[(cur + 1) % DIFF_CYCLE.length];
+  difficultySelect.dispatchEvent(new Event('change'));
+  updateDiffChip();
 });
+
+if (chipCount) chipCount.addEventListener('click', () => {
+  const palette = PALETTES[paletteSelect.value];
+  const maxCount = palette.length;
+  const cur = COUNT_CYCLE.indexOf(state.colorCount);
+  const nextRaw = COUNT_CYCLE[(cur + 1) % COUNT_CYCLE.length];
+  const next = nextRaw === 'max' ? maxCount : Number(nextRaw);
+  setColorCount(next, next === maxCount);
+  updateCountChip();
+});
+
+if (chipPalette) chipPalette.addEventListener('click', () => {
+  const cur = PALETTE_CYCLE.indexOf(paletteSelect.value);
+  paletteSelect.value = PALETTE_CYCLE[(cur + 1) % PALETTE_CYCLE.length];
+  paletteSelect.dispatchEvent(new Event('change'));
+  updatePaletteChip();
+  updateCountChip(); // palette affects max count
+});
+
+if (chipNumbers) chipNumbers.addEventListener('click', () => {
+  showNumbersInput.checked = !showNumbersInput.checked;
+  showNumbersInput.dispatchEvent(new Event('change'));
+  updateNumbersChip();
+});
+
+updateAllChips();
+
+// ─── Populate-only helpers (A1) ───────────────────────────────────────────────
+function pulseDraw() {
+  const btn = document.getElementById('generate-button');
+  if (!btn) return;
+  btn.classList.remove('pulse');
+  void btn.offsetWidth; // reflow to restart animation
+  btn.classList.add('pulse');
+  btn.addEventListener('animationend', () => btn.classList.remove('pulse'), { once: true });
+}
 
 // ─── Surprise button ──────────────────────────────────────────────────────────
 document.getElementById('surprise-button').addEventListener('click', () => {
   const subjects = SURPRISE_SUBJECTS;
   subjectInput.value = subjects[Math.floor(Math.random() * subjects.length)];
   subjectInput.focus();
+  pulseDraw();
 });
 
 // ─── Coloring hint dismiss ────────────────────────────────────────────────────
@@ -544,13 +621,17 @@ const dailyWordValue = document.getElementById('daily-word-value');
 const dailyInfoBtn   = document.getElementById('daily-word-info-btn');
 const dailyInfoPopup = document.getElementById('daily-info-popup');
 const { word: dailyWord, seed: dailySeed } = getDailyChallenge();
+// Clear seed override when user manually changes the input
+subjectInput.addEventListener('input', () => { _pendingSeedOverride = null; });
+
 if (dailyWordRow && dailyWordBtn && dailyWordValue) {
   dailyWordValue.textContent = getTranslatedDailyWord(dailyWord, getCurrentLang());
   dailyWordRow.hidden = false;
   dailyWordBtn.addEventListener('click', () => {
     subjectInput.value = dailyWord; // always English for the AI prompt
     _pendingSeedOverride = dailySeed;
-    form.requestSubmit();
+    subjectInput.focus();
+    pulseDraw(); // A1: guide user to click Draw instead of auto-submitting
   });
 }
 if (dailyInfoBtn && dailyInfoPopup) {
@@ -661,7 +742,7 @@ function renderExamples() {
   grid.innerHTML = examplePicks.map((item, idx) => {
     const label = item.labels?.[lang]
       || (item.subject.charAt(0).toUpperCase() + item.subject.slice(1));
-    return `<button class="example-card" data-subject="${item.subject}" type="button" aria-label="${label}">
+    return `<button class="example-card" data-subject="${item.subject}" data-label="${label}" type="button" aria-label="${label}">
       <div class="example-card-art" style="background:${CARD_GRADIENTS[idx % CARD_GRADIENTS.length]}">
         <span class="example-emoji">${item.emoji}</span>
       </div>
@@ -670,8 +751,11 @@ function renderExamples() {
   }).join('');
   grid.querySelectorAll('.example-card').forEach(card => {
     card.addEventListener('click', () => {
-      subjectInput.value = card.dataset.subject;
-      form.requestSubmit();
+      // A1: populate input only — don't auto-draw
+      // B1: use translated label so user sees their language in the input field
+      subjectInput.value = card.dataset.label;
+      subjectInput.focus();
+      pulseDraw();
     });
   });
 }
