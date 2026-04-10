@@ -630,6 +630,10 @@ export async function fetchToDataUrl(url) {
   if (!response.ok) {
     throw new Error(`Pollinations returned ${response.status}.`);
   }
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.startsWith("image/")) {
+    throw new Error(`Pollinations returned non-image content (${contentType}).`);
+  }
   const blob = await response.blob();
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
