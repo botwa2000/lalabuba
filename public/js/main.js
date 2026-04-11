@@ -18,7 +18,7 @@ import {
 import { generatePage, requestGeneratedImage } from './generate.js';
 import { initDrawingTool } from './drawing.js';
 import { initShareHandlers, loadFromShare } from './share.js';
-import { initZoom, getCanvasCoords } from './zoom.js';
+import { initZoom, getCanvasCoords, isPanMode } from './zoom.js';
 import { initOnboarding } from './onboarding.js';
 
 function formatTime(ms) {
@@ -218,6 +218,7 @@ document.addEventListener('keydown', (e) => {
 let _lastClickMs = 0, _lastClickId = 0;
 
 previewCanvas.addEventListener("click", (event) => {
+  if (isPanMode()) return; // pan mode active — drag is for moving, not coloring
   if (!state.regionMap) return;
 
   const { x: canvasX, y: canvasY } = getCanvasCoords(event);

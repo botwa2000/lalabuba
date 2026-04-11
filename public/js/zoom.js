@@ -8,6 +8,9 @@ let panY = 0;
 let canvasFrame = null;
 let _canvas = null;
 
+// Pan mode: when true, mouse drag moves the image instead of coloring
+let panMode = false;
+
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
 
@@ -19,9 +22,47 @@ function applyTransform() {
   canvasFrame.style.transform = `scale(${scale}) translate(${panX}px, ${panY}px)`;
 }
 
+function _updatePanCursor() {
+  if (!_canvas) return;
+  if (panMode) {
+    _canvas.style.cursor = 'grab';
+  } else {
+    _canvas.style.cursor = '';
+  }
+}
+
+function _updateZoomButtons() {
+  const inBtn  = document.getElementById('zoom-in-btn');
+  const outBtn = document.getElementById('zoom-out-btn');
+  const panBtn = document.getElementById('zoom-pan-btn');
+  if (inBtn)  inBtn.disabled  = scale >= MAX_SCALE;
+  if (outBtn) outBtn.disabled = scale <= MIN_SCALE;
+  if (panBtn) {
+    const zoomed = scale > MIN_SCALE;
+    panBtn.disabled = !zoomed;
+    // Auto-exit pan mode when zoomed back to 1×
+    if (!zoomed && panMode) {
+      panMode = false;
+      panBtn.classList.remove('active');
+      panBtn.setAttribute('aria-pressed', 'false');
+      _updatePanCursor();
+    }
+  }
+}
+
+export function isPanMode() { return panMode; }
+
 export function resetZoom() {
   scale = 1; panX = 0; panY = 0;
   applyTransform();
+  panMode = false;
+  const panBtn = document.getElementById('zoom-pan-btn');
+  if (panBtn) {
+    panBtn.classList.remove('active');
+    panBtn.setAttribute('aria-pressed', 'false');
+    panBtn.disabled = true;
+  }
+  _updatePanCursor();
 }
 
 export function zoomIn() {
@@ -35,13 +76,6 @@ export function zoomOut() {
   if (scale <= MIN_SCALE) { scale = MIN_SCALE; panX = 0; panY = 0; }
   applyTransform();
   _updateZoomButtons();
-}
-
-function _updateZoomButtons() {
-  const inBtn  = document.getElementById('zoom-in-btn');
-  const outBtn = document.getElementById('zoom-out-btn');
-  if (inBtn)  inBtn.disabled  = scale >= MAX_SCALE;
-  if (outBtn) outBtn.disabled = scale <= MIN_SCALE;
 }
 
 // Convert a click event's client coords to canvas pixel coords, accounting for zoom/pan.
@@ -66,7 +100,45 @@ export function initZoom(frame, canvas) {
     scale = clamp(scale * delta, MIN_SCALE, MAX_SCALE);
     if (scale === MIN_SCALE) { panX = 0; panY = 0; }
     applyTransform();
+    _updateZoomButtons();
   }, { passive: false });
+
+  // ── Mouse drag-to-pan (active when panMode = true) ─────────────────────────
+  let mouseDragging = false;
+  let mouseDragStart = null;
+  let panAtDragStart = null;
+
+  canvas.addEventListener('mousedown', (e) => {
+    if (!panMode || scale <= MIN_SCALE) return;
+    e.preventDefault(); // prevent text selection during drag
+    mouseDragging = true;
+    mouseDragStart = { x: e.clientX, y: e.clientY };
+    panAtDragStart = { x: panX, y: panY };
+    canvas.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!mouseDragging) return;
+    panX = panAtDragStart.x + (e.clientX - mouseDragStart.x) / scale;
+    panY = panAtDragStart.y + (e.clientY - mouseDragStart.y) / scale;
+    applyTransform();
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!mouseDragging) return;
+    mouseDragging = false;
+    if (panMode) canvas.style.cursor = 'grab';
+  });
+
+  // ── Pan button toggle ──────────────────────────────────────────────────────
+  document.getElementById('zoom-pan-btn')?.addEventListener('click', () => {
+    if (scale <= MIN_SCALE) return; // safety: can't pan when at 1×
+    panMode = !panMode;
+    const btn = document.getElementById('zoom-pan-btn');
+    btn?.classList.toggle('active', panMode);
+    btn?.setAttribute('aria-pressed', String(panMode));
+    _updatePanCursor();
+  });
 
   // ── Touch: pinch-to-zoom + drag-to-pan ────────────────────────────────────
   let touches = {};
