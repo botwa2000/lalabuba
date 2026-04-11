@@ -1,9 +1,8 @@
 import { state } from './state.js';
-import { SIZE_DIMS, buildPrompt } from './data.js';
 import { t } from './i18n.js';
 import { subjectInput, difficultySelect, providerSelect } from './dom.js';
 import { setStatus, showLoading, hideLoading, activePalette } from './ui.js';
-import { renderGeneratedImage, fetchToDataUrl } from './canvas.js';
+import { renderGeneratedImage } from './canvas.js';
 
 export function svgDataUrl(svg) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
@@ -130,29 +129,11 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
   }
 
   if (provider === "direct") {
-    // Only use browser-direct Pollinations when the subject is a known English
-    // original (pre-defined card / daily word / surprise). Custom user input in
-    // any language is routed through the backend, which translates via Claude
-    // before building the prompt.
-    if (isPreDefined) {
-      const prompt = buildPrompt(subject, difficulty, state.selectedSize);
-      const dims = SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium;
-      const url = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-      url.searchParams.set("width",   String(dims.w));
-      url.searchParams.set("height",  String(dims.h));
-      url.searchParams.set("nologo",  "true");
-      url.searchParams.set("model",   "flux");
-      url.searchParams.set("enhance", "false");
-      url.searchParams.set("safe",    "true");
-      url.searchParams.set("seed",    String(seed));
-      try {
-        return await fetchToDataUrl(url.toString());
-      } catch {
-        // Pollinations unavailable — fall through to backend
-        setStatus('Direct source unavailable — trying backend…');
-      }
-    }
-    // Custom input or Pollinations failed: fall through to backend for translation
+    // Browser-to-Pollinations direct path is intentionally disabled.
+    // Reason: the browser TLS handshake can trigger OS certificate-selection
+    // dialogs on machines with client certs (enterprise, MDM). All requests
+    // go through the backend (server-to-server) where no such prompts occur.
+    // Fall through to the backend block below.
   }
 
   if (provider === "backend" || provider === "direct") {
