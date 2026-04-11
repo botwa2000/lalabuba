@@ -93,11 +93,17 @@ function getTurnstileToken() {
 
 // ─── Form submit ─────────────────────────────────────────────────────────────
 let _pendingSeedOverride = null;
+// When a card / daily-word / surprise sets this, the English original is used
+// directly for the AI prompt (skips server translation). Cleared on manual input.
+let _pendingEnglishSubject = null;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  const subject = sanitizeSubject(subjectInput.value);
+  const pendingEnglish = _pendingEnglishSubject;
+  _pendingEnglishSubject = null;
+  // Pre-defined: use English original. Custom: use raw input (server will translate).
+  const subject = pendingEnglish ?? sanitizeSubject(subjectInput.value);
   if (!subject) {
     setStatus(t('typeFirst'), true);
     return;
@@ -115,7 +121,7 @@ form.addEventListener("submit", async (event) => {
     state.turnstileToken = await getTurnstileToken();
     const seedOverride = _pendingSeedOverride;
     _pendingSeedOverride = null;
-    await generatePage(subject, seedOverride);
+    await generatePage(subject, seedOverride, !!pendingEnglish);
   } catch (error) {
     setStatus(error.message || "Something went wrong.", true);
   } finally {
@@ -597,6 +603,7 @@ function pulseDraw() {
 document.getElementById('surprise-button').addEventListener('click', () => {
   const subjects = SURPRISE_SUBJECTS;
   subjectInput.value = subjects[Math.floor(Math.random() * subjects.length)];
+  _pendingEnglishSubject = subjectInput.value; // SURPRISE_SUBJECTS are English
   subjectInput.focus();
   pulseDraw();
 });
@@ -626,13 +633,14 @@ const dailyInfoBtn   = document.getElementById('daily-word-info-btn');
 const dailyInfoPopup = document.getElementById('daily-info-popup');
 const { word: dailyWord, seed: dailySeed } = getDailyChallenge();
 // Clear seed override when user manually changes the input
-subjectInput.addEventListener('input', () => { _pendingSeedOverride = null; });
+subjectInput.addEventListener('input', () => { _pendingSeedOverride = null; _pendingEnglishSubject = null; });
 
 if (dailyWordRow && dailyWordBtn && dailyWordValue) {
   dailyWordValue.textContent = getTranslatedDailyWord(dailyWord, getCurrentLang());
   dailyWordRow.hidden = false;
   dailyWordBtn.addEventListener('click', () => {
-    subjectInput.value = dailyWord; // always English for the AI prompt
+    subjectInput.value = getTranslatedDailyWord(dailyWord, getCurrentLang());
+    _pendingEnglishSubject = dailyWord; // use English original for the AI prompt
     _pendingSeedOverride = dailySeed;
     subjectInput.focus();
     pulseDraw(); // A1: guide user to click Draw instead of auto-submitting
@@ -770,6 +778,7 @@ function renderExamples() {
       // A1: populate input only — don't auto-draw
       // B1: use translated label so user sees their language in the input field
       subjectInput.value = card.dataset.label;
+      _pendingEnglishSubject = card.dataset.subject; // use English original for the AI prompt
       subjectInput.focus();
       pulseDraw();
     });

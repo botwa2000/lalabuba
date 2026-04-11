@@ -1,5 +1,6 @@
 const { sanitizeSubject, isSafeSubject } = require("../lib/content-safety");
 const { buildPrompt, generateImage } = require("../lib/image-providers");
+const { translateToEnglish } = require("../lib/translate");
 
 // Vercel Blob — optional; only active when BLOB_READ_WRITE_TOKEN is set.
 let blobPut = null, blobList = null, blobDel = null;
@@ -136,7 +137,8 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const prompt = buildPrompt(subject, difficulty, size);
+    const englishSubject = await translateToEnglish(subject);
+    const prompt = buildPrompt(englishSubject, difficulty, size);
     const generated = await generateImage(prompt, width, height, seed, {
       provider: IMAGE_PROVIDER,
       hfToken: HF_TOKEN,

@@ -94,13 +94,13 @@ export function buildDemoImage(subject) {
   `));
 }
 
-export async function generatePage(subject, seedOverride = null) {
+export async function generatePage(subject, seedOverride = null, isPreDefined = false) {
   const difficulty = difficultySelect.value;
   setStatus(t('generating', subject, difficulty));
   showLoading();
   await new Promise(r => requestAnimationFrame(r));
   try {
-    const imageUrl = await requestGeneratedImage(subject, difficulty, seedOverride);
+    const imageUrl = await requestGeneratedImage(subject, difficulty, seedOverride, isPreDefined);
     await renderGeneratedImage(imageUrl);
     // Clear undo stack for new image
     state.undoStack = [];
@@ -118,7 +118,7 @@ export async function generatePage(subject, seedOverride = null) {
   }
 }
 
-export async function requestGeneratedImage(subject, difficulty = "medium", seedOverride = null) {
+export async function requestGeneratedImage(subject, difficulty = "medium", seedOverride = null, isPreDefined = false) {
   const provider = providerSelect.value;
   const seed = (seedOverride !== null && Number.isFinite(seedOverride))
     ? Math.floor(seedOverride)
@@ -130,22 +130,29 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
   }
 
   if (provider === "direct") {
-    const prompt = buildPrompt(subject, difficulty, state.selectedSize);
-    const dims = SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium;
-    const url = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
-    url.searchParams.set("width",   String(dims.w));
-    url.searchParams.set("height",  String(dims.h));
-    url.searchParams.set("nologo",  "true");
-    url.searchParams.set("model",   "flux");
-    url.searchParams.set("enhance", "false");
-    url.searchParams.set("safe",    "true");
-    url.searchParams.set("seed",    String(seed));
-    try {
-      return await fetchToDataUrl(url.toString());
-    } catch {
-      // Pollinations unavailable — silently fall through to the backend
-      setStatus('Direct source unavailable — trying backend…');
+    // Only use browser-direct Pollinations when the subject is a known English
+    // original (pre-defined card / daily word / surprise). Custom user input in
+    // any language is routed through the backend, which translates via Claude
+    // before building the prompt.
+    if (isPreDefined) {
+      const prompt = buildPrompt(subject, difficulty, state.selectedSize);
+      const dims = SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium;
+      const url = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`);
+      url.searchParams.set("width",   String(dims.w));
+      url.searchParams.set("height",  String(dims.h));
+      url.searchParams.set("nologo",  "true");
+      url.searchParams.set("model",   "flux");
+      url.searchParams.set("enhance", "false");
+      url.searchParams.set("safe",    "true");
+      url.searchParams.set("seed",    String(seed));
+      try {
+        return await fetchToDataUrl(url.toString());
+      } catch {
+        // Pollinations unavailable — fall through to backend
+        setStatus('Direct source unavailable — trying backend…');
+      }
     }
+    // Custom input or Pollinations failed: fall through to backend for translation
   }
 
   if (provider === "backend" || provider === "direct") {
