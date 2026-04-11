@@ -52,6 +52,8 @@
 }
 
 /* ─── Store badges row ───────────────────────────────────────────────────── */
+.is-native .store-badges { display: none; }
+
 .store-badges {
   display: flex;
   flex-direction: row;

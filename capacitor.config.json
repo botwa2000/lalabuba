@@ -2,6 +2,16 @@
   "appId": "com.lalabuba.lalabuba",
   "appName": "Lalabuba",
   "webDir": "public",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#fef9ef",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_INSIDE",
+      "splashFullScreen": true,
+      "splashImmersive": true
+    }
+  },
   "ios": {
     "contentInset": "automatic",
     "backgroundColor": "#fef9ef"

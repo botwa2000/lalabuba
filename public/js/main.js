@@ -19,6 +19,7 @@ import { generatePage, requestGeneratedImage } from './generate.js';
 import { initDrawingTool } from './drawing.js';
 import { initShareHandlers, loadFromShare } from './share.js';
 import { initZoom, getCanvasCoords } from './zoom.js';
+import { initOnboarding } from './onboarding.js';
 
 function formatTime(ms) {
   const s = Math.floor(ms / 1000);
@@ -71,7 +72,9 @@ function checkCompletion() {
 window.onTurnstileSuccess = (token) => { state.turnstileToken = token; };
 
 function getTurnstileToken() {
-  const isNative = window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:';
+  const isNative = window.Capacitor?.isNativePlatform?.() ||
+                   window.location.protocol === 'capacitor:' ||
+                   window.location.protocol === 'ionic:';
   if (isNative || !window.turnstile) return Promise.resolve(null);
   // Token already stored from auto-render callback
   if (state.turnstileToken) return Promise.resolve(state.turnstileToken);
@@ -650,6 +653,11 @@ if (dailyInfoBtn && dailyInfoPopup) {
 
 // ─── Initialization ───────────────────────────────────────────────────────────
 
+// Mark native app so CSS can hide web-only elements (e.g. store badges)
+if (window.Capacitor?.isNativePlatform?.()) {
+  document.body.classList.add('is-native');
+}
+
 // Hide debug-only elements in production
 if (!DEBUG) {
   const debugAside = document.getElementById('debug-aside');
@@ -660,6 +668,13 @@ if (!DEBUG) {
 renderLegend();
 applyTranslations();
 loadFromShare();
+
+// Hide native splash screen now that fonts + i18n are ready
+if (window.Capacitor?.isNativePlatform?.()) {
+  window.Capacitor.Plugins?.SplashScreen?.hide({ fadeOutDuration: 300 }).catch(() => {});
+  // Show first-time onboarding after splash fade completes
+  setTimeout(initOnboarding, 500);
+}
 
 // ─── Gallery: continue drawing ────────────────────────────────────────────────
 async function continueArtwork(item) {
