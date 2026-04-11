@@ -30,6 +30,13 @@ workflows:
       - name: Sync Capacitor web assets
         script: npx cap sync ios
 
+      - name: Set build number
+        script: |
+          cd ios/App
+          # Offset by 100 so Codemagic builds (101, 102…) always exceed any
+          # prior GitHub Actions build. agvtool bumps CFBundleVersion only.
+          agvtool new-version -all $(($BUILD_NUMBER + 100))
+
       - name: Set up keychain
         script: keychain initialize
 

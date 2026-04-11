@@ -7,7 +7,12 @@ android {
         applicationId "com.lalabuba.lalabuba"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode (System.getenv("GITHUB_RUN_NUMBER")?.toInteger() ?: 1)
+        // Codemagic supplies BUILD_NUMBER (1, 2, 3…); offset by 100 so it always
+        // exceeds any previous GitHub Actions build (last known: 12).
+        // GitHub Actions supplies GITHUB_RUN_NUMBER as a fallback.
+        def cmBuild = System.getenv("BUILD_NUMBER")?.toInteger() ?: 0
+        def ghRun   = System.getenv("GITHUB_RUN_NUMBER")?.toInteger() ?: 0
+        versionCode (cmBuild > 0 ? cmBuild + 100 : ghRun > 0 ? ghRun : 1)
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
