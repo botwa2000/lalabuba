@@ -11,6 +11,9 @@ generate-screenshots.js
 !android/generate-icon.js
 !android/generate-tablet-screenshots.js
 
+# DeepL usage tracker (auto-created, resets each month)
+lib/deepl-usage.json
+
 # Android build artifacts
 *.aab
 *.aab.zip
