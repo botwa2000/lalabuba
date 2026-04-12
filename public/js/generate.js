@@ -3,6 +3,7 @@ import { t } from './i18n.js';
 import { subjectInput, difficultySelect, providerSelect } from './dom.js';
 import { setStatus, showLoading, hideLoading, activePalette } from './ui.js';
 import { renderGeneratedImage } from './canvas.js';
+import { SIZE_DIMS } from './data.js';
 
 export function svgDataUrl(svg) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
