@@ -9,6 +9,11 @@ if [[ -z "$MSG" ]]; then
   exit 1
 fi
 
+# Bump all ?v= cache-busting params in index.html to the next commit number
+VERSION=$(( $(git rev-list --count HEAD) + 1 ))
+sed -i "s/?v=[0-9][0-9]*/?v=$VERSION/g" public/index.html
+echo "  cache version → v=$VERSION"
+
 git add -A
 git commit -m "$MSG"
 git push origin dev

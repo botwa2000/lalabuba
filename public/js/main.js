@@ -203,7 +203,7 @@ function doUndo() {
   if (!state.undoStack.length) return;
   undoLastFill();
   if (undoButton) undoButton.disabled = state.undoStack.length === 0;
-  setStatus(t('undoBtn'));
+  setStatus(t('undoDone'));
   updateUndoBtn();
 }
 
@@ -533,7 +533,8 @@ const chipNumbers = document.getElementById('chip-numbers');
 function updateDiffChip() {
   if (!chipDiff) return;
   chipDiff.textContent = DIFF_EMOJI[difficultySelect.value] || '⭐';
-  chipDiff.title = t('difficulty') + ': ' + t('diff' + difficultySelect.value.charAt(0).toUpperCase() + difficultySelect.value.slice(1));
+  const diffLabels = { easy: t('diffEasy'), medium: t('diffMedium'), hard: t('diffHard'), extreme: t('diffExtreme') };
+  chipDiff.title = t('difficulty') + ': ' + (diffLabels[difficultySelect.value] || difficultySelect.value);
 }
 function updateCountChip() {
   if (!chipCount) return;
@@ -544,7 +545,8 @@ function updateCountChip() {
 function updatePaletteChip() {
   if (!chipPalette) return;
   chipPalette.textContent = PALETTE_EMOJI[paletteSelect.value] || '🖍️';
-  chipPalette.title = t('palette') + ': ' + t('palette' + paletteSelect.value.charAt(0).toUpperCase() + paletteSelect.value.slice(1));
+  const paletteLabels = { classic: t('paletteClassic'), pastel: t('palettePastel'), nature: t('paletteNature') };
+  chipPalette.title = t('palette') + ': ' + (paletteLabels[paletteSelect.value] || paletteSelect.value);
 }
 function updateNumbersChip() {
   if (!chipNumbers) return;
