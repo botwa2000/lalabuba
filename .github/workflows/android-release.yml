@@ -59,6 +59,16 @@ jobs:
             -Pandroid.injected.signing.key.alias="${{ secrets.CM_KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.CM_KEY_PASSWORD }}"
 
+      # ── Build signed APK for sideloading / direct device testing ───────
+      - name: Build signed APK (sideload artifact)
+        run: |
+          cd android
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=/tmp/lalabuba-release.keystore \
+            -Pandroid.injected.signing.store.password="${{ secrets.CM_KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.CM_KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.CM_KEY_PASSWORD }}"
+
       # ── Upload AAB as build artifact (always) ───────────────────────────
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
@@ -67,8 +77,17 @@ jobs:
           path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
 
+      # ── Upload APK as build artifact (always) ───────────────────────────
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lalabuba-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
       # ── Publish to Google Play internal track ────────────────────────────
       - name: Publish to Play Store (internal track)
+        continue-on-error: true
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_CREDENTIALS }}
