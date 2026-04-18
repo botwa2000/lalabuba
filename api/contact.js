@@ -50,6 +50,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "capacitor://localhost",
   "ionic://localhost",
+  "https://localhost",   // Capacitor 4+ Android WebView origin
 ];
 
 module.exports = async (req, res) => {

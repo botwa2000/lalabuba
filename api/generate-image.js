@@ -80,6 +80,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "capacitor://localhost",
   "ionic://localhost",
+  "https://localhost",   // Capacitor 4+ Android WebView origin
 ];
 
 module.exports = async (req, res) => {
@@ -111,7 +112,7 @@ module.exports = async (req, res) => {
     const body = req.body || {};
 
     // Turnstile verification — skip for native app origins
-    const isNative = origin === 'capacitor://localhost' || origin === 'ionic://localhost';
+    const isNative = origin === 'capacitor://localhost' || origin === 'ionic://localhost' || origin === 'https://localhost';
     if (!isNative) {
       const ok = await verifyTurnstile(body.turnstileToken, ip);
       if (!ok) {
