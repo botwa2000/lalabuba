@@ -8,6 +8,8 @@
   <meta name="keywords" content="coloring pages for kids, AI coloring, color by number, free coloring pages, kids activities, printable coloring, coloring book online, ausmalbilder, coloriage, colorear" />
   <meta name="author" content="Lalabuba" />
   <meta name="theme-color" content="#7c4dff" />
+  <!-- Detect native app before any external scripts load (prevents Turnstile iframe rendering in WebView) -->
+  <script>if (window.Capacitor) document.documentElement.classList.add('is-native');</script>
   <link rel="canonical" href="https://lalabuba.com/" />
 
   <!-- Open Graph -->
@@ -395,13 +397,19 @@
     </div>
   </div>
 
-  <!-- Cloudflare Turnstile (managed bot protection) -->
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <!-- Cloudflare Turnstile (managed bot protection — hidden/skipped in native app) -->
+  <script>if (!document.documentElement.classList.contains('is-native')) {
+    var s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    s.async = s.defer = true;
+    document.head.appendChild(s);
+  }</script>
   <div id="turnstile-widget"
        class="cf-turnstile"
        data-sitekey="0x4AAAAAAC1F8nOkL4VkmWEd"
        data-callback="onTurnstileSuccess">
   </div>
+  <style>html.is-native #turnstile-widget { display: none !important; }</style>
 
   <script type="module" src="/js/main.js?v=122"></script>
 </body>
