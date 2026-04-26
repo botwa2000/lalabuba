@@ -1,8 +1,7 @@
-name: iOS — TestFlight
+name: iOS — TestFlight (disabled — Codemagic handles iOS builds)
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:  # manual trigger only — Codemagic is the active iOS pipeline
     paths:
       - 'public/**'
       - 'ios/**'
