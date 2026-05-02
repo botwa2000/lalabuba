@@ -7,7 +7,8 @@ import { t } from './i18n.js';
 
 export function buildShareUrl() {
   const isNative = window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:';
-  const base = isNative ? 'https://lalabuba.com/' : window.location.origin + window.location.pathname;
+  const isDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  const base = (isNative || !isDev) ? 'https://lalabuba.com/' : window.location.origin + window.location.pathname;
   const params = new URLSearchParams({
     s:    '1',
     q:    subjectInput.value.trim(),
