@@ -23,4 +23,5 @@ export const state = {
   turnstileToken: null,
   turnstileWidgetId: null,
   undoStack: [],        // [{regionId, record: Uint8Array, completedBefore: boolean}]
+  colorMode: 'tap',     // 'tap' | 'paint'
 };

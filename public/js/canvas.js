@@ -655,14 +655,21 @@ export function drawBaseImage(image) {
   drawCanvas.hidden = false;
   drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
 
-  // Exit pencil mode on new image.
+  // Exit pencil/paint mode on new image.
   state.pencilMode = false;
+  state.colorMode = 'tap';
   pencilBtn.classList.remove('active');
   drawCanvas.classList.remove('pencil-active');
   previewCanvas.style.pointerEvents = '';
+  document.getElementById('mode-tap-btn')?.classList.add('active');
+  document.getElementById('mode-paint-btn')?.classList.remove('active');
 
   pencilBtn.disabled = false;
   clearPencilBtn.disabled = false;
+  const modeTapBtn = document.getElementById('mode-tap-btn');
+  const modePaintBtn = document.getElementById('mode-paint-btn');
+  if (modeTapBtn) modeTapBtn.disabled = false;
+  if (modePaintBtn) modePaintBtn.disabled = false;
 
   context.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
   context.fillStyle = "#ffffff";

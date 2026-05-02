@@ -1,0 +1,221 @@
+/* ─── Two-column app layout ───────────────────────────────────────────────── */
+
+/* Extend app wrapper to fill remaining height */
+.app {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+
+.app-body {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-height: calc(100dvh - 130px);
+  overflow: hidden;
+  margin: 0 -18px; /* bleed to edge of .app padding */
+}
+
+/* ── Config panel (left sidebar) ─────────────────────────────────────────── */
+.config-panel {
+  width: 300px;
+  min-width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-right: 2px solid var(--border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.25s ease, min-width 0.25s ease;
+  position: relative;
+}
+
+.config-panel.collapsed {
+  width: 44px;
+  min-width: 44px;
+  overflow: hidden;
+}
+
+.panel-inner {
+  flex: 1;
+  min-width: 296px;
+  padding: 0 14px 24px;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.config-panel.collapsed .panel-inner {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Toggle button — sticks to the top-right of the panel */
+.panel-toggle-btn {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  align-self: flex-end;
+  width: 36px;
+  height: 36px;
+  margin: 10px 4px 0 auto;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--purple);
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+}
+.panel-toggle-btn:hover { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+/* Inside panel: hero section tweaks */
+.config-panel .hero-section {
+  padding: 14px 0 6px;
+  text-align: left;
+}
+.config-panel .hero-tagline {
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+.config-panel .examples-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-width: 100%;
+}
+.config-panel .shuffle-cards-btn {
+  margin: 6px 0 0;
+}
+
+/* Generator section inside panel */
+.config-panel .generator-section {
+  padding: 0;
+  margin: 0;
+}
+
+/* ── Canvas area (right content) ─────────────────────────────────────────── */
+.canvas-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Remove top margin from workspace when inside canvas-area */
+.canvas-area .workspace {
+  margin-top: 0;
+  flex: 1;
+}
+
+/* ── Landscape hint (portrait mobile only) ───────────────────────────────── */
+.landscape-hint {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--purple), #a855f7);
+  color: #fff;
+  font-family: var(--ff-body);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ── Color mode toggle ───────────────────────────────────────────────────── */
+.color-mode-group {
+  display: flex;
+  gap: 0;
+  border-radius: 50px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+}
+.mode-btn {
+  font-family: var(--ff-body);
+  font-size: .82rem;
+  font-weight: 800;
+  padding: 6px 14px;
+  border: none;
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.mode-btn:first-child { border-right: 1.5px solid var(--border); }
+.mode-btn.active {
+  background: var(--purple);
+  color: #fff;
+}
+.mode-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Paint coverage indicator in status bar */
+#status.paint-coverage {
+  background: linear-gradient(135deg, #fff8e1, #fff3e0);
+  border-color: rgba(255,152,0,.3);
+  color: var(--ink);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+/* Medium screens: narrower panel */
+@media (max-width: 900px) {
+  .config-panel { width: 240px; min-width: 240px; }
+  .panel-inner  { min-width: 236px; }
+}
+
+/* Portrait mobile: sidebar hidden by default, canvas fills width */
+@media (max-width: 767px) {
+  .app-body { flex-direction: column; }
+
+  .config-panel {
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+    border-bottom: 2px solid var(--border);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .config-panel.mobile-open {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  /* Override collapsed: on mobile collapsed = hidden = 0 height */
+  .config-panel.collapsed { width: 100%; min-width: 0; max-height: 0; }
+
+  .panel-inner  { min-width: 0; width: 100%; padding: 0 14px 16px; }
+  .panel-toggle-btn { display: none; } /* replaced by header menu btn on mobile */
+
+  /* Hide examples on mobile (saves space) */
+  .config-panel .examples-grid,
+  .config-panel .shuffle-cards-btn { display: none; }
+
+  .landscape-hint { display: flex; }
+}
+
+/* Landscape on narrow screens: hide landscape hint, show two-column */
+@media (max-width: 767px) and (orientation: landscape) {
+  .app-body { flex-direction: row; }
+  .config-panel {
+    width: 220px;
+    min-width: 220px;
+    max-height: none;
+    border-right: 2px solid var(--border);
+    border-bottom: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .config-panel.collapsed { width: 44px; min-width: 44px; }
+  .panel-inner { min-width: 216px; width: 216px; }
+  .panel-toggle-btn { display: flex; }
+  .landscape-hint { display: none; }
+}
