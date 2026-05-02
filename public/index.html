@@ -69,23 +69,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=122" />
-  <link rel="stylesheet" href="/css/header.css?v=122" />
-  <link rel="stylesheet" href="/css/hero.css?v=122" />
-  <link rel="stylesheet" href="/css/generator.css?v=122" />
-  <link rel="stylesheet" href="/css/workspace.css?v=122" />
-  <link rel="stylesheet" href="/css/palette.css?v=122" />
-  <link rel="stylesheet" href="/css/modals.css?v=122" />
-  <link rel="stylesheet" href="/css/footer.css?v=122" />
-  <link rel="stylesheet" href="/css/print.css?v=122" />
-  <link rel="stylesheet" href="/css/cookies.css?v=122" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=122" />
-  <script src="/js/cookies.js?v=122"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=123" />
+  <link rel="stylesheet" href="/css/header.css?v=123" />
+  <link rel="stylesheet" href="/css/hero.css?v=123" />
+  <link rel="stylesheet" href="/css/generator.css?v=123" />
+  <link rel="stylesheet" href="/css/layout.css?v=123" />
+  <link rel="stylesheet" href="/css/workspace.css?v=123" />
+  <link rel="stylesheet" href="/css/palette.css?v=123" />
+  <link rel="stylesheet" href="/css/modals.css?v=123" />
+  <link rel="stylesheet" href="/css/footer.css?v=123" />
+  <link rel="stylesheet" href="/css/print.css?v=123" />
+  <link rel="stylesheet" href="/css/cookies.css?v=123" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=123" />
+  <script src="/js/cookies.js?v=123"></script>
 </head>
 <body>
   <div class="app">
 
     <header class="site-header">
+      <!-- Mobile-only: opens the config panel as a drawer -->
+      <button id="mobile-menu-btn" class="mobile-menu-btn" type="button" aria-label="Open settings">☰</button>
       <div class="lang-picker">
         <button id="gallery-btn" class="gallery-header-btn" type="button" data-i18n="galleryBtn" aria-label="Gallery">🖼️ Gallery</button>
         <button id="lang-toggle" class="lang-toggle-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose language">
@@ -116,31 +119,37 @@
       </div>
     </header>
 
-    <main>
+    <!-- ─── App body: config sidebar + canvas area ──────────────────────── -->
+    <div class="app-body">
 
-      <!-- ─── Hero: tagline + random suggestion cards (populated by JS) ────── -->
-      <section class="hero-section">
-        <p class="hero-tagline" data-i18n="tagline">Draw it · Color it · Love it 🌈</p>
-        <div class="daily-word-row" id="daily-word-row" hidden>
-          <button id="daily-word-btn" class="daily-word-pill" type="button">
-            <span class="daily-word-label" data-i18n="dailyWord">Today's word</span>
-            <span>·</span>
-            <span id="daily-word-value" class="daily-word-value"></span>
-          </button>
-          <button id="daily-word-info-btn" class="daily-info-btn" type="button" aria-label="What is this?">?</button>
-          <div id="daily-info-popup" class="daily-info-popup hidden" role="tooltip">
-            <div class="daily-info-icon">🌟</div>
-            <h4 class="daily-info-title" data-i18n="dailyInfoTitle">Daily Challenge!</h4>
-            <p class="daily-info-body" data-i18n="dailyInfoBody">Every day everyone gets the same word to color. Race your friends!</p>
-          </div>
-        </div>
-        <div id="examples-grid" class="examples-grid"></div>
-        <button id="shuffle-cards-btn" class="shuffle-cards-btn" type="button" aria-label="Shuffle suggestions">🎲</button>
-      </section>
+      <!-- Left: collapsible config panel -->
+      <aside class="config-panel" id="config-panel">
+        <button id="panel-toggle" class="panel-toggle-btn" type="button" aria-label="Toggle settings panel" title="Collapse/expand settings">◀</button>
+        <div class="panel-inner">
 
-      <!-- ─── Generator ──────────────────────────────────────────────────── -->
-      <section class="generator-section">
-        <form id="generator-form" class="generator-form">
+          <!-- Hero: tagline + daily word + suggestion cards -->
+          <section class="hero-section">
+            <p class="hero-tagline" data-i18n="tagline">Draw it · Color it · Love it 🌈</p>
+            <div class="daily-word-row" id="daily-word-row" hidden>
+              <button id="daily-word-btn" class="daily-word-pill" type="button">
+                <span class="daily-word-label" data-i18n="dailyWord">Today's word</span>
+                <span>·</span>
+                <span id="daily-word-value" class="daily-word-value"></span>
+              </button>
+              <button id="daily-word-info-btn" class="daily-info-btn" type="button" aria-label="What is this?">?</button>
+              <div id="daily-info-popup" class="daily-info-popup hidden" role="tooltip">
+                <div class="daily-info-icon">🌟</div>
+                <h4 class="daily-info-title" data-i18n="dailyInfoTitle">Daily Challenge!</h4>
+                <p class="daily-info-body" data-i18n="dailyInfoBody">Every day everyone gets the same word to color. Race your friends!</p>
+              </div>
+            </div>
+            <div id="examples-grid" class="examples-grid"></div>
+            <button id="shuffle-cards-btn" class="shuffle-cards-btn" type="button" aria-label="Shuffle suggestions">🎲</button>
+          </section>
+
+          <!-- Generator form -->
+          <section class="generator-section">
+            <form id="generator-form" class="generator-form">
           <div class="search-bar">
             <input
               id="subject"
@@ -202,11 +211,21 @@
             <option value="demo" data-i18n="srcDemo">🎭 Demo</option>
           </select>
 
-          <p id="status" class="status-bar" role="status" data-i18n="statusDefault"></p>
-        </form>
-      </section>
+              <p id="status" class="status-bar" role="status" data-i18n="statusDefault"></p>
+            </form>
+          </section>
 
-      <!-- ─── Workspace ──────────────────────────────────────────────────── -->
+        </div><!-- /panel-inner -->
+      </aside><!-- /config-panel -->
+
+      <!-- Right: canvas + workspace -->
+      <main class="canvas-area">
+        <!-- Landscape hint — only visible on portrait mobile -->
+        <div class="landscape-hint" id="landscape-hint">
+          <span data-i18n="landscapeHint">Rotate device for best experience 🔄</span>
+        </div>
+
+        <!-- ─── Workspace ──────────────────────────────────────────────── -->
       <section class="workspace">
         <div class="canvas-wrapper">
 
@@ -218,6 +237,11 @@
 
           <div class="canvas-actions">
             <button id="undo-button"         type="button" disabled class="action-btn" data-i18n="undoBtn">↩ Undo</button>
+            <!-- Color mode toggle: tap-to-fill vs manual paint -->
+            <div class="color-mode-group" role="group" aria-label="Coloring mode">
+              <button id="mode-tap-btn"   type="button" disabled class="mode-btn active" data-i18n="tapModeBtn">🎯 Tap</button>
+              <button id="mode-paint-btn" type="button" disabled class="mode-btn"        data-i18n="paintModeBtn">🖌️ Paint</button>
+            </div>
             <button id="pencil-button"       type="button" disabled class="action-btn" data-i18n="pencilBtn">✏️ Draw</button>
             <button id="clear-pencil-button" type="button" disabled class="action-btn" data-i18n="clearPencilBtn">🗑️ Clear</button>
             <button id="print-button"        type="button" disabled class="action-btn" data-i18n="printBtn">🖨️ Print</button>
@@ -279,7 +303,8 @@
           </details>
         </aside>
       </section>
-    </main>
+      </main><!-- /canvas-area -->
+    </div><!-- /app-body -->
 
     <footer class="site-footer">
       <div class="store-badges">
@@ -323,7 +348,7 @@
         <span>·</span>
         <a href="/contact.html">Contact</a>
         <span>·</span>
-        <button id="cookie-settings-btn" class="footer-cookie-btn">Cookie settings</button>
+        <button id="cookie-settings-btn" class="footer-cookie-btn" data-i18n="cookieSettings">Cookie settings</button>
       </nav>
     </footer>
   </div>
@@ -363,7 +388,7 @@
         <svg class="share-apple-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
         </svg>
-        No app yet? Get it free on the App Store
+        <span data-i18n="noAppYet">No app yet? Get it free on the App Store</span>
       </a>
     </div>
   </div>
@@ -411,6 +436,6 @@
   </div>
   <style>html.is-native #turnstile-widget { display: none !important; }</style>
 
-  <script type="module" src="/js/main.js?v=122"></script>
+  <script type="module" src="/js/main.js?v=123"></script>
 </body>
 </html>

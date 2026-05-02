@@ -16,7 +16,7 @@ import {
   openMaxPicker, closeMaxPicker, flashPaletteSwatch,
 } from './ui.js';
 import { generatePage, requestGeneratedImage } from './generate.js';
-import { initDrawingTool } from './drawing.js';
+import { initDrawingTool, setPaintEndCallback, updateDrawCanvasMode } from './drawing.js';
 import { initShareHandlers, loadFromShare } from './share.js';
 import { initZoom, getCanvasCoords, isPanMode } from './zoom.js';
 import { initOnboarding } from './onboarding.js';
@@ -225,6 +225,7 @@ let _lastClickMs = 0, _lastClickId = 0;
 
 previewCanvas.addEventListener("click", (event) => {
   if (isPanMode()) return; // pan mode active — drag is for moving, not coloring
+  if (state.colorMode === 'paint') return; // paint mode uses draw-canvas, not click-fill
   if (!state.regionMap) return;
 
   const { x: canvasX, y: canvasY } = getCanvasCoords(event);
@@ -511,9 +512,108 @@ document.querySelectorAll('.lang-option').forEach(btn => {
 // ─── Drawing tool ─────────────────────────────────────────────────────────────
 initDrawingTool();
 
+// ─── Paint mode toggle ────────────────────────────────────────────────────────
+const modeTapBtn   = document.getElementById('mode-tap-btn');
+const modePaintBtn = document.getElementById('mode-paint-btn');
+
+function setColorMode(mode) {
+  state.colorMode = mode;
+  if (modeTapBtn)   modeTapBtn.classList.toggle('active', mode === 'tap');
+  if (modePaintBtn) modePaintBtn.classList.toggle('active', mode === 'paint');
+  updateDrawCanvasMode();
+  if (mode === 'paint') setStatus(t('paintMode'));
+}
+
+if (modeTapBtn)   modeTapBtn.addEventListener('click',   () => setColorMode('tap'));
+if (modePaintBtn) modePaintBtn.addEventListener('click', () => setColorMode('paint'));
+
+// ─── Paint coverage check ────────────────────────────────────────────────────
+function checkPaintCoverage() {
+  if (!state.regionPixels || !state.paintedImageData) return;
+
+  const ctx = drawCanvas.getContext('2d');
+  const drawData = ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+
+  let bestRegion = null;
+  let bestPct = 0;
+
+  for (const [regionId, pixels] of state.regionPixels) {
+    if (state.completedRegions.has(regionId)) continue;
+    if (regionId === state.backgroundRegionId) continue;
+    if (!pixels || pixels.length === 0) continue;
+
+    let covered = 0;
+    for (let i = 0; i < pixels.length; i++) {
+      if (drawData.data[pixels[i] * 4 + 3] > 32) covered++;
+    }
+    const pct = covered / pixels.length;
+    if (pct > bestPct) { bestPct = pct; bestRegion = regionId; }
+  }
+
+  if (bestRegion === null || bestPct < 0.02) return; // nothing meaningful drawn
+
+  if (bestPct >= 0.70) {
+    let fillColor;
+    if (state.selectedPaletteIndex === -1) {
+      fillColor = hexToRgb(state.customColor);
+    } else {
+      fillColor = hexToRgb(activePalette()[state.selectedPaletteIndex].color);
+    }
+    if (!fillColor) return;
+
+    if (!state.coloringStartTime) state.coloringStartTime = Date.now();
+    const completedBefore = state.completedRegions.has(bestRegion);
+    state.completedRegions.add(bestRegion);
+    const fillResult = fillRegion(bestRegion, fillColor);
+    pushUndo(bestRegion, fillResult, completedBefore);
+
+    ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+
+    const label = state.selectedPaletteIndex === -1 ? t('customColorLabel') : activePalette()[state.selectedPaletteIndex].label;
+    const total = state.regionColorMap?.size ?? state.regionPixels.size;
+    const done  = state.completedRegions.size;
+    setStatus(done < total ? t('filledProgress', label, done, total) : t('filled', label));
+    checkCompletion();
+  } else {
+    setStatus(t('paintCoverage', Math.round(bestPct * 100)));
+  }
+}
+
+setPaintEndCallback(checkPaintCoverage);
+
 // ─── Zoom ─────────────────────────────────────────────────────────────────────
 const canvasFrame = document.querySelector('.canvas-frame');
 if (canvasFrame) initZoom(canvasFrame, previewCanvas);
+
+// ─── Config panel toggle (desktop sidebar + mobile drawer) ────────────────────
+const configPanel    = document.getElementById('config-panel');
+const panelToggleBtn = document.getElementById('panel-toggle');
+const mobileMenuBtn  = document.getElementById('mobile-menu-btn');
+
+function togglePanel() {
+  const isMobile = window.innerWidth < 768;
+  if (isMobile) {
+    configPanel?.classList.toggle('mobile-open');
+  } else {
+    configPanel?.classList.toggle('collapsed');
+    if (panelToggleBtn) {
+      panelToggleBtn.textContent = configPanel?.classList.contains('collapsed') ? '▶' : '◀';
+    }
+  }
+}
+
+panelToggleBtn?.addEventListener('click', togglePanel);
+mobileMenuBtn?.addEventListener('click', togglePanel);
+
+// Close mobile panel when clicking outside
+document.addEventListener('click', (e) => {
+  if (window.innerWidth < 768 &&
+      configPanel?.classList.contains('mobile-open') &&
+      !configPanel.contains(e.target) &&
+      e.target !== mobileMenuBtn) {
+    configPanel.classList.remove('mobile-open');
+  }
+});
 
 // ─── Share handlers ───────────────────────────────────────────────────────────
 initShareHandlers();

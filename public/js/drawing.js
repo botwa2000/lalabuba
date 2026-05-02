@@ -18,16 +18,22 @@ function getPencilPos(e) {
   };
 }
 
+function getBrushSize() {
+  return state.colorMode === 'paint' ? 22 : 5;
+}
+
+function isDrawingActive() {
+  return state.pencilMode || state.colorMode === 'paint';
+}
+
 function pencilStart(e) {
   state.pencilDrawing = true;
   const { x, y } = getPencilPos(e);
-  drawCtx.beginPath();
-  drawCtx.moveTo(x, y);
-  // Draw a dot for single tap.
+  const size = getBrushSize();
   drawCtx.globalCompositeOperation = 'source-over';
   drawCtx.fillStyle = getActivePencilColor();
   drawCtx.beginPath();
-  drawCtx.arc(x, y, 3, 0, Math.PI * 2);
+  drawCtx.arc(x, y, size / 2, 0, Math.PI * 2);
   drawCtx.fill();
   drawCtx.beginPath();
   drawCtx.moveTo(x, y);
@@ -38,7 +44,7 @@ function pencilMove(e) {
   const { x, y } = getPencilPos(e);
   drawCtx.globalCompositeOperation = 'source-over';
   drawCtx.strokeStyle = getActivePencilColor();
-  drawCtx.lineWidth = 5;
+  drawCtx.lineWidth = getBrushSize();
   drawCtx.lineCap = 'round';
   drawCtx.lineJoin = 'round';
   drawCtx.lineTo(x, y);
@@ -47,14 +53,28 @@ function pencilMove(e) {
   drawCtx.moveTo(x, y);
 }
 
-function pencilEnd() { state.pencilDrawing = false; }
+let paintEndCallback = null;
+export function setPaintEndCallback(cb) { paintEndCallback = cb; }
+
+function pencilEnd() {
+  if (!state.pencilDrawing) return;
+  state.pencilDrawing = false;
+  if (state.colorMode === 'paint' && paintEndCallback) {
+    paintEndCallback();
+  }
+}
+
+export function updateDrawCanvasMode() {
+  const active = isDrawingActive();
+  drawCanvas.classList.toggle('pencil-active', active);
+  previewCanvas.style.pointerEvents = active ? 'none' : '';
+}
 
 export function initDrawingTool() {
   pencilBtn.addEventListener('click', () => {
     state.pencilMode = !state.pencilMode;
     pencilBtn.classList.toggle('active', state.pencilMode);
-    drawCanvas.classList.toggle('pencil-active', state.pencilMode);
-    previewCanvas.style.pointerEvents = state.pencilMode ? 'none' : '';
+    updateDrawCanvasMode();
     if (state.pencilMode) setStatus(t('pencilMode'));
   });
 
@@ -62,11 +82,11 @@ export function initDrawingTool() {
     drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
   });
 
-  drawCanvas.addEventListener('mousedown', (e) => { if (state.pencilMode) pencilStart(e); });
-  drawCanvas.addEventListener('mousemove', (e) => { if (state.pencilMode) pencilMove(e); });
+  drawCanvas.addEventListener('mousedown', (e) => { if (isDrawingActive()) pencilStart(e); });
+  drawCanvas.addEventListener('mousemove', (e) => { if (isDrawingActive()) pencilMove(e); });
   drawCanvas.addEventListener('mouseup',   pencilEnd);
   drawCanvas.addEventListener('mouseleave', pencilEnd);
-  drawCanvas.addEventListener('touchstart', (e) => { if (state.pencilMode) { e.preventDefault(); pencilStart(e); } }, { passive: false });
-  drawCanvas.addEventListener('touchmove',  (e) => { if (state.pencilMode) { e.preventDefault(); pencilMove(e); } }, { passive: false });
+  drawCanvas.addEventListener('touchstart', (e) => { if (isDrawingActive()) { e.preventDefault(); pencilStart(e); } }, { passive: false });
+  drawCanvas.addEventListener('touchmove',  (e) => { if (isDrawingActive()) { e.preventDefault(); pencilMove(e); } }, { passive: false });
   drawCanvas.addEventListener('touchend',   pencilEnd);
 }

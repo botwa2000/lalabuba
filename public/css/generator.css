@@ -1,5 +1,5 @@
 /* ─── Generator ──────────────────────────────────────────────────────────── */
-.generator-section { margin-top: 22px; }
+.generator-section { margin-top: 16px; }
 
 .generator-form {
   background: var(--card);
@@ -7,6 +7,12 @@
   padding: 22px 24px 18px;
   box-shadow: var(--sh-md);
   border: 2px solid var(--border);
+}
+
+/* Inside sidebar: tighter styling */
+.config-panel .generator-form {
+  box-shadow: none;
+  padding: 14px 14px 12px;
 }
 
 .search-bar {
