@@ -15,6 +15,32 @@
   padding: 14px 14px 12px;
 }
 
+/* Sidebar search-bar: wrap so go-btn / regen-btn don't overflow the 300px panel */
+.config-panel .search-bar {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.config-panel .search-bar input {
+  min-width: 0;
+  font-size: .95rem;
+  padding: 10px 16px;
+}
+.config-panel .go-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 18px;
+  font-size: 1rem;
+}
+.config-panel .regen-btn {
+  padding: 10px 14px;
+  font-size: .9rem;
+}
+.config-panel .surprise-btn {
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
+}
+
 .search-bar {
   display: flex;
   gap: 10px;
