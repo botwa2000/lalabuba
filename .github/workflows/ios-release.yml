@@ -2,13 +2,6 @@ name: iOS — TestFlight (disabled — Codemagic handles iOS builds)
 
 on:
   workflow_dispatch:  # manual trigger only — Codemagic is the active iOS pipeline
-    paths:
-      - 'public/**'
-      - 'ios/**'
-      - 'capacitor.config.json'
-      - 'package.json'
-      - '.github/workflows/ios-release.yml'
-  workflow_dispatch:
 
 jobs:
   build-and-upload:
