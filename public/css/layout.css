@@ -224,6 +224,18 @@
   .landscape-hint { display: none; }
 }
 
+/* Tablet landscape: taller than a phone but height-constrained (501px–900px, 768px+ wide).
+   Config panel content (~640px) overflows a 530px-tall 7" tablet in landscape, hiding the
+   prompt input below fold. Fix: hide example cards + shrink hero so form stays visible. */
+@media (orientation: landscape) and (min-height: 501px) and (max-height: 900px) and (min-width: 768px) {
+  .config-panel { width: 260px; min-width: 260px; }
+  .panel-inner  { min-width: 256px; }
+  .config-panel .examples-grid,
+  .config-panel .shuffle-cards-btn { display: none; }
+  .config-panel .hero-tagline { display: none; }
+  .config-panel .hero-section { padding: 8px 0 4px; }
+}
+
 /* ── Container queries: config-panel inner content adapts to sidebar width ─── */
 /* Tighter pill/chip wrapping when panel is narrow (e.g. 240px or landscape 220px) */
 @container config-panel (max-width: 250px) {
