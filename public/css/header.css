@@ -212,6 +212,13 @@
   }
 }
 
+/* Tablet landscape: shrink logo so header doesn't eat ~160px of limited height */
+@media (orientation: landscape) and (min-height: 501px) and (max-height: 840px) and (min-width: 768px) {
+  .site-header { padding: 4px 0 2px; }
+  .logo-mascot { height: 2.2rem; }
+  .logo        { font-size: 2.6rem; }
+}
+
 .tagline {
   margin-top: 6px;
   font-size: clamp(0.95rem, 2.5vw, 1.25rem);

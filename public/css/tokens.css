@@ -44,5 +44,13 @@ body {
            max(18px, env(safe-area-inset-left, 0px));
 }
 
+/* Tablet landscape: recover wasted top/bottom padding from the default 20px+60px */
+@media (orientation: landscape) and (min-height: 501px) and (max-height: 840px) and (min-width: 768px) {
+  .app {
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-bottom: 10px;
+  }
+}
+
 /* ─── Screen-reader only utility ─────────────────────────────────────────── */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
