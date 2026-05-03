@@ -11,12 +11,14 @@
 .canvas-wrapper {
   background: var(--card);
   border-radius: var(--radius);
-  overflow: hidden;
+  overflow: clip;
   box-shadow: var(--sh-md);
   border: 2px solid var(--border);
   display: flex;
   flex-direction: column;
   min-width: 0; /* prevents grid blowout */
+  container-type: inline-size;
+  container-name: canvas-wrapper;
 }
 
 .canvas-actions {
@@ -67,7 +69,7 @@
 #preview-canvas {
   display: block;
   max-width: 100%;
-  max-height: 85vh;
+  max-height: 85dvh;
   width: auto;
   height: auto;
   cursor: crosshair;
@@ -227,7 +229,12 @@
 
 /* Small phones */
 @media (max-width: 480px) {
-  .app { padding: 10px 10px 40px; }
+  .app {
+    padding: max(10px, env(safe-area-inset-top, 0px))
+             max(10px, env(safe-area-inset-right, 0px))
+             40px
+             max(10px, env(safe-area-inset-left, 0px));
+  }
   .search-bar { flex-wrap: wrap; gap: 6px; }
   .go-btn { flex: 1; min-width: 0; }
   .regen-btn { flex: 1; min-width: 0; }
@@ -237,7 +244,12 @@
 
 /* Very small phones */
 @media (max-width: 360px) {
-  .app { padding: 8px 8px 32px; }
+  .app {
+    padding: max(8px, env(safe-area-inset-top, 0px))
+             max(8px, env(safe-area-inset-right, 0px))
+             32px
+             max(8px, env(safe-area-inset-left, 0px));
+  }
 }
 
 /* Phone landscape: canvas fills width, palette drops below, action bar compact */
@@ -257,7 +269,7 @@
   .mode-btn    { font-size: .75rem; padding: 5px 8px; }
   .zoom-controls { padding: 5px 8px; gap: 4px; }
   .zoom-btn { width: 30px; height: 30px; font-size: .95rem; }
-  #preview-canvas { max-height: 60vh; }
+  #preview-canvas { max-height: 60dvh; }
 }
 
 /* ─── Coloring hint banner ───────────────────────────────────────────────── */
@@ -324,6 +336,17 @@
 .empty-hint { opacity: .7; }
 .empty-icon { font-size: 5rem; }
 .empty-hint p { font-size: 1.1rem; }
+
+/* ─── Container queries: canvas-actions adapts to canvas width, not viewport ── */
+/* Fires when sidebar is open + screen is narrow (canvas shrinks before viewport does) */
+@container canvas-wrapper (max-width: 500px) {
+  .canvas-actions { gap: 6px; padding: 8px 10px; flex-wrap: wrap; }
+  .action-btn { font-size: .78rem; padding: 6px 11px; }
+}
+@container canvas-wrapper (max-width: 360px) {
+  .canvas-actions { gap: 5px; padding: 6px 8px; }
+  .action-btn { font-size: .74rem; padding: 5px 9px; }
+}
 
 /* ─── Share action button (prominent) ───────────────────────────────────── */
 .share-action-btn {

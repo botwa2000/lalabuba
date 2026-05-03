@@ -29,7 +29,7 @@ body {
   font-family: var(--ff-body);
   color: var(--ink);
   background: var(--bg);
-  min-height: 100vh;
+  min-height: 100dvh;
   line-height: 1.5;
 }
 
@@ -37,7 +37,11 @@ body {
 .app {
   max-width: 1260px;
   margin: 0 auto;
-  padding: 20px 18px 60px;
+  /* safe-area-inset-* handles notch/Dynamic Island/gesture bars on iOS & Android */
+  padding: max(20px, env(safe-area-inset-top, 0px))
+           max(18px, env(safe-area-inset-right, 0px))
+           60px
+           max(18px, env(safe-area-inset-left, 0px));
 }
 
 /* ─── Screen-reader only utility ─────────────────────────────────────────── */

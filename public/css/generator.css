@@ -67,7 +67,7 @@
 
 .go-btn {
   font-family: var(--ff-brand);
-  font-size: 1.15rem;
+  font-size: clamp(1rem, 3vw, 1.15rem);
   font-weight: 700;
   padding: 14px 30px;
   border-radius: 50px;

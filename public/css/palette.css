@@ -13,7 +13,7 @@
   /* Stick to top of viewport when scrolling */
   position: sticky;
   top: 16px;
-  max-height: 90vh;
+  max-height: 90dvh;
 }
 
 .palette-strip {

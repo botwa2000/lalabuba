@@ -1,7 +1,10 @@
 /* ─── Site footer ────────────────────────────────────────────────────────── */
 .site-footer {
   text-align: center;
-  padding: 28px 20px 24px;
+  padding: 28px
+           max(20px, env(safe-area-inset-right, 0px))
+           max(24px, env(safe-area-inset-bottom, 0px))
+           max(20px, env(safe-area-inset-left, 0px));
   margin-top: 40px;
   display: flex;
   flex-direction: column;

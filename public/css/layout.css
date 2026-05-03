@@ -11,7 +11,7 @@
   display: flex;
   align-items: stretch;
   flex: 1;
-  min-height: calc(100dvh - 130px);
+  min-height: calc(100dvh - 130px - env(safe-area-inset-top, 0px));
   overflow: hidden;
   margin: 0 -18px; /* bleed to edge of .app padding */
 }
@@ -29,19 +29,21 @@
   overflow-x: hidden;
   transition: width 0.25s ease, min-width 0.25s ease;
   position: relative;
+  container-type: inline-size;
+  container-name: config-panel;
 }
 
 .config-panel.collapsed {
   width: 44px;
   min-width: 44px;
-  overflow: hidden;
+  overflow: clip;
 }
 
 .panel-inner {
   flex: 1;
   min-width: 296px;
   padding: 0 14px 24px;
-  overflow: hidden;
+  overflow: clip;
   transition: opacity 0.2s ease;
 }
 
@@ -186,7 +188,7 @@
     transition: max-height 0.3s ease;
   }
   .config-panel.mobile-open {
-    max-height: 70vh;
+    max-height: 70dvh;
     overflow-y: auto;
   }
   /* Override collapsed: on mobile collapsed = hidden = 0 height */
@@ -220,4 +222,13 @@
   .panel-inner { min-width: 216px; width: 216px; }
   .panel-toggle-btn { display: flex; }
   .landscape-hint { display: none; }
+}
+
+/* ── Container queries: config-panel inner content adapts to sidebar width ─── */
+/* Tighter pill/chip wrapping when panel is narrow (e.g. 240px or landscape 220px) */
+@container config-panel (max-width: 250px) {
+  .ctrl-label { min-width: 56px; font-size: .68rem; }
+  .setting-chip { font-size: .82rem; padding: 7px 12px; }
+  .diff-pill, .palette-pill, .size-pill, .count-pill { font-size: .8rem; padding: 6px 11px; }
+  .check-pill { font-size: .82rem; padding: 7px 12px; }
 }
