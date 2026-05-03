@@ -1,5 +1,5 @@
 import { state, DEBUG } from './state.js';
-import { PALETTES, SURPRISE_SUBJECTS, EXAMPLE_SUGGESTIONS, getDailyChallenge, getTranslatedDailyWord } from './data.js';
+import { PALETTES, EXAMPLE_SUGGESTIONS, randomCardSubject, getDailyChallenge, getTranslatedDailyWord } from './data.js';
 import { sanitizeSubject, isSafeSubject } from './data.js';
 import { saveArtwork, initGalleryHandlers } from './gallery.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
@@ -703,9 +703,9 @@ function pulseDraw() {
 
 // ─── Surprise button ──────────────────────────────────────────────────────────
 document.getElementById('surprise-button').addEventListener('click', () => {
-  const subjects = SURPRISE_SUBJECTS;
-  subjectInput.value = subjects[Math.floor(Math.random() * subjects.length)];
-  _pendingEnglishSubject = subjectInput.value; // SURPRISE_SUBJECTS are English
+  const subject = randomCardSubject();
+  subjectInput.value = subject;
+  _pendingEnglishSubject = subject; // randomCardSubject always returns English
   subjectInput.focus();
   pulseDraw();
 });

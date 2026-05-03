@@ -119,66 +119,80 @@ export const BLOCKED_TERMS = new Set([
   "drogues","terreur","terroriste","suicide","viol","racisme",
 ]);
 
-// Structured pool for hero suggestion cards and the surprise button.
-// `subject` is always English (sent to the AI). `labels` provides the
-// display name per language; English is derived from `subject` at render time.
-export const EXAMPLE_SUGGESTIONS = [
-  { subject: "butterfly", emoji: "🦋", labels: { de:"Schmetterling", ru:"Бабочка", fr:"Papillon", es:"Mariposa", pt:"Borboleta", it:"Farfalla", nl:"Vlinder", pl:"Motyl" } },
-  { subject: "dragon", emoji: "🐉", labels: { de:"Drache", ru:"Дракон", fr:"Dragon", es:"Dragón", pt:"Dragão", it:"Drago", nl:"Draak", pl:"Smok" } },
-  { subject: "castle", emoji: "🏰", labels: { de:"Schloss", ru:"Замок", fr:"Château", es:"Castillo", pt:"Castelo", it:"Castello", nl:"Kasteel", pl:"Zamek" } },
-  { subject: "rocket ship", emoji: "🚀", labels: { de:"Rakete", ru:"Ракета", fr:"Fusée", es:"Cohete", pt:"Foguete", it:"Razzo", nl:"Raket", pl:"Rakieta" } },
-  { subject: "cat", emoji: "🐱", labels: { de:"Katze", ru:"Кот", fr:"Chat", es:"Gato", pt:"Gato", it:"Gatto", nl:"Kat", pl:"Kot" } },
-  { subject: "unicorn", emoji: "🦄", labels: { de:"Einhorn", ru:"Единорог", fr:"Licorne", es:"Unicornio", pt:"Unicórnio", it:"Unicorno", nl:"Eenhoorn", pl:"Jednorożec" } },
-  { subject: "dinosaur eating pizza", emoji: "🦖", labels: { de:"Dino isst Pizza", ru:"Динозавр ест пиццу", fr:"Dinosaure et pizza", es:"Dino comiendo pizza", pt:"Dino comendo pizza", it:"Dinosauro e pizza", nl:"Dino eet pizza", pl:"Dinozaur je pizzę" } },
-  { subject: "dragon baking cookies", emoji: "🍪", labels: { de:"Drache backt Kekse", ru:"Дракон печёт печенье", fr:"Dragon pâtissier", es:"Dragón y galletas", pt:"Dragão e biscoitos", it:"Drago e biscotti", nl:"Draak bakt koekjes", pl:"Smok piecze ciastka" } },
-  { subject: "cat riding a bicycle", emoji: "🚲", labels: { de:"Katze fährt Fahrrad", ru:"Кот на велосипеде", fr:"Chat à vélo", es:"Gato en bicicleta", pt:"Gato de bicicleta", it:"Gatto in bicicletta", nl:"Kat op de fiets", pl:"Kot na rowerze" } },
-  { subject: "castle on a cloud", emoji: "☁️", labels: { de:"Schloss auf Wolke", ru:"Замок на облаке", fr:"Château sur un nuage", es:"Castillo en la nube", pt:"Castelo na nuvem", it:"Castello su nuvola", nl:"Kasteel op een wolk", pl:"Zamek na chmurze" } },
-  { subject: "robot puppy", emoji: "🤖", labels: { de:"Roboter-Welpe", ru:"Робот-щенок", fr:"Chiot robot", es:"Cachorro robot", pt:"Cachorro robô", it:"Cucciolo robot", nl:"Robothondje", pl:"Szczeniak-robot" } },
-  { subject: "mermaid at school", emoji: "🧜", labels: { de:"Meerjungfrau in Schule", ru:"Русалка в школе", fr:"Sirène à l'école", es:"Sirena en la escuela", pt:"Sereia na escola", it:"Sirena a scuola", nl:"Zeemeermin op school", pl:"Syrenka w szkole" } },
-  { subject: "pirate octopus", emoji: "🐙", labels: { de:"Piraten-Krake", ru:"Осьминог-пират", fr:"Pieuvre pirate", es:"Pulpo pirata", pt:"Polvo pirata", it:"Polpo pirata", nl:"Piraat-octopus", pl:"Ośmiornica pirat" } },
-  { subject: "superhero penguin", emoji: "🐧", labels: { de:"Superhelden-Pinguin", ru:"Пингвин-супергерой", fr:"Pingouin super-héros", es:"Pingüino superhéroe", pt:"Pinguim super-herói", it:"Pinguino supereroe", nl:"Superheld pinguïn", pl:"Pingwin superbohater" } },
-  { subject: "wizard casting spells", emoji: "🧙", labels: { de:"Zauberer zaubert", ru:"Волшебник колдует", fr:"Magicien et sorts", es:"Mago lanzando hechizos", pt:"Mago lançando feitiços", it:"Mago e incantesimi", nl:"Tovenaar tovert", pl:"Czarodziej i czary" } },
-  { subject: "flying whale", emoji: "🐋", labels: { de:"Fliegender Wal", ru:"Летающий кит", fr:"Baleine volante", es:"Ballena voladora", pt:"Baleia voadora", it:"Balena volante", nl:"Vliegende walvis", pl:"Latający wieloryb" } },
-  { subject: "princess on a dragon", emoji: "👸", labels: { de:"Prinzessin auf Drache", ru:"Принцесса на драконе", fr:"Princesse sur un dragon", es:"Princesa en dragón", pt:"Princesa no dragão", it:"Principessa su drago", nl:"Prinses op draak", pl:"Księżniczka na smoku" } },
-  { subject: "bunny astronaut", emoji: "🐰", labels: { de:"Hasen-Astronaut", ru:"Кролик-космонавт", fr:"Lapin astronaute", es:"Conejo astronauta", pt:"Coelho astronauta", it:"Coniglio astronauta", nl:"Konijn astronaut", pl:"Królik astronauta" } },
-  { subject: "shark playing guitar", emoji: "🦈", labels: { de:"Hai spielt Gitarre", ru:"Акула с гитарой", fr:"Requin guitariste", es:"Tiburón con guitarra", pt:"Tubarão com guitarra", it:"Squalo e chitarra", nl:"Haai speelt gitaar", pl:"Rekin z gitarą" } },
-  { subject: "bear having a tea party", emoji: "🐻", labels: { de:"Bär bei Teeparty", ru:"Медведь на чаепитии", fr:"Ours au goûter", es:"Oso tomando té", pt:"Urso tomando chá", it:"Orso al tè", nl:"Beer op theekransje", pl:"Miś na herbatce" } },
-  { subject: "giraffe driving a bus", emoji: "🦒", labels: { de:"Giraffe fährt Bus", ru:"Жираф за рулём", fr:"Girafe chauffeur de bus", es:"Jirafa en autobús", pt:"Girafa no ônibus", it:"Giraffa alla guida", nl:"Giraffe rijdt bus", pl:"Żyrafa prowadzi autobus" } },
-  { subject: "fox in a spaceship", emoji: "🦊", labels: { de:"Fuchs im Raumschiff", ru:"Лиса в космолёте", fr:"Renard dans un vaisseau", es:"Zorro en nave espacial", pt:"Raposa na nave", it:"Volpe nell'astronave", nl:"Vos in ruimteschip", pl:"Lis w statku kosmicznym" } },
-  { subject: "lion reading a book", emoji: "🦁", labels: { de:"Löwe liest ein Buch", ru:"Лев читает книгу", fr:"Lion qui lit un livre", es:"León leyendo un libro", pt:"Leão lendo um livro", it:"Leone con un libro", nl:"Leeuw leest een boek", pl:"Lew czyta książkę" } },
-  { subject: "elephant playing piano", emoji: "🐘", labels: { de:"Elefant spielt Klavier", ru:"Слон играет на пианино", fr:"Éléphant au piano", es:"Elefante al piano", pt:"Elefante no piano", it:"Elefante al pianoforte", nl:"Olifant speelt piano", pl:"Słoń gra na pianinie" } },
-  { subject: "turtle racing a rocket", emoji: "🐢", labels: { de:"Schildkröte gegen Rakete", ru:"Черепаха и ракета", fr:"Tortue contre fusée", es:"Tortuga contra cohete", pt:"Tartaruga e foguete", it:"Tartaruga e razzo", nl:"Schildpad vs raket", pl:"Żółw kontra rakieta" } },
-  { subject: "owl baking a cake", emoji: "🦉", labels: { de:"Eule backt Kuchen", ru:"Сова печёт торт", fr:"Hibou pâtissier", es:"Búho horneando pastel", pt:"Coruja e bolo", it:"Gufo e torta", nl:"Uil bakt taart", pl:"Sowa piecze tort" } },
-  { subject: "panda painting a rainbow", emoji: "🐼", labels: { de:"Panda malt Regenbogen", ru:"Панда рисует радугу", fr:"Panda et arc-en-ciel", es:"Panda y arcoíris", pt:"Panda e arco-íris", it:"Panda e arcobaleno", nl:"Panda schildert regenboog", pl:"Panda maluje tęczę" } },
+// ─── Combinatorial card system: SUBJECTS × ACTIONS = 400 unique prompts ──────
+// Adding a new subject or action row instantly creates 20 new combinations.
+// `subject` sent to the AI is always the English combo: "{subj.en} {act.en}".
+
+const CARD_SUBJECTS = [
+  { en:"shark",      emoji:"🦈", de:"Hai",          fr:"requin",      es:"tiburón",      pt:"tubarão",     it:"squalo",      nl:"haai",         pl:"rekin",       ru:"акула",       tr:"köpekbalığı",  zh:"鲨鱼",   hi:"शार्क"       },
+  { en:"giraffe",    emoji:"🦒", de:"Giraffe",      fr:"girafe",      es:"jirafa",       pt:"girafa",      it:"giraffa",     nl:"giraf",        pl:"żyrafa",      ru:"жираф",       tr:"zürafa",       zh:"长颈鹿", hi:"जिराफ़"      },
+  { en:"elephant",   emoji:"🐘", de:"Elefant",      fr:"éléphant",    es:"elefante",     pt:"elefante",    it:"elefante",    nl:"olifant",      pl:"słoń",        ru:"слон",        tr:"fil",          zh:"大象",   hi:"हाथी"        },
+  { en:"penguin",    emoji:"🐧", de:"Pinguin",      fr:"pingouin",    es:"pingüino",     pt:"pinguim",     it:"pinguino",    nl:"pinguïn",      pl:"pingwin",     ru:"пингвин",     tr:"penguen",      zh:"企鹅",   hi:"पेंगुइन"     },
+  { en:"fox",        emoji:"🦊", de:"Fuchs",        fr:"renard",      es:"zorro",        pt:"raposa",      it:"volpe",       nl:"vos",          pl:"lis",         ru:"лиса",        tr:"tilki",        zh:"狐狸",   hi:"लोमड़ी"      },
+  { en:"bear",       emoji:"🐻", de:"Bär",          fr:"ours",        es:"oso",          pt:"urso",        it:"orso",        nl:"beer",         pl:"niedźwiedź",  ru:"медведь",     tr:"ayı",          zh:"熊",     hi:"भालू"        },
+  { en:"panda",      emoji:"🐼", de:"Panda",        fr:"panda",       es:"panda",        pt:"panda",       it:"panda",       nl:"panda",        pl:"panda",       ru:"панда",       tr:"panda",        zh:"熊猫",   hi:"पांडा"       },
+  { en:"owl",        emoji:"🦉", de:"Eule",         fr:"hibou",       es:"búho",         pt:"coruja",      it:"gufo",        nl:"uil",          pl:"sowa",        ru:"сова",        tr:"baykuş",       zh:"猫头鹰", hi:"उल्लू"       },
+  { en:"lion",       emoji:"🦁", de:"Löwe",         fr:"lion",        es:"león",         pt:"leão",        it:"leone",       nl:"leeuw",        pl:"lew",         ru:"лев",         tr:"aslan",        zh:"狮子",   hi:"शेर"         },
+  { en:"frog",       emoji:"🐸", de:"Frosch",       fr:"grenouille",  es:"rana",         pt:"sapo",        it:"rana",        nl:"kikker",       pl:"żaba",        ru:"лягушка",     tr:"kurbağa",      zh:"青蛙",   hi:"मेंढक"       },
+  { en:"octopus",    emoji:"🐙", de:"Tintenfisch",  fr:"pieuvre",     es:"pulpo",        pt:"polvo",       it:"polpo",       nl:"octopus",      pl:"ośmiornica",  ru:"осьминог",    tr:"ahtapot",      zh:"章鱼",   hi:"ऑक्टोपस"    },
+  { en:"dinosaur",   emoji:"🦖", de:"Dinosaurier",  fr:"dinosaure",   es:"dinosaurio",   pt:"dinossauro",  it:"dinosauro",   nl:"dinosaurus",   pl:"dinozaur",    ru:"динозавр",    tr:"dinozor",      zh:"恐龙",   hi:"डायनासोर"    },
+  { en:"dragon",     emoji:"🐉", de:"Drache",       fr:"dragon",      es:"dragón",       pt:"dragão",      it:"drago",       nl:"draak",        pl:"smok",        ru:"дракон",      tr:"ejderha",      zh:"龙",     hi:"ड्रैगन"      },
+  { en:"unicorn",    emoji:"🦄", de:"Einhorn",      fr:"licorne",     es:"unicornio",    pt:"unicórnio",   it:"unicorno",    nl:"eenhoorn",     pl:"jednorożec",  ru:"единорог",    tr:"unicorn",      zh:"独角兽", hi:"यूनिकॉर्न"   },
+  { en:"cat",        emoji:"🐱", de:"Katze",        fr:"chat",        es:"gato",         pt:"gato",        it:"gatto",       nl:"kat",          pl:"kot",         ru:"кот",         tr:"kedi",         zh:"猫",     hi:"बिल्ली"      },
+  { en:"dog",        emoji:"🐶", de:"Hund",         fr:"chien",       es:"perro",        pt:"cachorro",    it:"cane",        nl:"hond",         pl:"pies",        ru:"пёс",         tr:"köpek",        zh:"狗",     hi:"कुत्ता"      },
+  { en:"bunny",      emoji:"🐰", de:"Hase",         fr:"lapin",       es:"conejito",     pt:"coelho",      it:"coniglio",    nl:"konijn",       pl:"królik",      ru:"кролик",      tr:"tavşan",       zh:"兔子",   hi:"खरगोश"      },
+  { en:"turtle",     emoji:"🐢", de:"Schildkröte",  fr:"tortue",      es:"tortuga",      pt:"tartaruga",   it:"tartaruga",   nl:"schildpad",    pl:"żółw",        ru:"черепаха",    tr:"kaplumbağa",   zh:"乌龟",   hi:"कछुआ"        },
+  { en:"monkey",     emoji:"🐒", de:"Affe",         fr:"singe",       es:"mono",         pt:"macaco",      it:"scimmia",     nl:"aap",          pl:"małpa",       ru:"обезьяна",    tr:"maymun",       zh:"猴子",   hi:"बंदर"        },
+  { en:"crocodile",  emoji:"🐊", de:"Krokodil",     fr:"crocodile",   es:"cocodrilo",    pt:"crocodilo",   it:"coccodrillo", nl:"krokodil",     pl:"krokodyl",    ru:"крокодил",    tr:"timsah",       zh:"鳄鱼",   hi:"मगरमच्छ"     },
 ];
 
-export const SURPRISE_SUBJECTS = [
-  "dinosaur eating pizza",
-  "unicorn in space",
-  "dragon baking cookies",
-  "cat riding a bicycle",
-  "castle on a cloud",
-  "robot puppy",
-  "mermaid at school",
-  "pirate octopus",
-  "superhero penguin",
-  "wizard casting spells",
-  "flying whale",
-  "princess on a dragon",
-  "submarine adventure",
-  "alien playground",
-  "magic treehouse",
-  "bunny astronaut",
-  "shark playing guitar",
-  "bear having a tea party",
-  "giraffe driving a bus",
-  "fox in a spaceship",
-  "lion reading a book",
-  "elephant playing piano",
-  "turtle racing a rocket",
-  "owl baking a cake",
-  "panda painting a rainbow",
+const CARD_ACTIONS = [
+  { en:"playing guitar",       de:"spielt Gitarre",          fr:"et sa guitare",              es:"con guitarra",            pt:"com guitarra",          it:"e chitarra",             nl:"speelt gitaar",          pl:"z gitarą",              ru:"с гитарой",           tr:"gitarla",            zh:"弹吉他",     hi:"गिटार बजाते"         },
+  { en:"baking cookies",       de:"backt Kekse",             fr:"fait des gâteaux",           es:"horneando galletas",      pt:"fazendo biscoitos",     it:"fa biscotti",            nl:"bakt koekjes",           pl:"piecze ciastka",        ru:"печёт печенье",       tr:"kurabiye pişirir",   zh:"烤饼干",     hi:"कुकीज़ बनाते"        },
+  { en:"riding a bicycle",     de:"fährt Fahrrad",           fr:"à vélo",                     es:"en bicicleta",            pt:"de bicicleta",          it:"in bicicletta",          nl:"op de fiets",            pl:"jedzie rowerem",        ru:"на велосипеде",       tr:"bisiklet sürer",     zh:"骑自行车",   hi:"साइकिल चलाते"       },
+  { en:"reading a book",       de:"liest ein Buch",          fr:"lit un livre",               es:"leyendo un libro",        pt:"lendo um livro",        it:"legge un libro",         nl:"leest een boek",         pl:"czyta książkę",         ru:"читает книгу",        tr:"kitap okur",         zh:"看书",       hi:"किताब पढ़ते"         },
+  { en:"driving a bus",        de:"fährt Bus",               fr:"conduit un bus",             es:"manejando un autobús",    pt:"dirigindo um ônibus",   it:"guida un autobus",       nl:"rijdt een bus",          pl:"prowadzi autobus",      ru:"за рулём автобуса",   tr:"otobüs sürer",       zh:"开公共汽车", hi:"बस चलाते"            },
+  { en:"painting a rainbow",   de:"malt Regenbogen",         fr:"peint un arc-en-ciel",       es:"pintando un arcoíris",    pt:"pintando arco-íris",    it:"dipinge arcobaleno",     nl:"schildert regenboog",    pl:"maluje tęczę",          ru:"рисует радугу",       tr:"gökkuşağı boyar",    zh:"画彩虹",     hi:"इंद्रधनुष बनाते"     },
+  { en:"playing piano",        de:"spielt Klavier",          fr:"joue du piano",              es:"tocando el piano",        pt:"tocando piano",         it:"suona il pianoforte",    nl:"speelt piano",           pl:"gra na pianinie",       ru:"играет на пианино",   tr:"piyano çalar",       zh:"弹钢琴",     hi:"पियानो बजाते"        },
+  { en:"flying a kite",        de:"lässt Drachen steigen",   fr:"fait voler un cerf-volant",  es:"volando una cometa",      pt:"soltando pipa",         it:"fa volare un aquilone",  nl:"vliegert",               pl:"puszcza latawca",       ru:"запускает змея",      tr:"uçurtma uçurur",     zh:"放风筝",     hi:"पतंग उड़ाते"         },
+  { en:"having a tea party",   de:"bei der Teeparty",        fr:"prend le thé",               es:"en una merienda",         pt:"no chá da tarde",       it:"al tè",                  nl:"op theekransje",         pl:"na herbatce",           ru:"на чаепитии",         tr:"çay partisinde",     zh:"喝下午茶",   hi:"चाय पार्टी में"      },
+  { en:"surfing",              de:"surft die Wellen",        fr:"surfe les vagues",           es:"surfeando las olas",      pt:"surfando as ondas",     it:"fa surf",                nl:"surft de golven",        pl:"surfuje",               ru:"катается на волнах",  tr:"sörf yapar",         zh:"冲浪",       hi:"सर्फिंग करते"        },
+  { en:"eating ice cream",     de:"isst Eis",                fr:"mange une glace",            es:"comiendo helado",         pt:"comendo sorvete",       it:"mangia gelato",          nl:"eet een ijsje",          pl:"je lody",               ru:"ест мороженое",       tr:"dondurma yer",       zh:"吃冰淇淋",   hi:"आइसक्रीम खाते"       },
+  { en:"dancing",              de:"tanzt",                   fr:"danse",                      es:"bailando",                pt:"dançando",              it:"balla",                  nl:"danst",                  pl:"tańczy",                ru:"танцует",             tr:"dans eder",          zh:"跳舞",       hi:"नाचते"               },
+  { en:"cooking spaghetti",    de:"kocht Spaghetti",         fr:"cuisine des spaghettis",     es:"cocinando espagueti",     pt:"fazendo espaguete",     it:"cucina spaghetti",       nl:"kookt spaghetti",        pl:"gotuje spaghetti",      ru:"готовит спагетти",    tr:"spagetti pişirir",   zh:"煮意面",     hi:"स्पेगेटी बनाते"      },
+  { en:"playing chess",        de:"spielt Schach",           fr:"joue aux échecs",            es:"jugando ajedrez",         pt:"jogando xadrez",        it:"gioca a scacchi",        nl:"speelt schaken",         pl:"gra w szachy",          ru:"играет в шахматы",    tr:"satranç oynar",      zh:"下棋",       hi:"शतरंज खेलते"         },
+  { en:"building a sandcastle",de:"baut Sandburg",           fr:"fait un château de sable",   es:"haciendo castillo arena",  pt:"fazendo castelo areia", it:"fa castello di sabbia",  nl:"bouwt zandkasteel",      pl:"buduje zamek z piasku", ru:"строит замок из песка",tr:"kum kalesi yapar",   zh:"建沙堡",     hi:"रेत का महल बनाते"    },
+  { en:"doing yoga",           de:"macht Yoga",              fr:"fait du yoga",               es:"haciendo yoga",           pt:"fazendo yoga",          it:"fa yoga",                nl:"doet yoga",              pl:"robi jogę",             ru:"занимается йогой",    tr:"yoga yapar",         zh:"练瑜伽",     hi:"योगा करते"           },
+  { en:"playing drums",        de:"spielt Schlagzeug",       fr:"joue de la batterie",        es:"tocando la batería",      pt:"tocando bateria",       it:"suona la batteria",      nl:"speelt drums",           pl:"gra na perkusji",       ru:"играет на барабанах", tr:"davul çalar",        zh:"打鼓",       hi:"ड्रम बजाते"          },
+  { en:"in a spaceship",       de:"im Raumschiff",           fr:"dans un vaisseau spatial",   es:"en una nave espacial",    pt:"numa nave espacial",    it:"su un'astronave",        nl:"in een ruimteschip",     pl:"w statku kosmicznym",   ru:"в космическом корабле",tr:"uzay gemisinde",     zh:"在宇宙飞船里",hi:"अंतरिक्ष यान में"   },
+  { en:"at school",            de:"in der Schule",           fr:"à l'école",                  es:"en la escuela",           pt:"na escola",             it:"a scuola",               nl:"op school",              pl:"w szkole",              ru:"в школе",             tr:"okulda",             zh:"在学校",     hi:"स्कूल में"           },
+  { en:"skateboarding",        de:"fährt Skateboard",        fr:"fait du skateboard",         es:"en monopatín",            pt:"andando de skate",      it:"fa skateboard",          nl:"skateboardt",            pl:"jedzie na deskorolce",  ru:"катается на скейте",  tr:"kaykay yapar",       zh:"玩滑板",     hi:"स्केटबोर्ड करते"     },
 ];
+
+const LANGS = ['de','fr','es','pt','it','nl','pl','ru','tr','zh','hi'];
+
+export function buildCardPool() {
+  const pool = [];
+  for (const subj of CARD_SUBJECTS) {
+    for (const act of CARD_ACTIONS) {
+      const labels = {};
+      for (const lang of LANGS) {
+        labels[lang] = `${subj[lang] ?? subj.en} ${act[lang] ?? act.en}`;
+      }
+      pool.push({ subject: `${subj.en} ${act.en}`, emoji: subj.emoji, labels });
+    }
+  }
+  return pool;
+}
+
+export function randomCardSubject() {
+  const subj = CARD_SUBJECTS[Math.floor(Math.random() * CARD_SUBJECTS.length)];
+  const act  = CARD_ACTIONS[Math.floor(Math.random() * CARD_ACTIONS.length)];
+  return `${subj.en} ${act.en}`;
+}
+
+// Keep for backward compatibility — buildCardPool() is preferred for the card grid.
+export const EXAMPLE_SUGGESTIONS = buildCardPool();
 
 export function sanitizeSubject(value) {
   return String(value || "")
