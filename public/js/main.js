@@ -590,9 +590,13 @@ const configPanel    = document.getElementById('config-panel');
 const panelToggleBtn = document.getElementById('panel-toggle');
 const mobileMenuBtn  = document.getElementById('mobile-menu-btn');
 
+function isPhoneLandscape() {
+  return window.innerHeight <= 500 && window.innerWidth > window.innerHeight;
+}
+
 function togglePanel() {
-  const isMobile = window.innerWidth < 768;
-  if (isMobile) {
+  const isMobilePortrait = window.innerWidth < 768 && !isPhoneLandscape();
+  if (isMobilePortrait) {
     configPanel?.classList.toggle('mobile-open');
   } else {
     configPanel?.classList.toggle('collapsed');
@@ -602,12 +606,23 @@ function togglePanel() {
   }
 }
 
+// Collapse sidebar by default on phone landscape — gives canvas maximum space
+function syncSidebarToOrientation() {
+  if (isPhoneLandscape()) {
+    configPanel?.classList.add('collapsed');
+    configPanel?.classList.remove('mobile-open');
+    if (panelToggleBtn) panelToggleBtn.textContent = '▶';
+  }
+}
+syncSidebarToOrientation();
+window.addEventListener('orientationchange', () => setTimeout(syncSidebarToOrientation, 150));
+
 panelToggleBtn?.addEventListener('click', togglePanel);
 mobileMenuBtn?.addEventListener('click', togglePanel);
 
-// Close mobile panel when clicking outside
+// Close mobile portrait panel when clicking outside
 document.addEventListener('click', (e) => {
-  if (window.innerWidth < 768 &&
+  if (window.innerWidth < 768 && !isPhoneLandscape() &&
       configPanel?.classList.contains('mobile-open') &&
       !configPanel.contains(e.target) &&
       e.target !== mobileMenuBtn) {

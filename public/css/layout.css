@@ -202,8 +202,9 @@
   .landscape-hint { display: flex; }
 }
 
-/* Landscape on narrow screens: hide landscape hint, show two-column */
-@media (max-width: 767px) and (orientation: landscape) {
+/* Phone landscape: detected by short viewport height (phones rotated sideways).
+   Works on all phones regardless of their portrait width (S Ultra, iPhone, etc.) */
+@media (orientation: landscape) and (max-height: 500px) {
   .app-body { flex-direction: row; }
   .config-panel {
     width: 220px;
@@ -214,6 +215,7 @@
     overflow-y: auto;
     overflow-x: hidden;
   }
+  /* Collapsed = slim toggle-only strip */
   .config-panel.collapsed { width: 44px; min-width: 44px; }
   .panel-inner { min-width: 216px; width: 216px; }
   .panel-toggle-btn { display: flex; }

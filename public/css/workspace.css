@@ -240,6 +240,26 @@
   .app { padding: 8px 8px 32px; }
 }
 
+/* Phone landscape: canvas fills width, palette drops below, action bar compact */
+@media (orientation: landscape) and (max-height: 500px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 0 8px 8px;
+  }
+  .side-panel { display: none !important; }
+  .canvas-actions {
+    gap: 5px;
+    padding: 6px 8px;
+    flex-wrap: wrap;
+  }
+  .action-btn  { font-size: .75rem; padding: 5px 10px; }
+  .mode-btn    { font-size: .75rem; padding: 5px 8px; }
+  .zoom-controls { padding: 5px 8px; gap: 4px; }
+  .zoom-btn { width: 30px; height: 30px; font-size: .95rem; }
+  #preview-canvas { max-height: 60vh; }
+}
+
 /* ─── Coloring hint banner ───────────────────────────────────────────────── */
 .coloring-hint {
   display: flex;
