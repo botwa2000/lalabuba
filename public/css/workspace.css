@@ -218,6 +218,13 @@
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 
+/* Portrait: fill available height, hide debug panel */
+@media (max-width: 767px) {
+  .workspace { align-items: stretch; }
+  .canvas-wrapper { min-height: 60dvh; }
+  .side-panel { display: none !important; }
+}
+
 /* Tablet and below: stack palette under canvas */
 @media (max-width: 640px) {
   .workspace {
@@ -235,11 +242,18 @@
              40px
              max(10px, env(safe-area-inset-left, 0px));
   }
+  .workspace { padding: 0 6px 12px !important; }
   .search-bar { flex-wrap: wrap; gap: 6px; }
   .go-btn { flex: 1; min-width: 0; }
   .regen-btn { flex: 1; min-width: 0; }
-  .canvas-actions { gap: 6px; padding: 8px 10px; flex-wrap: wrap; }
-  .action-btn { font-size: .78rem; padding: 6px 12px; }
+  /* !important beats container queries that appear later in the file */
+  .canvas-actions { gap: 3px !important; padding: 5px 4px !important; flex-wrap: wrap !important; }
+  .action-btn { font-size: .74rem !important; padding: 4px 7px !important; }
+  .mode-btn   { font-size: .74rem !important; padding: 4px 5px !important; }
+  /* Pencil draw + clear-strokes hidden on narrow portrait — too small to use precisely */
+  #print-button { display: none; }
+  #pencil-button { display: none; }
+  #clear-pencil-button { display: none; }
 }
 
 /* Very small phones */

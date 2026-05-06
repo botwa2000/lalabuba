@@ -176,6 +176,7 @@
 
 /* Portrait mobile: sidebar hidden by default, canvas fills width */
 @media (max-width: 767px) {
+  .app { overflow-x: hidden; } /* prevent -18px margin bleed at narrow app padding */
   .app-body { flex-direction: column; }
 
   .config-panel {
@@ -218,7 +219,7 @@
     overflow-x: hidden;
   }
   /* Collapsed = slim toggle-only strip */
-  .config-panel.collapsed { width: 44px; min-width: 44px; }
+  .config-panel.collapsed { width: 44px; min-width: 44px; max-height: none; overflow: clip; }
   .panel-inner { min-width: 216px; width: 216px; }
   .panel-toggle-btn { display: flex; }
   .landscape-hint { display: none; }
@@ -237,6 +238,10 @@
 }
 
 /* ── Container queries: config-panel inner content adapts to sidebar width ─── */
+/* Match app-body bleed margin to app padding at each mobile breakpoint to prevent viewport overflow */
+@media (max-width: 480px) { .app-body { margin: 0 -10px; } }
+@media (max-width: 360px) { .app-body { margin: 0 -8px;  } }
+
 /* Tighter pill/chip wrapping when panel is narrow (e.g. 240px or landscape 220px) */
 @container config-panel (max-width: 250px) {
   .ctrl-label { min-width: 56px; font-size: .68rem; }

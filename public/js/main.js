@@ -647,9 +647,9 @@ const chipNumbers = document.getElementById('chip-numbers');
 
 function updateDiffChip() {
   if (!chipDiff) return;
-  chipDiff.textContent = DIFF_EMOJI[difficultySelect.value] || '⭐';
-  const diffLabels = { easy: t('diffEasy'), medium: t('diffMedium'), hard: t('diffHard'), extreme: t('diffExtreme') };
-  chipDiff.title = t('difficulty') + ': ' + (diffLabels[difficultySelect.value] || difficultySelect.value);
+  const diffShort = { easy: 'Easy', medium: 'Medium', hard: 'Hard', extreme: 'Extreme' };
+  chipDiff.textContent = (DIFF_EMOJI[difficultySelect.value] || '⭐') + ' ' + (diffShort[difficultySelect.value] || difficultySelect.value);
+  chipDiff.title = t('difficulty') + ': ' + (diffShort[difficultySelect.value] || difficultySelect.value);
 }
 function updateCountChip() {
   if (!chipCount) return;
@@ -659,9 +659,9 @@ function updateCountChip() {
 }
 function updatePaletteChip() {
   if (!chipPalette) return;
-  chipPalette.textContent = PALETTE_EMOJI[paletteSelect.value] || '🖍️';
-  const paletteLabels = { classic: t('paletteClassic'), pastel: t('palettePastel'), nature: t('paletteNature') };
-  chipPalette.title = t('palette') + ': ' + (paletteLabels[paletteSelect.value] || paletteSelect.value);
+  const paletteShort = { classic: 'Crayons', pastel: 'Pastels', nature: 'Nature' };
+  chipPalette.textContent = (PALETTE_EMOJI[paletteSelect.value] || '🖍️') + ' ' + (paletteShort[paletteSelect.value] || paletteSelect.value);
+  chipPalette.title = t('palette') + ': ' + (paletteShort[paletteSelect.value] || paletteSelect.value);
 }
 function updateNumbersChip() {
   if (!chipNumbers) return;
@@ -683,10 +683,11 @@ if (chipDiff) chipDiff.addEventListener('click', () => {
 if (chipCount) chipCount.addEventListener('click', () => {
   const palette = PALETTES[paletteSelect.value];
   const maxCount = palette.length;
-  const cur = COUNT_CYCLE.indexOf(state.colorCount);
-  const nextRaw = COUNT_CYCLE[(cur + 1) % COUNT_CYCLE.length];
+  const atMax = state.colorCount >= maxCount;
+  const curIdx = atMax ? COUNT_CYCLE.length - 1 : Math.max(0, COUNT_CYCLE.indexOf(state.colorCount));
+  const nextRaw = COUNT_CYCLE[(curIdx + 1) % COUNT_CYCLE.length];
   const next = nextRaw === 'max' ? maxCount : Number(nextRaw);
-  setColorCount(next, next === maxCount);
+  setColorCount(next, next >= maxCount);
   updateCountChip();
 });
 
