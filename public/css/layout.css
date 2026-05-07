@@ -201,7 +201,10 @@
   /* Hide examples on mobile (saves space) */
   .config-panel .examples-grid,
   .config-panel .shuffle-cards-btn { display: none; }
+}
 
+/* Landscape hint: phones only — tablets at 768px+ don't need a rotation nudge */
+@media (max-width: 540px) {
   .landscape-hint { display: flex; }
 }
 
@@ -222,6 +225,7 @@
   .config-panel.collapsed { width: 44px; min-width: 44px; max-height: none; overflow: clip; }
   .panel-inner { min-width: 216px; width: 216px; }
   .panel-toggle-btn { display: flex; }
+  .mobile-menu-btn { display: none; } /* sidebar toggle handles this in landscape */
   .landscape-hint { display: none; }
 }
 

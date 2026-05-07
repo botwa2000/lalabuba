@@ -25,12 +25,14 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html { overflow-x: hidden; }
 body {
   font-family: var(--ff-body);
   color: var(--ink);
   background: var(--bg);
   min-height: 100dvh;
   line-height: 1.5;
+  overflow-x: hidden;
 }
 
 /* ─── Shell ──────────────────────────────────────────────────────────────── */

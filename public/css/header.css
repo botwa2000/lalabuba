@@ -225,6 +225,12 @@
   .logo        { font-size: 2.6rem; letter-spacing: 0.03em; }
 }
 
+/* Very small phones (≤360px, content only 344px): 2.6rem still overflows — shrink further */
+@media (max-width: 360px) {
+  .logo-mascot { height: 2rem; }
+  .logo        { font-size: 2.2rem; letter-spacing: 0.02em; }
+}
+
 .tagline {
   margin-top: 6px;
   font-size: clamp(0.95rem, 2.5vw, 1.25rem);

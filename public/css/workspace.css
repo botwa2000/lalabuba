@@ -98,6 +98,7 @@
   color: var(--muted);
   opacity: .45;
   pointer-events: none;
+  width: 85%;
 }
 .empty-icon {
   font-size: 4rem;
