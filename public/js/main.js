@@ -792,15 +792,19 @@ if (!DEBUG) {
   document.querySelectorAll('.debug-item').forEach(el => { el.style.display = 'none'; });
 }
 
-renderLegend();
-applyTranslations();
-loadFromShare();
-
-// Hide native splash screen now that fonts + i18n are ready
-if (window.Capacitor?.isNativePlatform?.()) {
-  window.Capacitor.Plugins?.SplashScreen?.hide({ fadeOutDuration: 300 }).catch(() => {});
-  // Show first-time onboarding after splash fade completes
-  setTimeout(initOnboarding, 500);
+try {
+  renderLegend();
+  applyTranslations();
+  loadFromShare();
+} catch (e) {
+  console.error('[Lalabuba] Startup error:', e);
+} finally {
+  // Always hide the native splash screen — launchAutoHide is false, so if
+  // anything above throws the app would appear permanently frozen otherwise.
+  if (window.Capacitor?.isNativePlatform?.()) {
+    window.Capacitor.Plugins?.SplashScreen?.hide({ fadeOutDuration: 300 }).catch(() => {});
+    setTimeout(initOnboarding, 500);
+  }
 }
 
 // ─── Gallery: continue drawing ────────────────────────────────────────────────

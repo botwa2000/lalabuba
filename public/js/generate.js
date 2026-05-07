@@ -144,19 +144,35 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
                      window.location.protocol === 'capacitor:' ||
                      window.location.protocol === 'ionic:';
     const apiBase = isNative ? 'https://lalabuba.com' : '';
-    const response = await fetch(`${apiBase}/api/generate-image`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        subject,
-        difficulty,
-        size: state.selectedSize,
-        seed,
-        width:  (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).w,
-        height: (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).h,
-        turnstileToken: state.turnstileToken || undefined,
-      }),
-    });
+    // 45-second hard timeout — prevents infinite hang if network is blocked
+    // (e.g. Google Play test environment). AbortController is supported on all
+    // Android WebViews we target (minSdk 24 / Chrome 56+).
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    let response;
+    try {
+      response = await fetch(`${apiBase}/api/generate-image`, {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject,
+          difficulty,
+          size: state.selectedSize,
+          seed,
+          width:  (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).w,
+          height: (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).h,
+          turnstileToken: state.turnstileToken || undefined,
+        }),
+      });
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        throw new Error('Generation timed out. Please check your connection and try again.');
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       let message = `Image request failed (${response.status}).`;

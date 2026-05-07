@@ -69,19 +69,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=155" />
-  <link rel="stylesheet" href="/css/header.css?v=155" />
-  <link rel="stylesheet" href="/css/hero.css?v=155" />
-  <link rel="stylesheet" href="/css/generator.css?v=155" />
-  <link rel="stylesheet" href="/css/layout.css?v=155" />
-  <link rel="stylesheet" href="/css/workspace.css?v=155" />
-  <link rel="stylesheet" href="/css/palette.css?v=155" />
-  <link rel="stylesheet" href="/css/modals.css?v=155" />
-  <link rel="stylesheet" href="/css/footer.css?v=155" />
-  <link rel="stylesheet" href="/css/print.css?v=155" />
-  <link rel="stylesheet" href="/css/cookies.css?v=155" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=155" />
-  <script src="/js/cookies.js?v=155"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=156" />
+  <link rel="stylesheet" href="/css/header.css?v=156" />
+  <link rel="stylesheet" href="/css/hero.css?v=156" />
+  <link rel="stylesheet" href="/css/generator.css?v=156" />
+  <link rel="stylesheet" href="/css/layout.css?v=156" />
+  <link rel="stylesheet" href="/css/workspace.css?v=156" />
+  <link rel="stylesheet" href="/css/palette.css?v=156" />
+  <link rel="stylesheet" href="/css/modals.css?v=156" />
+  <link rel="stylesheet" href="/css/footer.css?v=156" />
+  <link rel="stylesheet" href="/css/print.css?v=156" />
+  <link rel="stylesheet" href="/css/cookies.css?v=156" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=156" />
+  <script src="/js/cookies.js?v=156"></script>
 </head>
 <body>
   <div class="app">
@@ -436,6 +436,22 @@
   </div>
   <style>html.is-native #turnstile-widget { display: none !important; }</style>
 
-  <script type="module" src="/js/main.js?v=155"></script>
+  <!-- Safety net: if the main module throws before it can hide the splash screen,
+       hide it here so the app never appears permanently frozen on native. -->
+  <script>
+  (function () {
+    function hideSplashIfNative() {
+      try {
+        var C = window.Capacitor;
+        if (C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.SplashScreen) {
+          C.Plugins.SplashScreen.hide({ fadeOutDuration: 300 });
+        }
+      } catch (e) { /* best-effort */ }
+    }
+    window.addEventListener('error', hideSplashIfNative);
+    window.addEventListener('unhandledrejection', hideSplashIfNative);
+  })();
+  </script>
+  <script type="module" src="/js/main.js?v=156"></script>
 </body>
 </html>
