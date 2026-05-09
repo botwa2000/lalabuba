@@ -276,24 +276,34 @@
   .workspace  { align-items: stretch; }
 }
 
-/* Phone landscape: canvas fills width, palette drops below, action bar compact */
+/* Phone landscape: canvas + compact palette side by side, action bar compact */
 @media (orientation: landscape) and (max-height: 500px) {
   .workspace {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 0 8px 8px;
+    grid-template-columns: 1fr 140px;
+    grid-template-rows: 1fr;
+    gap: 6px;
+    padding: 0 6px 6px;
+    align-items: stretch;
+    height: 100%; /* fill canvas-area height (app is 100dvh, flex chain propagates) */
   }
+  .preview-stage { min-height: 0 !important; }
+  .canvas-body { min-height: 0; }
   .side-panel { display: none !important; }
   .canvas-actions {
-    gap: 5px;
-    padding: 6px 8px;
-    flex-wrap: wrap;
+    gap: 5px !important;
+    padding: 5px 6px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
   }
-  .action-btn  { font-size: .75rem; padding: 5px 10px; }
-  .mode-btn    { font-size: .75rem; padding: 5px 8px; }
+  .canvas-actions::-webkit-scrollbar { display: none; }
+  .action-btn  { font-size: .72rem !important; padding: 4px 8px !important; white-space: nowrap; flex-shrink: 0; }
+  .mode-btn    { font-size: .72rem !important; padding: 4px 6px !important; white-space: nowrap; flex-shrink: 0; }
   .zoom-controls { padding: 5px 8px; gap: 4px; }
   .zoom-btn { width: 30px; height: 30px; font-size: .95rem; }
-  #preview-canvas { max-height: 60dvh; }
+  .coloring-hint { font-size: .74rem; padding: 5px 8px; overflow: hidden; white-space: nowrap; }
+  #preview-canvas { max-height: calc(100dvh - 210px); }
 }
 
 /* ─── Coloring hint banner ───────────────────────────────────────────────── */

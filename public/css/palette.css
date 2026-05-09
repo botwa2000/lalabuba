@@ -151,6 +151,31 @@
   }
 }
 
+/* Phone landscape: compact palette in 140px column beside canvas */
+@media (orientation: landscape) and (max-height: 500px) {
+  .palette-sidebar {
+    position: sticky;
+    top: 6px;
+    max-height: calc(100dvh - 52px);
+    overflow-y: auto;
+    overflow-x: visible;
+    padding: 6px 5px;
+    border-radius: var(--radius);
+    align-items: stretch;
+    gap: 4px;
+    flex-direction: column;
+  }
+  .palette-strip {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    padding: 1px 2px;
+  }
+  .tool-btn { padding: 5px 6px; font-size: .63rem; gap: 4px; }
+  .picker-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .6rem; }
+  .picker-dot { width: 10px; height: 10px; }
+  .legend-sep { margin: 2px 1px; }
+}
+
 /* ─── Max colour-picker modal (16 × 16 grid) ─────────────────────────────── */
 .max-picker-backdrop {
   position: fixed;

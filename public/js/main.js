@@ -606,16 +606,31 @@ function togglePanel() {
   }
 }
 
-// Collapse sidebar by default on phone landscape — gives canvas maximum space
+// Expand sidebar in phone landscape so prompt input is immediately visible
 function syncSidebarToOrientation() {
+  const examplesGrid  = document.getElementById('examples-grid');
+  const shuffleBtn    = document.getElementById('shuffle-cards-btn');
+  const heroTagline   = document.querySelector('.hero-tagline');
+  const regenBtn      = document.getElementById('regen-button');
   if (isPhoneLandscape()) {
-    configPanel?.classList.add('collapsed');
+    configPanel?.classList.remove('collapsed');
     configPanel?.classList.remove('mobile-open');
-    if (panelToggleBtn) panelToggleBtn.textContent = '▶';
+    if (panelToggleBtn) panelToggleBtn.textContent = '◀';
+    // Hide non-essential elements so Draw button and text input are above the fold
+    if (examplesGrid) examplesGrid.style.display = 'none';
+    if (shuffleBtn)   shuffleBtn.style.display   = 'none';
+    if (heroTagline)  heroTagline.style.display   = 'none';
+    if (regenBtn)     regenBtn.style.display      = 'none';
+  } else {
+    if (examplesGrid) examplesGrid.style.display = '';
+    if (shuffleBtn)   shuffleBtn.style.display   = '';
+    if (heroTagline)  heroTagline.style.display   = '';
+    if (regenBtn)     regenBtn.style.display      = '';
   }
 }
 syncSidebarToOrientation();
 window.addEventListener('orientationchange', () => setTimeout(syncSidebarToOrientation, 150));
+window.addEventListener('resize', () => syncSidebarToOrientation());
 
 panelToggleBtn?.addEventListener('click', togglePanel);
 mobileMenuBtn?.addEventListener('click', togglePanel);

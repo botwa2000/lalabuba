@@ -219,6 +219,13 @@
   .logo        { font-size: 2.6rem; }
 }
 
+/* Phone landscape: header would eat ~100px of the 480px height — shrink aggressively */
+@media (orientation: landscape) and (max-height: 500px) {
+  .site-header { padding: 0; }
+  .logo-mascot { height: 1.2rem; }
+  .logo        { font-size: 1.5rem; letter-spacing: 0.01em; }
+}
+
 /* Small phones: logo at default 3.2rem overflows 355px content width — shrink to fit */
 @media (max-width: 480px) {
   .logo-mascot { height: 2.4rem; }
