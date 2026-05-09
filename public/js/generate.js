@@ -167,7 +167,7 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
       });
     } catch (err) {
       if (err.name === 'AbortError') {
-        throw new Error('Generation timed out. Please check your connection and try again.');
+        throw new Error(t('genTimeout'));
       }
       throw err;
     } finally {

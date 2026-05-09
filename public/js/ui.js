@@ -5,7 +5,8 @@ import { legendList, paletteSelect, statusElement, showNumbersInput } from './do
 import { renderGeneratedImage, setPaletteContext } from './canvas.js';
 
 export function activePalette() {
-  return PALETTES[paletteSelect.value].slice(0, state.colorCount);
+  const base = state.paletteOverride ?? PALETTES[paletteSelect.value];
+  return base.slice(0, state.colorCount);
 }
 
 export function setStatus(message, isError = false) {

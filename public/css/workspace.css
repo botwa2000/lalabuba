@@ -1,3 +1,6 @@
+/* Debug panel: always hidden in production on all viewports */
+#debug-aside { display: none !important; }
+
 /* ─── Workspace ──────────────────────────────────────────────────────────── */
 .workspace {
   display: grid;

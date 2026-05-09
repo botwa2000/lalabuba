@@ -38,8 +38,10 @@
   grid-column: 1;
   grid-row: 2;
   min-width: 0;
-  padding: 10px 16px;
-  font-size: .97rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 10px 12px;
+  font-size: .9rem;
 }
 .config-panel .surprise-btn {
   grid-column: 2;

@@ -1,5 +1,5 @@
 import { state, DEBUG } from './state.js';
-import { PALETTES, EXAMPLE_SUGGESTIONS, randomCardSubject, getDailyChallenge, getTranslatedDailyWord } from './data.js';
+import { PALETTES, EXAMPLE_SUGGESTIONS, randomCardSubject, getDailyChallenge, getTranslatedDailyWord, getSemanticPaletteOrder } from './data.js';
 import { sanitizeSubject, isSafeSubject } from './data.js';
 import { saveArtwork, initGalleryHandlers } from './gallery.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
@@ -121,6 +121,8 @@ form.addEventListener("submit", async (event) => {
     state.turnstileToken = await getTurnstileToken();
     const seedOverride = _pendingSeedOverride;
     _pendingSeedOverride = null;
+    state.paletteOverride = getSemanticPaletteOrder(
+      pendingEnglish || subject, paletteSelect.value, PALETTES[paletteSelect.value]);
     await generatePage(subject, seedOverride, !!pendingEnglish);
   } catch (error) {
     setStatus(error.message || "Something went wrong.", true);
@@ -148,6 +150,7 @@ showNumbersInput.addEventListener("change", async () => {
 
 // ─── Palette select ──────────────────────────────────────────────────────────
 paletteSelect.addEventListener("change", async () => {
+  state.paletteOverride = null; // user explicitly changed palette — clear semantic override
   renderLegend();
   updatePaletteChip();
   updateCountChip();
@@ -465,6 +468,7 @@ regenButton.addEventListener('click', async () => {
   const submitButton = document.getElementById('generate-button');
   submitButton.disabled = true;
   try {
+    state.paletteOverride = getSemanticPaletteOrder(subject, paletteSelect.value, PALETTES[paletteSelect.value]);
     await generatePage(subject);
   } catch (error) {
     setStatus(error.message || 'Something went wrong.', true);
@@ -503,7 +507,7 @@ document.querySelectorAll('.lang-option').forEach(btn => {
     if (dailyWordValue) {
       dailyWordValue.textContent = getTranslatedDailyWord(dailyWord, getCurrentLang());
     }
-    updateDiffChip(); updatePaletteChip(); // refresh translated chip titles
+    updateDiffChip(); updatePaletteChip(); updateNumbersChip(); // refresh translated chip titles
     langDropdown.hidden = true;
     langToggle.setAttribute('aria-expanded', 'false');
   });
@@ -674,9 +678,13 @@ const chipNumbers = document.getElementById('chip-numbers');
 
 function updateDiffChip() {
   if (!chipDiff) return;
-  const diffShort = { easy: 'Easy', medium: 'Medium', hard: 'Hard', extreme: 'Extreme' };
-  chipDiff.textContent = (DIFF_EMOJI[difficultySelect.value] || '⭐') + ' ' + (diffShort[difficultySelect.value] || difficultySelect.value);
-  chipDiff.title = t('difficulty') + ': ' + (diffShort[difficultySelect.value] || difficultySelect.value);
+  const diffI18nKeys = { easy: 'diffEasy', medium: 'diffMedium', hard: 'diffHard', extreme: 'diffExtreme' };
+  const key = diffI18nKeys[difficultySelect.value] || 'diffEasy';
+  const raw = t(key);
+  const parts = raw.split(' ');
+  const label = parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0];
+  chipDiff.textContent = (DIFF_EMOJI[difficultySelect.value] || '⭐') + ' ' + label;
+  chipDiff.title = t('difficulty') + ': ' + label;
 }
 function updateCountChip() {
   if (!chipCount) return;
@@ -686,14 +694,18 @@ function updateCountChip() {
 }
 function updatePaletteChip() {
   if (!chipPalette) return;
-  const paletteShort = { classic: 'Crayons', pastel: 'Pastels', nature: 'Nature' };
-  chipPalette.textContent = (PALETTE_EMOJI[paletteSelect.value] || '🖍️') + ' ' + (paletteShort[paletteSelect.value] || paletteSelect.value);
-  chipPalette.title = t('palette') + ': ' + (paletteShort[paletteSelect.value] || paletteSelect.value);
+  const paletteI18nKeys = { classic: 'paletteClassic', pastel: 'palettePastel', nature: 'paletteNature' };
+  const key = paletteI18nKeys[paletteSelect.value] || 'paletteClassic';
+  const raw = t(key);
+  const parts = raw.split(' ');
+  const label = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
+  chipPalette.textContent = (PALETTE_EMOJI[paletteSelect.value] || '🖍️') + ' ' + label;
+  chipPalette.title = t('palette') + ': ' + label;
 }
 function updateNumbersChip() {
   if (!chipNumbers) return;
   const on = showNumbersInput.checked;
-  chipNumbers.textContent = on ? '🔢 ●' : '🔢 ○';
+  chipNumbers.textContent = '🔢 ' + t('numbersChip');
   chipNumbers.classList.toggle('setting-chip--on', on);
 }
 function updateAllChips() {

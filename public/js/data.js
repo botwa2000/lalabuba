@@ -562,6 +562,88 @@ export function getTranslatedDailyWord(word, lang) {
   return DAILY_WORDS_I18N[lang]?.[word] ?? word;
 }
 
+// ─── Semantic palette ordering ─────────────────────────────────────────────────
+// Maps subject keywords → the best-fit color label in each palette.
+// First matching rule wins. Keywords are matched against the English subject string
+// and also against multilingual translations built from CARD_SUBJECTS + DAILY_WORDS_I18N.
+const SEMANTIC_COLOR_RULES = [
+  { keywords: ['frog','turtle','crocodile','dinosaur','lizard','alligator','caterpillar','snake','iguana','cactus','grasshopper'],
+    classic: 'Green',  pastel: 'Mint',        nature: 'Leaf'  },
+  { keywords: ['dragon','parrot','jungle','plant','leaf','shamrock'],
+    classic: 'Green',  pastel: 'Sage',        nature: 'Leaf'  },
+  { keywords: ['shark','dolphin','whale','mermaid','fish','submarine','seahorse','ocean','lake','sea','river','waterfall'],
+    classic: 'Blue',   pastel: 'Sky',         nature: 'Lake'  },
+  { keywords: ['fox','tiger','goldfish','clownfish','pumpkin','sunset'],
+    classic: 'Orange', pastel: 'Peach',       nature: 'Amber' },
+  { keywords: ['giraffe','lion','bee','sunflower','chick','duckling','sun','banana','lemon','corn','star','gold'],
+    classic: 'Gold',   pastel: 'Butter',      nature: 'Sun'   },
+  { keywords: ['bear','monkey','dog','owl','hamster','horse','deer','camel','squirrel','chipmunk','hedgehog','otter','beaver'],
+    classic: 'Brown',  pastel: 'Apricot',     nature: 'Bark'  },
+  { keywords: ['elephant','koala','rhino','hippo','wolf','gorilla','donkey','mouse','seal','robot','astronaut','rocket','spaceship','knight'],
+    classic: 'Slate',  pastel: 'Mist',        nature: 'Stone' },
+  { keywords: ['bunny','flamingo','pig','piglet','shrimp'],
+    classic: 'Pink',   pastel: 'Baby Pink',   nature: 'Petal' },
+  { keywords: ['unicorn','fairy','flower','rose','cherry blossom','lotus','orchid'],
+    classic: 'Pink',   pastel: 'Rose',        nature: 'Petal' },
+  { keywords: ['octopus','grape','plum','eggplant','jellyfish'],
+    classic: 'Purple', pastel: 'Lilac',       nature: 'Berry' },
+  { keywords: ['cat','kitten'],
+    classic: 'Tan',    pastel: 'Apricot',     nature: 'Clay'  },
+  { keywords: ['penguin','panda','zebra','skunk'],
+    classic: 'Navy',   pastel: 'Periwinkle',  nature: 'Dusk'  },
+  { keywords: ['volcano','fire truck','firetruck','phoenix','lobster','crab','ladybug'],
+    classic: 'Red',    pastel: 'Rose',        nature: 'Petal' },
+];
+
+// Reverse map: any-language word → English subject key from CARD_SUBJECTS
+function buildSubjectToEnglishMap() {
+  const map = new Map();
+  for (const subj of CARD_SUBJECTS) {
+    const allLangKeys = ['en', ...LANGS];
+    for (const lang of allLangKeys) {
+      const word = subj[lang];
+      if (word) map.set(word.toLowerCase(), subj.en);
+    }
+  }
+  // Also index DAILY_WORDS_I18N translations
+  for (const [lang, entries] of Object.entries(DAILY_WORDS_I18N)) {
+    for (const [enWord, localWord] of Object.entries(entries)) {
+      if (localWord) map.set(localWord.toLowerCase(), enWord);
+    }
+  }
+  return map;
+}
+
+const _subjectToEnglish = buildSubjectToEnglishMap();
+
+// Returns a reordered copy of `palette` with the semantically appropriate color
+// placed first, so canvas.js (which assigns palette[0] to the largest region)
+// gives the main subject body the right color. Returns null if no rule matched.
+export function getSemanticPaletteOrder(subject, paletteName, palette) {
+  const lower = (subject || '').toLowerCase();
+  // Expand multilingual words to their English equivalents
+  const terms = new Set([lower]);
+  for (const word of lower.split(/\s+/)) {
+    terms.add(word);
+    const en = _subjectToEnglish.get(word);
+    if (en) terms.add(en.toLowerCase());
+  }
+
+  for (const rule of SEMANTIC_COLOR_RULES) {
+    const matched = rule.keywords.some(k => [...terms].some(term => term.includes(k)));
+    if (!matched) continue;
+    const targetLabel = rule[paletteName];
+    if (!targetLabel) return null;
+    const idx = palette.findIndex(p => p.label === targetLabel);
+    if (idx <= 0) return null; // already first or label not in palette
+    const reordered = [...palette];
+    const [chosen] = reordered.splice(idx, 1);
+    reordered.unshift(chosen);
+    return reordered;
+  }
+  return null;
+}
+
 export function buildPrompt(subject, difficulty = "medium", size = "medium") {
   const base = [
     "every outline is a fully closed loop",
