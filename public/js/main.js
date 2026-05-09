@@ -591,13 +591,24 @@ const panelToggleBtn = document.getElementById('panel-toggle');
 const mobileMenuBtn  = document.getElementById('mobile-menu-btn');
 
 function isPhoneLandscape() {
+  // Use screen.orientation.angle so keyboard-open (which shrinks viewport height)
+  // doesn't falsely trigger landscape mode on portrait phones.
+  const angle = screen?.orientation?.angle ?? (typeof window.orientation === 'number' ? window.orientation : null);
+  if (angle !== null) {
+    return (Math.abs(angle) === 90 || Math.abs(angle) === 270) && window.innerHeight <= 500;
+  }
   return window.innerHeight <= 500 && window.innerWidth > window.innerHeight;
 }
 
 function togglePanel() {
   const isMobilePortrait = window.innerWidth < 768 && !isPhoneLandscape();
   if (isMobilePortrait) {
-    configPanel?.classList.toggle('mobile-open');
+    const willOpen = !configPanel?.classList.contains('mobile-open');
+    configPanel?.classList.toggle('mobile-open', willOpen);
+    if (mobileMenuBtn) {
+      mobileMenuBtn.textContent = willOpen ? '✕' : '☰';
+      mobileMenuBtn.setAttribute('aria-label', willOpen ? 'Close settings' : 'Open settings');
+    }
   } else {
     configPanel?.classList.toggle('collapsed');
     if (panelToggleBtn) {
@@ -640,8 +651,9 @@ document.addEventListener('click', (e) => {
   if (window.innerWidth < 768 && !isPhoneLandscape() &&
       configPanel?.classList.contains('mobile-open') &&
       !configPanel.contains(e.target) &&
-      e.target !== mobileMenuBtn) {
+      !mobileMenuBtn?.contains(e.target)) {
     configPanel.classList.remove('mobile-open');
+    if (mobileMenuBtn) { mobileMenuBtn.textContent = '☰'; mobileMenuBtn.setAttribute('aria-label', 'Open settings'); }
   }
 });
 

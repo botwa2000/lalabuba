@@ -198,9 +198,8 @@
   .panel-inner  { min-width: 0; width: 100%; padding: 0 14px 16px; }
   .panel-toggle-btn { display: none; } /* replaced by header menu btn on mobile */
 
-  /* Hide examples on mobile (saves space) */
-  .config-panel .examples-grid,
-  .config-panel .shuffle-cards-btn { display: none; }
+  /* Keep suggestion cards visible on mobile — panel scrolls (max-height 70dvh + overflow-y auto) */
+  .config-panel .shuffle-cards-btn { display: none; } /* shuffle btn still hidden to save space */
 }
 
 /* Landscape hint: phones only — tablets at 768px+ don't need a rotation nudge */
