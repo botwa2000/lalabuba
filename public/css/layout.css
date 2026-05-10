@@ -176,8 +176,10 @@
 
 /* Portrait mobile: sidebar hidden by default, canvas fills width */
 @media (max-width: 767px) {
-  .app { overflow-x: hidden; } /* prevent -18px margin bleed at narrow app padding */
-  .app-body { flex-direction: column; }
+  /* Bound the app to 100dvh so the flex chain can't expand the body beyond the viewport */
+  .app { overflow-x: hidden; height: 100dvh; overflow-y: hidden; }
+  .app-body { flex-direction: column; min-height: 0; } /* override base calc() min-height */
+  .canvas-area { min-height: 0; }                      /* allow flex shrink for overflow-y:auto */
 
   .config-panel {
     width: 100%;

@@ -117,3 +117,8 @@
   height: 22px;
   flex-shrink: 0;
 }
+
+/* Portrait phones: footer takes space the canvas needs — hide it */
+@media (max-width: 767px) {
+  .site-footer { display: none; }
+}
