@@ -130,41 +130,42 @@ async function showCookieBanner(page) {
   await new Promise(r => setTimeout(r, 200));
 }
 
+const GOTO_OPTS = { waitUntil: 'domcontentloaded', timeout: 15000 };
+
+async function loadFresh(page, vp) {
+  await page.setViewport({ width: vp.w, height: vp.h });
+  await page.goto('http://localhost:3000', GOTO_OPTS);
+  await new Promise(r => setTimeout(r, 400)); // let fonts/CSS settle
+}
+
 (async () => {
-  const browser = await puppeteer.launch({ headless: true, executablePath: EXEC });
+  const browser = await puppeteer.launch({
+    headless: true,
+    executablePath: EXEC,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
 
   for (const vp of VIEWPORTS) {
     console.log(`\n▶ ${vp.name} (${vp.w}×${vp.h})`);
+    const page = await browser.newPage();
 
     // --- STATE 1: Empty (no image)
-    let page = await browser.newPage();
-    await page.setViewport({ width: vp.w, height: vp.h });
-    await page.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
-    await new Promise(r => setTimeout(r, 300));
+    await loadFresh(page, vp);
     await shoot(page, `${vp.name}-1-empty`, '1-empty');
-    await page.close();
 
     // --- STATE 2: Empty + cookie banner
-    page = await browser.newPage();
-    await page.setViewport({ width: vp.w, height: vp.h });
-    await page.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
+    await loadFresh(page, vp);
     await showCookieBanner(page);
     await shoot(page, `${vp.name}-2-cookie`, '2-cookie banner');
-    await page.close();
 
     // --- STATE 3: With generated image + palette
-    page = await browser.newPage();
-    await page.setViewport({ width: vp.w, height: vp.h });
-    await page.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
+    await loadFresh(page, vp);
     await injectColors(page);
     await injectColorState(page);
     await shoot(page, `${vp.name}-3-with-image`, '3-with image');
-    await page.close();
 
     // --- STATE 4: With image + Paint mode active
-    page = await browser.newPage();
-    await page.setViewport({ width: vp.w, height: vp.h });
-    await page.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
+    await loadFresh(page, vp);
     await injectColors(page);
     await injectColorState(page);
     await page.evaluate(() => {
@@ -172,6 +173,7 @@ async function showCookieBanner(page) {
       document.getElementById('mode-tap-btn')?.classList.remove('active');
     });
     await shoot(page, `${vp.name}-4-paint-mode`, '4-paint mode');
+
     await page.close();
   }
 
