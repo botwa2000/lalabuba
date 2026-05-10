@@ -226,10 +226,61 @@ document.addEventListener('keydown', (e) => {
 // ─── Canvas click ─────────────────────────────────────────────────────────────
 let _lastClickMs = 0, _lastClickId = 0;
 
+// Erase a single region by id, recording undo. Skips if already erased this stroke.
+let _erasedThisStroke = new Set();
+function eraseRegionById(regionId) {
+  if (!regionId || _erasedThisStroke.has(regionId)) return;
+  const pixels = state.regionPixels.get(regionId);
+  if (!pixels) return;
+  const paint = state.paintedImageData.data;
+  const base  = state.baseImageData.data;
+  const undoEntries = [];
+  for (const idx of pixels) {
+    const o = idx * 4;
+    undoEntries.push(idx, paint[o], paint[o+1], paint[o+2], paint[o+3]);
+    paint[o] = base[o]; paint[o+1] = base[o+1]; paint[o+2] = base[o+2]; paint[o+3] = base[o+3];
+  }
+  const completedBefore = state.completedRegions.has(regionId);
+  state.completedRegions.delete(regionId);
+  state.celebrationShown = false;
+  redrawCanvas();
+  setStatus(t('areaCleared'));
+  const count = undoEntries.length / 5;
+  const record = new Uint8Array(count * 7);
+  for (let i = 0, b = 0; i < undoEntries.length; i += 5, b += 7) {
+    const idx = undoEntries[i];
+    record[b] = idx & 0xff; record[b+1] = (idx>>8)&0xff; record[b+2] = (idx>>16)&0xff;
+    record[b+3] = undoEntries[i+1]; record[b+4] = undoEntries[i+2];
+    record[b+5] = undoEntries[i+3]; record[b+6] = undoEntries[i+4];
+  }
+  pushUndo(regionId, { success: true, record }, completedBefore);
+  _erasedThisStroke.add(regionId);
+}
+
+// Pointer-based erase: fires immediately (no 300ms touch delay) and supports drag-to-erase.
+let _eraseDown = false;
+previewCanvas.addEventListener('pointerdown', (e) => {
+  if (!state.eraseMode || isPanMode() || state.colorMode === 'paint' || !state.regionMap) return;
+  e.preventDefault();
+  _eraseDown = true;
+  _erasedThisStroke = new Set();
+  previewCanvas.setPointerCapture(e.pointerId);
+  const { x, y } = getCanvasCoords(e);
+  eraseRegionById(findRegionAt(x, y));
+});
+previewCanvas.addEventListener('pointermove', (e) => {
+  if (!_eraseDown || !state.eraseMode || !state.regionMap) return;
+  const { x, y } = getCanvasCoords(e);
+  eraseRegionById(findRegionAt(x, y));
+});
+previewCanvas.addEventListener('pointerup',     () => { _eraseDown = false; });
+previewCanvas.addEventListener('pointercancel', () => { _eraseDown = false; });
+
 previewCanvas.addEventListener("click", (event) => {
   if (isPanMode()) return; // pan mode active — drag is for moving, not coloring
   if (state.colorMode === 'paint') return; // paint mode uses draw-canvas, not click-fill
   if (!state.regionMap) return;
+  if (state.eraseMode) return; // handled by pointerdown above
 
   const { x: canvasX, y: canvasY } = getCanvasCoords(event);
 
@@ -239,45 +290,13 @@ previewCanvas.addEventListener("click", (event) => {
     debugPanel.textContent = [
       `Clicked     : (${canvasX}, ${canvasY})`,
       `Region id   : ${regionId > 0 ? regionId : "none"}${regionId === state.backgroundRegionId ? " (bg)" : ""} (${state.regionPixels.get(regionId)?.length ?? 0} px)`,
-      `Mode        : ${state.eraseMode ? "erase" : "fill " + activePalette()[state.selectedPaletteIndex]?.label}`,
+      `Mode        : fill ${activePalette()[state.selectedPaletteIndex]?.label}`,
     ].join("\n");
     document.getElementById("debug-details").open = true;
   }
 
   if (!regionId) {
     setStatus(t('notEnclosed'), true);
-    return;
-  }
-
-  // Erase mode: restore region pixels to the original base image.
-  if (state.eraseMode) {
-    const pixels = state.regionPixels.get(regionId);
-    if (pixels) {
-      const paint = state.paintedImageData.data;
-      const base  = state.baseImageData.data;
-      // Record undo entry for erase too
-      const undoEntries = [];
-      for (const idx of pixels) {
-        const o = idx * 4;
-        undoEntries.push(idx, paint[o], paint[o+1], paint[o+2], paint[o+3]);
-        paint[o] = base[o]; paint[o+1] = base[o+1]; paint[o+2] = base[o+2]; paint[o+3] = base[o+3];
-      }
-      const completedBefore = state.completedRegions.has(regionId);
-      state.completedRegions.delete(regionId);
-      state.celebrationShown = false;
-      redrawCanvas();
-      setStatus(t('areaCleared'));
-      // Pack erase as undo record
-      const count = undoEntries.length / 5;
-      const record = new Uint8Array(count * 7);
-      for (let i = 0, b = 0; i < undoEntries.length; i += 5, b += 7) {
-        const idx = undoEntries[i];
-        record[b] = idx & 0xff; record[b+1] = (idx>>8)&0xff; record[b+2] = (idx>>16)&0xff;
-        record[b+3] = undoEntries[i+1]; record[b+4] = undoEntries[i+2];
-        record[b+5] = undoEntries[i+3]; record[b+6] = undoEntries[i+4];
-      }
-      pushUndo(regionId, { success: true, record }, completedBefore);
-    }
     return;
   }
 
