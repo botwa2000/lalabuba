@@ -18,3 +18,10 @@ lib/deepl-usage.json
 *.aab
 *.aab.zip
 *.apk
+
+# Local test outputs
+screenshots/
+build-artifacts/
+take-functional.js
+take-shots.js
+take-stability.js

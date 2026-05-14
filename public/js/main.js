@@ -860,7 +860,7 @@ try {
   // Always hide the native splash screen — launchAutoHide is false, so if
   // anything above throws the app would appear permanently frozen otherwise.
   if (window.Capacitor?.isNativePlatform?.()) {
-    window.Capacitor.Plugins?.SplashScreen?.hide({ fadeOutDuration: 300 }).catch(() => {});
+    window.Capacitor?.Plugins?.SplashScreen?.hide({ fadeOutDuration: 300 })?.catch(() => {});
     setTimeout(initOnboarding, 500);
   }
 }
