@@ -12,6 +12,17 @@
     { "src": "/terms",              "dest": "/public/terms.html" },
     { "src": "/impressum",          "dest": "/public/impressum.html" },
     { "src": "/contact",            "dest": "/public/contact.html" },
+    { "src": "/features",           "dest": "/public/features.html" },
+    { "src": "/about",              "dest": "/public/about.html" },
+    { "src": "/coloring-pages",     "dest": "/public/coloring-pages/index.html" },
+    { "src": "/coloring-pages/dragon",    "dest": "/public/coloring-pages/dragon/index.html" },
+    { "src": "/coloring-pages/unicorn",   "dest": "/public/coloring-pages/unicorn/index.html" },
+    { "src": "/coloring-pages/butterfly", "dest": "/public/coloring-pages/butterfly/index.html" },
+    { "src": "/coloring-pages/dinosaur",  "dest": "/public/coloring-pages/dinosaur/index.html" },
+    { "src": "/coloring-pages/cat",       "dest": "/public/coloring-pages/cat/index.html" },
+    { "src": "/coloring-pages/princess",  "dest": "/public/coloring-pages/princess/index.html" },
+    { "src": "/coloring-pages/mermaid",   "dest": "/public/coloring-pages/mermaid/index.html" },
+    { "src": "/coloring-pages/rocket",    "dest": "/public/coloring-pages/rocket/index.html" },
     { "src": "/(.*)",               "dest": "/public/$1" }
   ]
 }

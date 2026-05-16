@@ -68,3 +68,21 @@ body {
 
 /* ─── Screen-reader only utility ─────────────────────────────────────────── */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* ─── Dark mode ───────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:     #1a1625;
+    --card:   #2a2040;
+    --ink:    #f0eaff;
+    --muted:  #a3a3c0;
+    --border: rgba(255,255,255,0.08);
+    --purple: #a78bfa;
+    --sh-sm:  0 2px 8px rgba(0,0,0,0.35);
+    --sh-md:  0 8px 28px rgba(0,0,0,0.45);
+    --sh-lg:  0 20px 60px rgba(0,0,0,0.55);
+  }
+  /* Keep canvas/paper white — coloring pages always render on a white background */
+  #preview-canvas, #draw-canvas { background: #fff; }
+  .preview-stage { background: #2a2040; }
+}

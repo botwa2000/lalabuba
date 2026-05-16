@@ -3,48 +3,54 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Get in Touch — Lalabuba</title>
+  <title>Contact Us — Lalabuba Free AI Coloring Pages</title>
+  <meta name="description" content="Get in touch with the Lalabuba team. Questions, feedback, or just want to say hi? We'd love to hear from you."/>
+  <link rel="canonical" href="https://lalabuba.com/contact"/>
+  <meta property="og:title" content="Contact — Lalabuba"/>
+  <meta property="og:description" content="Get in touch with the Lalabuba team. Questions, feedback, or bug reports welcome."/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://lalabuba.com/contact"/>
+  <meta property="og:image" content="https://lalabuba.com/og-image.png"/>
+  <meta property="og:site_name" content="Lalabuba"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="Contact — Lalabuba"/>
+  <meta name="twitter:image" content="https://lalabuba.com/og-image.png"/>
+  <meta name="theme-color" content="#7c4dff"/>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+  <link rel="icon" href="/favicon.png" type="image/png"/>
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+  <link rel="stylesheet" href="/css/legal.css"/>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; color: #333; background: #fef9ef; line-height: 1.7; }
-    h1  { font-size: 2rem; color: #7c4dff; margin-bottom: 4px; }
-    h2  { font-size: 1.15rem; color: #555; margin-top: 2rem; }
-    p, li { font-size: 0.97rem; }
-    a   { color: #7c4dff; }
-    .updated { color: #999; font-size: 0.85rem; margin-bottom: 2rem; }
-    ul { padding-left: 1.4rem; }
-
-    /* Form styles */
+    /* Contact-form specific styles */
     .contact-form { margin-top: 1.5rem; }
     .form-group { margin-bottom: 1.2rem; }
-    label { display: block; font-weight: 600; font-size: 0.9rem; color: #555; margin-bottom: 4px; }
+    label { display: block; font-weight: 700; font-size: 0.88rem; color: var(--lp-muted); margin-bottom: 5px; }
     input[type="text"],
     input[type="email"],
     textarea {
       width: 100%;
-      padding: 10px 14px;
-      border: 2px solid #e8e0f0;
+      padding: 11px 16px;
+      border: 2px solid var(--lp-border);
       border-radius: 12px;
       font-family: inherit;
       font-size: 0.95rem;
-      color: #333;
-      background: #fff;
+      color: var(--lp-ink);
+      background: var(--lp-surface);
       box-sizing: border-box;
       transition: border-color 0.15s;
       outline: none;
     }
     input[type="text"]:focus,
     input[type="email"]:focus,
-    textarea:focus {
-      border-color: #7c4dff;
-    }
+    textarea:focus { border-color: var(--lp-purple); }
     textarea { resize: vertical; min-height: 140px; }
-    .char-count { font-size: 0.8rem; color: #aaa; text-align: right; margin-top: 2px; }
+    .char-count { font-size: 0.8rem; color: var(--lp-muted); text-align: right; margin-top: 3px; }
     .submit-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 12px 32px;
-      background: #7c4dff;
+      padding: 12px 34px;
+      background: var(--lp-purple);
       color: #fff;
       border: none;
       border-radius: 999px;
@@ -54,14 +60,10 @@
       cursor: pointer;
       transition: opacity 0.15s, transform 0.15s;
     }
-    .submit-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .submit-btn:hover { opacity: 0.87; transform: translateY(-1px); }
     .submit-btn:active { opacity: 0.7; transform: translateY(0); }
     .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-    /* Cloudflare Turnstile wrapper */
     .turnstile-wrap { margin: 1rem 0; }
-
-    /* Message feedback */
     .form-msg {
       margin-top: 1rem;
       padding: 12px 16px;
@@ -71,34 +73,55 @@
     }
     .form-msg.success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; display: block; }
     .form-msg.error   { background: #fce4ec; color: #b71c1c; border: 1px solid #ef9a9a; display: block; }
-
-    .direct-email { margin-top: 2rem; font-size: 0.9rem; color: #888; }
+    .direct-email { margin-top: 2rem; font-size: 0.9rem; color: var(--lp-muted); }
   </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type":"ListItem","position":1,"name":"Lalabuba","item":"https://lalabuba.com/"},
+      {"@type":"ListItem","position":2,"name":"Contact","item":"https://lalabuba.com/contact"}
+    ]
+  }
+  </script>
 </head>
 <body>
 
-<h1>Get in Touch 💌</h1>
+<nav class="legal-nav">
+  <a href="/" class="legal-logo"><span class="legal-logo-emoji">🎨</span> Lalabuba</a>
+  <span class="nav-sep">›</span>
+  <a href="/features">Features</a>
+  <span class="nav-sep">·</span>
+  <a href="/about">About</a>
+  <span class="nav-sep">·</span>
+  <span class="nav-current">Contact</span>
+</nav>
+
+<div class="legal-content">
+
+<h1>Get in Touch</h1>
 <p>Have a question, feedback, or just want to say hi? We'd love to hear from you!</p>
 
 <form id="contact-form" class="contact-form" novalidate>
 
-  <!-- Honeypot — hidden from real users, filled only by bots -->
-  <input name="website" style="display:none" tabindex="-1" autocomplete="off" />
+  <!-- Honeypot — invisible to real users, bots fill it automatically -->
+  <input name="website" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true"/>
 
   <div class="form-group">
     <label for="cf-name">Your name</label>
-    <input type="text" id="cf-name" name="name" placeholder="e.g. Alex" maxlength="100" required />
+    <input type="text" id="cf-name" name="name" placeholder="e.g. Alex" maxlength="100" required autocomplete="name"/>
   </div>
 
   <div class="form-group">
     <label for="cf-email">Your email</label>
-    <input type="email" id="cf-email" name="email" placeholder="you@example.com" required />
+    <input type="email" id="cf-email" name="email" placeholder="you@example.com" required autocomplete="email"/>
   </div>
 
   <div class="form-group">
     <label for="cf-message">Message</label>
     <textarea id="cf-message" name="message" maxlength="2000" placeholder="Tell us what's on your mind…" required></textarea>
-    <div class="char-count"><span id="char-count">0</span> / 2000</div>
+    <div class="char-count" aria-live="polite"><span id="char-count">0</span> / 2000</div>
   </div>
 
   <!-- Cloudflare Turnstile -->
@@ -116,9 +139,19 @@
 
 <p class="direct-email">Or email us directly at <a href="mailto:info@lalabuba.com">info@lalabuba.com</a></p>
 
-<p style="margin-top:3rem;"><a href="/">← Back to app</a></p>
+</div>
 
-<p style="margin-top:1rem; color:#aaa; font-size:0.85rem;">© 2026 Lalabuba · <a href="/privacy.html">Privacy Policy</a></p>
+<footer class="legal-footer">
+  <span>© 2026 Lalabuba</span>
+  <span class="sep">·</span>
+  <a href="/">App</a>
+  <span class="sep">·</span>
+  <a href="/privacy">Privacy Policy</a>
+  <span class="sep">·</span>
+  <a href="/terms">Terms</a>
+  <span class="sep">·</span>
+  <a href="/impressum">Impressum</a>
+</footer>
 
 <!-- Cloudflare Turnstile -->
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -127,8 +160,7 @@
 (function () {
   "use strict";
 
-  // Character counter
-  var msgField = document.getElementById("cf-message");
+  var msgField  = document.getElementById("cf-message");
   var charCount = document.getElementById("char-count");
   if (msgField && charCount) {
     msgField.addEventListener("input", function () {
@@ -136,16 +168,14 @@
     });
   }
 
-  // Form submission
-  var form = document.getElementById("contact-form");
+  var form      = document.getElementById("contact-form");
   var submitBtn = document.getElementById("cf-submit");
-  var msgDiv = document.getElementById("form-msg");
+  var msgDiv    = document.getElementById("form-msg");
 
   function showMsg(text, type) {
     msgDiv.textContent = text;
     msgDiv.className = "form-msg " + type;
   }
-
   function hideMsg() {
     msgDiv.className = "form-msg";
     msgDiv.textContent = "";
@@ -160,14 +190,12 @@
     var message = msgField.value.trim();
     var website = form.querySelector('[name="website"]').value;
 
-    // Client-side validation
-    if (!name) { showMsg("Please enter your name.", "error"); return; }
+    if (!name)    { showMsg("Please enter your name.", "error"); return; }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       showMsg("Please enter a valid email address.", "error"); return;
     }
     if (!message) { showMsg("Please write a message.", "error"); return; }
 
-    // Get Turnstile token
     var turnstileToken = "";
     if (window.turnstile) {
       try { turnstileToken = window.turnstile.getResponse() || ""; } catch (err) { /* */ }
@@ -179,13 +207,7 @@
     fetch("/api/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: name,
-        email: email,
-        message: message,
-        website: website,
-        turnstileToken: turnstileToken
-      })
+      body: JSON.stringify({ name: name, email: email, message: message, website: website, turnstileToken: turnstileToken })
     })
     .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
     .then(function (result) {

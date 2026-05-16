@@ -66,6 +66,25 @@
   justify-content: center;
 }
 
+/* ─── Footer site nav ────────────────────────────────────────────────────── */
+.footer-nav {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--ff-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.footer-nav a {
+  color: var(--purple);
+  text-decoration: none;
+}
+.footer-nav a:hover { text-decoration: underline; }
+
+
 /* ─── App Store badge ────────────────────────────────────────────────────── */
 .appstore-badge {
   display: inline-flex;

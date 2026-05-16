@@ -12,6 +12,21 @@
   <script>if (window.Capacitor) document.documentElement.classList.add('is-native');</script>
   <link rel="canonical" href="https://lalabuba.com/" />
 
+  <!-- hreflang — all 12 supported languages -->
+  <link rel="alternate" hreflang="en"      href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="de"      href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="ru"      href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="fr"      href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="es"      href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="pt"      href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="it"      href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="nl"      href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="pl"      href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="tr"      href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="zh-Hans" href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="hi"      href="https://lalabuba.com/" />
+  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/" />
+
   <!-- Open Graph -->
   <meta property="og:title" content="Lalabuba 🎨 — Free AI Coloring Pages for Kids" />
   <meta property="og:description" content="Type anything and get a free AI-generated coloring page instantly. Color by number, print it, or race a friend to finish first!" />
@@ -32,6 +47,7 @@
   <meta name="twitter:image:alt" content="Lalabuba — Free AI Coloring Pages for Kids" />
 
   <!-- Icons & PWA -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon.png" type="image/png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -61,11 +77,69 @@
       "suggestedMinAge": 3,
       "suggestedMaxAge": 12
     },
-    "inLanguage": ["en","de","ru","fr","es","pt","it","nl","pl"],
+    "inLanguage": ["en","de","ru","fr","es","pt","it","nl","pl","tr","zh","hi"],
     "browserRequirements": "Requires JavaScript",
     "featureList": "AI-generated coloring pages, Color by number, Print and save, Multiplayer challenge mode, 9 languages"
   }
   </script>
+  <!-- FAQ structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is Lalabuba free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, Lalabuba is completely free. No account, no subscription, no ads, no in-app purchases — just unlimited AI-generated coloring pages."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What ages is Lalabuba for?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Lalabuba is designed for children ages 3–12, but anyone who enjoys coloring can use it. The Easy difficulty is perfect for toddlers, while Hard and Extreme levels challenge older kids and adults."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I print the coloring pages?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! Click the Print button after generating a coloring page. You can print the blank line art to color by hand, or print your finished colored version to keep or display."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does color-by-number work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Each region of the coloring page is numbered and matched to a color in the palette. Tap a color, then tap any numbered area to fill it in. You can also turn off numbers for free-form coloring."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the daily challenge?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Every day a new word is chosen as the daily challenge. Everyone who visits on that day gets the same word — you can race friends to see who colors it fastest!"
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What languages does Lalabuba support?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Lalabuba is available in 12 languages: English, German, Russian, French, Spanish, Portuguese, Italian, Dutch, Polish, Turkish, Chinese, and Hindi."
+        }
+      }
+    ]
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -148,7 +222,8 @@
           </section>
 
           <!-- Generator form -->
-          <section class="generator-section">
+          <section class="generator-section" aria-labelledby="generator-heading">
+            <h2 id="generator-heading" class="sr-only">Draw a Coloring Page</h2>
             <form id="generator-form" class="generator-form">
           <div class="search-bar">
             <input
@@ -159,6 +234,7 @@
               placeholder="🦋 butterfly · 🐉 dragon · 🏰 castle · 🦄 unicorn…"
               data-i18n-placeholder="placeholder"
               autocomplete="off"
+              aria-label="Enter a subject to draw (e.g. butterfly, dragon, castle)"
               required
             />
             <button id="surprise-button" type="button" class="surprise-btn" data-i18n-title="surpriseBtn" data-i18n-aria-label="surpriseBtn" aria-label="Surprise me">💡</button>
@@ -226,7 +302,8 @@
         </div>
 
         <!-- ─── Workspace ──────────────────────────────────────────────── -->
-      <section class="workspace">
+      <section class="workspace" aria-labelledby="workspace-heading">
+        <h2 id="workspace-heading" class="sr-only">Color Your Drawing</h2>
         <div class="canvas-wrapper">
 
           <!-- Coloring hint (shown after generation) -->
@@ -277,8 +354,8 @@
                 <p class="loading-text" id="loading-text"></p>
               </div>
               <div class="canvas-frame">
-                <canvas id="preview-canvas" width="1024" height="1024" hidden></canvas>
-                <canvas id="draw-canvas" width="1024" height="1024" hidden></canvas>
+                <canvas id="preview-canvas" width="1024" height="1024" hidden aria-label="Coloring page canvas"></canvas>
+                <canvas id="draw-canvas" width="1024" height="1024" hidden aria-label="Free-form drawing layer"></canvas>
               </div>
             </div>
           </div>
@@ -338,25 +415,32 @@
           </div>
         </a>
       </div>
+      <nav class="footer-nav" aria-label="Site navigation">
+        <a href="/features">Features</a>
+        <span>·</span>
+        <a href="/about">About</a>
+        <span>·</span>
+        <a href="/coloring-pages/">Coloring Pages</a>
+      </nav>
       <p class="footer-copy">Lalabuba 🎨 · <span data-i18n="footerFun">Free &amp; fun for everyone 🌈</span> · © 2026</p>
       <nav class="footer-legal" aria-label="Legal">
-        <a href="/privacy.html">Privacy Policy</a>
+        <a href="/privacy">Privacy Policy</a>
         <span>·</span>
-        <a href="/terms.html">Terms</a>
+        <a href="/terms">Terms</a>
         <span>·</span>
-        <a href="/impressum.html">Impressum</a>
+        <a href="/impressum">Impressum</a>
         <span>·</span>
-        <a href="/contact.html">Contact</a>
+        <a href="/contact">Contact</a>
         <span>·</span>
         <button id="cookie-settings-btn" class="footer-cookie-btn" data-i18n="cookieSettings">Cookie settings</button>
       </nav>
     </footer>
   </div>
 
-  <div id="celebration" class="celebration hidden" aria-hidden="true">
+  <div id="celebration" class="celebration hidden" aria-hidden="true" role="dialog" aria-labelledby="celeb-title">
     <div class="celebration-card">
       <div class="celebration-art">🎨</div>
-      <h2 data-i18n="celebTitle">Well done!</h2>
+      <h2 id="celeb-title" data-i18n="celebTitle">Well done!</h2>
       <p data-i18n="celebMsg">You colored the whole picture!</p>
       <p id="celebration-time" class="celebration-time"></p>
       <div class="celebration-actions">
@@ -366,10 +450,10 @@
     </div>
   </div>
 
-  <div id="share-modal" class="share-modal hidden" aria-hidden="true">
+  <div id="share-modal" class="share-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="share-modal-title">
     <div class="share-card">
       <div class="share-header">
-        <h3 data-i18n="shareTitle">Share &amp; Compete!</h3>
+        <h3 id="share-modal-title" data-i18n="shareTitle">Share &amp; Compete!</h3>
         <button id="close-share-modal" class="share-close" aria-label="Close">✕</button>
       </div>
       <p class="share-desc" data-i18n="shareDesc">Scan the QR code to color the same picture!</p>
@@ -394,10 +478,10 @@
   </div>
 
   <!-- Gallery modal -->
-  <div id="gallery-modal" class="gallery-modal hidden" aria-hidden="true">
+  <div id="gallery-modal" class="gallery-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="gallery-modal-title">
     <div class="gallery-modal-card">
       <div class="gallery-header">
-        <h3 data-i18n="galleryTitle">My Gallery</h3>
+        <h3 id="gallery-modal-title" data-i18n="galleryTitle">My Gallery</h3>
         <button id="close-gallery-modal" class="gallery-close" aria-label="Close">✕</button>
       </div>
       <div id="gallery-grid" class="gallery-grid"></div>
@@ -413,7 +497,7 @@
   <div id="cookie-banner" class="cookie-banner" aria-live="polite" aria-label="Cookie consent" hidden>
     <div class="cookie-banner-inner">
       <p class="cookie-text">
-        <span data-i18n="cookieText">🍪 We use cookies to understand how you use Lalabuba. </span><a href="/privacy.html" class="cookie-link" data-i18n="cookieLearnMore">Learn more</a>
+        <span data-i18n="cookieText">🍪 We use cookies to understand how you use Lalabuba. </span><a href="/privacy" class="cookie-link" data-i18n="cookieLearnMore">Learn more</a>
       </p>
       <div class="cookie-actions">
         <button id="cookie-accept" class="cookie-btn cookie-btn-accept" data-i18n="cookieAccept">Accept cookies 🍪</button>
