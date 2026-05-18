@@ -66,6 +66,30 @@ function checkCompletion() {
   }
 }
 
+// ─── Theme toggle ────────────────────────────────────────────────────────────
+(function() {
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+
+  function isDark() {
+    return document.documentElement.getAttribute('data-theme') === 'dark';
+  }
+
+  function syncIcon() {
+    btn.textContent = isDark() ? '☀️' : '🌙';
+    btn.setAttribute('aria-label', isDark() ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+
+  btn.addEventListener('click', () => {
+    const next = isDark() ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('lalabuba-theme', next);
+    syncIcon();
+  });
+
+  syncIcon();
+})();
+
 // ─── Turnstile ───────────────────────────────────────────────────────────────
 // Auto-render uses data-callback="onTurnstileSuccess" on the widget div.
 // This fires regardless of script/module load order — no manual render needed.

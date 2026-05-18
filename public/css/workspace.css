@@ -390,6 +390,28 @@
   .action-btn { font-size: .74rem; padding: 5px 9px; }
 }
 
+/* ─── Dark mode overrides for hardcoded light backgrounds ───────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .loading-overlay { background: #1e1b2e; }
+  :root:not([data-theme="light"]) .coloring-hint {
+    background: rgba(124,77,255,0.14);
+    border-bottom-color: rgba(124,77,255,0.25);
+  }
+  :root:not([data-theme="light"]) .challenge-strip {
+    background: rgba(255,112,67,0.14);
+    border-top-color: rgba(255,112,67,0.25);
+  }
+}
+:root[data-theme="dark"] .loading-overlay { background: #1e1b2e; }
+:root[data-theme="dark"] .coloring-hint {
+  background: rgba(124,77,255,0.14);
+  border-bottom-color: rgba(124,77,255,0.25);
+}
+:root[data-theme="dark"] .challenge-strip {
+  background: rgba(255,112,67,0.14);
+  border-top-color: rgba(255,112,67,0.25);
+}
+
 /* ─── Share action button (prominent) ───────────────────────────────────── */
 .share-action-btn {
   background: linear-gradient(135deg, var(--orange), var(--red)) !important;

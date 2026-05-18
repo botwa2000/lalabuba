@@ -675,12 +675,21 @@ export function drawBaseImage(image) {
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
   context.drawImage(image, 0, 0, previewCanvas.width, previewCanvas.height);
-  const raw = context.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
-  closeOutlineGaps(raw);
-  closeOutlineGaps(raw);
-  context.putImageData(raw, 0, 0);
-  state.baseImageData = context.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
-  state.paintedImageData = context.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+  // getImageData can throw a SecurityError on some iOS WKWebView builds.
+  // Wrap so the image stays visible even if pixel manipulation fails.
+  try {
+    const raw = context.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+    closeOutlineGaps(raw);
+    closeOutlineGaps(raw);
+    context.putImageData(raw, 0, 0);
+  } catch { /* leave drawImage result as-is */ }
+  try {
+    state.baseImageData = context.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+    state.paintedImageData = context.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+  } catch {
+    state.baseImageData = null;
+    state.paintedImageData = null;
+  }
   state.regionMap = null;
   state.regionPixels = null;
   state.regionColorMap = null;
@@ -690,7 +699,7 @@ export function drawBaseImage(image) {
   state.celebrationShown = false;
   state.coloringStartTime = null;
   state.undoStack = [];
-  precomputeRegions();
+  if (state.baseImageData) precomputeRegions();
 }
 
 export async function renderGeneratedImage(imageBase64) {

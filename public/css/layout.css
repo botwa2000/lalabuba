@@ -165,6 +165,16 @@
   border-color: rgba(255,152,0,.3);
   color: var(--ink);
 }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #status.paint-coverage {
+    background: rgba(255,152,0,0.14);
+    border-color: rgba(255,152,0,0.3);
+  }
+}
+:root[data-theme="dark"] #status.paint-coverage {
+  background: rgba(255,152,0,0.14);
+  border-color: rgba(255,152,0,0.3);
+}
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 

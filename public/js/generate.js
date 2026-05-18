@@ -113,6 +113,8 @@ export async function generatePage(subject, seedOverride = null, isPreDefined = 
     const challengeStrip = document.getElementById('challenge-strip');
     if (challengeStrip) challengeStrip.hidden = false;
     document.getElementById('regen-button').disabled = false;
+  } catch (err) {
+    setStatus(err.message || 'Generation failed. Please try again.', true);
   } finally {
     hideLoading();
   }

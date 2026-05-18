@@ -191,6 +191,11 @@
   border: 2px solid rgba(124,77,255,.15);
 }
 .help-panel[hidden] { display: none; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .help-panel { background: rgba(124,77,255,0.12); border-color: rgba(124,77,255,0.25); }
+}
+:root[data-theme="dark"] .help-panel { background: rgba(124,77,255,0.12); border-color: rgba(124,77,255,0.25); }
 .help-step {
   font-size: .9rem;
   font-weight: 700;
