@@ -17,6 +17,7 @@
   flex-shrink: 0;
   mix-blend-mode: multiply;
   animation: mascotFloat 3s ease-in-out infinite;
+  pointer-events: none;
 }
 
 @keyframes mascotFloat {
