@@ -102,6 +102,7 @@ export async function generatePage(subject, seedOverride = null, isPreDefined = 
   try {
     const imageUrl = await requestGeneratedImage(subject, difficulty, seedOverride, isPreDefined);
     await renderGeneratedImage(imageUrl);
+    document.querySelector('.app')?.classList.remove('app-hero');
     // Clear undo stack for new image
     state.undoStack = [];
     const undoBtn = document.getElementById('undo-button');

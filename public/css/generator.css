@@ -405,6 +405,69 @@
 }
 .setting-chip--on:hover { border-color: transparent; color: #fff; opacity: .9; }
 
+/* ─── Hero state additions ──────────────────────────────────────────────── */
+
+/* Hero draw heading */
+.hero-draw-heading {
+  font-family: var(--ff-brand);
+  font-size: clamp(1.35rem, 4vw, 2.1rem);
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+  margin: 20px 0 6px;
+  line-height: 1.25;
+}
+.app:not(.app-hero) .hero-draw-heading { display: none; }
+
+/* Hero controls: diff + count + palette + numbers pills */
+.hero-controls { display: none; }
+.app.app-hero .hero-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+  align-items: center;
+}
+.hero-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+.hero-pills-sep {
+  color: var(--muted);
+  opacity: 0.4;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* Settings chips: hidden on landing, visible after generation */
+.app.app-hero .settings-chips { display: none; }
+/* Status bar: hidden on landing page */
+.app.app-hero #status { display: none; }
+
+/* Hero mode: larger search bar overrides */
+.app.app-hero .config-panel .generator-section { margin-top: 4px; }
+.app.app-hero .config-panel .generator-form { padding: 0; }
+.app.app-hero .config-panel .search-bar input {
+  font-size: 1.18rem;
+  padding: 16px 26px;
+  border-radius: 60px;
+  border-width: 2.5px;
+}
+.app.app-hero .config-panel .go-btn {
+  font-size: 1.05rem;
+  padding: 13px 32px;
+}
+.app.app-hero .config-panel .surprise-btn {
+  width: 50px;
+  height: 50px;
+}
+.app.app-hero .config-panel .regen-btn { display: none; }
+
 /* ─── Surprise button ────────────────────────────────────────────────────── */
 .surprise-btn {
   font-size: 1.2rem;

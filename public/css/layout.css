@@ -280,6 +280,48 @@
 @media (max-width: 480px) { .app-body { margin: 0 -10px; } }
 @media (max-width: 360px) { .app-body { margin: 0 -8px;  } }
 
+/* ── Hero state: full-width centered panel, canvas hidden ──────────────── */
+.app.app-hero .app-body {
+  justify-content: center;
+}
+.app.app-hero .canvas-area {
+  display: none;
+}
+.app.app-hero .config-panel {
+  width: 100%;
+  max-width: 860px;
+  min-width: 0;
+  margin: 0 auto;
+  border-right: none;
+}
+.app.app-hero .panel-inner {
+  min-width: 0;
+  padding: 0 28px 32px;
+}
+.app.app-hero .panel-toggle-btn {
+  display: none;
+}
+.app.app-hero .mobile-menu-btn {
+  display: none;
+}
+
+/* Hero mode mobile: panel always visible, no drawer needed */
+@media (max-width: 767px) {
+  .app.app-hero {
+    height: auto;
+    overflow-y: auto;
+  }
+  .app.app-hero .app-body {
+    flex-direction: column;
+    min-height: auto;
+  }
+  .app.app-hero .config-panel {
+    max-height: none !important;
+    overflow: visible;
+    border-bottom: none;
+  }
+}
+
 /* Tighter pill/chip wrapping when panel is narrow (e.g. 240px or landscape 220px) */
 @container config-panel (max-width: 250px) {
   .ctrl-label { min-width: 56px; font-size: .68rem; }

@@ -1,5 +1,6 @@
 const TRANSLATIONS = {
   en: {
+    heroHeading: "What should we draw today? ✨",
     tagline: "Draw it · Color it · Love it 🌈",
     placeholder: "🦋 butterfly · 🐉 dragon · 🏰 castle · 🦄 unicorn…",
     drawBtn: "Draw! ✨",

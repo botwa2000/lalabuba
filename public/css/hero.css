@@ -228,6 +228,34 @@
   .example-emoji { font-size: 2.4rem; }
   .daily-info-popup { width: 240px; }
 }
+
+/* ── Hero mode overrides: full-width centered panel ──────────────────────── */
+.app.app-hero .config-panel .hero-section {
+  text-align: center;
+  padding: 10px 0 18px;
+}
+.app.app-hero .config-panel .hero-tagline {
+  font-size: clamp(.95rem, 2.5vw, 1.15rem);
+  text-align: center;
+  margin-bottom: 16px;
+}
+.app.app-hero .config-panel .examples-grid {
+  grid-template-columns: repeat(4, 1fr);
+  max-width: 720px;
+  margin: 0 auto;
+  gap: 14px;
+}
+.app.app-hero .config-panel .shuffle-cards-btn {
+  display: inline-flex;
+  margin-top: 12px;
+}
+@media (max-width: 600px) {
+  .app.app-hero .config-panel .examples-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    max-width: 360px;
+  }
+}
 @media (max-width: 360px) {
   .examples-grid { gap: 8px; }
 }

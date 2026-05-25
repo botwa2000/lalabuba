@@ -145,22 +145,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=155" />
-  <link rel="stylesheet" href="/css/header.css?v=155" />
-  <link rel="stylesheet" href="/css/hero.css?v=155" />
-  <link rel="stylesheet" href="/css/generator.css?v=155" />
-  <link rel="stylesheet" href="/css/layout.css?v=155" />
-  <link rel="stylesheet" href="/css/workspace.css?v=155" />
-  <link rel="stylesheet" href="/css/palette.css?v=155" />
-  <link rel="stylesheet" href="/css/modals.css?v=155" />
-  <link rel="stylesheet" href="/css/footer.css?v=155" />
-  <link rel="stylesheet" href="/css/print.css?v=155" />
-  <link rel="stylesheet" href="/css/cookies.css?v=155" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=155" />
-  <script src="/js/cookies.js?v=155"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=156" />
+  <link rel="stylesheet" href="/css/header.css?v=156" />
+  <link rel="stylesheet" href="/css/hero.css?v=156" />
+  <link rel="stylesheet" href="/css/generator.css?v=156" />
+  <link rel="stylesheet" href="/css/layout.css?v=156" />
+  <link rel="stylesheet" href="/css/workspace.css?v=156" />
+  <link rel="stylesheet" href="/css/palette.css?v=156" />
+  <link rel="stylesheet" href="/css/modals.css?v=156" />
+  <link rel="stylesheet" href="/css/footer.css?v=156" />
+  <link rel="stylesheet" href="/css/print.css?v=156" />
+  <link rel="stylesheet" href="/css/cookies.css?v=156" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=156" />
+  <script src="/js/cookies.js?v=156"></script>
 </head>
 <body>
-  <div class="app">
+  <div class="app app-hero">
 
     <header class="site-header">
       <!-- Mobile-only: opens the config panel as a drawer -->
@@ -204,6 +204,9 @@
         <button id="panel-toggle" class="panel-toggle-btn" type="button" aria-label="Toggle settings panel" title="Collapse/expand settings">◀</button>
         <div class="panel-inner">
 
+          <!-- Hero heading — visible only in hero (landing) state -->
+          <h2 class="hero-draw-heading" data-i18n="heroHeading">What should we draw today? ✨</h2>
+
           <!-- Hero: tagline + daily word + suggestion cards -->
           <section class="hero-section">
             <p class="hero-tagline" data-i18n="tagline">Draw it · Color it · Love it 🌈</p>
@@ -243,6 +246,29 @@
             <button id="surprise-button" type="button" class="surprise-btn" data-i18n-title="surpriseBtn" data-i18n-aria-label="surpriseBtn" aria-label="Surprise me">💡</button>
             <button id="generate-button" type="submit" class="go-btn" data-i18n="drawBtn">Draw! ✨</button>
             <button id="regen-button" type="button" class="regen-btn" disabled data-i18n="regenBtn">🎲 Again!</button>
+          </div>
+
+          <!-- Hero controls — shown in hero (landing) state, hidden after generation -->
+          <div class="hero-controls" id="hero-controls">
+            <div class="hero-row hero-diff-row">
+              <button class="diff-pill" data-diff="easy" type="button" data-i18n="diffEasy">Easy 🌟</button>
+              <button class="diff-pill selected" data-diff="medium" type="button" data-i18n="diffMedium">Medium 🌟🌟</button>
+              <button class="diff-pill" data-diff="hard" type="button" data-i18n="diffHard">Hard 🌟🌟🌟</button>
+              <button class="diff-pill" data-diff="extreme" type="button" data-i18n="diffExtreme">Extreme 🔥</button>
+            </div>
+            <div class="hero-row hero-options-row">
+              <button class="count-pill" data-count="6" type="button">6</button>
+              <button class="count-pill selected" data-count="12" type="button">12</button>
+              <button class="count-pill" data-count="18" type="button">18</button>
+              <button class="count-pill" data-count="24" type="button">24</button>
+              <button class="count-max-pill" type="button">Max</button>
+              <span class="hero-pills-sep">·</span>
+              <button class="palette-pill selected" data-palette="classic" type="button" data-i18n="paletteClassic">🖍️ Classic</button>
+              <button class="palette-pill" data-palette="pastel" type="button" data-i18n="palettePastel">🌸 Pastel</button>
+              <button class="palette-pill" data-palette="nature" type="button" data-i18n="paletteNature">🌿 Nature</button>
+              <span class="hero-pills-sep">·</span>
+              <button type="button" id="hero-numbers-toggle" class="setting-chip setting-chip--on" data-i18n="numbersChip">🔢 Numbers</button>
+            </div>
           </div>
 
           <!-- A2: Always-visible settings chips — tap to cycle/toggle -->
@@ -539,7 +565,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=155"></script>
+  <script type="module" src="/js/main.js?v=156"></script>
 </body>
 </html>
 

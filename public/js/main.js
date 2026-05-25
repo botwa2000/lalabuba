@@ -785,7 +785,25 @@ if (chipNumbers) chipNumbers.addEventListener('click', () => {
   showNumbersInput.checked = !showNumbersInput.checked;
   showNumbersInput.dispatchEvent(new Event('change'));
   updateNumbersChip();
+  syncHeroNumbersBtn();
 });
+
+function syncHeroNumbersBtn() {
+  const heroBtn = document.getElementById('hero-numbers-toggle');
+  if (!heroBtn) return;
+  const on = showNumbersInput.checked;
+  heroBtn.classList.toggle('setting-chip--on', on);
+}
+
+const heroNumbersToggle = document.getElementById('hero-numbers-toggle');
+if (heroNumbersToggle) {
+  heroNumbersToggle.addEventListener('click', () => {
+    showNumbersInput.checked = !showNumbersInput.checked;
+    showNumbersInput.dispatchEvent(new Event('change'));
+    updateNumbersChip();
+    syncHeroNumbersBtn();
+  });
+}
 
 updateAllChips();
 
