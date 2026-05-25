@@ -253,28 +253,24 @@
   display: none;
 }
 .app.app-hero .hero-cards-divider {
-  display: block;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-family: var(--ff-body);
-  font-size: .78rem;
+  font-size: .82rem;
   font-weight: 800;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin: 20px 0 14px;
-  position: relative;
+  width: 100%;
+  max-width: 720px;
+  margin: 20px auto 14px;
 }
 .app.app-hero .hero-cards-divider::before,
 .app.app-hero .hero-cards-divider::after {
   content: '';
-  position: absolute;
-  top: 50%;
-  width: 28%;
+  flex: 1;
   height: 1px;
   background: var(--border);
 }
-.app.app-hero .hero-cards-divider::before { left: 0; }
-.app.app-hero .hero-cards-divider::after  { right: 0; }
 
 @media (max-width: 600px) {
   .app.app-hero .config-panel .examples-grid {
