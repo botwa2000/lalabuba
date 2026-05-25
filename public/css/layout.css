@@ -281,12 +281,16 @@
 @media (max-width: 480px) { .app-body { margin: 0 -10px; } }
 @media (max-width: 360px) { .app-body { margin: 0 -8px;  } }
 
-/* ── Hero state: full-width centered panel, canvas hidden ──────────────── */
+/* ── Hero state: full-width centered panel + canvas preview below ──────── */
 .app.app-hero .app-body {
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 }
 .app.app-hero .canvas-area {
-  display: none;
+  display: flex;
+  width: 100%;
+  max-width: 860px;
 }
 .app.app-hero .config-panel {
   width: 100%;
@@ -313,6 +317,20 @@
   display: none;
 }
 
+/* Hero canvas: single-column workspace, no toolbar, compact preview */
+.app.app-hero .workspace {
+  grid-template-columns: 1fr;
+  margin-top: 0;
+  padding: 0 28px 24px;
+}
+.app.app-hero .canvas-actions,
+.app.app-hero .zoom-controls {
+  display: none;
+}
+.app.app-hero .preview-stage {
+  min-height: 220px;
+}
+
 /* Hero mode mobile: panel always visible, no drawer needed */
 @media (max-width: 767px) {
   .app.app-hero {
@@ -328,6 +346,8 @@
     overflow: visible;
     border-bottom: none;
   }
+  .app.app-hero .workspace { padding: 0 10px 16px; }
+  .app.app-hero .preview-stage { min-height: 160px; }
 }
 
 /* Tighter pill/chip wrapping when panel is narrow (e.g. 240px or landscape 220px) */
