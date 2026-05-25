@@ -1,5 +1,5 @@
 name: Android — Google Play
-# last triggered: 2026-04-09
+# last triggered: 2026-05-25
 
 on:
   push:
@@ -16,6 +16,8 @@ jobs:
   build-and-publish:
     name: Build AAB & publish to Play Store (internal track)
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       # ── Checkout ────────────────────────────────────────────────────────────
@@ -93,6 +95,6 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_CREDENTIALS }}
           packageName: com.lalabuba.lalabuba
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
-          track: internal
+          tracks: internal
           status: completed
           changesNotSentForReview: true
