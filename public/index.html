@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=157" />
-  <link rel="stylesheet" href="/css/header.css?v=157" />
-  <link rel="stylesheet" href="/css/hero.css?v=157" />
-  <link rel="stylesheet" href="/css/generator.css?v=157" />
-  <link rel="stylesheet" href="/css/layout.css?v=157" />
-  <link rel="stylesheet" href="/css/workspace.css?v=157" />
-  <link rel="stylesheet" href="/css/palette.css?v=157" />
-  <link rel="stylesheet" href="/css/modals.css?v=157" />
-  <link rel="stylesheet" href="/css/footer.css?v=157" />
-  <link rel="stylesheet" href="/css/print.css?v=157" />
-  <link rel="stylesheet" href="/css/cookies.css?v=157" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=157" />
-  <script src="/js/cookies.js?v=157"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=158" />
+  <link rel="stylesheet" href="/css/header.css?v=158" />
+  <link rel="stylesheet" href="/css/hero.css?v=158" />
+  <link rel="stylesheet" href="/css/generator.css?v=158" />
+  <link rel="stylesheet" href="/css/layout.css?v=158" />
+  <link rel="stylesheet" href="/css/workspace.css?v=158" />
+  <link rel="stylesheet" href="/css/palette.css?v=158" />
+  <link rel="stylesheet" href="/css/modals.css?v=158" />
+  <link rel="stylesheet" href="/css/footer.css?v=158" />
+  <link rel="stylesheet" href="/css/print.css?v=158" />
+  <link rel="stylesheet" href="/css/cookies.css?v=158" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=158" />
+  <script src="/js/cookies.js?v=158"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -256,18 +256,18 @@
               <button class="diff-pill" data-diff="hard" type="button" data-i18n="diffHard">Hard 🌟🌟🌟</button>
               <button class="diff-pill" data-diff="extreme" type="button" data-i18n="diffExtreme">Extreme 🔥</button>
             </div>
-            <div class="hero-row hero-options-row">
+            <div class="hero-row hero-count-row">
               <button class="count-pill" data-count="6" type="button">6</button>
               <button class="count-pill selected" data-count="12" type="button">12</button>
               <button class="count-pill" data-count="18" type="button">18</button>
               <button class="count-pill" data-count="24" type="button">24</button>
               <button class="count-max-pill" type="button">Max</button>
-              <span class="hero-pills-sep">·</span>
+              <button type="button" id="hero-numbers-toggle" class="setting-chip setting-chip--on">🔢 <span data-i18n="numbersChip">Numbers</span></button>
+            </div>
+            <div class="hero-row hero-palette-row">
               <button class="palette-pill selected" data-palette="classic" type="button" data-i18n="paletteClassic">🖍️ Classic</button>
               <button class="palette-pill" data-palette="pastel" type="button" data-i18n="palettePastel">🌸 Pastel</button>
               <button class="palette-pill" data-palette="nature" type="button" data-i18n="paletteNature">🌿 Nature</button>
-              <span class="hero-pills-sep">·</span>
-              <button type="button" id="hero-numbers-toggle" class="setting-chip setting-chip--on">🔢 <span data-i18n="numbersChip">Numbers</span></button>
             </div>
           </div>
 
@@ -565,7 +565,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=157"></script>
+  <script type="module" src="/js/main.js?v=158"></script>
 </body>
 </html>
 
