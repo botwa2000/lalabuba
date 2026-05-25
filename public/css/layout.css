@@ -297,6 +297,7 @@
 .app.app-hero .panel-inner {
   min-width: 0;
   padding: 0 28px 32px;
+  overflow: visible;
 }
 .app.app-hero .panel-toggle-btn {
   display: none;
