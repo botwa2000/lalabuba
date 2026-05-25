@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=160" />
-  <link rel="stylesheet" href="/css/header.css?v=160" />
-  <link rel="stylesheet" href="/css/hero.css?v=160" />
-  <link rel="stylesheet" href="/css/generator.css?v=160" />
-  <link rel="stylesheet" href="/css/layout.css?v=160" />
-  <link rel="stylesheet" href="/css/workspace.css?v=160" />
-  <link rel="stylesheet" href="/css/palette.css?v=160" />
-  <link rel="stylesheet" href="/css/modals.css?v=160" />
-  <link rel="stylesheet" href="/css/footer.css?v=160" />
-  <link rel="stylesheet" href="/css/print.css?v=160" />
-  <link rel="stylesheet" href="/css/cookies.css?v=160" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=160" />
-  <script src="/js/cookies.js?v=160"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=161" />
+  <link rel="stylesheet" href="/css/header.css?v=161" />
+  <link rel="stylesheet" href="/css/hero.css?v=161" />
+  <link rel="stylesheet" href="/css/generator.css?v=161" />
+  <link rel="stylesheet" href="/css/layout.css?v=161" />
+  <link rel="stylesheet" href="/css/workspace.css?v=161" />
+  <link rel="stylesheet" href="/css/palette.css?v=161" />
+  <link rel="stylesheet" href="/css/modals.css?v=161" />
+  <link rel="stylesheet" href="/css/footer.css?v=161" />
+  <link rel="stylesheet" href="/css/print.css?v=161" />
+  <link rel="stylesheet" href="/css/cookies.css?v=161" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=161" />
+  <script src="/js/cookies.js?v=161"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -166,7 +166,6 @@
       <!-- Mobile-only: opens the config panel as a drawer -->
       <button id="mobile-menu-btn" class="mobile-menu-btn" type="button" aria-label="Open settings">☰</button>
       <div class="lang-picker">
-        <button id="gallery-btn" class="gallery-header-btn" type="button" data-i18n="galleryBtn" aria-label="Gallery">🖼️ Gallery</button>
         <button id="theme-toggle" class="theme-toggle-btn" type="button" aria-label="Switch to dark mode">🌙</button>
         <button id="lang-toggle" class="lang-toggle-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose language">
           <span class="lang-flag" id="lang-current-flag" data-lang="en"></span>
@@ -270,6 +269,7 @@
             <button type="button" class="setting-chip" id="chip-count">🎨 12</button>
             <button type="button" class="setting-chip" id="chip-palette">🖍️</button>
             <button type="button" class="setting-chip setting-chip--on" id="chip-numbers">🔢 ●</button>
+            <button type="button" id="gallery-btn" class="setting-chip" data-i18n="galleryBtn" aria-label="Gallery">🖼️ Gallery</button>
             <button type="button" id="help-btn" class="help-btn" data-i18n="helpBtn">❓ How it works</button>
           </div>
 
@@ -558,7 +558,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=160"></script>
+  <script type="module" src="/js/main.js?v=161"></script>
 </body>
 </html>
 

@@ -303,6 +303,6 @@
 @media (max-width: 767px) {
   .site-header { position: relative; }
   .mobile-menu-btn { display: flex; }
-  /* Push lang-picker (Gallery + EN) clear of the 40px hamburger at left:12px */
+  /* Push lang-picker (🌙 + EN) clear of the 40px hamburger at left:12px */
   .lang-picker { padding-left: 56px; }
 }
