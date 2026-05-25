@@ -806,6 +806,7 @@ if (heroNumbersToggle) {
 }
 
 updateAllChips();
+syncHeroNumbersBtn();
 
 // ─── Populate-only helpers (A1) ───────────────────────────────────────────────
 function pulseDraw() {
