@@ -222,6 +222,7 @@
 /* Phone landscape: detected by short viewport height (phones rotated sideways).
    Works on all phones regardless of their portrait width (S Ultra, iPhone, etc.) */
 @media (orientation: landscape) and (max-height: 500px) {
+  .app { height: 100dvh; overflow: hidden; }
   .app-body { flex-direction: row; }
   .config-panel {
     width: 200px;

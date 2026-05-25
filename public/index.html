@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=162" />
-  <link rel="stylesheet" href="/css/header.css?v=162" />
-  <link rel="stylesheet" href="/css/hero.css?v=162" />
-  <link rel="stylesheet" href="/css/generator.css?v=162" />
-  <link rel="stylesheet" href="/css/layout.css?v=162" />
-  <link rel="stylesheet" href="/css/workspace.css?v=162" />
-  <link rel="stylesheet" href="/css/palette.css?v=162" />
-  <link rel="stylesheet" href="/css/modals.css?v=162" />
-  <link rel="stylesheet" href="/css/footer.css?v=162" />
-  <link rel="stylesheet" href="/css/print.css?v=162" />
-  <link rel="stylesheet" href="/css/cookies.css?v=162" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=162" />
-  <script src="/js/cookies.js?v=162"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=163" />
+  <link rel="stylesheet" href="/css/header.css?v=163" />
+  <link rel="stylesheet" href="/css/hero.css?v=163" />
+  <link rel="stylesheet" href="/css/generator.css?v=163" />
+  <link rel="stylesheet" href="/css/layout.css?v=163" />
+  <link rel="stylesheet" href="/css/workspace.css?v=163" />
+  <link rel="stylesheet" href="/css/palette.css?v=163" />
+  <link rel="stylesheet" href="/css/modals.css?v=163" />
+  <link rel="stylesheet" href="/css/footer.css?v=163" />
+  <link rel="stylesheet" href="/css/print.css?v=163" />
+  <link rel="stylesheet" href="/css/cookies.css?v=163" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=163" />
+  <script src="/js/cookies.js?v=163"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -540,7 +540,10 @@
        data-sitekey="0x4AAAAAAC1F8nOkL4VkmWEd"
        data-callback="onTurnstileSuccess">
   </div>
-  <style>html.is-native #turnstile-widget { display: none !important; }</style>
+  <style>
+    html.is-native #turnstile-widget { display: none !important; }
+    #turnstile-widget { position: fixed; bottom: -300px; left: -300px; }
+  </style>
 
   <!-- Safety net: if the main module throws before it can hide the splash screen,
        hide it here so the app never appears permanently frozen on native. -->
@@ -558,7 +561,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=162"></script>
+  <script type="module" src="/js/main.js?v=163"></script>
 </body>
 </html>
 

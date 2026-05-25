@@ -92,6 +92,8 @@ const TRANSLATIONS = {
     numbersChip: "Numbers",
   },
   de: {
+    heroHeading: "Was sollen wir heute zeichnen? ✨",
+    heroSub: "Deine Fantasie… gezeichnet von Lalabuba",
     tagline: "Zeichne · Färbe · Liebe es 🌈",
     placeholder: "🦋 Schmetterling · 🐉 Drache · 🏰 Schloss · 🦄 Einhorn…",
     drawBtn: "Zeichnen! ✨",
@@ -179,6 +181,8 @@ const TRANSLATIONS = {
     numbersChip: "Zahlen",
   },
   ru: {
+    heroHeading: "Что мы нарисуем сегодня? ✨",
+    heroSub: "Твоя фантазия… нарисована Lalabuba",
     tagline: "Рисуй · Раскрашивай · Люби 🌈",
     placeholder: "🦋 бабочка · 🐉 дракон · 🏰 замок · 🦄 единорог…",
     drawBtn: "Рисовать! ✨",
@@ -266,6 +270,8 @@ const TRANSLATIONS = {
     numbersChip: "Числа",
   },
   fr: {
+    heroHeading: "Qu'allons-nous dessiner aujourd'hui ? ✨",
+    heroSub: "Ton imagination… dessinée par Lalabuba",
     tagline: "Dessine · Colorie · Adore-le 🌈",
     placeholder: "🦋 papillon · 🐉 dragon · 🏰 château · 🦄 licorne…",
     drawBtn: "Dessiner! ✨",
@@ -353,6 +359,8 @@ const TRANSLATIONS = {
     numbersChip: "Chiffres",
   },
   es: {
+    heroHeading: "¿Qué dibujamos hoy? ✨",
+    heroSub: "Tu imaginación… dibujada por Lalabuba",
     tagline: "Dibuja · Colorea · Disfrútalo 🌈",
     placeholder: "🦋 mariposa · 🐉 dragón · 🏰 castillo · 🦄 unicornio…",
     drawBtn: "¡Dibujar! ✨",
@@ -440,6 +448,8 @@ const TRANSLATIONS = {
     numbersChip: "Números",
   },
   pt: {
+    heroHeading: "O que vamos desenhar hoje? ✨",
+    heroSub: "Sua imaginação… desenhada pelo Lalabuba",
     tagline: "Desenhe · Pinte · Ame 🌈",
     placeholder: "🦋 borboleta · 🐉 dragão · 🏰 castelo · 🦄 unicórnio…",
     drawBtn: "Desenhar! ✨",
@@ -527,6 +537,8 @@ const TRANSLATIONS = {
     numbersChip: "Números",
   },
   it: {
+    heroHeading: "Cosa disegniamo oggi? ✨",
+    heroSub: "La tua fantasia… disegnata da Lalabuba",
     tagline: "Disegna · Colora · Amalo 🌈",
     placeholder: "🦋 farfalla · 🐉 drago · 🏰 castello · 🦄 unicorno…",
     drawBtn: "Disegna! ✨",
@@ -614,6 +626,8 @@ const TRANSLATIONS = {
     numbersChip: "Numeri",
   },
   nl: {
+    heroHeading: "Wat tekenen we vandaag? ✨",
+    heroSub: "Jouw fantasie… getekend door Lalabuba",
     tagline: "Teken · Kleur · Geniet 🌈",
     placeholder: "🦋 vlinder · 🐉 draak · 🏰 kasteel · 🦄 eenhoorn…",
     drawBtn: "Tekenen! ✨",
@@ -701,6 +715,8 @@ const TRANSLATIONS = {
     numbersChip: "Nummers",
   },
   pl: {
+    heroHeading: "Co dzisiaj narysujemy? ✨",
+    heroSub: "Twoja wyobraźnia… narysowana przez Lalabuba",
     tagline: "Rysuj · Koloruj · Kochaj 🌈",
     placeholder: "🦋 motyl · 🐉 smok · 🏰 zamek · 🦄 jednorożec…",
     drawBtn: "Rysuj! ✨",
@@ -788,6 +804,8 @@ const TRANSLATIONS = {
     numbersChip: "Liczby",
   },
   tr: {
+    heroHeading: "Bugün ne çizelim? ✨",
+    heroSub: "Hayal gücün… Lalabuba tarafından çizildi",
     tagline: "Çiz · Boya · Sev 🌈",
     placeholder: "🦋 kelebek · 🐉 ejderha · 🏰 kale · 🦄 unicorn…",
     drawBtn: "Çiz! ✨",
@@ -875,6 +893,8 @@ const TRANSLATIONS = {
     numbersChip: "Sayılar",
   },
   zh: {
+    heroHeading: "今天画什么呢？✨",
+    heroSub: "你的想象力…由 Lalabuba 绘制",
     tagline: "画 · 涂色 · 享受 🌈",
     placeholder: "🦋 蝴蝶 · 🐉 龙 · 🏰 城堡 · 🦄 独角兽…",
     drawBtn: "画！✨",
@@ -962,6 +982,8 @@ const TRANSLATIONS = {
     numbersChip: "数字",
   },
   hi: {
+    heroHeading: "आज क्या बनाएं? ✨",
+    heroSub: "तुम्हारी कल्पना… Lalabuba द्वारा बनाई गई",
     tagline: "बनाओ · रंगो · प्यार करो 🌈",
     placeholder: "🦋 तितली · 🐉 अजगर · 🏰 महल · 🦄 यूनिकॉर्न…",
     drawBtn: "बनाओ! ✨",

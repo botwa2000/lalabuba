@@ -638,13 +638,13 @@ const panelToggleBtn = document.getElementById('panel-toggle');
 const mobileMenuBtn  = document.getElementById('mobile-menu-btn');
 
 function isPhoneLandscape() {
-  // Use screen.orientation.angle so keyboard-open (which shrinks viewport height)
-  // doesn't falsely trigger landscape mode on portrait phones.
+  // Use screen.orientation.angle — immune to keyboard-open shrinking window.innerHeight.
+  // Use screen.height (physical) not window.innerHeight (CSS viewport, keyboard-affected).
   const angle = screen?.orientation?.angle ?? (typeof window.orientation === 'number' ? window.orientation : null);
   if (angle !== null) {
-    return (Math.abs(angle) === 90 || Math.abs(angle) === 270) && window.innerHeight <= 500;
+    return (Math.abs(angle) === 90 || Math.abs(angle) === 270) && screen.height <= 500;
   }
-  return window.innerHeight <= 500 && window.innerWidth > window.innerHeight;
+  return screen.height <= 500 && screen.width > screen.height;
 }
 
 function togglePanel() {
@@ -691,7 +691,7 @@ window.addEventListener('orientationchange', () => setTimeout(syncSidebarToOrien
 window.addEventListener('resize', () => syncSidebarToOrientation());
 
 panelToggleBtn?.addEventListener('click', togglePanel);
-mobileMenuBtn?.addEventListener('click', togglePanel);
+mobileMenuBtn?.addEventListener('click', (e) => { e.stopPropagation(); togglePanel(); });
 
 // Close mobile portrait panel when clicking outside
 document.addEventListener('click', (e) => {
