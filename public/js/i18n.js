@@ -1,7 +1,7 @@
 const TRANSLATIONS = {
   en: {
     heroHeading: "What should we draw today? ✨",
-    heroSub: "Draw it · Color it · Love it 🌈 — type anything, AI draws it for you!",
+    heroSub: "Your imagination… drawn by Lalabuba",
     surpriseMeLong: "💡 Surprise me",
     todayWord: "Today",
     orPickSomething: "or pick something fun",
