@@ -229,31 +229,63 @@
   .daily-info-popup { width: 240px; }
 }
 
-/* ── Hero mode overrides: full-width centered panel ──────────────────────── */
+/* ── Hero mode overrides ──────────────────────────────────────────────────── */
 .app.app-hero .config-panel .hero-section {
   text-align: center;
-  padding: 10px 0 18px;
+  padding: 0 0 20px;
 }
-.app.app-hero .config-panel .hero-tagline {
-  font-size: clamp(.95rem, 2.5vw, 1.15rem);
-  text-align: center;
-  margin-bottom: 16px;
-}
+/* Hide tagline and daily-word from hero-section in hero mode (shown as sub-heading & quick pill instead) */
+.app.app-hero .config-panel .hero-section .hero-tagline { display: none; }
+.app.app-hero .config-panel .hero-section .daily-word-row { display: none; }
+
 .app.app-hero .config-panel .examples-grid {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   max-width: 720px;
   margin: 0 auto;
-  gap: 14px;
+  gap: 10px;
 }
 .app.app-hero .config-panel .shuffle-cards-btn {
   display: inline-flex;
   margin-top: 12px;
 }
+/* Cards divider */
+.hero-cards-divider {
+  display: none;
+}
+.app.app-hero .hero-cards-divider {
+  display: block;
+  text-align: center;
+  font-family: var(--ff-body);
+  font-size: .78rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin: 20px 0 14px;
+  position: relative;
+}
+.app.app-hero .hero-cards-divider::before,
+.app.app-hero .hero-cards-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 28%;
+  height: 1px;
+  background: var(--border);
+}
+.app.app-hero .hero-cards-divider::before { left: 0; }
+.app.app-hero .hero-cards-divider::after  { right: 0; }
+
 @media (max-width: 600px) {
   .app.app-hero .config-panel .examples-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
     max-width: 360px;
+  }
+}
+@media (max-width: 400px) {
+  .app.app-hero .config-panel .examples-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 @media (max-width: 360px) {

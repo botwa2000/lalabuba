@@ -298,7 +298,13 @@
   min-width: 0;
   padding: 0 28px 32px;
   overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
+.app.app-hero .hero-draw-heading { order: 1; }
+.app.app-hero .hero-sub-heading  { order: 2; }
+.app.app-hero .generator-section { order: 3; }
+.app.app-hero .hero-section      { order: 4; }
 .app.app-hero .panel-toggle-btn {
   display: none;
 }

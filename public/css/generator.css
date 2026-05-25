@@ -20,7 +20,7 @@
 /* Sidebar search-bar: grid layout — input fills row 1, buttons on row 2 */
 .config-panel .search-bar {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
   grid-template-rows: auto auto;
   gap: 8px;
 }
@@ -43,15 +43,8 @@
   padding: 10px 12px;
   font-size: .9rem;
 }
-.config-panel .surprise-btn {
-  grid-column: 2;
-  grid-row: 2;
-  width: 38px;
-  height: 38px;
-  font-size: 1rem;
-}
 .config-panel .regen-btn {
-  grid-column: 3;
+  grid-column: 2;
   grid-row: 2;
   padding: 10px 12px;
   font-size: .85rem;
@@ -364,29 +357,6 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Hero mobile: input + 💡 on row 1, full-width Draw! button on row 2 */
-@media (max-width: 540px) {
-  .app.app-hero .config-panel .search-bar {
-    flex-wrap: wrap;
-  }
-  .app.app-hero .config-panel .search-bar input {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-  .app.app-hero .config-panel .go-btn {
-    flex: 1 1 100%;
-    order: 4;
-    text-align: center;
-  }
-}
-
-/* Reduce hero panel inner padding on mobile so more width is available */
-@media (max-width: 767px) {
-  .app.app-hero .panel-inner {
-    padding: 0 12px 24px;
-  }
-}
-
 /* ─── Draw button pulse (A1: guides eye after chip/card tap) ──────────────── */
 @keyframes drawPulse {
   0%   { box-shadow: 0 5px 18px rgba(255,71,87,.35), 0 0 0 0 rgba(255,71,87,.55); transform: translateY(0) scale(1); }
@@ -430,25 +400,41 @@
 
 /* ─── Hero state additions ──────────────────────────────────────────────── */
 
-/* Hero draw heading */
+/* Gradient heading */
 .hero-draw-heading {
   font-family: var(--ff-brand);
-  font-size: clamp(1.35rem, 4vw, 2.1rem);
-  font-weight: 800;
-  color: var(--ink);
+  font-size: clamp(1.6rem, 4.5vw, 2.6rem);
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-align: center;
-  margin: 20px 0 6px;
-  line-height: 1.25;
+  margin: 28px 0 8px;
+  line-height: 1.2;
 }
 .app:not(.app-hero) .hero-draw-heading { display: none; }
 
-/* Hero controls: diff + count + palette + numbers pills */
+/* Sub heading */
+.hero-sub-heading {
+  display: none;
+  font-family: var(--ff-body);
+  font-size: clamp(.88rem, 2vw, 1.05rem);
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  margin: 0 0 22px;
+  line-height: 1.5;
+}
+.app.app-hero .hero-sub-heading { display: block; }
+
+/* Hero mode: unified purple pill search bar */
 .hero-controls { display: none; }
 .app.app-hero .hero-controls {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 8px;
+  margin-top: 14px;
   align-items: center;
 }
 .hero-row {
@@ -467,51 +453,130 @@
   user-select: none;
 }
 
+/* Quick pills row — Surprise + Today's Word */
+.hero-quick-row {
+  display: none;
+}
+.app.app-hero .hero-quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+}
+.hero-quick-pill {
+  font-family: var(--ff-body);
+  font-size: .9rem;
+  font-weight: 800;
+  padding: 9px 20px;
+  border-radius: 50px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.hero-quick-pill:hover {
+  border-color: var(--purple);
+  color: var(--purple);
+  transform: translateY(-1px);
+}
+.hero-quick-pill.hero-daily-proxy {
+  border-color: var(--yellow);
+  background: rgba(255,202,40,.08);
+  color: var(--ink);
+}
+.hero-quick-pill.hero-daily-proxy:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
 /* Settings chips: hidden on landing, visible after generation */
 .app.app-hero .settings-chips { display: none; }
 /* Status bar: hidden on landing page */
 .app.app-hero #status { display: none; }
 
-/* Hero mode: single-row search bar — [💡] [___input___] [Draw! ✨] */
-.app.app-hero .config-panel .generator-section { margin-top: 4px; }
+/* Hero mode: override surprise-btn circle to pill style */
+.app.app-hero .surprise-btn {
+  width: auto;
+  height: auto;
+  border-radius: 50px;
+  font-size: .9rem;
+  padding: 9px 20px;
+}
+
+/* Hero mode: unified search pill */
+.app.app-hero .config-panel .generator-section { margin-top: 0; }
 .app.app-hero .config-panel .generator-form { padding: 0; }
 .app.app-hero .config-panel .search-bar {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 10px;
+  background: var(--card);
+  border: 3px solid var(--purple);
+  border-radius: 100px;
+  padding: 8px 8px 8px 24px;
+  gap: 8px;
+  box-shadow: 0 8px 32px rgba(124,77,255,.18);
+  width: 100%;
+  max-width: 660px;
+  margin: 0 auto;
 }
 .app.app-hero .config-panel .search-bar input {
   grid-column: unset;
   grid-row: unset;
   flex: 1;
   min-width: 0;
-  font-size: 1.18rem;
-  padding: 16px 26px;
-  border-radius: 60px;
-  border-width: 2.5px;
-  order: 2;
+  font-size: 1.08rem;
+  padding: 8px 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  border-width: 0;
+  box-shadow: none;
+  width: 100%;
 }
-.app.app-hero .config-panel .surprise-btn {
-  grid-column: unset;
-  grid-row: unset;
-  order: 1;
-  width: 52px;
-  height: 52px;
-  flex-shrink: 0;
+.app.app-hero .config-panel .search-bar input:focus {
+  border-color: transparent;
+  box-shadow: none;
 }
 .app.app-hero .config-panel .go-btn {
   grid-column: unset;
   grid-row: unset;
-  order: 3;
   flex-shrink: 0;
-  font-size: 1.1rem;
-  font-weight: 800;
-  padding: 15px 32px;
-  min-height: 52px;
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  box-shadow: 0 4px 14px rgba(124,77,255,.35);
+  font-size: 1rem;
+  padding: 12px 26px;
+  border-radius: 100px;
   white-space: nowrap;
 }
+.app.app-hero .config-panel .go-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 20px rgba(124,77,255,.45);
+}
 .app.app-hero .config-panel .regen-btn { display: none; }
+/* Surprise btn is moved outside search-bar in hero mode; hide old location just in case */
+.app.app-hero .config-panel .search-bar .surprise-btn { display: none; }
+
+/* Hero mobile: search pill goes full width, wraps at small screens */
+@media (max-width: 540px) {
+  .app.app-hero .config-panel .search-bar {
+    padding: 7px 7px 7px 18px;
+  }
+  .app.app-hero .config-panel .go-btn {
+    padding: 10px 18px;
+    font-size: .95rem;
+  }
+}
+
+/* Reduce hero panel inner padding on mobile */
+@media (max-width: 767px) {
+  .app.app-hero .panel-inner {
+    padding: 0 12px 24px;
+  }
+}
 
 /* ─── Surprise button ────────────────────────────────────────────────────── */
 .surprise-btn {

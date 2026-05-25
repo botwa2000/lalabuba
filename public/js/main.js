@@ -865,6 +865,20 @@ if (dailyWordRow && dailyWordBtn && dailyWordValue) {
     pulseDraw(); // A1: guide user to click Draw instead of auto-submitting
   });
 }
+
+// Populate hero-daily-proxy for the landing quick pills row
+const heroDailyProxy = document.getElementById('hero-daily-proxy');
+const heroDailyText  = document.getElementById('hero-daily-text');
+if (heroDailyProxy && heroDailyText) {
+  heroDailyText.textContent = getTranslatedDailyWord(dailyWord, getCurrentLang());
+  heroDailyProxy.hidden = false;
+  heroDailyProxy.addEventListener('click', () => {
+    subjectInput.value = getTranslatedDailyWord(dailyWord, getCurrentLang());
+    _pendingEnglishSubject = dailyWord;
+    subjectInput.focus();
+    pulseDraw();
+  });
+}
 if (dailyInfoBtn && dailyInfoPopup) {
   dailyInfoBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -983,7 +997,7 @@ function renderExamples() {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    examplePicks = pool.slice(0, 4);
+    examplePicks = pool.slice(0, 12);
   }
   const lang = getCurrentLang();
   grid.innerHTML = examplePicks.map((item, idx) => {

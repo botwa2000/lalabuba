@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=158" />
-  <link rel="stylesheet" href="/css/header.css?v=158" />
-  <link rel="stylesheet" href="/css/hero.css?v=158" />
-  <link rel="stylesheet" href="/css/generator.css?v=158" />
-  <link rel="stylesheet" href="/css/layout.css?v=158" />
-  <link rel="stylesheet" href="/css/workspace.css?v=158" />
-  <link rel="stylesheet" href="/css/palette.css?v=158" />
-  <link rel="stylesheet" href="/css/modals.css?v=158" />
-  <link rel="stylesheet" href="/css/footer.css?v=158" />
-  <link rel="stylesheet" href="/css/print.css?v=158" />
-  <link rel="stylesheet" href="/css/cookies.css?v=158" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=158" />
-  <script src="/js/cookies.js?v=158"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=159" />
+  <link rel="stylesheet" href="/css/header.css?v=159" />
+  <link rel="stylesheet" href="/css/hero.css?v=159" />
+  <link rel="stylesheet" href="/css/generator.css?v=159" />
+  <link rel="stylesheet" href="/css/layout.css?v=159" />
+  <link rel="stylesheet" href="/css/workspace.css?v=159" />
+  <link rel="stylesheet" href="/css/palette.css?v=159" />
+  <link rel="stylesheet" href="/css/modals.css?v=159" />
+  <link rel="stylesheet" href="/css/footer.css?v=159" />
+  <link rel="stylesheet" href="/css/print.css?v=159" />
+  <link rel="stylesheet" href="/css/cookies.css?v=159" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=159" />
+  <script src="/js/cookies.js?v=159"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -206,6 +206,7 @@
 
           <!-- Hero heading — visible only in hero (landing) state -->
           <h2 class="hero-draw-heading" data-i18n="heroHeading">What should we draw today? ✨</h2>
+          <p class="hero-sub-heading" data-i18n="heroSub">Draw it · Color it · Love it 🌈 — type anything, AI draws it for you!</p>
 
           <!-- Hero: tagline + daily word + suggestion cards -->
           <section class="hero-section">
@@ -223,6 +224,7 @@
                 <p class="daily-info-body" data-i18n="dailyInfoBody">Every day everyone gets the same word to color. Race your friends!</p>
               </div>
             </div>
+            <p class="hero-cards-divider" data-i18n="orPickSomething">— or pick something fun —</p>
             <div id="examples-grid" class="examples-grid"></div>
             <button id="shuffle-cards-btn" class="shuffle-cards-btn" type="button" aria-label="Shuffle suggestions">🎲</button>
           </section>
@@ -243,31 +245,22 @@
               aria-label="Enter a subject to draw (e.g. butterfly, dragon, castle)"
               required
             />
-            <button id="surprise-button" type="button" class="surprise-btn" data-i18n-title="surpriseBtn" data-i18n-aria-label="surpriseBtn" aria-label="Surprise me">💡</button>
             <button id="generate-button" type="submit" class="go-btn" data-i18n="drawBtn">Draw! ✨</button>
             <button id="regen-button" type="button" class="regen-btn" disabled data-i18n="regenBtn">🎲 Again!</button>
           </div>
 
-          <!-- Hero controls — shown in hero (landing) state, hidden after generation -->
+          <div class="hero-quick-row" id="hero-quick-row">
+            <button id="surprise-button" type="button" class="hero-quick-pill surprise-btn" aria-label="Surprise me" data-i18n="surpriseMeLong">💡 Surprise me</button>
+            <button type="button" class="hero-quick-pill hero-daily-proxy" id="hero-daily-proxy" hidden>🌟 <span data-i18n="todayWord">Today</span>: <span id="hero-daily-text"></span></button>
+          </div>
+
+          <!-- Hero controls — difficulty tabs only, shown in hero state -->
           <div class="hero-controls" id="hero-controls">
             <div class="hero-row hero-diff-row">
               <button class="diff-pill" data-diff="easy" type="button" data-i18n="diffEasy">Easy 🌟</button>
               <button class="diff-pill selected" data-diff="medium" type="button" data-i18n="diffMedium">Medium 🌟🌟</button>
               <button class="diff-pill" data-diff="hard" type="button" data-i18n="diffHard">Hard 🌟🌟🌟</button>
               <button class="diff-pill" data-diff="extreme" type="button" data-i18n="diffExtreme">Extreme 🔥</button>
-            </div>
-            <div class="hero-row hero-count-row">
-              <button class="count-pill" data-count="6" type="button">6</button>
-              <button class="count-pill selected" data-count="12" type="button">12</button>
-              <button class="count-pill" data-count="18" type="button">18</button>
-              <button class="count-pill" data-count="24" type="button">24</button>
-              <button class="count-max-pill" type="button">Max</button>
-              <button type="button" id="hero-numbers-toggle" class="setting-chip setting-chip--on">🔢 <span data-i18n="numbersChip">Numbers</span></button>
-            </div>
-            <div class="hero-row hero-palette-row">
-              <button class="palette-pill selected" data-palette="classic" type="button" data-i18n="paletteClassic">🖍️ Classic</button>
-              <button class="palette-pill" data-palette="pastel" type="button" data-i18n="palettePastel">🌸 Pastel</button>
-              <button class="palette-pill" data-palette="nature" type="button" data-i18n="paletteNature">🌿 Nature</button>
             </div>
           </div>
 
@@ -565,7 +558,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=158"></script>
+  <script type="module" src="/js/main.js?v=159"></script>
 </body>
 </html>
 
