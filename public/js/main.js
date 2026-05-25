@@ -997,7 +997,7 @@ function renderExamples() {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    examplePicks = pool.slice(0, 12);
+    examplePicks = pool.slice(0, 4);
   }
   const lang = getCurrentLang();
   grid.innerHTML = examplePicks.map((item, idx) => {

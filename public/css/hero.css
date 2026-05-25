@@ -229,6 +229,13 @@
   .daily-info-popup { width: 240px; }
 }
 
+/* ── Coloring state: hide hero content so form is immediately visible ──────── */
+.app:not(.app-hero) .hero-draw-heading,
+.app:not(.app-hero) .hero-sub-heading,
+.app:not(.app-hero) .hero-section {
+  display: none;
+}
+
 /* ── Hero mode overrides ──────────────────────────────────────────────────── */
 .app.app-hero .config-panel .hero-section {
   text-align: center;
@@ -239,7 +246,7 @@
 .app.app-hero .config-panel .hero-section .daily-word-row { display: none; }
 
 .app.app-hero .config-panel .examples-grid {
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   max-width: 720px;
   margin: 0 auto;
   gap: 10px;
@@ -274,14 +281,9 @@
 
 @media (max-width: 600px) {
   .app.app-hero .config-panel .examples-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     max-width: 360px;
-  }
-}
-@media (max-width: 400px) {
-  .app.app-hero .config-panel .examples-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 @media (max-width: 360px) {
