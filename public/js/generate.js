@@ -95,6 +95,8 @@ export function buildDemoImage(subject) {
 }
 
 export async function generatePage(subject, seedOverride = null, isPreDefined = false) {
+  // Transition to coloring layout immediately so canvas & loading overlay are visible
+  document.querySelector('.app')?.classList.remove('app-hero');
   const difficulty = difficultySelect.value;
   setStatus(t('generating', subject, difficulty));
   showLoading();
@@ -102,7 +104,6 @@ export async function generatePage(subject, seedOverride = null, isPreDefined = 
   try {
     const imageUrl = await requestGeneratedImage(subject, difficulty, seedOverride, isPreDefined);
     await renderGeneratedImage(imageUrl);
-    document.querySelector('.app')?.classList.remove('app-hero');
     // Clear undo stack for new image
     state.undoStack = [];
     const undoBtn = document.getElementById('undo-button');
