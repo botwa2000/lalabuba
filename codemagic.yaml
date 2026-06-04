@@ -1,15 +1,15 @@
 workflows:
+  # ── Legacy Capacitor iOS build — manual only ─────────────────────────────────
+  # Kept until Flutter replaces it in the App Store.
+  # Triggered via Codemagic API by Claude when explicitly approved.
+  # For Flutter iOS use the flutter-release workflow below.
   ios-release:
-    name: Lalabuba iOS — App Store
+    name: Lalabuba iOS Capacitor — Manual Only
     max_build_duration: 60
     instance_type: mac_mini_m2
 
     triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: main
-          include: true
+      events: []   # no automatic triggers — Claude triggers via API
 
     integrations:
       app_store_connect: Bonistock ASC
@@ -81,3 +81,75 @@ workflows:
         submit_to_testflight: true
         submit_to_app_store: false
 
+  # ── Flutter iOS release — manual only ────────────────────────────────────────
+  # Triggered via Codemagic API by Claude when a Flutter release is approved.
+  # workflowId to use in API call: "flutter-release"
+  flutter-release:
+    name: Lalabuba Flutter iOS — TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    triggering:
+      events: []   # no automatic triggers — Claude triggers via API
+
+    integrations:
+      app_store_connect: Bonistock ASC
+
+    environment:
+      groups:
+        - ios-signing
+      vars:
+        APP_STORE_APPLE_ID: "6761691648"
+        FLUTTER_APP_DIR: "flutter_app"
+      flutter: stable
+
+    scripts:
+      - name: Set build number in pubspec.yaml
+        script: |
+          cd $FLUTTER_APP_DIR
+          # Flutter version format: major.minor.patch+buildNumber
+          CURRENT=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
+          sed -i "s/^version: .*/version: ${CURRENT}+${BUILD_NUMBER}/" pubspec.yaml
+
+      - name: Get Flutter dependencies
+        script: |
+          cd $FLUTTER_APP_DIR
+          flutter pub get
+
+      - name: Run tests
+        script: |
+          cd $FLUTTER_APP_DIR
+          flutter test
+
+      - name: Set up keychain
+        script: keychain initialize
+
+      - name: Fetch or create signing certificate & provisioning profile
+        script: |
+          app-store-connect fetch-signing-files com.lalabuba.lalabuba \
+            --type IOS_APP_STORE \
+            --create \
+            --certificate-key @env:CM_CERTIFICATE_PRIVATE_KEY
+
+      - name: Add certificates to keychain
+        script: keychain add-certificates
+
+      - name: Apply signing profiles to Xcode project
+        script: |
+          cd $FLUTTER_APP_DIR
+          xcode-project use-profiles
+
+      - name: Build Flutter IPA
+        script: |
+          cd $FLUTTER_APP_DIR
+          flutter build ipa --release \
+            --export-options-plist=$CM_EXPORT_OPTIONS_PLIST
+
+    artifacts:
+      - flutter_app/build/ios/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
