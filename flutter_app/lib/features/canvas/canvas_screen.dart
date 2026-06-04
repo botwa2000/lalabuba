@@ -9,12 +9,10 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import '../../core/l10n/l10n_service.dart';
+import '../../core/di/providers.dart';
 import '../../features/generate/generate_service.dart';
-import '../../features/settings/settings_controller.dart';
-import '../../features/subscription/subscription_service.dart';
 import '../../shared/widgets/lala_color_swatch.dart';
 import '../../shared/widgets/lala_loading_overlay.dart';
-import 'canvas_controller.dart';
 import 'canvas_models.dart';
 import 'canvas_painter.dart';
 
@@ -53,7 +51,14 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   }
 
   Future<void> _generate({int? seed}) async {
-    final svc = ref.read(generateServiceProvider);
+    GenerateService svc;
+    try {
+      svc = ref.read(generateServiceProvider);
+    } catch (_) {
+      // Config not loaded yet — wait for it
+      final config = await ref.read(appConfigProvider.future);
+      svc = GenerateService(config);
+    }
     final settings = ref.read(settingsProvider).valueOrNull;
     final sub = ref.read(subscriptionProvider).valueOrNull;
 
