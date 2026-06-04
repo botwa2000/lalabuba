@@ -41,7 +41,7 @@ class LalaChip extends StatelessWidget {
             width: selected ? 2 : 1.5,
           ),
           boxShadow: selected
-              ? [BoxShadow(color: accent.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))]
+              ? [BoxShadow(color: accent.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 3))]
               : null,
         ),
         child: Row(
@@ -50,7 +50,7 @@ class LalaChip extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.nunito(
-                color: selected ? Colors.white : cs.onSurface.withOpacity(0.8),
+                color: selected ? Colors.white : cs.onSurface.withValues(alpha: 0.8),
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
               ),
@@ -58,7 +58,7 @@ class LalaChip extends StatelessWidget {
             if (locked) ...[
               const SizedBox(width: 4),
               Icon(Icons.lock_outline_rounded, size: 12,
-                  color: selected ? Colors.white70 : cs.onSurface.withOpacity(0.4)),
+                  color: selected ? Colors.white70 : cs.onSurface.withValues(alpha: 0.4)),
             ],
           ],
         ),

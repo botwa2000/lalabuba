@@ -91,7 +91,7 @@ class _LalaLoadingOverlayState extends State<LalaLoadingOverlay>
               widget.message,
               textAlign: TextAlign.center,
               style: GoogleFonts.fredoka(
-                color: cs.onSurface.withOpacity(0.6),
+                color: cs.onSurface.withValues(alpha: 0.6),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),

@@ -76,16 +76,16 @@ class _LalaColorSwatchState extends State<LalaColorSwatch>
                   BoxShadow(color: Colors.white, blurRadius: 0, spreadRadius: 3),
                   BoxShadow(color: activeRingColor, blurRadius: 0, spreadRadius: 6),
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
+                      color: Colors.black.withValues(alpha:0.18),
                       blurRadius: 0,
                       spreadRadius: 9),
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.28),
+                      color: Colors.black.withValues(alpha:0.28),
                       blurRadius: 20,
                       offset: const Offset(0, 8)),
                 ] else
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.18),
+                    color: Colors.black.withValues(alpha:0.18),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),

@@ -1,0 +1,17 @@
+{
+  "rules": [
+    { "keywords": ["frog","turtle","crocodile","dinosaur","lizard","alligator","caterpillar","snake","iguana","cactus","grasshopper"], "classic": "Green", "pastel": "Mint", "nature": "Leaf" },
+    { "keywords": ["dragon","parrot","jungle","plant","leaf","shamrock"], "classic": "Green", "pastel": "Sage", "nature": "Leaf" },
+    { "keywords": ["shark","dolphin","whale","mermaid","fish","submarine","seahorse","ocean","lake","sea","river","waterfall"], "classic": "Blue", "pastel": "Sky", "nature": "Lake" },
+    { "keywords": ["fox","tiger","goldfish","clownfish","pumpkin","sunset"], "classic": "Orange", "pastel": "Peach", "nature": "Amber" },
+    { "keywords": ["giraffe","lion","bee","sunflower","chick","duckling","sun","banana","lemon","corn","star","gold"], "classic": "Gold", "pastel": "Butter", "nature": "Sun" },
+    { "keywords": ["bear","monkey","dog","owl","hamster","horse","deer","camel","squirrel","chipmunk","hedgehog","otter","beaver"], "classic": "Brown", "pastel": "Apricot", "nature": "Bark" },
+    { "keywords": ["elephant","koala","rhino","hippo","wolf","gorilla","donkey","mouse","seal","robot","astronaut","rocket","spaceship","knight"], "classic": "Slate", "pastel": "Mist", "nature": "Stone" },
+    { "keywords": ["bunny","flamingo","pig","piglet","shrimp"], "classic": "Pink", "pastel": "Baby Pink", "nature": "Petal" },
+    { "keywords": ["unicorn","fairy","flower","rose","cherry blossom","lotus","orchid"], "classic": "Pink", "pastel": "Rose", "nature": "Petal" },
+    { "keywords": ["octopus","grape","plum","eggplant","jellyfish"], "classic": "Purple", "pastel": "Lilac", "nature": "Berry" },
+    { "keywords": ["cat","kitten"], "classic": "Tan", "pastel": "Apricot", "nature": "Clay" },
+    { "keywords": ["penguin","panda","zebra","skunk"], "classic": "Navy", "pastel": "Periwinkle", "nature": "Dusk" },
+    { "keywords": ["volcano","fire truck","firetruck","phoenix","lobster","crab","ladybug"], "classic": "Red", "pastel": "Rose", "nature": "Petal" }
+  ]
+}

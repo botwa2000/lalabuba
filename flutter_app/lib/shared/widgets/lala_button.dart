@@ -77,13 +77,13 @@ class _LalaButtonState extends State<LalaButton>
         border = cs.primary;
       case LalaButtonVariant.ghost:
         bg = Colors.transparent;
-        fg = cs.onSurface.withOpacity(0.7);
+        fg = cs.onSurface.withValues(alpha: 0.7);
         border = Colors.transparent;
     }
 
     if (disabled) {
-      bg = bg.withOpacity(0.45);
-      fg = fg.withOpacity(0.6);
+      bg = bg.withValues(alpha: 0.45);
+      fg = fg.withValues(alpha: 0.6);
     }
 
     Widget content = Row(
@@ -133,7 +133,7 @@ class _LalaButtonState extends State<LalaButton>
                 ? null
                 : [
                     BoxShadow(
-                      color: bg.withOpacity(0.35),
+                      color: bg.withValues(alpha: 0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),

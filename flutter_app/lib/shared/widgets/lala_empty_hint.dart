@@ -54,7 +54,7 @@ class _LalaEmptyHintState extends State<LalaEmptyHint>
                 widget.message,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.nunito(
-                  color: cs.onSurface.withOpacity(0.7),
+                  color: cs.onSurface.withValues(alpha: 0.7),
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),

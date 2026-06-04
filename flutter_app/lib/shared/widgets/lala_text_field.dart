@@ -70,7 +70,7 @@ class _LalaTextFieldState extends State<LalaTextField> {
         hintText: widget.placeholder,
         hintStyle: GoogleFonts.nunito(
           fontSize: 14,
-          color: cs.onSurface.withOpacity(0.45),
+          color: cs.onSurface.withValues(alpha: 0.45),
         ),
         counterText: '',
         suffixIcon: _hasText
@@ -80,7 +80,7 @@ class _LalaTextFieldState extends State<LalaTextField> {
                   widget.onChanged?.call('');
                 },
                 child: Icon(Icons.cancel_rounded,
-                    color: cs.onSurface.withOpacity(0.4), size: 20),
+                    color: cs.onSurface.withValues(alpha: 0.4), size: 20),
               )
             : null,
       ),
