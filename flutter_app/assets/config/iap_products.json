@@ -1,0 +1,82 @@
+{
+  "products": [
+    {
+      "id": "com.lalabuba.lalabuba.plus_monthly",
+      "tier": "plus",
+      "period": "monthly",
+      "appleId": "com.lalabuba.lalabuba.plus_monthly",
+      "googleId": "plus_monthly"
+    },
+    {
+      "id": "com.lalabuba.lalabuba.plus_yearly",
+      "tier": "plus",
+      "period": "yearly",
+      "appleId": "com.lalabuba.lalabuba.plus_yearly",
+      "googleId": "plus_yearly"
+    },
+    {
+      "id": "com.lalabuba.lalabuba.family_monthly",
+      "tier": "family",
+      "period": "monthly",
+      "appleId": "com.lalabuba.lalabuba.family_monthly",
+      "googleId": "family_monthly"
+    },
+    {
+      "id": "com.lalabuba.lalabuba.family_yearly",
+      "tier": "family",
+      "period": "yearly",
+      "appleId": "com.lalabuba.lalabuba.family_yearly",
+      "googleId": "family_yearly"
+    }
+  ],
+  "entitlements": {
+    "free": {
+      "dailyGenerations": 5,
+      "difficulties": ["easy", "medium"],
+      "palettes": ["classic"],
+      "maxColors": 12,
+      "resolution": 768,
+      "pencilMode": false,
+      "gallery": false,
+      "galleryLimit": 0,
+      "exactSharing": false,
+      "hdPrint": false,
+      "zoomControls": false,
+      "colorPicker": false,
+      "maxPalette": false,
+      "childProfiles": 0
+    },
+    "plus": {
+      "dailyGenerations": -1,
+      "difficulties": ["easy", "medium", "hard", "extreme"],
+      "palettes": ["classic", "pastel", "nature"],
+      "maxColors": 99,
+      "resolution": 1024,
+      "pencilMode": true,
+      "gallery": true,
+      "galleryLimit": 100,
+      "exactSharing": true,
+      "hdPrint": true,
+      "zoomControls": true,
+      "colorPicker": true,
+      "maxPalette": true,
+      "childProfiles": 0
+    },
+    "family": {
+      "dailyGenerations": -1,
+      "difficulties": ["easy", "medium", "hard", "extreme"],
+      "palettes": ["classic", "pastel", "nature"],
+      "maxColors": 99,
+      "resolution": 1024,
+      "pencilMode": true,
+      "gallery": true,
+      "galleryLimit": -1,
+      "exactSharing": true,
+      "hdPrint": true,
+      "zoomControls": true,
+      "colorPicker": true,
+      "maxPalette": true,
+      "childProfiles": 5
+    }
+  }
+}

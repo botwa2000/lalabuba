@@ -1,0 +1,30 @@
+{
+  "colors": {
+    "primary": "#9C6FFF",
+    "primaryDark": "#7C4DFF",
+    "secondary": "#FF8A65",
+    "background": "#0F0E1A",
+    "surface": "#1E1B2E",
+    "surfaceVariant": "#2A2640",
+    "border": "#3A3650",
+    "ink": "#F0EEFF",
+    "muted": "#9D9AB8",
+    "error": "#FF6B6B",
+    "success": "#4DD8A0",
+    "warning": "#FFA726",
+    "orange": "#FF8A65",
+    "red": "#FF6B6B",
+    "blue": "#64B5F6",
+    "green": "#4DD8A0"
+  },
+  "gradients": {
+    "brand": ["#7C4DFF", "#A855F7"],
+    "warm": ["#FF7043", "#FF4757"],
+    "card1": ["#3E2A1A", "#4A3020"],
+    "card2": ["#1A2E1C", "#1E3620"],
+    "card3": ["#162438", "#1A2D45"],
+    "card4": ["#2E1A22", "#38202A"],
+    "card5": ["#261A2E", "#30213A"],
+    "card6": ["#2E2A10", "#363214"]
+  }
+}

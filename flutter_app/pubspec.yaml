@@ -1,0 +1,69 @@
+name: lalabuba
+description: Lalabuba — AI Coloring Pages for Kids
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.3.5
+
+  # Navigation
+  go_router: ^14.6.2
+
+  # Localization
+  easy_localization: ^3.0.7
+
+  # Network
+  dio: ^5.7.0
+
+  # Secure storage
+  flutter_secure_storage: ^9.2.2
+
+  # In-app purchases
+  in_app_purchase: ^3.2.0
+
+  # Image processing
+  image: ^4.2.0
+
+  # Sharing
+  share_plus: ^10.0.2
+  image_gallery_saver: ^2.0.3
+
+  # QR codes
+  qr_flutter: ^4.1.0
+
+  # Fonts (Google Fonts caches locally; will bundle in assets/fonts/ in Phase 8)
+  google_fonts: ^6.2.1
+
+  # Utils
+  intl: ^0.20.2
+  path_provider: ^2.1.4
+  url_launcher: ^6.3.1
+  package_info_plus: ^8.1.2
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  riverpod_generator: ^2.4.3
+  build_runner: ^2.4.13
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/i18n/
+    - assets/data/
+    - assets/config/
+    - assets/images/

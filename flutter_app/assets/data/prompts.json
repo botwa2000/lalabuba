@@ -1,0 +1,79 @@
+{
+  "base": [
+    "every outline is a fully closed loop",
+    "no open line ends",
+    "flat white interior",
+    "pure solid white fills",
+    "white background",
+    "no color",
+    "no gradients",
+    "no shading",
+    "no shadows",
+    "no stippling",
+    "no dots",
+    "no dashed lines",
+    "no crosshatching",
+    "no texture",
+    "no realism",
+    "no text",
+    "no watermark"
+  ],
+  "sizeHints": {
+    "small": ["single centered subject", "sparse simple layout"],
+    "medium": [],
+    "large": ["wide scene filling the full canvas", "include background elements"],
+    "xxl": ["panoramic wide scene filling the entire canvas", "rich background detail throughout"]
+  },
+  "difficulties": {
+    "easy": {
+      "prefix": "coloring book page of {subject}",
+      "extras": [
+        "toddler coloring book style",
+        "only 3 to 4 very large simple bold shapes",
+        "extremely thick black outlines",
+        "absolutely no interior lines or details whatsoever",
+        "maximum simplicity",
+        "clean toddler coloring page"
+      ],
+      "minArea": 2000
+    },
+    "medium": {
+      "prefix": "coloring book page of {subject}",
+      "extras": [
+        "simple cartoon illustration style",
+        "thick bold continuous black outlines",
+        "6 to 10 clearly enclosed regions",
+        "absolutely no interior texture or detail lines",
+        "clean professional coloring book illustration"
+      ],
+      "minArea": 600
+    },
+    "hard": {
+      "prefix": "detailed coloring book page of {subject}",
+      "extras": [
+        "children's detailed coloring book style",
+        "bold continuous black outlines",
+        "15 to 30 clearly enclosed regions",
+        "decorative interior lines that form fully closed sub-regions",
+        "no hatching or crosshatching",
+        "professional detailed coloring book illustration"
+      ],
+      "minArea": 200
+    },
+    "extreme": {
+      "prefix": "ultra-detailed adult coloring book page of {subject}",
+      "extras": [
+        "intricate mandala-inspired style with complex ornamental cell borders",
+        "bold continuous black outline-only lines",
+        "every interior line forms a fully closed loop",
+        "no filled black areas anywhere in the image",
+        "all interiors remain white with only black boundary lines",
+        "dozens of tiny white-filled enclosed cells covering every region",
+        "dense geometric and floral border patterns creating many fillable white areas",
+        "maximum intricacy throughout the entire image",
+        "expert adult coloring book for skilled colorers"
+      ],
+      "minArea": 40
+    }
+  }
+}

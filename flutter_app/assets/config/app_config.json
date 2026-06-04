@@ -1,0 +1,22 @@
+{
+  "features": {
+    "dailyChallenge": true,
+    "galleryEnabled": true,
+    "challengeMode": true,
+    "maxPalette": true,
+    "pencilMode": true,
+    "analyticsEnabled": true,
+    "iapEnabled": true,
+    "blobSharing": true
+  },
+  "api": {
+    "baseUrl": "https://lalabuba.com",
+    "generatePath": "/api/generate-image",
+    "timeoutSeconds": 60
+  },
+  "limits": {
+    "subjectMaxLength": 80,
+    "undoStackDepth": 20,
+    "dailyFreeGenerations": 5
+  }
+}
