@@ -42,6 +42,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   String? _errorMsg;
   bool _hintVisible = true;
   String _subject = '';
+  int? _currentSeed;       // seed returned by the API — used to build challenge URL
+  String? _currentBlobUrl; // blob URL from API — optional direct-image link
 
   @override
   void initState() {
@@ -91,6 +93,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         setState(() {
           _isGenerating = false;
           _hintVisible = true;
+          _currentSeed = result.seed;
+          _currentBlobUrl = result.blobUrl;
         });
         Future.delayed(const Duration(seconds: 4), () {
           if (mounted) setState(() => _hintVisible = false);
@@ -429,34 +433,30 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                   mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
             ),
             const SizedBox(width: 6),
-            // Print (stub – opens a SnackBar for now)
+            // Print — on mobile, printing goes through the system share sheet
             _ActionBtn(
               label: l10n.t('printBtn'),
-              onTap: canvas.isReady
-                  ? () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '🖨️ Print coming soon!',
-                            style: GoogleFonts.nunito(),
-                          ),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  : null,
+              onTap: canvas.isReady ? () => _printArtwork(canvas) : null,
             ),
             const SizedBox(width: 6),
-            // Save
+            // Save to gallery
             _ActionBtn(
               label: l10n.t('saveBtn'),
               onTap: canvas.isReady ? () => _saveArtwork(canvas) : null,
             ),
             const SizedBox(width: 6),
-            // Share art
+            // Share artwork image
             _ActionBtn(
               label: l10n.t('shareArtBtn'),
               onTap: canvas.isReady ? () => _shareArtwork(canvas) : null,
+            ),
+            const SizedBox(width: 6),
+            // Challenge — share the coloring page URL so anyone can play along
+            _ActionBtn(
+              label: l10n.t('challengeBtn'),
+              onTap: (_currentSeed != null && canvas.isReady)
+                  ? () => _shareChallenge()
+                  : null,
             ),
           ],
         ),
@@ -596,8 +596,53 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       final file = XFile.fromData(bytes,
           mimeType: 'image/png',
           name: 'lalabuba_${widget.args.displayLabel}.png');
-      await Share.shareXFiles([file],
-          text: '🎨 I colored ${widget.args.displayLabel} with Lalabuba!');
+      final l10n = ref.read(l10nProvider);
+      await Share.shareXFiles(
+        [file],
+        text: l10n.t('shareImageText', {'subject': widget.args.displayLabel}),
+      );
+    } catch (_) {
+      // Ignore share cancel
+    }
+  }
+
+  // On mobile, printing is done via the system share sheet (share → Print).
+  // This opens the same sheet but signals print intent via subject line.
+  Future<void> _printArtwork(CanvasState canvas) async {
+    try {
+      final bytes = await _captureCanvas(canvas);
+      if (bytes == null) return;
+      final file = XFile.fromData(bytes,
+          mimeType: 'image/png',
+          name: 'lalabuba_${widget.args.displayLabel}.png');
+      await Share.shareXFiles(
+        [file],
+        subject: 'Print — Lalabuba: ${widget.args.displayLabel}',
+      );
+    } catch (_) {
+      // Ignore share cancel
+    }
+  }
+
+  // Builds a proper https://lalabuba.com/challenge?subject=...&seed=... URL
+  // so the recipient opens the exact same coloring page in browser or app.
+  Future<void> _shareChallenge() async {
+    final seed = _currentSeed;
+    if (seed == null) return;
+
+    // Always use the config base URL — never localhost
+    final baseUrl = ref.read(appConfigProvider).valueOrNull?.apiBaseUrl
+        ?? 'https://lalabuba.com';
+    final encodedSubject = Uri.encodeQueryComponent(_subject);
+    final challengeUrl = '$baseUrl/challenge?subject=$encodedSubject&seed=$seed';
+
+    final l10n = ref.read(l10nProvider);
+    final text =
+        l10n.t('challengeText', {'subject': widget.args.displayLabel});
+
+    try {
+      // Share the challenge URL — opens in browser or triggers app deep link
+      await Share.share('$text\n$challengeUrl', subject: 'Lalabuba Challenge 🏆');
     } catch (_) {
       // Ignore share cancel
     }
