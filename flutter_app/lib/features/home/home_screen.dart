@@ -10,7 +10,6 @@ import '../../shared/widgets/lala_card.dart';
 import '../../shared/widgets/lala_chip.dart';
 import '../../shared/widgets/lala_text_field.dart';
 import '../../shared/widgets/lala_empty_hint.dart';
-import '../canvas/canvas_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -56,15 +55,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _fillSubject(String text) {
     _textCtrl.text = text;
-    _textCtrl.selection =
-        TextSelection.collapsed(offset: text.length);
+    _textCtrl.selection = TextSelection.collapsed(offset: text.length);
     setState(() => _canDraw = text.isNotEmpty);
     ref.read(homeProvider.notifier).setSubject(text);
   }
 
+  String get _currentLocale =>
+      ref.read(localeProvider).valueOrNull?.locale ?? 'en';
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final l10n = ref.watch(l10nProvider);
     final themeMode = ref.watch(themeModeProvider);
     final homeAsync = ref.watch(homeProvider);
@@ -74,35 +74,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         MediaQuery.orientationOf(context) == Orientation.landscape;
 
     return Scaffold(
-      backgroundColor: cs.surface,
-      resizeToAvoidBottomInset: true,
-      appBar: _buildAppBar(context, cs, l10n, themeMode),
-      body: isLandscape
-          ? _buildLandscapeLayout(context, cs, l10n, homeAsync, settingsAsync, sub)
-          : _buildPortraitLayout(context, cs, l10n, homeAsync, settingsAsync, sub),
+      appBar: _buildAppBar(context, l10n, themeMode),
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: isLandscape
+            ? _buildLandscapeLayout(context, l10n, homeAsync, settingsAsync, sub)
+            : _buildPortraitLayout(context, l10n, homeAsync, settingsAsync, sub),
+      ),
     );
   }
 
-  AppBar _buildAppBar(
-      BuildContext context, ColorScheme cs, L10n l10n, ThemeMode themeMode) {
+  AppBar _buildAppBar(BuildContext context, L10n l10n, ThemeMode themeMode) {
+    final cs = Theme.of(context).colorScheme;
     return AppBar(
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          Text('🎨', style: const TextStyle(fontSize: 22)),
+          const Text('🎨', style: TextStyle(fontSize: 22)),
           const SizedBox(width: 6),
           Text(
             'Lalabuba',
             style: GoogleFonts.fredoka(
               fontWeight: FontWeight.w700,
-              fontSize: 20,
+              fontSize: 22,
               color: cs.primary,
             ),
           ),
         ],
       ),
       actions: [
-        // Theme toggle
         IconButton(
           icon: Icon(
             themeMode == ThemeMode.dark
@@ -117,7 +118,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ref.read(themeModeProvider.notifier).state = next;
           },
         ),
-        // Language picker
         PopupMenuButton<String>(
           icon: Text(
             languageMeta[ref.watch(localeProvider).valueOrNull?.locale ?? 'en']
@@ -141,9 +141,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ))
               .toList(),
         ),
-        // Gallery
         IconButton(
           icon: const Icon(Icons.photo_library_rounded),
+          tooltip: l10n.t('galleryBtn'),
           onPressed: () => context.pushNamed('gallery'),
         ),
         const SizedBox(width: 4),
@@ -151,19 +151,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ─── Portrait ───────────────────────────────────────────────────────────────
+
   Widget _buildPortraitLayout(
     BuildContext context,
-    ColorScheme cs,
     L10n l10n,
     AsyncValue<HomeState> homeAsync,
     AsyncValue<SettingsState> settingsAsync,
     SubscriptionState? sub,
   ) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -177,91 +179,109 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 2),
+                // Tagline
                 Text(
-                  l10n.t('heroSub'),
+                  l10n.t('tagline'),
                   style: GoogleFonts.nunito(
                     fontSize: 13,
-                    color: cs.onSurface.withValues(alpha: 0.6),
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface.withValues(alpha: 0.55),
                   ),
                 ),
                 const SizedBox(height: 14),
                 // Daily challenge pill
                 homeAsync.whenOrNull(
-                  data: (home) => home.dailyChallenge != null
-                      ? _buildDailyPill(context, cs, l10n, home, ref.watch(localeProvider).valueOrNull?.locale ?? 'en')
-                      : const SizedBox.shrink(),
-                ) ?? const SizedBox.shrink(),
+                      data: (home) => home.dailyChallenge != null
+                          ? _buildDailyPill(
+                              context, cs, l10n, home, _currentLocale)
+                          : const SizedBox.shrink(),
+                    ) ??
+                    const SizedBox.shrink(),
+                const SizedBox(height: 14),
+                // "or pick something fun" divider
+                _buildPickDivider(context, l10n),
                 const SizedBox(height: 12),
-                // Card grid
+                // 2×2 card grid + shuffle
                 homeAsync.when(
                   loading: () => const SizedBox(
-                      height: 200,
+                      height: 220,
                       child: Center(child: CircularProgressIndicator())),
                   error: (_, __) => const SizedBox.shrink(),
-                  data: (home) => _buildCardGrid(context, home, l10n, ref.watch(localeProvider).valueOrNull?.locale ?? 'en'),
+                  data: (home) =>
+                      _buildCardGrid(context, home, l10n, _currentLocale),
                 ),
-                const SizedBox(height: 12),
-                // Canvas placeholder
-                Container(
-                  height: 160,
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                        color: cs.outlineVariant.withValues(alpha: 0.5)),
-                  ),
-                  child: LalaEmptyHint(message: l10n.t('emptyHint')),
-                ),
+                const SizedBox(height: 16),
+                // Canvas placeholder hint
+                _buildCanvasPlaceholder(context, l10n),
               ],
             ),
           ),
         ),
-        // Sticky bottom bar
-        _buildBottomBar(context, cs, l10n, settingsAsync, sub),
+        // Sticky bottom input + settings bar
+        _buildBottomBar(context, l10n, settingsAsync, sub),
         SizedBox(height: MediaQuery.paddingOf(context).bottom),
       ],
     );
   }
 
+  // ─── Landscape ──────────────────────────────────────────────────────────────
+
   Widget _buildLandscapeLayout(
     BuildContext context,
-    ColorScheme cs,
     L10n l10n,
     AsyncValue<HomeState> homeAsync,
     AsyncValue<SettingsState> settingsAsync,
     SubscriptionState? sub,
   ) {
+    final cs = Theme.of(context).colorScheme;
+    // Left panel width: fixed but generous enough for 2-col card grid
+    const panelWidth = 300.0;
+
     return Row(
       children: [
-        // Left: controls
+        // Left control panel
         SizedBox(
-          width: 280,
+          width: panelWidth,
           child: Column(
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         l10n.t('heroHeading'),
                         style: GoogleFonts.fredoka(
-                            fontSize: 16, fontWeight: FontWeight.w700),
+                            fontSize: 15, fontWeight: FontWeight.w700),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
+                      // Daily pill
                       homeAsync.whenOrNull(
                             data: (home) => home.dailyChallenge != null
-                                ? _buildDailyPill(context, cs, l10n, home,
-                                    ref.watch(localeProvider).valueOrNull?.locale ?? 'en')
+                                ? _buildDailyPill(
+                                    context, cs, l10n, home, _currentLocale)
                                 : const SizedBox.shrink(),
+                          ) ??
+                          const SizedBox.shrink(),
+                      const SizedBox(height: 10),
+                      // Divider
+                      _buildPickDivider(context, l10n),
+                      const SizedBox(height: 8),
+                      // Card grid (2-col, compact)
+                      homeAsync.whenOrNull(
+                            data: (home) => _buildCardGrid(
+                                context, home, l10n, _currentLocale,
+                                compact: true),
                           ) ??
                           const SizedBox.shrink(),
                     ],
                   ),
                 ),
               ),
-              _buildBottomBar(context, cs, l10n, settingsAsync, sub),
+              _buildBottomBar(context, l10n, settingsAsync, sub),
               SizedBox(height: MediaQuery.paddingOf(context).bottom),
             ],
           ),
@@ -272,11 +292,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             margin: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: cs.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
             ),
             child: LalaEmptyHint(message: l10n.t('emptyHint')),
           ),
         ),
+      ],
+    );
+  }
+
+  // ─── Reusable sections ──────────────────────────────────────────────────────
+
+  Widget _buildPickDivider(BuildContext context, L10n l10n) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Expanded(child: Divider(color: cs.outlineVariant, height: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            l10n.t('orPickSomething'),
+            style: GoogleFonts.nunito(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface.withValues(alpha: 0.4),
+            ),
+          ),
+        ),
+        Expanded(child: Divider(color: cs.outlineVariant, height: 1)),
       ],
     );
   }
@@ -286,7 +330,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final daily = home.dailyChallenge!;
     final label = daily.translate(locale);
     return GestureDetector(
-      onTap: () => _fillSubject(daily.word),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _fillSubject(daily.word);
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
@@ -294,6 +341,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             colors: [cs.primaryContainer, cs.secondaryContainer],
           ),
           borderRadius: BorderRadius.circular(50),
+          boxShadow: [
+            BoxShadow(
+              color: cs.primary.withValues(alpha: 0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -314,13 +368,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildCardGrid(BuildContext context, HomeState home, L10n l10n, String locale) {
+  Widget _buildCardGrid(
+    BuildContext context,
+    HomeState home,
+    L10n l10n,
+    String locale, {
+    bool compact = false,
+  }) {
     final cs = Theme.of(context).colorScheme;
-    final cardColors = [
-      [const Color(0xFFFF6B6B), const Color(0xFFFF8E53)],
-      [const Color(0xFF4ECDC4), const Color(0xFF45B7D1)],
-      [const Color(0xFFFFE66D), const Color(0xFFFFA26B)],
-      [const Color(0xFF96E6A1), const Color(0xFF4ECDC4)],
+    // Vibrant gradient pairs for cards — matches web app branding
+    const cardColors = [
+      [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
+      [Color(0xFF4ECDC4), Color(0xFF45B7D1)],
+      [Color(0xFFFFE66D), Color(0xFFFFA26B)],
+      [Color(0xFF96E6A1), Color(0xFF4ECDC4)],
     ];
 
     return Column(
@@ -329,11 +390,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
-            childAspectRatio: 1.1,
+            childAspectRatio: compact ? 1.2 : 1.1,
           ),
           itemCount: home.visibleCards.length.clamp(0, 4),
           itemBuilder: (ctx, i) {
@@ -358,17 +419,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ref.read(homeProvider.notifier).shuffle();
             },
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(50),
                 border: Border.all(color: cs.outlineVariant),
               ),
               child: Text(
-                '🎲 Shuffle',
+                '🎲',
                 style: GoogleFonts.fredoka(
-                    fontSize: 14,
+                    fontSize: 20,
                     fontWeight: FontWeight.w600,
                     color: cs.onSurface),
               ),
@@ -379,13 +439,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Widget _buildCanvasPlaceholder(BuildContext context, L10n l10n) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: LalaEmptyHint(message: l10n.t('emptyHint')),
+    );
+  }
+
   Widget _buildBottomBar(
     BuildContext context,
-    ColorScheme cs,
     L10n l10n,
     AsyncValue<SettingsState> settingsAsync,
     SubscriptionState? sub,
   ) {
+    final cs = Theme.of(context).colorScheme;
     final settings = settingsAsync.valueOrNull;
     final ents = sub?.entitlements;
 
@@ -397,7 +470,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
-              offset: const Offset(0, -3))
+              offset: const Offset(0, -3)),
         ],
       ),
       child: Column(
@@ -418,24 +491,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(width: 8),
                 // Surprise me
-                GestureDetector(
+                _buildIconPill(
+                  context,
+                  '💡',
                   onTap: () {
                     HapticFeedback.lightImpact();
                     ref.read(homeProvider.notifier).surpriseMe();
-                    final s = ref.read(homeProvider).valueOrNull?.subject ?? '';
-                    if (s.isNotEmpty) _textCtrl.text = s;
-                    setState(() => _canDraw = s.isNotEmpty);
+                    final s =
+                        ref.read(homeProvider).valueOrNull?.subject ?? '';
+                    if (s.isNotEmpty) _fillSubject(s);
                   },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Center(
-                        child: Text('💡', style: TextStyle(fontSize: 20))),
-                  ),
                 ),
                 const SizedBox(width: 8),
                 // Draw button
@@ -444,7 +509,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
+                        horizontal: 18, vertical: 11),
                     decoration: BoxDecoration(
                       color: _canDraw
                           ? cs.primary
@@ -453,10 +518,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       boxShadow: _canDraw
                           ? [
                               BoxShadow(
-                                  color:
-                                      cs.primary.withValues(alpha: 0.4),
+                                  color: cs.primary.withValues(alpha: 0.38),
                                   blurRadius: 12,
-                                  offset: const Offset(0, 4))
+                                  offset: const Offset(0, 4)),
                             ]
                           : null,
                     ),
@@ -473,22 +537,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
-          // Settings chips
+          // Settings chips row
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+            padding: const EdgeInsets.fromLTRB(12, 2, 12, 10),
             child: Row(
               children: [
-                // Difficulty
                 LalaChip(
                   label: _diffLabel(settings?.difficulty ?? 'medium', l10n),
                   selected: true,
                   onTap: () => ref
                       .read(settingsProvider.notifier)
-                      .cycleDifficulty(ents?.difficulties ?? ['easy', 'medium']),
+                      .cycleDifficulty(
+                          ents?.difficulties ?? ['easy', 'medium']),
                 ),
                 const SizedBox(width: 6),
-                // Palette
                 LalaChip(
                   label: _palLabel(settings?.palette ?? 'classic'),
                   onTap: () => ref
@@ -496,7 +559,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       .cyclePalette(ents?.palettes ?? ['classic']),
                 ),
                 const SizedBox(width: 6),
-                // Color count
                 LalaChip(
                   label: _cntLabel(settings?.colorCount ?? 12),
                   onTap: () => ref
@@ -504,9 +566,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       .cycleColorCount([6, 12, 18, 24]),
                 ),
                 const SizedBox(width: 6),
-                // Numbers toggle
                 LalaChip(
-                  label: '${settings?.showNumbers == true ? '🔢' : '🔢'} ${settings?.showNumbers == true ? 'ON' : 'OFF'}',
+                  label: settings?.showNumbers == true
+                      ? '🔢 ${l10n.t('numbersOn')}'
+                      : '🔡 ${l10n.t('numbersOff')}',
                   selected: settings?.showNumbers ?? true,
                   onTap: () =>
                       ref.read(settingsProvider.notifier).toggleNumbers(),
@@ -519,26 +582,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // Small square icon pill button used for 💡 etc.
+  Widget _buildIconPill(BuildContext context, String emoji,
+      {required VoidCallback onTap}) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cs.outlineVariant),
+        ),
+        child: Center(
+            child: Text(emoji, style: const TextStyle(fontSize: 20))),
+      ),
+    );
+  }
+
+  // ─── Label helpers ──────────────────────────────────────────────────────────
+
   String _diffLabel(String d, L10n l10n) {
     switch (d) {
-      case 'easy': return l10n.t('diffEasy');
-      case 'medium': return l10n.t('diffMedium');
-      case 'hard': return l10n.t('diffHard');
+      case 'easy':    return l10n.t('diffEasy');
+      case 'medium':  return l10n.t('diffMedium');
+      case 'hard':    return l10n.t('diffHard');
       case 'extreme': return l10n.t('diffExtreme');
-      default: return d;
+      default:        return d;
     }
   }
 
   String _palLabel(String p) {
     switch (p) {
       case 'classic': return '🖍️ Classic';
-      case 'pastel': return '🌸 Pastel';
-      case 'nature': return '🌿 Nature';
-      default: return p;
+      case 'pastel':  return '🌸 Pastel';
+      case 'nature':  return '🌿 Nature';
+      default:        return p;
     }
   }
 
-  String _cntLabel(int cnt) {
-    return '🎨 ${cnt == 99 ? 'Max' : cnt.toString()}';
-  }
+  String _cntLabel(int cnt) =>
+      '🎨 ${cnt == 99 ? 'Max' : cnt.toString()}';
 }

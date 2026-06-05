@@ -55,7 +55,6 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     try {
       svc = ref.read(generateServiceProvider);
     } catch (_) {
-      // Config not loaded yet — wait for it
       final config = await ref.read(appConfigProvider.future);
       svc = GenerateService(config);
     }
@@ -93,7 +92,6 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           _isGenerating = false;
           _hintVisible = true;
         });
-        // Auto-hide hint after 4 seconds
         Future.delayed(const Duration(seconds: 4), () {
           if (mounted) setState(() => _hintVisible = false);
         });
@@ -110,19 +108,49 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
   int _minAreaFor(String difficulty) {
     switch (difficulty) {
-      case 'easy': return 2000;
-      case 'medium': return 1000;
-      case 'hard': return 400;
+      case 'easy':    return 2000;
+      case 'medium':  return 1000;
+      case 'hard':    return 400;
       case 'extreme': return 150;
-      default: return 800;
+      default:        return 800;
     }
   }
 
   void _showPaywall() {
-    // TODO: navigate to paywall screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("You've used all 5 free drawings today — come back tomorrow!")),
+    if (mounted) context.pushNamed('subscription');
+  }
+
+  Future<bool> _confirmLeave(BuildContext context, L10n l10n) async {
+    final canvas = ref.read(canvasProvider);
+    final hasProgress =
+        canvas.regionColors.isNotEmpty || canvas.strokes.isNotEmpty;
+    if (!hasProgress) return true;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.t('backConfirmTitle'),
+            style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
+        content: Text(l10n.t('backConfirmBody'),
+            style: GoogleFonts.nunito(fontSize: 14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.t('backConfirmStay'),
+                style: GoogleFonts.nunito(fontWeight: FontWeight.w700)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.t('backConfirmLeave'),
+                style: GoogleFonts.nunito(
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.error)),
+          ),
+        ],
+      ),
     );
+    return result ?? false;
   }
 
   @override
@@ -134,101 +162,128 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final isLandscape =
         MediaQuery.orientationOf(context) == Orientation.landscape;
 
-    return Scaffold(
-      backgroundColor: cs.surface,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          widget.args.displayLabel,
-          style: GoogleFonts.fredoka(fontWeight: FontWeight.w700, fontSize: 18),
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: [
-          IconButton(
-            icon: const Text('🎲', style: TextStyle(fontSize: 20)),
-            tooltip: l10n.t('regenBtn'),
-            onPressed: _isGenerating ? null : () => _generate(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final ok = await _confirmLeave(context, l10n);
+        if (ok && context.mounted) context.pop();
+      },
+      child: Scaffold(
+        backgroundColor: cs.surface,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () async {
+              final ok = await _confirmLeave(context, l10n);
+              if (ok && context.mounted) context.pop();
+            },
           ),
-          const SizedBox(width: 4),
-        ],
+          title: Text(
+            widget.args.displayLabel,
+            style:
+                GoogleFonts.fredoka(fontWeight: FontWeight.w700, fontSize: 18),
+            overflow: TextOverflow.ellipsis,
+          ),
+          actions: [
+            IconButton(
+              icon: const Text('🎲', style: TextStyle(fontSize: 20)),
+              tooltip: l10n.t('regenBtn'),
+              onPressed: _isGenerating ? null : () => _generate(),
+            ),
+            const SizedBox(width: 4),
+          ],
+        ),
+        body: SafeArea(
+          top: false,
+          bottom: false,
+          child: isLandscape
+              ? _buildLandscape(context, canvas, settings, l10n)
+              : _buildPortrait(context, canvas, settings, l10n),
+        ),
       ),
-      body: isLandscape
-          ? _buildLandscape(context, canvas, settings, l10n)
-          : _buildPortrait(context, canvas, settings, l10n),
     );
   }
 
+  // ─── Portrait layout ────────────────────────────────────────────────────────
+
   Widget _buildPortrait(BuildContext context, CanvasState canvas,
       SettingsState? settings, L10n l10n) {
+    final hasContent = canvas.hasImage || canvas.isReady;
     return Column(
       children: [
-        // Canvas area
+        // Canvas – fills all remaining space
         Expanded(
           child: Stack(
             children: [
               _buildCanvasArea(context, canvas),
               if (_hintVisible && canvas.isReady)
                 Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
+                  top: 0, left: 0, right: 0,
                   child: _buildHintBanner(context, l10n),
                 ),
               if (_isGenerating || canvas.isProcessing)
                 Positioned.fill(
                   child: LalaLoadingOverlay(
-                    message: l10n.t('generating', {'subject': widget.args.displayLabel}),
+                    message: l10n.t('generating',
+                        {'subject': widget.args.displayLabel}),
                   ),
                 ),
               if (_errorMsg != null)
-                Positioned.fill(child: _buildError(context)),
+                Positioned.fill(child: _buildError(context, l10n)),
             ],
           ),
         ),
-        // Action bar
-        _buildActionBar(context, canvas, settings, l10n),
-        // Color strip
-        if (canvas.isReady || canvas.hasImage)
-          _buildColorStrip(context, canvas, settings),
+        // Action bar + color strip: only shown once an image exists
+        if (hasContent) _buildActionBar(context, canvas, settings, l10n),
+        if (hasContent) _buildColorStrip(context, canvas, settings),
         SizedBox(height: MediaQuery.paddingOf(context).bottom),
       ],
     );
   }
 
+  // ─── Landscape layout ───────────────────────────────────────────────────────
+
   Widget _buildLandscape(BuildContext context, CanvasState canvas,
       SettingsState? settings, L10n l10n) {
+    final hasContent = canvas.hasImage || canvas.isReady;
     return Row(
       children: [
+        // Canvas column (action bar below canvas, NOT overlaid)
         Expanded(
-          child: Stack(
+          child: Column(
             children: [
-              _buildCanvasArea(context, canvas),
-              if (_hintVisible && canvas.isReady)
-                Positioned(
-                    top: 0, left: 0, right: 0,
-                    child: _buildHintBanner(context, l10n)),
-              if (_isGenerating || canvas.isProcessing)
-                Positioned.fill(
-                    child: LalaLoadingOverlay(
-                        message: l10n.t('generating',
-                            {'subject': widget.args.displayLabel}))),
-              if (_errorMsg != null)
-                Positioned.fill(child: _buildError(context)),
-              Positioned(
-                  bottom: 0, left: 0, right: 0,
-                  child: _buildActionBar(context, canvas, settings, l10n)),
+              Expanded(
+                child: Stack(
+                  children: [
+                    _buildCanvasArea(context, canvas),
+                    if (_hintVisible && canvas.isReady)
+                      Positioned(
+                          top: 0, left: 0, right: 0,
+                          child: _buildHintBanner(context, l10n)),
+                    if (_isGenerating || canvas.isProcessing)
+                      Positioned.fill(
+                          child: LalaLoadingOverlay(
+                              message: l10n.t('generating',
+                                  {'subject': widget.args.displayLabel}))),
+                    if (_errorMsg != null)
+                      Positioned.fill(child: _buildError(context, l10n)),
+                  ],
+                ),
+              ),
+              if (hasContent)
+                _buildActionBar(context, canvas, settings, l10n),
+              SizedBox(height: MediaQuery.paddingOf(context).bottom),
             ],
           ),
         ),
-        // Sidebar color palette on landscape
-        if (canvas.isReady || canvas.hasImage)
-          _buildColorSidebar(context, canvas, settings),
+        // Color sidebar – visible only after image loads
+        if (hasContent) _buildColorSidebar(context, canvas, settings),
       ],
     );
   }
+
+  // ─── Canvas area ─────────────────────────────────────────────────────────────
 
   Widget _buildCanvasArea(BuildContext context, CanvasState canvas) {
     final cs = Theme.of(context).colorScheme;
@@ -244,16 +299,21 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     return LayoutBuilder(builder: (ctx, constraints) {
       final size = Size(constraints.maxWidth, constraints.maxHeight);
       return GestureDetector(
-        onTapUp: canvas.mode == DrawMode.tap ? (d) => _onTap(d.localPosition, size, canvas) : null,
+        onTapUp: canvas.mode == DrawMode.tap
+            ? (d) => _onTap(d.localPosition, size)
+            : null,
         onPanStart: canvas.mode == DrawMode.paint
-            ? (d) => _onPanStart(d.localPosition, size, canvas)
+            ? (d) => _onPanUpdate(d.localPosition, size)
             : canvas.mode == DrawMode.pencil
-                ? (d) => ref.read(canvasProvider.notifier).beginStroke(d.localPosition)
+                ? (d) =>
+                    ref.read(canvasProvider.notifier).beginStroke(d.localPosition)
                 : null,
         onPanUpdate: canvas.mode == DrawMode.paint
-            ? (d) => _onPanUpdate(d.localPosition, size, canvas)
+            ? (d) => _onPanUpdate(d.localPosition, size)
             : canvas.mode == DrawMode.pencil
-                ? (d) => ref.read(canvasProvider.notifier).continueStroke(d.localPosition)
+                ? (d) => ref
+                    .read(canvasProvider.notifier)
+                    .continueStroke(d.localPosition)
                 : null,
         onPanEnd: canvas.mode != DrawMode.tap
             ? (_) => ref.read(canvasProvider.notifier).endStroke()
@@ -266,28 +326,28 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     });
   }
 
-  void _onTap(Offset pos, Size size, CanvasState canvas) {
+  void _onTap(Offset pos, Size size) {
     final nx = pos.dx / size.width;
     final ny = pos.dy / size.height;
-    final regionId = ref.read(canvasProvider.notifier).regionAtNormalized(nx, ny);
+    final regionId =
+        ref.read(canvasProvider.notifier).regionAtNormalized(nx, ny);
     if (regionId != null) {
       HapticFeedback.lightImpact();
       ref.read(canvasProvider.notifier).fillRegion(regionId);
     }
   }
 
-  void _onPanStart(Offset pos, Size size, CanvasState canvas) {
-    _onPanUpdate(pos, size, canvas);
-  }
-
-  void _onPanUpdate(Offset pos, Size size, CanvasState canvas) {
+  void _onPanUpdate(Offset pos, Size size) {
     final nx = pos.dx / size.width;
     final ny = pos.dy / size.height;
-    final regionId = ref.read(canvasProvider.notifier).regionAtNormalized(nx, ny);
+    final regionId =
+        ref.read(canvasProvider.notifier).regionAtNormalized(nx, ny);
     if (regionId != null) {
       ref.read(canvasProvider.notifier).fillRegion(regionId);
     }
   }
+
+  // ─── Hint banner ─────────────────────────────────────────────────────────────
 
   Widget _buildHintBanner(BuildContext context, L10n l10n) {
     final cs = Theme.of(context).colorScheme;
@@ -299,6 +359,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         decoration: BoxDecoration(
           color: cs.primaryContainer,
           borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -309,12 +376,16 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                     fontSize: 13, color: cs.onPrimaryContainer),
               ),
             ),
-            Icon(Icons.close_rounded, size: 16, color: cs.onPrimaryContainer),
+            Icon(Icons.close_rounded,
+                size: 16, color: cs.onPrimaryContainer),
           ],
         ),
       ),
     );
   }
+
+  // ─── Action bar ──────────────────────────────────────────────────────────────
+  // Scrollable row so it never overflows on small screens.
 
   Widget _buildActionBar(BuildContext context, CanvasState canvas,
       SettingsState? settings, L10n l10n) {
@@ -322,72 +393,95 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final mode = canvas.mode;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      height: 52,
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border(top: BorderSide(color: cs.outlineVariant, width: 0.5)),
+        border: Border(
+            top: BorderSide(color: cs.outlineVariant, width: 0.5)),
       ),
-      child: Row(
-        children: [
-          // Undo
-          _ActionBtn(
-            label: l10n.t('undoBtn'),
-            onTap: canvas.undoStack.isEmpty
-                ? null
-                : () => ref.read(canvasProvider.notifier).undo(),
-          ),
-          const SizedBox(width: 8),
-          // Mode toggle
-          _ModeToggle(
-            mode: mode,
-            onTap: () => ref.read(canvasProvider.notifier).setMode(
-                mode == DrawMode.tap ? DrawMode.paint : DrawMode.tap),
-            tapLabel: l10n.t('tapModeBtn'),
-            paintLabel: l10n.t('paintModeBtn'),
-          ),
-          const Spacer(),
-          // Pencil
-          _ActionBtn(
-            label: l10n.t('pencilBtn'),
-            active: mode == DrawMode.pencil,
-            onTap: () => ref.read(canvasProvider.notifier).setMode(
-                mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
-          ),
-          const SizedBox(width: 8),
-          // Save
-          _ActionBtn(
-            label: l10n.t('saveBtn'),
-            onTap: canvas.isReady ? () => _saveArtwork(canvas) : null,
-          ),
-          const SizedBox(width: 8),
-          // Share
-          _ActionBtn(
-            label: l10n.t('shareArtBtn'),
-            onTap: canvas.isReady ? () => _shareArtwork(canvas) : null,
-          ),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Row(
+          children: [
+            // Undo
+            _ActionBtn(
+              label: l10n.t('undoBtn'),
+              onTap: canvas.undoStack.isEmpty
+                  ? null
+                  : () => ref.read(canvasProvider.notifier).undo(),
+            ),
+            const SizedBox(width: 6),
+            // Tap / Paint mode toggle
+            _ModeToggle(
+              mode: mode,
+              onTap: () => ref.read(canvasProvider.notifier).setMode(
+                  mode == DrawMode.tap ? DrawMode.paint : DrawMode.tap),
+              tapLabel: l10n.t('tapModeBtn'),
+              paintLabel: l10n.t('paintModeBtn'),
+            ),
+            const SizedBox(width: 6),
+            // Pencil / freehand
+            _ActionBtn(
+              label: l10n.t('pencilBtn'),
+              active: mode == DrawMode.pencil,
+              onTap: () => ref.read(canvasProvider.notifier).setMode(
+                  mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
+            ),
+            const SizedBox(width: 6),
+            // Print (stub – opens a SnackBar for now)
+            _ActionBtn(
+              label: l10n.t('printBtn'),
+              onTap: canvas.isReady
+                  ? () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '🖨️ Print coming soon!',
+                            style: GoogleFonts.nunito(),
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  : null,
+            ),
+            const SizedBox(width: 6),
+            // Save
+            _ActionBtn(
+              label: l10n.t('saveBtn'),
+              onTap: canvas.isReady ? () => _saveArtwork(canvas) : null,
+            ),
+            const SizedBox(width: 6),
+            // Share art
+            _ActionBtn(
+              label: l10n.t('shareArtBtn'),
+              onTap: canvas.isReady ? () => _shareArtwork(canvas) : null,
+            ),
+          ],
+        ),
       ),
     );
   }
 
+  // ─── Color strip (portrait) ──────────────────────────────────────────────────
+
   Widget _buildColorStrip(
       BuildContext context, CanvasState canvas, SettingsState? settings) {
-    final paletteName = settings?.palette ?? 'classic';
-    final colors = _getPaletteColors(paletteName, settings?.colorCount ?? 12);
+    final cs = Theme.of(context).colorScheme;
+    final colors =
+        _getPaletteColors(settings?.palette ?? 'classic', settings?.colorCount ?? 12);
 
     return Container(
-      height: 66,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      height: 64,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: cs.surface,
         border: Border(
-            top: BorderSide(
-                color: Theme.of(context).colorScheme.outlineVariant,
-                width: 0.5)),
+            top: BorderSide(color: cs.outlineVariant, width: 0.5)),
       ),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         itemCount: colors.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (ctx, i) => LalaColorSwatch(
@@ -401,21 +495,23 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     );
   }
 
+  // ─── Color sidebar (landscape) ───────────────────────────────────────────────
+
   Widget _buildColorSidebar(BuildContext context, CanvasState canvas,
       SettingsState? settings) {
-    final paletteName = settings?.palette ?? 'classic';
-    final colors = _getPaletteColors(paletteName, settings?.colorCount ?? 12);
+    final cs = Theme.of(context).colorScheme;
+    final colors =
+        _getPaletteColors(settings?.palette ?? 'classic', settings?.colorCount ?? 12);
+
     return Container(
-      width: 72,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      width: 68,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: cs.surface,
         border: Border(
-            left: BorderSide(
-                color: Theme.of(context).colorScheme.outlineVariant,
-                width: 0.5)),
+            left: BorderSide(color: cs.outlineVariant, width: 0.5)),
       ),
       child: ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: 10),
         itemCount: colors.length,
         separatorBuilder: (_, __) => const SizedBox(height: 8),
         itemBuilder: (ctx, i) => Center(
@@ -431,7 +527,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     );
   }
 
-  Widget _buildError(BuildContext context) {
+  // ─── Error state ─────────────────────────────────────────────────────────────
+
+  Widget _buildError(BuildContext context, L10n l10n) {
     final cs = Theme.of(context).colorScheme;
     return Container(
       color: cs.surface,
@@ -446,14 +544,15 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               Text(
                 _errorMsg ?? 'Something went wrong',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.nunito(fontSize: 16),
+                style: GoogleFonts.nunito(fontSize: 15),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () => _generate(),
                 child: Text(
-                  'Try again',
-                  style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
+                  '🎲 ${l10n.t('regenBtn')}',
+                  style:
+                      GoogleFonts.fredoka(fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -462,6 +561,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       ),
     );
   }
+
+  // ─── Save / Share ─────────────────────────────────────────────────────────────
 
   Future<void> _saveArtwork(CanvasState canvas) async {
     try {
@@ -473,7 +574,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       await file.writeAsBytes(bytes);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Saved to gallery!')),
+          SnackBar(
+            content: Text('💾 Saved!', style: GoogleFonts.nunito()),
+            duration: const Duration(seconds: 2),
+          ),
         );
       }
     } catch (e) {
@@ -492,9 +596,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       final file = XFile.fromData(bytes,
           mimeType: 'image/png',
           name: 'lalabuba_${widget.args.displayLabel}.png');
-      await Share.shareXFiles([file], text: 'Check out my Lalabuba artwork!');
-    } catch (e) {
-      // ignore share cancel
+      await Share.shareXFiles([file],
+          text: '🎨 I colored ${widget.args.displayLabel} with Lalabuba!');
+    } catch (_) {
+      // Ignore share cancel
     }
   }
 
@@ -505,8 +610,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     return byteData?.buffer.asUint8List();
   }
 
+  // ─── Palette ──────────────────────────────────────────────────────────────────
+
   List<Color> _getPaletteColors(String palette, int count) {
-    // Colours for each palette — fallback to classic
     const classic = [
       Color(0xFFFF4757), Color(0xFFFF7043), Color(0xFFFFCA28), Color(0xFF26C281),
       Color(0xFF1E90FF), Color(0xFF7C4DFF), Color(0xFFE91E63), Color(0xFF00BCD4),
@@ -537,13 +643,14 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         : palette == 'nature'
             ? nature
             : classic;
-
-    final effectiveCount = count == 99 ? src.length : count.clamp(1, src.length);
+    final effectiveCount =
+        count == 99 ? src.length : count.clamp(1, src.length);
     return src.take(effectiveCount).toList();
   }
 }
 
-// Small action button widget
+// ─── Helper widgets ───────────────────────────────────────────────────────────
+
 class _ActionBtn extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
@@ -557,7 +664,7 @@ class _ActionBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: active ? cs.primaryContainer : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
@@ -568,7 +675,7 @@ class _ActionBtn extends StatelessWidget {
             fontSize: 12,
             fontWeight: FontWeight.w700,
             color: onTap == null
-                ? cs.onSurface.withValues(alpha: 0.35)
+                ? cs.onSurface.withValues(alpha: 0.3)
                 : active
                     ? cs.onPrimaryContainer
                     : cs.onSurface,
@@ -599,11 +706,11 @@ class _ModeToggle extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest,
+          color: cs.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: cs.outline.withValues(alpha: 0.3)),
+          border: Border.all(color: cs.primary.withValues(alpha: 0.35)),
         ),
         child: Text(
           isTap ? tapLabel : paintLabel,
@@ -616,4 +723,3 @@ class _ModeToggle extends StatelessWidget {
     );
   }
 }
-

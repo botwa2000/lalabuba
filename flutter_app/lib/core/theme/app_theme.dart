@@ -83,16 +83,48 @@ class AppTheme {
 
   static ThemeData _build(LalaColors c, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final colorScheme = ColorScheme(
+
+    // Start from M3 seed to get all container/tonal palette values,
+    // then override with exact brand colours so they're consistent throughout the app.
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: c.primary,
       brightness: brightness,
+    ).copyWith(
       primary: c.primary,
       onPrimary: Colors.white,
+      // primaryContainer: light lavender / dark deep-purple – used in daily pill, hint banner
+      primaryContainer: isDark
+          ? Color.lerp(c.surface, c.primary, 0.25)!
+          : Color.lerp(c.primary, Colors.white, 0.88)!,
+      onPrimaryContainer: isDark ? c.primary : c.primaryDark,
       secondary: c.secondary,
       onSecondary: Colors.white,
+      secondaryContainer: isDark
+          ? Color.lerp(c.surface, c.secondary, 0.22)!
+          : Color.lerp(c.secondary, Colors.white, 0.88)!,
+      onSecondaryContainer: isDark
+          ? c.secondary
+          : Color.lerp(c.secondary, Colors.black, 0.38)!,
+      tertiary: c.success,
+      onTertiary: Colors.white,
       error: c.error,
       onError: Colors.white,
       surface: c.surface,
       onSurface: c.ink,
+      onSurfaceVariant: c.muted,
+      // Surface containers: lowest→highest go from barely-tinted to surfaceVariant
+      surfaceContainerLowest: isDark
+          ? Color.lerp(c.surface, Colors.black, 0.25)!
+          : c.surface,
+      surfaceContainerLow: isDark
+          ? Color.lerp(c.surface, Colors.black, 0.15)!
+          : Color.lerp(c.surface, c.surfaceVariant, 0.35)!,
+      surfaceContainer: Color.lerp(c.surface, c.surfaceVariant, 0.55)!,
+      surfaceContainerHigh: Color.lerp(c.surface, c.surfaceVariant, 0.75)!,
+      surfaceContainerHighest: c.surfaceVariant,
+      // Use our brand border colour for outlines
+      outlineVariant: c.border,
+      outline: isDark ? c.muted.withValues(alpha: 0.6) : c.border,
     );
 
     final textTheme = GoogleFonts.nunitoTextTheme(
@@ -126,6 +158,7 @@ class AppTheme {
         foregroundColor: c.ink,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
         titleTextStyle: GoogleFonts.fredoka(
           color: c.ink,
           fontSize: 20,
@@ -181,7 +214,7 @@ class AppTheme {
   }
 }
 
-// Extension for quick color access anywhere
+// Extension for quick LalaColors access anywhere in the tree
 extension ThemeX on BuildContext {
   LalaColors get lala => _LalaColorsScope.of(this);
 }
