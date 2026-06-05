@@ -86,7 +86,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       final minArea = _minAreaFor(settings?.difficulty ?? 'medium');
       await ref
           .read(canvasProvider.notifier)
-          .loadImage(result.imageBytes, minArea);
+          .loadImage(result.imageBytes, minArea,
+              showNumbers: settings?.showNumbers ?? true);
 
       await ref.read(subscriptionProvider.notifier).recordGeneration();
 

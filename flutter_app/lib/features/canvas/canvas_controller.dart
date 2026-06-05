@@ -13,8 +13,8 @@ class CanvasNotifier extends Notifier<CanvasState> {
   @override
   CanvasState build() => const CanvasState();
 
-  Future<void> loadImage(Uint8List imageBytes, int minArea) async {
-    state = const CanvasState(isProcessing: true);
+  Future<void> loadImage(Uint8List imageBytes, int minArea, {bool showNumbers = true}) async {
+    state = CanvasState(isProcessing: true, showNumbers: showNumbers);
 
     final codec = await ui.instantiateImageCodec(imageBytes);
     final frame = await codec.getNextFrame();
