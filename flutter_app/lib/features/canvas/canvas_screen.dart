@@ -42,8 +42,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   String? _errorMsg;
   bool _hintVisible = true;
   String _subject = '';
-  int? _currentSeed;       // seed returned by the API — used to build challenge URL
-  String? _currentBlobUrl; // blob URL from API — optional direct-image link
+  int? _currentSeed; // seed returned by the API — used to build challenge URL
 
   @override
   void initState() {
@@ -94,7 +93,6 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           _isGenerating = false;
           _hintVisible = true;
           _currentSeed = result.seed;
-          _currentBlobUrl = result.blobUrl;
         });
         Future.delayed(const Duration(seconds: 4), () {
           if (mounted) setState(() => _hintVisible = false);

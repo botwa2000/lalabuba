@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -198,6 +199,7 @@ class SettingsScreen extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     return Card(
       child: ListTile(
+        onTap: () => context.pushNamed('subscription'),
         leading: const Text('⭐', style: TextStyle(fontSize: 24)),
         title: Text(
           'Free tier',
@@ -210,8 +212,7 @@ class SettingsScreen extends ConsumerWidget {
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-                colors: [cs.primary, cs.secondary]),
+            gradient: LinearGradient(colors: [cs.primary, cs.secondary]),
             borderRadius: BorderRadius.circular(50),
           ),
           child: Text(

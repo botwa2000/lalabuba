@@ -17,7 +17,7 @@ class L10n {
   /// e.g. t('generating', {'subject': 'cat'}) → 'Drawing cat…'
   String t(String key, [Map<String, String>? args]) {
     String result = (_strings[key] as String?) ?? key;
-    args?.forEach((k, v) => result = result.replaceAll('{$key}', v).replaceAll('{$k}', v));
+    args?.forEach((k, v) => result = result.replaceAll('{$k}', v));
     return result;
   }
 

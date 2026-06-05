@@ -567,19 +567,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Section label
-        Padding(
-          padding: const EdgeInsets.fromLTRB(14, 0, 14, 4),
-          child: Text(
-            l10n.t('diffLabel'),
-            style: GoogleFonts.nunito(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface.withValues(alpha: 0.38),
-              letterSpacing: 0.8,
-            ),
-          ),
-        ),
         // Scrollable chip row with fade edges to hint at scrollability
         ShaderMask(
           shaderCallback: (bounds) => LinearGradient(
