@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -43,6 +44,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   bool _hintVisible = true;
   String _subject = '';
   int? _currentSeed; // seed returned by the API — used to build challenge URL
+  final _canvasKey = GlobalKey(); // RepaintBoundary key for full capture
 
   @override
   void initState() {
@@ -320,9 +322,12 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         onPanEnd: canvas.mode != DrawMode.tap
             ? (_) => ref.read(canvasProvider.notifier).endStroke()
             : null,
-        child: CustomPaint(
-          size: size,
-          painter: CanvasPainter(canvas),
+        child: RepaintBoundary(
+          key: _canvasKey,
+          child: CustomPaint(
+            size: size,
+            painter: CanvasPainter(canvas),
+          ),
         ),
       );
     });
@@ -646,7 +651,21 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     }
   }
 
+  // Captures the full painted canvas — flood fills + pencil strokes + numbers.
+  // Falls back to compositeImage if the boundary hasn't been laid out yet.
   Future<Uint8List?> _captureCanvas(CanvasState canvas) async {
+    try {
+      final boundary =
+          _canvasKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary != null) {
+        final image = await boundary.toImage(pixelRatio: 3.0);
+        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+        image.dispose();
+        return byteData?.buffer.asUint8List();
+      }
+    } catch (_) {
+      // Fall through to compositeImage fallback
+    }
     final img = canvas.compositeImage;
     if (img == null) return null;
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
