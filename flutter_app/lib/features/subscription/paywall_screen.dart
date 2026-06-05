@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/l10n/l10n_service.dart';
 
@@ -68,7 +69,7 @@ class PaywallScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               // Dismiss
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.pop(),
                 child: Text(
                   l10n.t('subscribeLater'),
                   style: GoogleFonts.nunito(
