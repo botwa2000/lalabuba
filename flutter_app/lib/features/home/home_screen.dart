@@ -460,7 +460,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     final cs = Theme.of(context).colorScheme;
     final settings = settingsAsync.valueOrNull;
-    final ents = sub?.entitlements;
 
     return Container(
       decoration: BoxDecoration(
@@ -476,10 +475,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Prompt input row
+          // ── Row 1: Full-width prompt input + surprise-me ──────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: LalaTextField(
@@ -490,7 +490,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Surprise me
+                // Surprise me — lives here, never crowds the input
                 _buildIconPill(
                   context,
                   '💡',
@@ -502,56 +502,111 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     if (s.isNotEmpty) _fillSubject(s);
                   },
                 ),
-                const SizedBox(width: 8),
-                // Draw button
-                GestureDetector(
+              ],
+            ),
+          ),
+          // ── Row 2: Prominent full-width Draw button ───────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: double.infinity,
+              height: 52,
+              decoration: BoxDecoration(
+                color: _canDraw
+                    ? cs.primary
+                    : cs.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: _canDraw
+                    ? [
+                        BoxShadow(
+                            color: cs.primary.withValues(alpha: 0.35),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4)),
+                      ]
+                    : null,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
                   onTap: _canDraw ? _onDraw : null,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 18, vertical: 11),
-                    decoration: BoxDecoration(
-                      color: _canDraw
-                          ? cs.primary
-                          : cs.primary.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(50),
-                      boxShadow: _canDraw
-                          ? [
-                              BoxShadow(
-                                  color: cs.primary.withValues(alpha: 0.38),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4)),
-                            ]
-                          : null,
-                    ),
+                  child: Center(
                     child: Text(
                       l10n.t('drawBtn'),
                       style: GoogleFonts.fredoka(
-                        color: Colors.white,
-                        fontSize: 15,
+                        color: _canDraw
+                            ? Colors.white
+                            : cs.onSurface.withValues(alpha: 0.35),
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-          // Settings chips row
-          SingleChildScrollView(
+          // ── Row 3: Settings chips (tap to cycle) ─────────────────────────
+          _buildSettingsChips(context, cs, l10n, settings, sub),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsChips(
+    BuildContext context,
+    ColorScheme cs,
+    L10n l10n,
+    SettingsState? settings,
+    SubscriptionState? sub,
+  ) {
+    final ents = sub?.entitlements;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Section label
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 4),
+          child: Text(
+            l10n.t('diffLabel'),
+            style: GoogleFonts.nunito(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface.withValues(alpha: 0.38),
+              letterSpacing: 0.8,
+            ),
+          ),
+        ),
+        // Scrollable chip row with fade edges to hint at scrollability
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            stops: const [0.0, 0.04, 0.92, 1.0],
+            colors: [
+              cs.surface,
+              Colors.transparent,
+              Colors.transparent,
+              cs.surface,
+            ],
+          ).createShader(bounds),
+          blendMode: BlendMode.dstOut,
+          child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(12, 2, 12, 10),
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
             child: Row(
               children: [
+                // Difficulty — cycles on tap, no persistent selected state
                 LalaChip(
                   label: _diffLabel(settings?.difficulty ?? 'medium', l10n),
-                  selected: true,
                   onTap: () => ref
                       .read(settingsProvider.notifier)
                       .cycleDifficulty(
                           ents?.difficulties ?? ['easy', 'medium']),
                 ),
                 const SizedBox(width: 6),
+                // Palette
                 LalaChip(
                   label: _palLabel(settings?.palette ?? 'classic'),
                   onTap: () => ref
@@ -559,6 +614,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       .cyclePalette(ents?.palettes ?? ['classic']),
                 ),
                 const SizedBox(width: 6),
+                // Colour count
                 LalaChip(
                   label: _cntLabel(settings?.colorCount ?? 12),
                   onTap: () => ref
@@ -566,6 +622,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       .cycleColorCount([6, 12, 18, 24]),
                 ),
                 const SizedBox(width: 6),
+                // Numbers toggle — this one IS a true toggle with on/off state
                 LalaChip(
                   label: settings?.showNumbers == true
                       ? '🔢 ${l10n.t('numbersOn')}'
@@ -574,11 +631,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onTap: () =>
                       ref.read(settingsProvider.notifier).toggleNumbers(),
                 ),
+                const SizedBox(width: 6),
+                // Settings shortcut
+                LalaChip(
+                  label: l10n.t('settingsBtn'),
+                  onTap: () => context.pushNamed('settings'),
+                ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
