@@ -118,11 +118,25 @@ class CanvasNotifier extends Notifier<CanvasState> {
     return completer.future;
   }
 
-  int? regionAtNormalized(double nx, double ny) {
+  /// Maps a canvas-space [pos] (from GestureDetector localPosition) to a
+  /// region id, accounting for the letterbox rect used by the painter.
+  int? regionAtOffset(Offset pos, Size canvasSize) {
     final d = state.detection;
     if (d == null) return null;
+
+    final displayRect = fitImageRect(
+      d.width.toDouble(), d.height.toDouble(),
+      canvasSize.width, canvasSize.height,
+    );
+
+    // Ignore taps that land in the letterbox margins outside the image
+    if (!displayRect.contains(pos)) return null;
+
+    final nx = (pos.dx - displayRect.left) / displayRect.width;
+    final ny = (pos.dy - displayRect.top) / displayRect.height;
     final x = (nx * d.width).round().clamp(0, d.width - 1);
     final y = (ny * d.height).round().clamp(0, d.height - 1);
+
     final idx = y * d.width + x;
     final r = d.pixelToRegion[idx];
     if (r < 0 || r == d.backgroundRegionId) return null;

@@ -2,6 +2,23 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
+/// Returns the letterbox [Rect] for an [imgW]×[imgH] image displayed inside
+/// a [canvasW]×[canvasH] viewport, preserving aspect ratio (contain-fit).
+Rect fitImageRect(double imgW, double imgH, double canvasW, double canvasH) {
+  if (imgW <= 0 || imgH <= 0 || canvasW <= 0 || canvasH <= 0) {
+    return Rect.fromLTWH(0, 0, canvasW, canvasH);
+  }
+  final imgAspect = imgW / imgH;
+  final canvasAspect = canvasW / canvasH;
+  if (imgAspect > canvasAspect) {
+    final h = canvasW / imgAspect;
+    return Rect.fromLTWH(0, (canvasH - h) / 2, canvasW, h);
+  } else {
+    final w = canvasH * imgAspect;
+    return Rect.fromLTWH((canvasW - w) / 2, 0, w, canvasH);
+  }
+}
+
 enum DrawMode { tap, paint, pencil }
 
 class Region {
@@ -37,7 +54,8 @@ class RegionDetectionResult {
   final int width;
   final int height;
   final int backgroundRegionId;         // id of the outer background region
-  final Map<int, int> regionColorMap;   // regionId → ARGB32 int (pre-assigned palette)
+  final Map<int, int> regionColorMap;       // regionId → ARGB32 int (pre-assigned palette)
+  final Map<int, int> regionPaletteIndex;   // regionId → 0-based palette index (for number display)
 
   const RegionDetectionResult({
     required this.pixelToRegion,
@@ -46,6 +64,7 @@ class RegionDetectionResult {
     required this.height,
     this.backgroundRegionId = 0,
     this.regionColorMap = const {},
+    this.regionPaletteIndex = const {},
   });
 }
 

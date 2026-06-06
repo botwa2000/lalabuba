@@ -238,15 +238,21 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   // Fallback: largest region (id=0 after sort)
   final backgroundRegionId = bgOrigId >= 0 ? bgOrigId : 0;
 
-  // ── 7. Color assignment ──
+  // ── 7. Color assignment — sequential round-robin ──
+  // Coloring pages have white/near-white fill regions so nearest-palette would
+  // assign ALL regions to the SAME color. Sequential assignment ensures each
+  // region gets a distinct, meaningful palette position for enforcement to work.
   final regionColorMap = <int, int>{};
+  final regionPaletteIndex = <int, int>{};
   if (palette.isNotEmpty) {
+    var colorIdx = 0;
     for (var i = 0; i < rawRegions.length; i++) {
-      final newId = i; // already sorted
+      final newId = i;
       if (newId == backgroundRegionId) continue;
-      final rd = rawRegions[i];
-      final paletteIdx = _nearestPalette(rd.avgR, rd.avgG, rd.avgB, palette);
+      final paletteIdx = colorIdx % palette.length;
       regionColorMap[newId] = palette[paletteIdx];
+      regionPaletteIndex[newId] = paletteIdx;
+      colorIdx++;
     }
   }
 
@@ -257,28 +263,8 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     height: h,
     backgroundRegionId: backgroundRegionId,
     regionColorMap: regionColorMap,
+    regionPaletteIndex: regionPaletteIndex,
   );
-}
-
-// Returns the index into [palette] whose color is closest to (r, g, b)
-// using squared Euclidean distance in RGB space.
-int _nearestPalette(int r, int g, int b, List<int> palette) {
-  var bestIdx = 0;
-  var bestDist = 0x7FFFFFFF;
-  for (var i = 0; i < palette.length; i++) {
-    final pr = (palette[i] >> 16) & 0xFF;
-    final pg = (palette[i] >> 8) & 0xFF;
-    final pb = palette[i] & 0xFF;
-    final dr = r - pr;
-    final dg = g - pg;
-    final db = b - pb;
-    final dist = dr * dr + dg * dg + db * db;
-    if (dist < bestDist) {
-      bestDist = dist;
-      bestIdx = i;
-    }
-  }
-  return bestIdx;
 }
 
 // ── 8. Composite image generation — unchanged from original ──

@@ -46,12 +46,19 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   String _subject = '';
   int? _currentSeed;
   final _canvasKey = GlobalKey();
+  final _transformCtrl = TransformationController();
 
   @override
   void initState() {
     super.initState();
     _subject = widget.args.subject;
     WidgetsBinding.instance.addPostFrameCallback((_) => _generate());
+  }
+
+  @override
+  void dispose() {
+    _transformCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _generate({int? seed}) async {
@@ -300,8 +307,24 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     return Container(
       color: cs.surfaceContainerLow,
       child: canvas.isReady
-          ? _buildInteractiveCanvas(context, canvas)
+          ? _buildZoomableCanvas(context, canvas)
           : const SizedBox.expand(),
+    );
+  }
+
+  Widget _buildZoomableCanvas(BuildContext context, CanvasState canvas) {
+    // In paint/pencil mode: disable InteractiveViewer panning so single-finger
+    // drag goes to the drawing GestureDetector, not the pan handler.
+    final isPaintOrPencil =
+        canvas.mode == DrawMode.paint || canvas.mode == DrawMode.pencil;
+    return InteractiveViewer(
+      transformationController: _transformCtrl,
+      panEnabled: !isPaintOrPencil,
+      scaleEnabled: true,
+      minScale: 0.5,
+      maxScale: 6.0,
+      boundaryMargin: const EdgeInsets.all(40),
+      child: _buildInteractiveCanvas(context, canvas),
     );
   }
 
@@ -340,10 +363,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   }
 
   void _onTap(Offset pos, Size size) {
-    final nx = pos.dx / size.width;
-    final ny = pos.dy / size.height;
+    // pos is in canvas-space (InteractiveViewer handles the coordinate transform)
     final regionId =
-        ref.read(canvasProvider.notifier).regionAtNormalized(nx, ny);
+        ref.read(canvasProvider.notifier).regionAtOffset(pos, size);
     if (regionId != null) {
       HapticFeedback.lightImpact();
       ref.read(canvasProvider.notifier).fillRegion(regionId);
@@ -351,14 +373,23 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   }
 
   void _onPanUpdate(Offset pos, Size size) {
-    final nx = pos.dx / size.width;
-    final ny = pos.dy / size.height;
     final regionId =
-        ref.read(canvasProvider.notifier).regionAtNormalized(nx, ny);
+        ref.read(canvasProvider.notifier).regionAtOffset(pos, size);
     if (regionId != null) {
       ref.read(canvasProvider.notifier).fillRegion(regionId);
     }
   }
+
+  void _zoomBy(double factor) {
+    final current = _transformCtrl.value;
+    final currentScale = current.getMaxScaleOnAxis();
+    final newScale = (currentScale * factor).clamp(0.5, 6.0);
+    if ((newScale - currentScale).abs() < 0.001) return;
+    final actualFactor = newScale / currentScale;
+    _transformCtrl.value = current.clone()..scale(actualFactor, actualFactor);
+  }
+
+  void _resetZoom() => _transformCtrl.value = Matrix4.identity();
 
   // ─── Hint banner ─────────────────────────────────────────────────────────────
 
@@ -446,6 +477,36 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               onTap: () => ref.read(canvasProvider.notifier).setMode(
                   mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
             ),
+            const SizedBox(width: 8),
+            // Eraser — moved here from the palette so palette stays symmetric
+            _ActionBtn(
+              label: l10n.t('eraserBtn'),
+              active: canvas.activeColor == Colors.transparent,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                ref
+                    .read(canvasProvider.notifier)
+                    .setActiveColor(Colors.transparent);
+              },
+            ),
+            const SizedBox(width: 16),
+            Container(width: 1, height: 28, color: cs.outlineVariant),
+            const SizedBox(width: 16),
+            // Zoom controls
+            _ActionBtn(
+              label: l10n.t('zoomIn'),
+              onTap: () => _zoomBy(1.4),
+            ),
+            const SizedBox(width: 8),
+            _ActionBtn(
+              label: l10n.t('zoomOut'),
+              onTap: () => _zoomBy(1 / 1.4),
+            ),
+            const SizedBox(width: 8),
+            _ActionBtn(
+              label: l10n.t('zoomReset'),
+              onTap: _resetZoom,
+            ),
             const SizedBox(width: 16),
             Container(width: 1, height: 28, color: cs.outlineVariant),
             const SizedBox(width: 16),
@@ -501,7 +562,6 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         runSpacing: 8,
         alignment: WrapAlignment.center,
         children: [
-          _buildEraserSwatch(context, canvas, 40),
           for (final color in colors)
             LalaColorSwatch(
               color: color,
@@ -538,7 +598,6 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           runSpacing: 8,
           alignment: WrapAlignment.center,
           children: [
-            _buildEraserSwatch(context, canvas, 46),
             for (final color in colors)
               LalaColorSwatch(
                 color: color,
@@ -549,49 +608,6 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                     ref.read(canvasProvider.notifier).setActiveColor(color),
               ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // Eraser swatch: white circle with ✕ icon; red ring when active
-  Widget _buildEraserSwatch(
-      BuildContext context, CanvasState canvas, double size) {
-    final cs = Theme.of(context).colorScheme;
-    final isActive = canvas.activeColor == Colors.transparent;
-
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        ref.read(canvasProvider.notifier).setActiveColor(Colors.transparent);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: cs.surfaceContainerHighest,
-          border: Border.all(
-            color: isActive ? cs.error : cs.outlineVariant,
-            width: isActive ? 3.0 : 1.5,
-          ),
-          boxShadow: [
-            if (isActive)
-              BoxShadow(
-                  color: cs.error.withValues(alpha: 0.3),
-                  blurRadius: 10,
-                  spreadRadius: 3),
-            BoxShadow(
-                color: Colors.black.withValues(alpha: 0.10),
-                blurRadius: 4,
-                offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Icon(
-          Icons.backspace_outlined,
-          size: size * 0.42,
-          color: isActive ? cs.error : cs.onSurfaceVariant,
         ),
       ),
     );

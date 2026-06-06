@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'canvas_models.dart';
@@ -12,53 +13,56 @@ class CanvasPainter extends CustomPainter {
     final img = canvasState.compositeImage ?? canvasState.baseImage;
     if (img == null) return;
 
-    final src = Rect.fromLTWH(
-        0, 0, img.width.toDouble(), img.height.toDouble());
-    final dst = Rect.fromLTWH(0, 0, size.width, size.height);
+    final src = Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
+    // Letterbox-fit the image to preserve aspect ratio
+    final dst = fitImageRect(
+        img.width.toDouble(), img.height.toDouble(), size.width, size.height);
 
     canvas.drawImageRect(img, src, dst, Paint());
 
-    // Draw region numbers
+    // Draw region numbers using the letterboxed display rect for correct positions
     if (canvasState.showNumbers && canvasState.detection != null) {
-      _drawNumbers(canvas, size, canvasState.detection!);
+      _drawNumbers(canvas, size, canvasState.detection!, dst);
     }
 
     // Draw pencil strokes
     for (final stroke in canvasState.strokes) {
-      _drawStroke(canvas, size, stroke, canvasState.detection);
+      _drawStroke(canvas, stroke);
     }
     if (canvasState.currentStroke != null) {
-      _drawStroke(
-          canvas, size, canvasState.currentStroke!, canvasState.detection);
+      _drawStroke(canvas, canvasState.currentStroke!);
     }
   }
 
-  void _drawNumbers(
-      Canvas canvas, Size size, RegionDetectionResult detection) {
+  void _drawNumbers(Canvas canvas, Size size, RegionDetectionResult detection,
+      Rect displayRect) {
     final iw = detection.width.toDouble();
     final ih = detection.height.toDouble();
-    final scaleX = size.width / iw;
-    final scaleY = size.height / ih;
+    final scaleX = displayRect.width / iw;
+    final scaleY = displayRect.height / ih;
 
-    // Only show numbers for unfilled regions
     final filled = canvasState.regionColors;
-    final maxShow =
-        detection.regions.length.clamp(0, 40); // cap for performance
+    final maxShow = detection.regions.length.clamp(0, 40);
 
     for (var i = 0; i < maxShow; i++) {
       final region = detection.regions[i];
       if (filled.containsKey(region.id)) continue;
-      if (region.pixelCount < 200) continue; // too small to show number
+      if (region.pixelCount < 200) continue;
 
-      final cx = region.centroid.dx * scaleX;
-      final cy = region.centroid.dy * scaleY;
+      // Map centroid from image-space to canvas-space via letterbox rect
+      final cx = displayRect.left + region.centroid.dx * scaleX;
+      final cy = displayRect.top + region.centroid.dy * scaleY;
 
-      final label = (region.id + 1).toString();
+      // Show 1-based palette index so it matches the palette position in the UI
+      final pi = detection.regionPaletteIndex[region.id];
+      final label = pi != null ? (pi + 1).toString() : (region.id + 1).toString();
+
+      final fontSize = _numberSize(region.pixelCount, size);
       final textPainter = TextPainter(
         text: TextSpan(
           text: label,
           style: GoogleFonts.fredoka(
-            fontSize: _numberSize(region.pixelCount, size),
+            fontSize: fontSize,
             fontWeight: FontWeight.w700,
             color: Colors.black87,
           ),
@@ -66,31 +70,38 @@ class CanvasPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      // White background circle
-      final bgRadius = textPainter.width * 0.8;
+      // Visible background circle — large enough to contain the label
+      final bgRadius =
+          math.max(textPainter.width, textPainter.height) * 0.65 + 4;
+
       canvas.drawCircle(
           Offset(cx, cy),
           bgRadius,
           Paint()
-            ..color = Colors.white.withValues(alpha: 0.85)
+            ..color = Colors.white.withValues(alpha: 0.94)
             ..style = PaintingStyle.fill);
+
+      canvas.drawCircle(
+          Offset(cx, cy),
+          bgRadius,
+          Paint()
+            ..color = Colors.black.withValues(alpha: 0.22)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.2);
 
       textPainter.paint(
           canvas,
-          Offset(
-              cx - textPainter.width / 2, cy - textPainter.height / 2));
+          Offset(cx - textPainter.width / 2, cy - textPainter.height / 2));
     }
   }
 
   double _numberSize(int pixelCount, Size canvasSize) {
-    // Scale number size relative to region size and canvas
     final area = canvasSize.width * canvasSize.height;
     final fraction = pixelCount / area;
-    return (8 + fraction * 120).clamp(8.0, 20.0);
+    return (14.0 + fraction * 200).clamp(14.0, 30.0);
   }
 
-  void _drawStroke(Canvas canvas, Size size, Stroke stroke,
-      RegionDetectionResult? detection) {
+  void _drawStroke(Canvas canvas, Stroke stroke) {
     if (stroke.points.length < 2) return;
     final paint = Paint()
       ..color = stroke.color
@@ -109,8 +120,7 @@ class CanvasPainter extends CustomPainter {
       path.quadraticBezierTo(
           stroke.points[i].dx, stroke.points[i].dy, mid.dx, mid.dy);
     }
-    path.lineTo(
-        stroke.points.last.dx, stroke.points.last.dy);
+    path.lineTo(stroke.points.last.dx, stroke.points.last.dy);
     canvas.drawPath(path, paint);
   }
 

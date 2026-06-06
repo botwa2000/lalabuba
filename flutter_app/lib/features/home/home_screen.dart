@@ -22,11 +22,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _textCtrl = TextEditingController();
   final _focusNode = FocusNode();
   bool _canDraw = false;
+  // Holds the English prompt when a card is tapped (display shows localized label,
+  // but the API call uses the English prompt for consistent generation quality).
+  String? _englishSubjectOverride;
+  bool _programmaticFill = false;
 
   @override
   void initState() {
     super.initState();
     _textCtrl.addListener(() {
+      if (_programmaticFill) return;
+      // User typed manually — clear the card-tap override
+      if (_englishSubjectOverride != null) {
+        setState(() => _englishSubjectOverride = null);
+      }
       final has = _textCtrl.text.trim().isNotEmpty;
       if (has != _canDraw) setState(() => _canDraw = has);
       ref.read(homeProvider.notifier).setSubject(_textCtrl.text.trim());
@@ -41,21 +50,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onDraw() {
-    final subject = _textCtrl.text.trim();
-    if (subject.isEmpty) return;
+    final displayLabel = _textCtrl.text.trim();
+    if (displayLabel.isEmpty) return;
+    // Use the English prompt for generation if a card was tapped; otherwise
+    // send whatever the user typed (handles manual input + daily word).
+    final apiSubject = _englishSubjectOverride ?? displayLabel;
     _focusNode.unfocus();
     context.pushNamed(
       'canvas',
       extra: CanvasScreenArgs(
-        subject: subject,
-        displayLabel: subject,
+        subject: apiSubject,
+        displayLabel: displayLabel,
       ),
     );
   }
 
-  void _fillSubject(String text) {
+  void _fillSubject(String text, {String? englishOverride}) {
+    _programmaticFill = true;
+    _englishSubjectOverride = englishOverride;
     _textCtrl.text = text;
     _textCtrl.selection = TextSelection.collapsed(offset: text.length);
+    _programmaticFill = false;
     setState(() => _canDraw = text.isNotEmpty);
     ref.read(homeProvider.notifier).setSubject(text);
   }
@@ -334,7 +349,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onTap: () {
             HapticFeedback.selectionClick();
             ref.read(settingsProvider.notifier).cycleDifficulty(
-                  sub?.entitlements?.difficulties ?? ['easy', 'medium'],
+                  sub?.entitlements.difficulties ?? ['easy', 'medium'],
                 );
           },
         ),
@@ -487,7 +502,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               animationIndex: i,
               onTap: () {
                 HapticFeedback.lightImpact();
-                _fillSubject(card.englishPrompt);
+                // Show localized label in the text field; send English to API
+                _fillSubject(
+                  card.label(locale),
+                  englishOverride: card.englishPrompt,
+                );
               },
             );
           },
@@ -642,7 +661,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onTap: () => ref
                 .read(settingsProvider.notifier)
                 .cycleDifficulty(
-                    sub?.entitlements?.difficulties ?? ['easy', 'medium']),
+                    sub?.entitlements.difficulties ?? ['easy', 'medium']),
           ),
           LalaChip(
             label: _palLabel(settings?.palette ?? 'classic'),
