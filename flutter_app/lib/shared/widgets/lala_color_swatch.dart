@@ -85,9 +85,7 @@ class _LalaColorSwatchState extends State<LalaColorSwatch>
       child: AnimatedBuilder(
         animation: Listenable.merge([_scale, _pulseScale]),
         builder: (_, __) {
-          final tapV = widget.active
-              ? 1.3 * _scale.value.clamp(1.0, 1.6)
-              : _scale.value;
+          final tapV = _scale.value;
           final pulseV = widget.pulse ? _pulseScale.value : 1.0;
           final combined = tapV > pulseV ? tapV : pulseV;
 
@@ -117,17 +115,17 @@ class _LalaColorSwatchState extends State<LalaColorSwatch>
                         spreadRadius: 6),
                   ] else if (widget.active) ...[
                     BoxShadow(
-                        color: Colors.white, blurRadius: 0, spreadRadius: 3),
+                        color: Colors.white, blurRadius: 0, spreadRadius: 2),
                     BoxShadow(
-                        color: widget.color, blurRadius: 0, spreadRadius: 6),
+                        color: widget.color, blurRadius: 0, spreadRadius: 4),
                     BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.18),
+                        color: Colors.black.withValues(alpha: 0.35),
                         blurRadius: 0,
-                        spreadRadius: 9),
+                        spreadRadius: 6),
                     BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.28),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8)),
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4)),
                   ] else
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.18),

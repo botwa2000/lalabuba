@@ -252,9 +252,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             ],
           ),
         ),
-        if (hasContent) _buildActionBar(context, canvas, settings, l10n),
-        // Full-width color grid — all swatches visible, no scroll
-        if (hasContent) _buildColorGrid(context, canvas, settings),
+        if (hasContent) _buildDrawingPanel(context, canvas, settings, l10n),
+        if (hasContent) _buildActionBar(context, canvas, l10n),
         SizedBox(height: MediaQuery.paddingOf(context).bottom),
       ],
     );
@@ -290,13 +289,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                 ),
               ),
               if (hasContent)
-                _buildActionBar(context, canvas, settings, l10n),
+                _buildActionBar(context, canvas, l10n),
               SizedBox(height: MediaQuery.paddingOf(context).bottom),
             ],
           ),
         ),
-        // Right color sidebar — 2-column wrap, all colors visible
-        if (hasContent) _buildColorSidebar(context, canvas, settings),
+        // Right sidebar — drawing tools + colors
+        if (hasContent) _buildDrawingSidebar(context, canvas, settings, l10n),
       ],
     );
   }
@@ -430,19 +429,16 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     );
   }
 
-  // ─── Action bar ──────────────────────────────────────────────────────────────
+  // ─── Action bar (zoom + utilities) ──────────────────────────────────────────
 
-  Widget _buildActionBar(BuildContext context, CanvasState canvas,
-      SettingsState? settings, L10n l10n) {
+  Widget _buildActionBar(BuildContext context, CanvasState canvas, L10n l10n) {
     final cs = Theme.of(context).colorScheme;
-    final mode = canvas.mode;
 
     return Container(
-      height: 60,
+      height: 56,
       decoration: BoxDecoration(
         color: cs.surface,
-        border:
-            Border(top: BorderSide(color: cs.outlineVariant, width: 0.5)),
+        border: Border(top: BorderSide(color: cs.outlineVariant, width: 0.5)),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -455,86 +451,33 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           children: [
-            // Undo
-            _ActionBtn(
-              label: l10n.t('undoBtn'),
-              onTap: canvas.undoStack.isEmpty
-                  ? null
-                  : () => ref.read(canvasProvider.notifier).undo(),
-            ),
+            _ActionBtn(label: l10n.t('zoomIn'), onTap: () => _zoomBy(1.4)),
             const SizedBox(width: 8),
-            // Tap / Paint mode toggle
-            _ModeToggle(
-              mode: mode,
-              onTap: () => ref.read(canvasProvider.notifier).setMode(
-                  mode == DrawMode.tap ? DrawMode.paint : DrawMode.tap),
-              tapLabel: l10n.t('tapModeBtn'),
-              paintLabel: l10n.t('paintModeBtn'),
-            ),
+            _ActionBtn(label: l10n.t('zoomOut'), onTap: () => _zoomBy(1 / 1.4)),
             const SizedBox(width: 8),
-            // Pencil / freehand
-            _ActionBtn(
-              label: l10n.t('pencilBtn'),
-              active: mode == DrawMode.pencil,
-              onTap: () => ref.read(canvasProvider.notifier).setMode(
-                  mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
-            ),
-            const SizedBox(width: 8),
-            // Eraser — moved here from the palette so palette stays symmetric
-            _ActionBtn(
-              label: l10n.t('eraserBtn'),
-              active: canvas.activeColor == Colors.transparent,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                ref
-                    .read(canvasProvider.notifier)
-                    .setActiveColor(Colors.transparent);
-              },
-            ),
+            _ActionBtn(label: l10n.t('zoomReset'), onTap: _resetZoom),
             const SizedBox(width: 16),
             Container(width: 1, height: 28, color: cs.outlineVariant),
             const SizedBox(width: 16),
-            // Zoom controls
-            _ActionBtn(
-              label: l10n.t('zoomIn'),
-              onTap: () => _zoomBy(1.4),
-            ),
-            const SizedBox(width: 8),
-            _ActionBtn(
-              label: l10n.t('zoomOut'),
-              onTap: () => _zoomBy(1 / 1.4),
-            ),
-            const SizedBox(width: 8),
-            _ActionBtn(
-              label: l10n.t('zoomReset'),
-              onTap: _resetZoom,
-            ),
-            const SizedBox(width: 16),
-            Container(width: 1, height: 28, color: cs.outlineVariant),
-            const SizedBox(width: 16),
-            // Print
             _ActionBtn(
               label: l10n.t('printBtn'),
               onTap: canvas.isReady ? () => _printArtwork(canvas) : null,
             ),
             const SizedBox(width: 8),
-            // Save
             _ActionBtn(
               label: l10n.t('saveBtn'),
               onTap: canvas.isReady ? () => _saveArtwork(canvas) : null,
             ),
             const SizedBox(width: 8),
-            // Share artwork
             _ActionBtn(
               label: l10n.t('shareArtBtn'),
               onTap: canvas.isReady ? () => _shareArtwork(canvas) : null,
             ),
             const SizedBox(width: 8),
-            // Challenge → QR dialog
             _ActionBtn(
               label: l10n.t('challengeBtn'),
               onTap: (_currentSeed != null && canvas.isReady)
-                  ? () => _showChallengeDialog()
+                  ? _showChallengeDialog
                   : null,
             ),
           ],
@@ -543,74 +486,217 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     );
   }
 
-  // ─── Color grid (portrait — full width Wrap, all swatches visible) ──────────
+  // ─── Drawing panel (portrait — mode buttons + color swatches) ───────────────
 
-  Widget _buildColorGrid(BuildContext context, CanvasState canvas,
-      SettingsState? settings) {
+  Widget _buildDrawingPanel(BuildContext context, CanvasState canvas,
+      SettingsState? settings, L10n l10n) {
     final cs = Theme.of(context).colorScheme;
     final colors = _getPaletteColors(
         settings?.palette ?? 'classic', settings?.colorCount ?? 12);
     final hintColor = canvas.hintColor;
+    final mode = canvas.mode;
+    final isEraser = canvas.activeColor == Colors.transparent;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
       decoration: BoxDecoration(
         color: cs.surface,
-        border:
-            Border(top: BorderSide(color: cs.outlineVariant, width: 0.5)),
+        border: Border(top: BorderSide(color: cs.outlineVariant, width: 0.5)),
       ),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 8,
-        alignment: WrapAlignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          for (final color in colors)
-            LalaColorSwatch(
-              color: color,
-              size: 40,
-              active: canvas.activeColor == color,
-              pulse: hintColor != null && hintColor == color,
-              onTap: () =>
-                  ref.read(canvasProvider.notifier).setActiveColor(color),
+          // Drawing mode buttons row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _ActionBtn(
+                    label: l10n.t('tapModeBtn'),
+                    active: mode == DrawMode.tap && !isEraser,
+                    onTap: () {
+                      ref.read(canvasProvider.notifier).setMode(DrawMode.tap);
+                      if (isEraser && colors.isNotEmpty) {
+                        ref.read(canvasProvider.notifier).setActiveColor(colors.first);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ActionBtn(
+                    label: l10n.t('paintModeBtn'),
+                    active: mode == DrawMode.paint && !isEraser,
+                    onTap: () => ref.read(canvasProvider.notifier).setMode(DrawMode.paint),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ActionBtn(
+                    label: l10n.t('pencilBtn'),
+                    active: mode == DrawMode.pencil,
+                    onTap: () => ref.read(canvasProvider.notifier).setMode(
+                        mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ActionBtn(
+                    label: l10n.t('eraserBtn'),
+                    active: isEraser,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      ref.read(canvasProvider.notifier).setActiveColor(Colors.transparent);
+                      ref.read(canvasProvider.notifier).setMode(DrawMode.paint);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _ActionBtn(
+                  label: l10n.t('undoBtn'),
+                  onTap: canvas.undoStack.isEmpty
+                      ? null
+                      : () => ref.read(canvasProvider.notifier).undo(),
+                ),
+              ],
             ),
+          ),
+          // Color swatches
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 4, 10, 10),
+            child: Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.center,
+              children: [
+                for (final color in colors)
+                  LalaColorSwatch(
+                    color: color,
+                    size: 40,
+                    active: canvas.activeColor == color,
+                    pulse: hintColor != null && hintColor == color,
+                    onTap: () =>
+                        ref.read(canvasProvider.notifier).setActiveColor(color),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // ─── Color sidebar (landscape — 2-column wrap panel) ─────────────────────────
+  // ─── Drawing sidebar (landscape — mode buttons + colors) ─────────────────────
 
-  Widget _buildColorSidebar(BuildContext context, CanvasState canvas,
-      SettingsState? settings) {
+  Widget _buildDrawingSidebar(BuildContext context, CanvasState canvas,
+      SettingsState? settings, L10n l10n) {
     final cs = Theme.of(context).colorScheme;
     final colors = _getPaletteColors(
         settings?.palette ?? 'classic', settings?.colorCount ?? 12);
     final hintColor = canvas.hintColor;
+    final mode = canvas.mode;
+    final isEraser = canvas.activeColor == Colors.transparent;
 
     return Container(
-      width: 118,
+      width: 128,
       decoration: BoxDecoration(
         color: cs.surface,
         border: Border(left: BorderSide(color: cs.outlineVariant, width: 0.5)),
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
-        child: Wrap(
-          spacing: 6,
-          runSpacing: 8,
-          alignment: WrapAlignment.center,
-          children: [
-            for (final color in colors)
-              LalaColorSwatch(
-                color: color,
-                size: 46,
-                active: canvas.activeColor == color,
-                pulse: hintColor != null && hintColor == color,
-                onTap: () =>
-                    ref.read(canvasProvider.notifier).setActiveColor(color),
+      child: Column(
+        children: [
+          // Drawing mode buttons
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SidebarBtn(
+                        label: l10n.t('tapModeBtn'),
+                        active: mode == DrawMode.tap && !isEraser,
+                        onTap: () {
+                          ref.read(canvasProvider.notifier).setMode(DrawMode.tap);
+                          if (isEraser && colors.isNotEmpty) {
+                            ref.read(canvasProvider.notifier).setActiveColor(colors.first);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _SidebarBtn(
+                        label: l10n.t('paintModeBtn'),
+                        active: mode == DrawMode.paint && !isEraser,
+                        onTap: () =>
+                            ref.read(canvasProvider.notifier).setMode(DrawMode.paint),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SidebarBtn(
+                        label: l10n.t('pencilBtn'),
+                        active: mode == DrawMode.pencil,
+                        onTap: () => ref.read(canvasProvider.notifier).setMode(
+                            mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _SidebarBtn(
+                        label: l10n.t('eraserBtn'),
+                        active: isEraser,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          ref.read(canvasProvider.notifier).setActiveColor(Colors.transparent);
+                          ref.read(canvasProvider.notifier).setMode(DrawMode.paint);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: double.infinity,
+                  child: _SidebarBtn(
+                    label: l10n.t('undoBtn'),
+                    onTap: canvas.undoStack.isEmpty
+                        ? null
+                        : () => ref.read(canvasProvider.notifier).undo(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, thickness: 0.5, color: cs.outlineVariant),
+          // Color swatches
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.center,
+                children: [
+                  for (final color in colors)
+                    LalaColorSwatch(
+                      color: color,
+                      size: 44,
+                      active: canvas.activeColor == color,
+                      pulse: hintColor != null && hintColor == color,
+                      onTap: () =>
+                          ref.read(canvasProvider.notifier).setActiveColor(color),
+                    ),
+                ],
               ),
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -893,39 +979,39 @@ class _ActionBtn extends StatelessWidget {
   }
 }
 
-class _ModeToggle extends StatelessWidget {
-  final DrawMode mode;
-  final VoidCallback onTap;
-  final String tapLabel;
-  final String paintLabel;
+class _SidebarBtn extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+  final bool active;
 
-  const _ModeToggle({
-    required this.mode,
-    required this.onTap,
-    required this.tapLabel,
-    required this.paintLabel,
-  });
+  const _SidebarBtn({required this.label, this.onTap, this.active = false});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isTap = mode == DrawMode.tap;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        height: 34,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: cs.primary.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(22),
-          border:
-              Border.all(color: cs.primary.withValues(alpha: 0.4)),
+          color: active ? cs.primaryContainer : cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
-          isTap ? tapLabel : paintLabel,
+          label,
           style: GoogleFonts.fredoka(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: cs.primary),
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            color: onTap == null
+                ? cs.onSurface.withValues(alpha: 0.3)
+                : active
+                    ? cs.onPrimaryContainer
+                    : cs.onSurface,
+          ),
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
       ),
     );

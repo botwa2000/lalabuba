@@ -38,10 +38,10 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   final bufA = Uint8List.fromList(outlineMask);
   final bufB = Uint8List(w * h);
 
-  // Dilate 6 passes
+  // Dilate 8 passes
   Uint8List cur = bufA;
   Uint8List nxt = bufB;
-  for (var pass = 0; pass < 6; pass++) {
+  for (var pass = 0; pass < 8; pass++) {
     nxt.setAll(0, cur); // copy cur → nxt
     for (var y = 1; y < h - 1; y++) {
       for (var x = 1; x < w - 1; x++) {
@@ -62,8 +62,8 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     nxt = tmp;
   }
 
-  // Erode 6 passes
-  for (var pass = 0; pass < 6; pass++) {
+  // Erode 8 passes
+  for (var pass = 0; pass < 8; pass++) {
     nxt.setAll(0, cur); // copy cur → nxt
     for (var y = 1; y < h - 1; y++) {
       for (var x = 1; x < w - 1; x++) {
@@ -311,6 +311,45 @@ Uint8List buildCompositeRgba(CompositeParams params) {
       out[i * 4 + 3] = orig[i * 4 + 3];
     }
   }
+
+  // 1-pixel dilation: bleed fill color into adjacent light-colored outline pixels
+  // to eliminate the white fringe at region boundaries.
+  final w = params.width;
+  final h = params.height;
+  for (var y = 1; y < h - 1; y++) {
+    for (var x = 1; x < w - 1; x++) {
+      final i = y * w + x;
+      if (p2r[i] != -2) continue; // only process outline/excluded pixels
+
+      // Skip truly dark pixels (hard outline lines) — keep them as-is
+      final origLuma = (0.299 * orig[i * 4] +
+              0.587 * orig[i * 4 + 1] +
+              0.114 * orig[i * 4 + 2])
+          .round();
+      if (origLuma < 60) continue;
+
+      // Find an adjacent filled region pixel
+      int? fillArgb;
+      for (final n in [i - 1, i + 1, i - w, i + w]) {
+        final ri = p2r[n];
+        if (ri >= 0 && colors.containsKey(ri)) {
+          fillArgb = colors[ri];
+          break;
+        }
+      }
+      if (fillArgb == null) continue;
+
+      final fr = (fillArgb >> 16) & 0xFF;
+      final fg = (fillArgb >> 8) & 0xFF;
+      final fb = fillArgb & 0xFF;
+      final factor = origLuma / 255.0;
+      out[i * 4] = (fr * factor).round().clamp(0, 255);
+      out[i * 4 + 1] = (fg * factor).round().clamp(0, 255);
+      out[i * 4 + 2] = (fb * factor).round().clamp(0, 255);
+      out[i * 4 + 3] = 255;
+    }
+  }
+
   return out;
 }
 
