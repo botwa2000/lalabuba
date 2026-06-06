@@ -87,8 +87,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   AppBar _buildAppBar(BuildContext context, L10n l10n, ThemeMode themeMode) {
     final cs = Theme.of(context).colorScheme;
-    // Use effective brightness so the toggle always produces a visible change,
-    // even when themeModeProvider starts as ThemeMode.system on a dark device.
     final sysBrightness = MediaQuery.platformBrightnessOf(context);
     final effectivelyDark = themeMode == ThemeMode.dark ||
         (themeMode == ThemeMode.system && sysBrightness == Brightness.dark);
@@ -172,7 +170,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Heading
                 Text(
                   l10n.t('heroHeading'),
                   style: GoogleFonts.fredoka(
@@ -182,7 +179,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                // Tagline
                 Text(
                   l10n.t('tagline'),
                   style: GoogleFonts.nunito(
@@ -192,7 +188,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                // Daily challenge pill
                 homeAsync.whenOrNull(
                       data: (home) => home.dailyChallenge != null
                           ? _buildDailyPill(
@@ -201,10 +196,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ) ??
                     const SizedBox.shrink(),
                 const SizedBox(height: 14),
-                // "or pick something fun" divider
                 _buildPickDivider(context, l10n),
                 const SizedBox(height: 12),
-                // 2×2 card grid + shuffle
                 homeAsync.when(
                   loading: () => const SizedBox(
                       height: 220,
@@ -218,8 +211,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ),
-        // Sticky bottom input + settings bar
-        _buildBottomBar(context, l10n, settingsAsync, sub),
+        // Portrait: sticky bottom bar with input + draw + settings chips
+        _buildBottomBar(context, l10n, settingsAsync, sub, showChips: true),
         SizedBox(height: MediaQuery.paddingOf(context).bottom),
       ],
     );
@@ -235,13 +228,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     SubscriptionState? sub,
   ) {
     final cs = Theme.of(context).colorScheme;
-    // Responsive panel: 32% of screen width, clamped to 260–340px
+    final settings = settingsAsync.valueOrNull;
     final panelWidth =
         (MediaQuery.sizeOf(context).width * 0.32).clamp(260.0, 340.0);
 
     return Row(
       children: [
-        // Left control panel
         SizedBox(
           width: panelWidth,
           child: Column(
@@ -260,7 +252,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
-                      // Daily pill
                       homeAsync.whenOrNull(
                             data: (home) => home.dailyChallenge != null
                                 ? _buildDailyPill(
@@ -269,36 +260,125 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ) ??
                           const SizedBox.shrink(),
                       const SizedBox(height: 10),
-                      // Divider
                       _buildPickDivider(context, l10n),
                       const SizedBox(height: 8),
-                      // Card grid (2-col, compact)
                       homeAsync.whenOrNull(
                             data: (home) => _buildCardGrid(
                                 context, home, l10n, _currentLocale,
                                 compact: true),
                           ) ??
                           const SizedBox.shrink(),
+                      // ── Inline settings section — fills dead space ──
+                      const SizedBox(height: 12),
+                      _buildLandscapeSettings(
+                          context, cs, l10n, settings, sub),
                     ],
                   ),
                 ),
               ),
-              _buildBottomBar(context, l10n, settingsAsync, sub),
+              // Landscape: no chips (settings are inline above)
+              _buildBottomBar(context, l10n, settingsAsync, sub,
+                  showChips: false),
               SizedBox(height: MediaQuery.paddingOf(context).bottom),
             ],
           ),
         ),
-        // Right: canvas placeholder
         Expanded(
           child: Container(
             margin: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: cs.surfaceContainerLow,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+              border: Border.all(
+                  color: cs.outlineVariant.withValues(alpha: 0.5)),
             ),
             child: LalaEmptyHint(message: l10n.t('emptyHint')),
           ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Landscape settings section ─────────────────────────────────────────────
+
+  Widget _buildLandscapeSettings(
+    BuildContext context,
+    ColorScheme cs,
+    L10n l10n,
+    SettingsState? settings,
+    SubscriptionState? sub,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header divider
+        Row(children: [
+          Expanded(child: Divider(color: cs.outlineVariant, height: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              '⚙️ ${l10n.t('settingsTitle')}',
+              style: GoogleFonts.nunito(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface.withValues(alpha: 0.45)),
+            ),
+          ),
+          Expanded(child: Divider(color: cs.outlineVariant, height: 1)),
+        ]),
+        const SizedBox(height: 8),
+        _SettingRow(
+          icon: '🌟',
+          label: l10n.t('diffLabel'),
+          value: _diffLabelShort(settings?.difficulty ?? 'medium'),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            ref.read(settingsProvider.notifier).cycleDifficulty(
+                  sub?.entitlements?.difficulties ?? ['easy', 'medium'],
+                );
+          },
+        ),
+        const SizedBox(height: 4),
+        _SettingRow(
+          icon: '🖍️',
+          label: l10n.t('paletteLabel'),
+          value: _palLabelShort(settings?.palette ?? 'classic'),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            // All 3 palettes — free users can try them all
+            ref.read(settingsProvider.notifier)
+                .cyclePalette(['classic', 'pastel', 'nature']);
+          },
+        ),
+        const SizedBox(height: 4),
+        _SettingRow(
+          icon: '🎨',
+          label: l10n.t('colorsLabel'),
+          value: _cntLabelShort(settings?.colorCount ?? 12),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            ref.read(settingsProvider.notifier).cycleColorCount([6, 12, 18, 24]);
+          },
+        ),
+        const SizedBox(height: 4),
+        _SettingRow(
+          icon: '🔢',
+          label: l10n.t('numbersLabel'),
+          value: settings?.showNumbers == true
+              ? l10n.t('numbersOn')
+              : l10n.t('numbersOff'),
+          selected: settings?.showNumbers ?? true,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            ref.read(settingsProvider.notifier).toggleNumbers();
+          },
+        ),
+        const SizedBox(height: 4),
+        _SettingRow(
+          icon: '⚙️',
+          label: l10n.t('settingsBtn'),
+          value: '›',
+          onTap: () => context.pushNamed('settings'),
         ),
       ],
     );
@@ -378,7 +458,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool compact = false,
   }) {
     final cs = Theme.of(context).colorScheme;
-    // Vibrant gradient pairs for cards — matches web app branding
     const cardColors = [
       [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
       [Color(0xFF4ECDC4), Color(0xFF45B7D1)],
@@ -445,8 +524,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     BuildContext context,
     L10n l10n,
     AsyncValue<SettingsState> settingsAsync,
-    SubscriptionState? sub,
-  ) {
+    SubscriptionState? sub, {
+    required bool showChips,
+  }) {
     final cs = Theme.of(context).colorScheme;
     final settings = settingsAsync.valueOrNull;
 
@@ -464,7 +544,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ── Row 1: Full-width prompt input + surprise-me ──────────────────
+          // Row 1: prompt input + surprise-me
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
             child: Row(
@@ -479,7 +559,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Surprise me — lives here, never crowds the input
                 _buildIconPill(
                   context,
                   '💡',
@@ -494,7 +573,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
-          // ── Row 2: Prominent full-width Draw button ───────────────────────
+          // Row 2: Draw! button
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: AnimatedContainer(
@@ -537,8 +616,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           ),
-          // ── Row 3: Settings chips (tap to cycle) ─────────────────────────
-          _buildSettingsChips(context, cs, l10n, settings, sub),
+          // Row 3: Settings chips (portrait only — landscape has inline settings)
+          if (showChips)
+            _buildSettingsChips(context, cs, l10n, settings, sub),
         ],
       ),
     );
@@ -551,9 +631,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     SettingsState? settings,
     SubscriptionState? sub,
   ) {
-    final ents = sub?.entitlements;
-    // Wrap ensures all chips are always visible regardless of panel width.
-    // No ShaderMask / SingleChildScrollView needed.
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
       child: Wrap(
@@ -564,13 +641,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             label: _diffLabel(settings?.difficulty ?? 'medium', l10n),
             onTap: () => ref
                 .read(settingsProvider.notifier)
-                .cycleDifficulty(ents?.difficulties ?? ['easy', 'medium']),
+                .cycleDifficulty(
+                    sub?.entitlements?.difficulties ?? ['easy', 'medium']),
           ),
           LalaChip(
             label: _palLabel(settings?.palette ?? 'classic'),
+            // Always cycle all 3 palettes — gating handled at generation time
             onTap: () => ref
                 .read(settingsProvider.notifier)
-                .cyclePalette(ents?.palettes ?? ['classic']),
+                .cyclePalette(['classic', 'pastel', 'nature']),
           ),
           LalaChip(
             label: _cntLabel(settings?.colorCount ?? 12),
@@ -595,7 +674,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  // Small square icon pill button used for 💡 etc.
   Widget _buildIconPill(BuildContext context, String emoji,
       {required VoidCallback onTap}) {
     final cs = Theme.of(context).colorScheme;
@@ -627,6 +705,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  String _diffLabelShort(String d) {
+    switch (d) {
+      case 'easy':    return 'Easy 🌟';
+      case 'medium':  return 'Medium 🌟🌟';
+      case 'hard':    return 'Hard 🌟🌟🌟';
+      case 'extreme': return 'Extreme 🔥';
+      default:        return d;
+    }
+  }
+
   String _palLabel(String p) {
     switch (p) {
       case 'classic': return '🖍️ Classic';
@@ -636,6 +724,91 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  String _palLabelShort(String p) {
+    switch (p) {
+      case 'classic': return 'Classic';
+      case 'pastel':  return 'Pastel';
+      case 'nature':  return 'Nature';
+      default:        return p;
+    }
+  }
+
   String _cntLabel(int cnt) =>
       '🎨 ${cnt == 99 ? 'Max' : cnt.toString()}';
+
+  String _cntLabelShort(int cnt) =>
+      cnt == 99 ? 'Max' : cnt.toString();
+}
+
+// ─── Landscape setting row ───────────────────────────────────────────────────
+
+class _SettingRow extends StatelessWidget {
+  final String icon;
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+  final bool selected;
+
+  const _SettingRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onTap,
+    this.selected = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? cs.primaryContainer.withValues(alpha: 0.5)
+              : cs.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected
+                ? cs.primary.withValues(alpha: 0.35)
+                : cs.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Row(
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: GoogleFonts.nunito(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface.withValues(alpha: 0.75),
+                ),
+              ),
+            ),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                value,
+                style: GoogleFonts.nunito(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: cs.onPrimaryContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

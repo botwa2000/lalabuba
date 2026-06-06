@@ -36,12 +36,16 @@ class RegionDetectionResult {
   final List<Region> regions;   // sorted by area desc (region 0 = largest)
   final int width;
   final int height;
+  final int backgroundRegionId;         // id of the outer background region
+  final Map<int, int> regionColorMap;   // regionId → ARGB32 int (pre-assigned palette)
 
   const RegionDetectionResult({
     required this.pixelToRegion,
     required this.regions,
     required this.width,
     required this.height,
+    this.backgroundRegionId = 0,
+    this.regionColorMap = const {},
   });
 }
 
@@ -51,12 +55,14 @@ class RegionDetectParams {
   final int width;
   final int height;
   final int minArea;
+  final List<int> paletteArgb; // ARGB32 values of the palette colors
 
   const RegionDetectParams({
     required this.rgbaBytes,
     required this.width,
     required this.height,
     required this.minArea,
+    this.paletteArgb = const [],
   });
 }
 
@@ -97,6 +103,8 @@ class CanvasState {
   final Stroke? currentStroke;
   final List<CanvasAction> undoStack;
   final bool isProcessing; // region detection running
+  final Map<int, Color> regionColorMap; // pre-assigned colors for color-by-number
+  final Color? hintColor;              // transient: pulses correct color swatch on wrong tap
 
   const CanvasState({
     this.baseImage,
@@ -111,6 +119,8 @@ class CanvasState {
     this.currentStroke,
     this.undoStack = const [],
     this.isProcessing = false,
+    this.regionColorMap = const {},
+    this.hintColor,
   });
 
   bool get hasImage => baseImage != null;
@@ -130,6 +140,9 @@ class CanvasState {
     bool clearCurrentStroke = false,
     List<CanvasAction>? undoStack,
     bool? isProcessing,
+    Map<int, Color>? regionColorMap,
+    Color? hintColor,
+    bool clearHintColor = false,
   }) => CanvasState(
         baseImage: baseImage ?? this.baseImage,
         compositeImage: compositeImage ?? this.compositeImage,
@@ -143,5 +156,7 @@ class CanvasState {
         currentStroke: clearCurrentStroke ? null : (currentStroke ?? this.currentStroke),
         undoStack: undoStack ?? this.undoStack,
         isProcessing: isProcessing ?? this.isProcessing,
+        regionColorMap: regionColorMap ?? this.regionColorMap,
+        hintColor: clearHintColor ? null : (hintColor ?? this.hintColor),
       );
 }

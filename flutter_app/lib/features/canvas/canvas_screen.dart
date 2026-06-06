@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -43,8 +44,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   String? _errorMsg;
   bool _hintVisible = true;
   String _subject = '';
-  int? _currentSeed; // seed returned by the API — used to build challenge URL
-  final _canvasKey = GlobalKey(); // RepaintBoundary key for full capture
+  int? _currentSeed;
+  final _canvasKey = GlobalKey();
 
   @override
   void initState() {
@@ -84,10 +85,16 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       );
 
       final minArea = _minAreaFor(settings?.difficulty ?? 'medium');
-      await ref
-          .read(canvasProvider.notifier)
-          .loadImage(result.imageBytes, minArea,
-              showNumbers: settings?.showNumbers ?? true);
+      final paletteColors = _getPaletteColors(
+        settings?.palette ?? 'classic',
+        settings?.colorCount ?? 12,
+      );
+      await ref.read(canvasProvider.notifier).loadImage(
+        result.imageBytes,
+        minArea,
+        showNumbers: settings?.showNumbers ?? true,
+        palette: paletteColors,
+      );
 
       await ref.read(subscriptionProvider.notifier).recordGeneration();
 
@@ -186,8 +193,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           ),
           title: Text(
             widget.args.displayLabel,
-            style:
-                GoogleFonts.fredoka(fontWeight: FontWeight.w700, fontSize: 18),
+            style: GoogleFonts.fredoka(fontWeight: FontWeight.w700, fontSize: 18),
             overflow: TextOverflow.ellipsis,
           ),
           actions: [
@@ -217,7 +223,6 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final hasContent = canvas.hasImage || canvas.isReady;
     return Column(
       children: [
-        // Canvas – fills all remaining space
         Expanded(
           child: Stack(
             children: [
@@ -239,9 +244,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             ],
           ),
         ),
-        // Action bar + color strip: only shown once an image exists
         if (hasContent) _buildActionBar(context, canvas, settings, l10n),
-        if (hasContent) _buildColorStrip(context, canvas, settings),
+        // Full-width color grid — all swatches visible, no scroll
+        if (hasContent) _buildColorGrid(context, canvas, settings),
         SizedBox(height: MediaQuery.paddingOf(context).bottom),
       ],
     );
@@ -254,7 +259,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final hasContent = canvas.hasImage || canvas.isReady;
     return Row(
       children: [
-        // Canvas column (action bar below canvas, NOT overlaid)
+        // Canvas column
         Expanded(
           child: Column(
             children: [
@@ -282,7 +287,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             ],
           ),
         ),
-        // Color sidebar – visible only after image loads
+        // Right color sidebar — 2-column wrap, all colors visible
         if (hasContent) _buildColorSidebar(context, canvas, settings),
       ],
     );
@@ -393,7 +398,6 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   }
 
   // ─── Action bar ──────────────────────────────────────────────────────────────
-  // Scrollable row so it never overflows on small screens.
 
   Widget _buildActionBar(BuildContext context, CanvasState canvas,
       SettingsState? settings, L10n l10n) {
@@ -404,8 +408,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       height: 60,
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border(
-            top: BorderSide(color: cs.outlineVariant, width: 0.5)),
+        border:
+            Border(top: BorderSide(color: cs.outlineVariant, width: 0.5)),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -443,7 +447,6 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                   mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
             ),
             const SizedBox(width: 16),
-            // Divider
             Container(width: 1, height: 28, color: cs.outlineVariant),
             const SizedBox(width: 16),
             // Print
@@ -464,11 +467,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               onTap: canvas.isReady ? () => _shareArtwork(canvas) : null,
             ),
             const SizedBox(width: 8),
-            // Challenge
+            // Challenge → QR dialog
             _ActionBtn(
               label: l10n.t('challengeBtn'),
               onTap: (_currentSeed != null && canvas.isReady)
-                  ? () => _shareChallenge()
+                  ? () => _showChallengeDialog()
                   : null,
             ),
           ],
@@ -477,64 +480,118 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     );
   }
 
-  // ─── Color strip (portrait) ──────────────────────────────────────────────────
+  // ─── Color grid (portrait — full width Wrap, all swatches visible) ──────────
 
-  Widget _buildColorStrip(
-      BuildContext context, CanvasState canvas, SettingsState? settings) {
+  Widget _buildColorGrid(BuildContext context, CanvasState canvas,
+      SettingsState? settings) {
     final cs = Theme.of(context).colorScheme;
-    final colors =
-        _getPaletteColors(settings?.palette ?? 'classic', settings?.colorCount ?? 12);
+    final colors = _getPaletteColors(
+        settings?.palette ?? 'classic', settings?.colorCount ?? 12);
+    final hintColor = canvas.hintColor;
 
     return Container(
-      height: 72,
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border(
-            top: BorderSide(color: cs.outlineVariant, width: 0.5)),
+        border:
+            Border(top: BorderSide(color: cs.outlineVariant, width: 0.5)),
       ),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        itemCount: colors.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (ctx, i) => LalaColorSwatch(
-          color: colors[i],
-          size: 44,
-          active: canvas.activeColor == colors[i],
-          onTap: () =>
-              ref.read(canvasProvider.notifier).setActiveColor(colors[i]),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 8,
+        alignment: WrapAlignment.center,
+        children: [
+          _buildEraserSwatch(context, canvas, 40),
+          for (final color in colors)
+            LalaColorSwatch(
+              color: color,
+              size: 40,
+              active: canvas.activeColor == color,
+              pulse: hintColor != null && hintColor == color,
+              onTap: () =>
+                  ref.read(canvasProvider.notifier).setActiveColor(color),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Color sidebar (landscape — 2-column wrap panel) ─────────────────────────
+
+  Widget _buildColorSidebar(BuildContext context, CanvasState canvas,
+      SettingsState? settings) {
+    final cs = Theme.of(context).colorScheme;
+    final colors = _getPaletteColors(
+        settings?.palette ?? 'classic', settings?.colorCount ?? 12);
+    final hintColor = canvas.hintColor;
+
+    return Container(
+      width: 118,
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: Border(left: BorderSide(color: cs.outlineVariant, width: 0.5)),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+        child: Wrap(
+          spacing: 6,
+          runSpacing: 8,
+          alignment: WrapAlignment.center,
+          children: [
+            _buildEraserSwatch(context, canvas, 46),
+            for (final color in colors)
+              LalaColorSwatch(
+                color: color,
+                size: 46,
+                active: canvas.activeColor == color,
+                pulse: hintColor != null && hintColor == color,
+                onTap: () =>
+                    ref.read(canvasProvider.notifier).setActiveColor(color),
+              ),
+          ],
         ),
       ),
     );
   }
 
-  // ─── Color sidebar (landscape) ───────────────────────────────────────────────
-
-  Widget _buildColorSidebar(BuildContext context, CanvasState canvas,
-      SettingsState? settings) {
+  // Eraser swatch: white circle with ✕ icon; red ring when active
+  Widget _buildEraserSwatch(
+      BuildContext context, CanvasState canvas, double size) {
     final cs = Theme.of(context).colorScheme;
-    final colors =
-        _getPaletteColors(settings?.palette ?? 'classic', settings?.colorCount ?? 12);
+    final isActive = canvas.activeColor == Colors.transparent;
 
-    return Container(
-      width: 76,
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border(
-            left: BorderSide(color: cs.outlineVariant, width: 0.5)),
-      ),
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        itemCount: colors.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (ctx, i) => Center(
-          child: LalaColorSwatch(
-            color: colors[i],
-            size: 48,
-            active: canvas.activeColor == colors[i],
-            onTap: () =>
-                ref.read(canvasProvider.notifier).setActiveColor(colors[i]),
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        ref.read(canvasProvider.notifier).setActiveColor(Colors.transparent);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: cs.surfaceContainerHighest,
+          border: Border.all(
+            color: isActive ? cs.error : cs.outlineVariant,
+            width: isActive ? 3.0 : 1.5,
           ),
+          boxShadow: [
+            if (isActive)
+              BoxShadow(
+                  color: cs.error.withValues(alpha: 0.3),
+                  blurRadius: 10,
+                  spreadRadius: 3),
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.10),
+                blurRadius: 4,
+                offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Icon(
+          Icons.backspace_outlined,
+          size: size * 0.42,
+          color: isActive ? cs.error : cs.onSurfaceVariant,
         ),
       ),
     );
@@ -564,8 +621,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                 onPressed: () => _generate(),
                 child: Text(
                   l10n.t('regenBtn'),
-                  style:
-                      GoogleFonts.fredoka(fontWeight: FontWeight.w700),
+                  style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -595,9 +651,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not save: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Could not save: $e')));
       }
     }
   }
@@ -614,13 +669,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         [file],
         text: l10n.t('shareImageText', {'subject': widget.args.displayLabel}),
       );
-    } catch (_) {
-      // Ignore share cancel
-    }
+    } catch (_) {}
   }
 
-  // On mobile, printing is done via the system share sheet (share → Print).
-  // This opens the same sheet but signals print intent via subject line.
   Future<void> _printArtwork(CanvasState canvas) async {
     try {
       final bytes = await _captureCanvas(canvas);
@@ -632,50 +683,113 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         [file],
         subject: 'Print — Lalabuba: ${widget.args.displayLabel}',
       );
-    } catch (_) {
-      // Ignore share cancel
-    }
+    } catch (_) {}
   }
 
-  // Builds a proper https://lalabuba.com/challenge?subject=...&seed=... URL
-  // so the recipient opens the exact same coloring page in browser or app.
-  Future<void> _shareChallenge() async {
+  // ─── Challenge → QR code dialog ──────────────────────────────────────────────
+
+  void _showChallengeDialog() {
     final seed = _currentSeed;
     if (seed == null) return;
 
-    // Always use the config base URL — never localhost
     final baseUrl = ref.read(appConfigProvider).valueOrNull?.apiBaseUrl
         ?? 'https://lalabuba.com';
     final encodedSubject = Uri.encodeQueryComponent(_subject);
     final challengeUrl = '$baseUrl/challenge?subject=$encodedSubject&seed=$seed';
-
     final l10n = ref.read(l10nProvider);
-    final text =
-        l10n.t('challengeText', {'subject': widget.args.displayLabel});
+    final cs = Theme.of(context).colorScheme;
 
-    try {
-      // Share the challenge URL — opens in browser or triggers app deep link
-      await Share.share('$text\n$challengeUrl', subject: 'Lalabuba Challenge 🏆');
-    } catch (_) {
-      // Ignore share cancel
-    }
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.t('challengeBtn'),
+                style: GoogleFonts.fredoka(
+                    fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 16),
+              // QR code on white background so it scans in dark mode too
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: QrImageView(
+                  data: challengeUrl,
+                  version: QrVersions.auto,
+                  size: 200,
+                  backgroundColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                l10n.t('challengeHint'),
+                style: GoogleFonts.nunito(
+                    fontSize: 13,
+                    color: cs.onSurface.withValues(alpha: 0.7)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(l10n.t('backConfirmStay'),
+                        style: GoogleFonts.nunito()),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      final text = l10n.t('challengeText',
+                          {'subject': widget.args.displayLabel});
+                      try {
+                        await Share.share('$text\n$challengeUrl',
+                            subject: 'Lalabuba Challenge 🏆');
+                      } catch (_) {}
+                    },
+                    icon: const Icon(Icons.share_rounded, size: 18),
+                    label: Text(l10n.t('challengeShare'),
+                        style: GoogleFonts.fredoka(
+                            fontWeight: FontWeight.w700)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  // Captures the full painted canvas — flood fills + pencil strokes + numbers.
-  // Falls back to compositeImage if the boundary hasn't been laid out yet.
+  // ─── Canvas capture ───────────────────────────────────────────────────────────
+
   Future<Uint8List?> _captureCanvas(CanvasState canvas) async {
     try {
-      final boundary =
-          _canvasKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary = _canvasKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
       if (boundary != null) {
         final image = await boundary.toImage(pixelRatio: 3.0);
         final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
         image.dispose();
         return byteData?.buffer.asUint8List();
       }
-    } catch (_) {
-      // Fall through to compositeImage fallback
-    }
+    } catch (_) {}
     final img = canvas.compositeImage;
     if (img == null) return null;
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
@@ -738,7 +852,8 @@ class _ActionBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
         decoration: BoxDecoration(
-          color: active ? cs.primaryContainer : cs.surfaceContainerHighest,
+          color:
+              active ? cs.primaryContainer : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(22),
         ),
         child: Text(
@@ -782,7 +897,8 @@ class _ModeToggle extends StatelessWidget {
         decoration: BoxDecoration(
           color: cs.primary.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: cs.primary.withValues(alpha: 0.4)),
+          border:
+              Border.all(color: cs.primary.withValues(alpha: 0.4)),
         ),
         child: Text(
           isTap ? tapLabel : paintLabel,

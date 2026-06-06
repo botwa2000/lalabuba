@@ -13,7 +13,10 @@ class CanvasNotifier extends Notifier<CanvasState> {
   @override
   CanvasState build() => const CanvasState();
 
-  Future<void> loadImage(Uint8List imageBytes, int minArea, {bool showNumbers = true}) async {
+  Future<void> loadImage(Uint8List imageBytes, int minArea, {
+    bool showNumbers = true,
+    List<Color> palette = const [],
+  }) async {
     state = CanvasState(isProcessing: true, showNumbers: showNumbers);
 
     final codec = await ui.instantiateImageCodec(imageBytes);
@@ -34,14 +37,22 @@ class CanvasNotifier extends Notifier<CanvasState> {
       isProcessing: true,
     );
 
+    final paletteArgb = palette.map((c) => c.toARGB32()).toList();
     final params = RegionDetectParams(
       rgbaBytes: rgba,
       width: img.width,
       height: img.height,
       minArea: minArea,
+      paletteArgb: paletteArgb,
     );
 
     final result = await _detectInIsolate(params);
+
+    // Convert Map<int,int> regionColorMap → Map<int,Color>
+    final colorMap = <int, Color>{};
+    result.regionColorMap.forEach((id, argb) {
+      colorMap[id] = Color(argb);
+    });
 
     state = state.copyWith(
       detection: result,
@@ -49,6 +60,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
       undoStack: [],
       strokes: [],
       isProcessing: false,
+      regionColorMap: colorMap,
     );
   }
 
@@ -113,16 +125,45 @@ class CanvasNotifier extends Notifier<CanvasState> {
     final y = (ny * d.height).round().clamp(0, d.height - 1);
     final idx = y * d.width + x;
     final r = d.pixelToRegion[idx];
-    return r >= 0 ? r : null;
+    if (r < 0 || r == d.backgroundRegionId) return null;
+    return r;
   }
 
   Future<void> fillRegion(int regionId) async {
     final s = state;
     if (!s.isReady) return;
+    // Don't fill the background
+    if (regionId == (s.detection?.backgroundRegionId ?? -99)) return;
+
+    final isErasing = s.activeColor == Colors.transparent;
+
+    // Color-by-number enforcement (skip when erasing)
+    if (!isErasing && s.showNumbers && s.regionColorMap.isNotEmpty) {
+      final assignedColor = s.regionColorMap[regionId];
+      if (assignedColor != null && assignedColor != s.activeColor) {
+        // Wrong color — flash hint, block fill
+        state = s.copyWith(hintColor: assignedColor);
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          final cur = state;
+          if (cur.hintColor == assignedColor) {
+            state = cur.copyWith(clearHintColor: true);
+          }
+        });
+        return;
+      }
+    }
+
     final prev = s.regionColors[regionId];
-    if (prev == s.activeColor) return; // no change
     final newColors = Map<int, Color>.from(s.regionColors);
-    newColors[regionId] = s.activeColor;
+
+    if (isErasing) {
+      if (prev == null) return; // already empty
+      newColors.remove(regionId);
+    } else {
+      if (prev == s.activeColor) return;
+      newColors[regionId] = s.activeColor;
+    }
+
     final action = CanvasAction(regionId: regionId, previousColor: prev);
     final newUndo = [...s.undoStack, action];
     if (newUndo.length > _maxUndo) newUndo.removeAt(0);
