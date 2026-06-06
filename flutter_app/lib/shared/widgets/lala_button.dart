@@ -51,8 +51,8 @@ class _LalaButtonState extends State<LalaButton>
     super.dispose();
   }
 
-  void _onTapDown(_) => _scale.forward();
-  void _onTapUp(_) => _scale.reverse();
+  void _onTapDown(dynamic _) => _scale.forward();
+  void _onTapUp(dynamic _) => _scale.reverse();
   void _onTapCancel() => _scale.reverse();
 
   @override

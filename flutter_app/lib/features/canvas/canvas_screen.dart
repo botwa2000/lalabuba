@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui' as ui;
+import 'package:vector_math/vector_math_64.dart' show Vector3;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter/services.dart';
@@ -386,7 +387,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final newScale = (currentScale * factor).clamp(0.5, 6.0);
     if ((newScale - currentScale).abs() < 0.001) return;
     final actualFactor = newScale / currentScale;
-    _transformCtrl.value = current.clone()..scale(actualFactor, actualFactor);
+    _transformCtrl.value = current.clone()
+      ..scaleByVector3(Vector3(actualFactor, actualFactor, 1.0));
   }
 
   void _resetZoom() => _transformCtrl.value = Matrix4.identity();
@@ -681,10 +683,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           mimeType: 'image/png',
           name: 'lalabuba_${widget.args.displayLabel}.png');
       final l10n = ref.read(l10nProvider);
-      await Share.shareXFiles(
-        [file],
+      await SharePlus.instance.share(ShareParams(
+        files: [file],
         text: l10n.t('shareImageText', {'subject': widget.args.displayLabel}),
-      );
+      ));
     } catch (_) {}
   }
 
@@ -695,10 +697,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       final file = XFile.fromData(bytes,
           mimeType: 'image/png',
           name: 'lalabuba_${widget.args.displayLabel}.png');
-      await Share.shareXFiles(
-        [file],
+      await SharePlus.instance.share(ShareParams(
+        files: [file],
         subject: 'Print — Lalabuba: ${widget.args.displayLabel}',
-      );
+      ));
     } catch (_) {}
   }
 
@@ -775,8 +777,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                       final text = l10n.t('challengeText',
                           {'subject': widget.args.displayLabel});
                       try {
-                        await Share.share('$text\n$challengeUrl',
-                            subject: 'Lalabuba Challenge 🏆');
+                        await SharePlus.instance.share(ShareParams(
+                          text: '$text\n$challengeUrl',
+                          subject: 'Lalabuba Challenge 🏆',
+                        ));
                       } catch (_) {}
                     },
                     icon: const Icon(Icons.share_rounded, size: 18),

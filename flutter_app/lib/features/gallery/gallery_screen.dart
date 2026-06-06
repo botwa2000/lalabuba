@@ -150,7 +150,10 @@ class _GalleryFullScreen extends StatelessWidget {
 
   Future<void> _share() async {
     final xFile = XFile(file.path, mimeType: 'image/png');
-    await Share.shareXFiles([xFile], text: 'My Lalabuba artwork! 🎨');
+    await SharePlus.instance.share(ShareParams(
+      files: [xFile],
+      text: 'My Lalabuba artwork! 🎨',
+    ));
   }
 
   void _confirmDelete(BuildContext context) {
