@@ -86,7 +86,7 @@ class _LalaCardState extends State<LalaCard>
                 // Gradient art area
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(8, 16, 8, 12),
+                  padding: const EdgeInsets.fromLTRB(8, 10, 8, 6),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -101,7 +101,7 @@ class _LalaCardState extends State<LalaCard>
                       child: Text(
                         widget.emoji,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 36, height: 1.1),
+                        style: const TextStyle(fontSize: 30, height: 1.1),
                       ),
                     ),
                   ),
@@ -110,7 +110,7 @@ class _LalaCardState extends State<LalaCard>
                 Container(
                   width: double.infinity,
                   color: cs.surface,
-                  padding: const EdgeInsets.fromLTRB(6, 6, 6, 10),
+                  padding: const EdgeInsets.fromLTRB(6, 4, 6, 7),
                   child: Text(
                     widget.label,
                     textAlign: TextAlign.center,
@@ -120,7 +120,7 @@ class _LalaCardState extends State<LalaCard>
                       color: cs.onSurface,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      height: 1.3,
+                      height: 1.25,
                     ),
                   ),
                 ),

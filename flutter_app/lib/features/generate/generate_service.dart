@@ -14,7 +14,7 @@ class GenerateService {
       : _dio = Dio(BaseOptions(
           baseUrl: config.generateUrl.replaceFirst('/api/generate-image', ''),
           connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 70),
+          receiveTimeout: Duration(seconds: config.timeoutSeconds + 30),
           responseType: ResponseType.bytes,
         ));
 

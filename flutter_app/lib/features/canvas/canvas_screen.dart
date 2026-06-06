@@ -401,15 +401,21 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final mode = canvas.mode;
 
     return Container(
-      height: 52,
+      height: 60,
       decoration: BoxDecoration(
         color: cs.surface,
         border: Border(
             top: BorderSide(color: cs.outlineVariant, width: 0.5)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, -2)),
+        ],
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           children: [
             // Undo
@@ -419,7 +425,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                   ? null
                   : () => ref.read(canvasProvider.notifier).undo(),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             // Tap / Paint mode toggle
             _ModeToggle(
               mode: mode,
@@ -428,7 +434,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               tapLabel: l10n.t('tapModeBtn'),
               paintLabel: l10n.t('paintModeBtn'),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             // Pencil / freehand
             _ActionBtn(
               label: l10n.t('pencilBtn'),
@@ -436,26 +442,29 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               onTap: () => ref.read(canvasProvider.notifier).setMode(
                   mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
             ),
-            const SizedBox(width: 6),
-            // Print — on mobile, printing goes through the system share sheet
+            const SizedBox(width: 16),
+            // Divider
+            Container(width: 1, height: 28, color: cs.outlineVariant),
+            const SizedBox(width: 16),
+            // Print
             _ActionBtn(
               label: l10n.t('printBtn'),
               onTap: canvas.isReady ? () => _printArtwork(canvas) : null,
             ),
-            const SizedBox(width: 6),
-            // Save to gallery
+            const SizedBox(width: 8),
+            // Save
             _ActionBtn(
               label: l10n.t('saveBtn'),
               onTap: canvas.isReady ? () => _saveArtwork(canvas) : null,
             ),
-            const SizedBox(width: 6),
-            // Share artwork image
+            const SizedBox(width: 8),
+            // Share artwork
             _ActionBtn(
               label: l10n.t('shareArtBtn'),
               onTap: canvas.isReady ? () => _shareArtwork(canvas) : null,
             ),
-            const SizedBox(width: 6),
-            // Challenge — share the coloring page URL so anyone can play along
+            const SizedBox(width: 8),
+            // Challenge
             _ActionBtn(
               label: l10n.t('challengeBtn'),
               onTap: (_currentSeed != null && canvas.isReady)
@@ -477,7 +486,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         _getPaletteColors(settings?.palette ?? 'classic', settings?.colorCount ?? 12);
 
     return Container(
-      height: 64,
+      height: 72,
       decoration: BoxDecoration(
         color: cs.surface,
         border: Border(
@@ -485,12 +494,12 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       ),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         itemCount: colors.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (ctx, i) => LalaColorSwatch(
           color: colors[i],
-          size: 40,
+          size: 44,
           active: canvas.activeColor == colors[i],
           onTap: () =>
               ref.read(canvasProvider.notifier).setActiveColor(colors[i]),
@@ -508,20 +517,20 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         _getPaletteColors(settings?.palette ?? 'classic', settings?.colorCount ?? 12);
 
     return Container(
-      width: 68,
+      width: 76,
       decoration: BoxDecoration(
         color: cs.surface,
         border: Border(
             left: BorderSide(color: cs.outlineVariant, width: 0.5)),
       ),
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         itemCount: colors.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (ctx, i) => Center(
           child: LalaColorSwatch(
             color: colors[i],
-            size: 44,
+            size: 48,
             active: canvas.activeColor == colors[i],
             onTap: () =>
                 ref.read(canvasProvider.notifier).setActiveColor(colors[i]),
@@ -727,15 +736,15 @@ class _ActionBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
         decoration: BoxDecoration(
           color: active ? cs.primaryContainer : cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
         ),
         child: Text(
           label,
           style: GoogleFonts.fredoka(
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
             color: onTap == null
                 ? cs.onSurface.withValues(alpha: 0.3)
@@ -769,16 +778,16 @@ class _ModeToggle extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: cs.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: cs.primary.withValues(alpha: 0.35)),
+          color: cs.primary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: cs.primary.withValues(alpha: 0.4)),
         ),
         child: Text(
           isTap ? tapLabel : paintLabel,
           style: GoogleFonts.fredoka(
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               color: cs.primary),
         ),

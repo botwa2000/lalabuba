@@ -210,9 +210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   data: (home) =>
                       _buildCardGrid(context, home, l10n, _currentLocale),
                 ),
-                const SizedBox(height: 16),
-                // Canvas placeholder hint
-                _buildCanvasPlaceholder(context, l10n),
+                const SizedBox(height: 8),
               ],
             ),
           ),
@@ -394,7 +392,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             crossAxisCount: 2,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
-            childAspectRatio: compact ? 1.2 : 1.1,
+            childAspectRatio: compact ? 1.1 : 0.95,
           ),
           itemCount: home.visibleCards.length.clamp(0, 4),
           itemBuilder: (ctx, i) {
@@ -436,19 +434,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildCanvasPlaceholder(BuildContext context, L10n l10n) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-      ),
-      child: LalaEmptyHint(message: l10n.t('emptyHint')),
     );
   }
 
