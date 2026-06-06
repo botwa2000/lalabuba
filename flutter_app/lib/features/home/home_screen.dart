@@ -376,7 +376,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 4),
         _SettingRow(
           icon: '⚙️',
-          label: l10n.t('settingsBtn'),
+          label: l10n.t('settingsTitle'),
           value: '›',
           onTap: () => context.pushNamed('settings'),
         ),

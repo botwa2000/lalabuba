@@ -68,7 +68,9 @@ class _LalaCardState extends State<LalaCard>
         builder: (_, __) => Transform.scale(
           scale: _scale.value,
           child: Container(
+            constraints: const BoxConstraints.expand(),
             decoration: BoxDecoration(
+              color: cs.surface,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: cs.outlineVariant, width: 1.5),
               boxShadow: [
@@ -81,36 +83,39 @@ class _LalaCardState extends State<LalaCard>
             ),
             clipBehavior: Clip.hardEdge,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.max,
               children: [
-                // Gradient art area
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(8, 10, 8, 6),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: widget.gradient,
+                // Gradient art area — expands to fill card, emoji centered
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: widget.gradient,
+                      ),
                     ),
-                  ),
-                  child: AnimatedBuilder(
-                    animation: _emojiScale,
-                    builder: (_, __) => Transform.scale(
-                      scale: _emojiScale.value,
-                      child: Text(
-                        widget.emoji,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 30, height: 1.1),
+                    child: Center(
+                      child: AnimatedBuilder(
+                        animation: _emojiScale,
+                        builder: (_, __) => Transform.scale(
+                          scale: _emojiScale.value,
+                          child: Text(
+                            widget.emoji,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 32, height: 1.1),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-                // Label
+                // Label pinned at bottom
                 Container(
                   width: double.infinity,
                   color: cs.surface,
-                  padding: const EdgeInsets.fromLTRB(6, 4, 6, 7),
+                  padding: const EdgeInsets.fromLTRB(6, 5, 6, 6),
                   child: Text(
                     widget.label,
                     textAlign: TextAlign.center,
