@@ -10,13 +10,15 @@ const _supportedLocales = ['en','de','ru','fr','es','pt','it','nl','pl','tr','zh
 class L10n {
   final String locale;
   final Map<String, dynamic> _strings;
+  final Map<String, dynamic> _fallback; // English fallback for missing keys
 
-  const L10n(this.locale, this._strings);
+  const L10n(this.locale, this._strings, [this._fallback = const {}]);
 
-  /// Translate a key, with optional named substitutions.
-  /// e.g. t('generating', {'subject': 'cat'}) → 'Drawing cat…'
+  /// Translate a key. Missing keys fall back to English, then to the key name.
   String t(String key, [Map<String, String>? args]) {
-    String result = (_strings[key] as String?) ?? key;
+    String result = (_strings[key] as String?)
+        ?? (_fallback[key] as String?)
+        ?? key;
     args?.forEach((k, v) => result = result.replaceAll('{$k}', v));
     return result;
   }
@@ -24,22 +26,29 @@ class L10n {
   /// Translate with positional substitution.
   String tr(String key, Map<String, String> args) => t(key, args);
 
-  /// Get a string list (e.g. loadingMessages).
+  /// Get a string list (e.g. loadingMessages). Falls back to English list.
   List<String> tList(String key) {
-    final val = _strings[key];
+    final val = _strings[key] ?? _fallback[key];
     if (val is List) return val.cast<String>();
     return [key];
   }
 
   static Future<L10n> load(String locale) async {
     final effective = _supportedLocales.contains(locale) ? locale : 'en';
+    // Always load English as the fallback for missing keys in other locales
+    Map<String, dynamic> enStrings = const {};
+    try {
+      final enRaw = await rootBundle.loadString('assets/i18n/en.json');
+      enStrings = jsonDecode(enRaw) as Map<String, dynamic>;
+    } catch (_) {}
+
+    if (effective == 'en') return L10n('en', enStrings);
+
     try {
       final raw = await rootBundle.loadString('assets/i18n/$effective.json');
-      return L10n(effective, jsonDecode(raw) as Map<String, dynamic>);
+      return L10n(effective, jsonDecode(raw) as Map<String, dynamic>, enStrings);
     } catch (_) {
-      // Fallback to English if locale file can't be loaded
-      final raw = await rootBundle.loadString('assets/i18n/en.json');
-      return L10n('en', jsonDecode(raw) as Map<String, dynamic>);
+      return L10n('en', enStrings);
     }
   }
 }

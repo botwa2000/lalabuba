@@ -111,8 +111,14 @@ module.exports = async (req, res) => {
   try {
     const body = req.body || {};
 
-    // Turnstile verification — skip for native app origins
-    const isNative = origin === 'capacitor://localhost' || origin === 'ionic://localhost' || origin === 'https://localhost';
+    // Turnstile verification — skip for native app origins.
+    // Flutter Dio sends no Origin header; it does send X-Device-ID.
+    // Browsers always send Origin for cross-origin requests.
+    const isNative = !origin
+      || !!req.headers['x-device-id']
+      || origin === 'capacitor://localhost'
+      || origin === 'ionic://localhost'
+      || origin === 'https://localhost';
     if (!isNative) {
       const ok = await verifyTurnstile(body.turnstileToken, ip);
       if (!ok) {

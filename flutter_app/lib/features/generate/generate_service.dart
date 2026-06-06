@@ -79,8 +79,9 @@ class GenerateService {
     }
     final status = e.response?.statusCode;
     if (status == 400) return 'Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…';
+    if (status == 403) return 'Request blocked — please update the app and try again';
     if (status == 429) return 'Too many requests — please wait a moment and try again';
-    return 'Something went wrong — please try again';
+    return 'Something went wrong — please try again${status != null ? ' (HTTP $status)' : ''}';
   }
 }
 

@@ -563,7 +563,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               ElevatedButton(
                 onPressed: () => _generate(),
                 child: Text(
-                  '🎲 ${l10n.t('regenBtn')}',
+                  l10n.t('regenBtn'),
                   style:
                       GoogleFonts.fredoka(fontWeight: FontWeight.w700),
                 ),

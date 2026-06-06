@@ -14,7 +14,6 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final settings = ref.watch(settingsProvider).valueOrNull;
 
     return Scaffold(
       appBar: AppBar(
@@ -34,11 +33,6 @@ class SettingsScreen extends ConsumerWidget {
           // Theme
           _SectionHeader(l10n.t('settingsTheme')),
           _buildThemeSelector(context, ref, l10n, themeMode),
-          const SizedBox(height: 16),
-
-          // Difficulty
-          _SectionHeader(l10n.t('diffLabel')),
-          _buildDifficultySelector(context, ref, l10n, settings),
           const SizedBox(height: 16),
 
           // Subscription placeholder
@@ -155,46 +149,6 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDifficultySelector(BuildContext context, WidgetRef ref,
-      L10n l10n, SettingsState? settings) {
-    final cs = Theme.of(context).colorScheme;
-    final options = [
-      ('easy', l10n.t('diffEasy')),
-      ('medium', l10n.t('diffMedium')),
-      ('hard', l10n.t('diffHard')),
-      ('extreme', l10n.t('diffExtreme')),
-    ];
-    return Wrap(
-      spacing: 8,
-      children: options.map((o) {
-        final selected = settings?.difficulty == o.$1;
-        return GestureDetector(
-          onTap: () =>
-              ref.read(settingsProvider.notifier).setDifficulty(o.$1),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: selected ? cs.primary : cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(50),
-              border: Border.all(
-                  color: selected ? cs.primary : cs.outlineVariant),
-            ),
-            child: Text(
-              o.$2,
-              style: GoogleFonts.nunito(
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: selected ? Colors.white : cs.onSurface,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
   Widget _buildSubscriptionTile(BuildContext context, L10n l10n) {
     final cs = Theme.of(context).colorScheme;
     return Card(
@@ -202,11 +156,11 @@ class SettingsScreen extends ConsumerWidget {
         onTap: () => context.pushNamed('subscription'),
         leading: const Text('⭐', style: TextStyle(fontSize: 24)),
         title: Text(
-          'Free tier',
+          l10n.t('subscribeFreeTier'),
           style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
         ),
         subtitle: Text(
-          '5 drawings/day • Easy + Medium',
+          l10n.t('subscribeFreeTierDesc'),
           style: GoogleFonts.nunito(fontSize: 13),
         ),
         trailing: Container(
@@ -233,7 +187,7 @@ class SettingsScreen extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SectionHeader('About'),
+            _SectionHeader(l10n.t('settingsAbout')),
             Card(
               child: Column(
                 children: [

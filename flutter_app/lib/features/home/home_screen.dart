@@ -87,6 +87,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   AppBar _buildAppBar(BuildContext context, L10n l10n, ThemeMode themeMode) {
     final cs = Theme.of(context).colorScheme;
+    // Use effective brightness so the toggle always produces a visible change,
+    // even when themeModeProvider starts as ThemeMode.system on a dark device.
+    final sysBrightness = MediaQuery.platformBrightnessOf(context);
+    final effectivelyDark = themeMode == ThemeMode.dark ||
+        (themeMode == ThemeMode.system && sysBrightness == Brightness.dark);
     return AppBar(
       automaticallyImplyLeading: false,
       title: Row(
@@ -106,16 +111,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       actions: [
         IconButton(
           icon: Icon(
-            themeMode == ThemeMode.dark
+            effectivelyDark
                 ? Icons.light_mode_rounded
                 : Icons.dark_mode_rounded,
             color: cs.onSurface,
           ),
           onPressed: () {
-            final next = themeMode == ThemeMode.dark
-                ? ThemeMode.light
-                : ThemeMode.dark;
-            ref.read(themeModeProvider.notifier).state = next;
+            ref.read(themeModeProvider.notifier).state =
+                effectivelyDark ? ThemeMode.light : ThemeMode.dark;
           },
         ),
         PopupMenuButton<String>(
@@ -232,8 +235,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     SubscriptionState? sub,
   ) {
     final cs = Theme.of(context).colorScheme;
-    // Left panel width: fixed but generous enough for 2-col card grid
-    const panelWidth = 300.0;
+    // Responsive panel: 32% of screen width, clamped to 260–340px
+    final panelWidth =
+        (MediaQuery.sizeOf(context).width * 0.32).clamp(260.0, 340.0);
 
     return Row(
       children: [
@@ -548,72 +552,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     SubscriptionState? sub,
   ) {
     final ents = sub?.entitlements;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Scrollable chip row with fade edges to hint at scrollability
-        ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            stops: const [0.0, 0.04, 0.92, 1.0],
-            colors: [
-              cs.surface,
-              Colors.transparent,
-              Colors.transparent,
-              cs.surface,
-            ],
-          ).createShader(bounds),
-          blendMode: BlendMode.dstOut,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-            child: Row(
-              children: [
-                // Difficulty — cycles on tap, no persistent selected state
-                LalaChip(
-                  label: _diffLabel(settings?.difficulty ?? 'medium', l10n),
-                  onTap: () => ref
-                      .read(settingsProvider.notifier)
-                      .cycleDifficulty(
-                          ents?.difficulties ?? ['easy', 'medium']),
-                ),
-                const SizedBox(width: 6),
-                // Palette
-                LalaChip(
-                  label: _palLabel(settings?.palette ?? 'classic'),
-                  onTap: () => ref
-                      .read(settingsProvider.notifier)
-                      .cyclePalette(ents?.palettes ?? ['classic']),
-                ),
-                const SizedBox(width: 6),
-                // Colour count
-                LalaChip(
-                  label: _cntLabel(settings?.colorCount ?? 12),
-                  onTap: () => ref
-                      .read(settingsProvider.notifier)
-                      .cycleColorCount([6, 12, 18, 24]),
-                ),
-                const SizedBox(width: 6),
-                // Numbers toggle — this one IS a true toggle with on/off state
-                LalaChip(
-                  label: settings?.showNumbers == true
-                      ? '🔢 ${l10n.t('numbersOn')}'
-                      : '🔡 ${l10n.t('numbersOff')}',
-                  selected: settings?.showNumbers ?? true,
-                  onTap: () =>
-                      ref.read(settingsProvider.notifier).toggleNumbers(),
-                ),
-                const SizedBox(width: 6),
-                // Settings shortcut
-                LalaChip(
-                  label: l10n.t('settingsBtn'),
-                  onTap: () => context.pushNamed('settings'),
-                ),
-              ],
-            ),
+    // Wrap ensures all chips are always visible regardless of panel width.
+    // No ShaderMask / SingleChildScrollView needed.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          LalaChip(
+            label: _diffLabel(settings?.difficulty ?? 'medium', l10n),
+            onTap: () => ref
+                .read(settingsProvider.notifier)
+                .cycleDifficulty(ents?.difficulties ?? ['easy', 'medium']),
           ),
-        ),
-      ],
+          LalaChip(
+            label: _palLabel(settings?.palette ?? 'classic'),
+            onTap: () => ref
+                .read(settingsProvider.notifier)
+                .cyclePalette(ents?.palettes ?? ['classic']),
+          ),
+          LalaChip(
+            label: _cntLabel(settings?.colorCount ?? 12),
+            onTap: () => ref
+                .read(settingsProvider.notifier)
+                .cycleColorCount([6, 12, 18, 24]),
+          ),
+          LalaChip(
+            label: settings?.showNumbers == true
+                ? '🔢 ${l10n.t('numbersOn')}'
+                : '🔡 ${l10n.t('numbersOff')}',
+            selected: settings?.showNumbers ?? true,
+            onTap: () =>
+                ref.read(settingsProvider.notifier).toggleNumbers(),
+          ),
+          LalaChip(
+            label: l10n.t('settingsBtn'),
+            onTap: () => context.pushNamed('settings'),
+          ),
+        ],
+      ),
     );
   }
 
