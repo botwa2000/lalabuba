@@ -39,6 +39,7 @@ class _LalaTextFieldState extends State<LalaTextField> {
 
   @override
   void dispose() {
+    _ctrl.removeListener(_onText);
     if (widget.controller == null) _ctrl.dispose();
     super.dispose();
   }
