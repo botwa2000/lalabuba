@@ -464,6 +464,15 @@
   justify-content: center;
   margin-top: 12px;
 }
+/* Keep Surprise/Today pills available in coloring mode too (shown when the panel
+   is reopened) — they're a useful way to start a new drawing, not hero-only. */
+.app:not(.app-hero) .config-panel .hero-quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+}
 .hero-quick-pill {
   font-family: var(--ff-body);
   font-size: .9rem;
