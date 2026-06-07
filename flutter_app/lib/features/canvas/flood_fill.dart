@@ -210,12 +210,47 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     }
   }
 
-  // Rebuild Region list with new sorted IDs
+  // ── 5b. Label positions: place each number at the region's most-interior pixel
+  // (max 4-connected distance from any outline/border), so numbers never sit on
+  // the black lines the way a plain centroid does for thin/concave regions. ──
+  final dist = Int32List(w * h)..fillRange(0, w * h, -1);
+  final dq = Int32List(w * h);
+  var dHead = 0, dTail = 0;
+  for (var i = 0; i < w * h; i++) {
+    final x = i % w, y = i ~/ w;
+    final isBorder = x == 0 || y == 0 || x == w - 1 || y == h - 1;
+    if (pixelToRegion[i] < 0 || isBorder) {
+      dist[i] = 0;
+      dq[dTail++] = i;
+    }
+  }
+  while (dHead < dTail) {
+    final idx = dq[dHead++];
+    final d = dist[idx] + 1;
+    final x = idx % w, y = idx ~/ w;
+    if (x > 0)     { final n = idx - 1; if (pixelToRegion[n] >= 0 && dist[n] == -1) { dist[n] = d; dq[dTail++] = n; } }
+    if (x < w - 1) { final n = idx + 1; if (pixelToRegion[n] >= 0 && dist[n] == -1) { dist[n] = d; dq[dTail++] = n; } }
+    if (y > 0)     { final n = idx - w; if (pixelToRegion[n] >= 0 && dist[n] == -1) { dist[n] = d; dq[dTail++] = n; } }
+    if (y < h - 1) { final n = idx + w; if (pixelToRegion[n] >= 0 && dist[n] == -1) { dist[n] = d; dq[dTail++] = n; } }
+  }
+  final bestDist = List<int>.filled(rawRegions.length, -1);
+  final bestIdx = List<int>.filled(rawRegions.length, -1);
+  for (var i = 0; i < w * h; i++) {
+    final r = pixelToRegion[i];
+    if (r >= 0 && r < rawRegions.length && dist[i] > bestDist[r]) {
+      bestDist[r] = dist[i];
+      bestIdx[r] = i;
+    }
+  }
+
+  // Rebuild Region list with new sorted IDs (label at the interior point)
   final sortedRegions = List.generate(
     rawRegions.length,
     (i) => Region(
       id: i,
-      centroid: rawRegions[i].centroid,
+      centroid: bestIdx[i] >= 0
+          ? Offset((bestIdx[i] % w).toDouble(), (bestIdx[i] ~/ w).toDouble())
+          : rawRegions[i].centroid,
       pixelCount: rawRegions[i].pixelCount,
     ),
   );
