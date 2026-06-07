@@ -96,6 +96,7 @@ const TRANSLATIONS = {
     newDrawingBtn: "🆕 New",
     genFailed: "Couldn't draw that — please try again. 🖍️",
     moreBtn: "⋯ More",
+    verifyHuman: "Quick check — tap the box so we know you're a real person!",
     themeToLight: "Switch to light mode",
     themeToDark: "Switch to dark mode",
     goFreeTitle: "Switch to free coloring?",

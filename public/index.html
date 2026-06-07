@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=179" />
-  <link rel="stylesheet" href="/css/header.css?v=179" />
-  <link rel="stylesheet" href="/css/hero.css?v=179" />
-  <link rel="stylesheet" href="/css/generator.css?v=179" />
-  <link rel="stylesheet" href="/css/layout.css?v=179" />
-  <link rel="stylesheet" href="/css/workspace.css?v=179" />
-  <link rel="stylesheet" href="/css/palette.css?v=179" />
-  <link rel="stylesheet" href="/css/modals.css?v=179" />
-  <link rel="stylesheet" href="/css/footer.css?v=179" />
-  <link rel="stylesheet" href="/css/print.css?v=179" />
-  <link rel="stylesheet" href="/css/cookies.css?v=179" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=179" />
-  <script src="/js/cookies.js?v=179"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=180" />
+  <link rel="stylesheet" href="/css/header.css?v=180" />
+  <link rel="stylesheet" href="/css/hero.css?v=180" />
+  <link rel="stylesheet" href="/css/generator.css?v=180" />
+  <link rel="stylesheet" href="/css/layout.css?v=180" />
+  <link rel="stylesheet" href="/css/workspace.css?v=180" />
+  <link rel="stylesheet" href="/css/palette.css?v=180" />
+  <link rel="stylesheet" href="/css/modals.css?v=180" />
+  <link rel="stylesheet" href="/css/footer.css?v=180" />
+  <link rel="stylesheet" href="/css/print.css?v=180" />
+  <link rel="stylesheet" href="/css/cookies.css?v=180" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=180" />
+  <script src="/js/cookies.js?v=180"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -567,13 +567,18 @@
        data-callback="onTurnstileSuccess"
        data-error-callback="onTurnstileError"
        data-expired-callback="onTurnstileExpired"
-       data-appearance="interaction-only">
+       data-appearance="execute">
+  </div>
+  <div id="turnstile-instruction" aria-hidden="true">
+    <span class="ts-emoji">👋</span>
+    <span data-i18n="verifyHuman">Quick check — tap the box so we know you're a real person!</span>
   </div>
   <style>
-    html.is-native #turnstile-widget { display: none !important; }
-    /* interaction-only: the widget is invisible/zero-size until Cloudflare needs a
-       tap. When it DOES appear (common on mobile) it must be on-screen and centered
-       so the user can complete it — never positioned off-screen. */
+    html.is-native #turnstile-widget,
+    html.is-native #turnstile-instruction { display: none !important; }
+    /* appearance:execute → the challenge does NOT run until turnstile.execute() is
+       called at Draw time. When it runs and needs a tap, it appears centered above a
+       dimmed backdrop with a clear instruction, so kids/parents can't miss it. */
     #turnstile-widget {
       position: fixed;
       left: 50%;
@@ -585,6 +590,39 @@
       box-shadow: 0 12px 48px rgba(0,0,0,.28);
       border-radius: 12px;
     }
+    /* Dimmed backdrop shown only while we're waiting for a human to verify */
+    body.ts-verifying::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 1990;
+      backdrop-filter: blur(2px);
+    }
+    #turnstile-instruction { display: none; }
+    body.ts-verifying #turnstile-instruction {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: fixed;
+      left: 50%;
+      top: calc(50% - 96px);
+      transform: translateX(-50%);
+      z-index: 2001;
+      width: min(300px, 86vw);
+      text-align: center;
+      background: #fff;
+      color: #2b2b2b;
+      padding: 14px 18px;
+      border-radius: 16px;
+      font-family: var(--ff-body, system-ui, sans-serif);
+      font-weight: 700;
+      font-size: .95rem;
+      line-height: 1.35;
+      box-shadow: 0 14px 48px rgba(0,0,0,.32);
+    }
+    #turnstile-instruction .ts-emoji { font-size: 1.7rem; }
   </style>
 
   <!-- Safety net: if the main module throws before it can hide the splash screen,
@@ -603,7 +641,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=179"></script>
+  <script type="module" src="/js/main.js?v=180"></script>
 </body>
 </html>
 

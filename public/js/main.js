@@ -108,14 +108,20 @@ function getTurnstileToken() {
   const el = document.getElementById('turnstile-widget');
   const existing = el ? window.turnstile.getResponse(el) : null;
   if (existing) return Promise.resolve(existing);
-  // Poll — covers the case where Cloudflare shows an interactive challenge
-  // (common on mobile). With interaction-only the widget auto-runs and, when a tap
-  // is required, appears centered on-screen — so give the user time to complete it.
+  // No token yet → run the challenge NOW (appearance:execute) behind a clear,
+  // dimmed verify overlay so the interactive checkbox can't be missed (the cause of
+  // "bot check failed" on mobile: the challenge was shown but never completed).
+  document.body.classList.add('ts-verifying');
+  try { if (el) window.turnstile.execute(el); } catch (_) { /* already running */ }
   return new Promise((resolve) => {
+    const finish = (val) => {
+      document.body.classList.remove('ts-verifying');
+      resolve(val);
+    };
     const poll = setInterval(() => {
-      if (state.turnstileToken) { clearInterval(poll); resolve(state.turnstileToken); }
+      if (state.turnstileToken) { clearInterval(poll); finish(state.turnstileToken); }
     }, 100);
-    setTimeout(() => { clearInterval(poll); resolve(null); }, 30000);
+    setTimeout(() => { clearInterval(poll); finish(null); }, 30000);
   });
 }
 
