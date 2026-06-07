@@ -93,9 +93,15 @@ function checkCompletion() {
 // ─── Turnstile ───────────────────────────────────────────────────────────────
 // Auto-render uses data-callback="onTurnstileSuccess" on the widget div.
 // This fires regardless of script/module load order — no manual render needed.
-window.onTurnstileSuccess = (token) => { state.turnstileToken = token; };
+window.onTurnstileSuccess = (token) => {
+  state.turnstileToken = token;
+  document.body.classList.remove('ts-verifying'); // challenge solved → drop overlay
+};
 window.onTurnstileExpired = () => { state.turnstileToken = null; };
-window.onTurnstileError   = () => { state.turnstileToken = null; };
+window.onTurnstileError   = () => {
+  state.turnstileToken = null;
+  document.body.classList.remove('ts-verifying'); // don't leave the page dimmed
+};
 
 function getTurnstileToken() {
   const isNative = window.Capacitor?.isNativePlatform?.() ||
@@ -108,11 +114,11 @@ function getTurnstileToken() {
   const el = document.getElementById('turnstile-widget');
   const existing = el ? window.turnstile.getResponse(el) : null;
   if (existing) return Promise.resolve(existing);
-  // No token yet → run the challenge NOW (appearance:execute) behind a clear,
-  // dimmed verify overlay so the interactive checkbox can't be missed (the cause of
-  // "bot check failed" on mobile: the challenge was shown but never completed).
+  // No token yet → show a dimmed verify overlay that points at the interaction-only
+  // checkbox so it can't be missed (the cause of "bot check failed" on mobile: the
+  // challenge was on screen but never completed). The widget stays visible because
+  // Cloudflare won't run a challenge inside a hidden container.
   document.body.classList.add('ts-verifying');
-  try { if (el) window.turnstile.execute(el); } catch (_) { /* already running */ }
   return new Promise((resolve) => {
     const finish = (val) => {
       document.body.classList.remove('ts-verifying');

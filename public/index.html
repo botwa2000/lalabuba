@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=181" />
-  <link rel="stylesheet" href="/css/header.css?v=181" />
-  <link rel="stylesheet" href="/css/hero.css?v=181" />
-  <link rel="stylesheet" href="/css/generator.css?v=181" />
-  <link rel="stylesheet" href="/css/layout.css?v=181" />
-  <link rel="stylesheet" href="/css/workspace.css?v=181" />
-  <link rel="stylesheet" href="/css/palette.css?v=181" />
-  <link rel="stylesheet" href="/css/modals.css?v=181" />
-  <link rel="stylesheet" href="/css/footer.css?v=181" />
-  <link rel="stylesheet" href="/css/print.css?v=181" />
-  <link rel="stylesheet" href="/css/cookies.css?v=181" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=181" />
-  <script src="/js/cookies.js?v=181"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=182" />
+  <link rel="stylesheet" href="/css/header.css?v=182" />
+  <link rel="stylesheet" href="/css/hero.css?v=182" />
+  <link rel="stylesheet" href="/css/generator.css?v=182" />
+  <link rel="stylesheet" href="/css/layout.css?v=182" />
+  <link rel="stylesheet" href="/css/workspace.css?v=182" />
+  <link rel="stylesheet" href="/css/palette.css?v=182" />
+  <link rel="stylesheet" href="/css/modals.css?v=182" />
+  <link rel="stylesheet" href="/css/footer.css?v=182" />
+  <link rel="stylesheet" href="/css/print.css?v=182" />
+  <link rel="stylesheet" href="/css/cookies.css?v=182" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=182" />
+  <script src="/js/cookies.js?v=182"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -567,7 +567,7 @@
        data-callback="onTurnstileSuccess"
        data-error-callback="onTurnstileError"
        data-expired-callback="onTurnstileExpired"
-       data-appearance="execute">
+       data-appearance="interaction-only">
   </div>
   <div id="turnstile-instruction" aria-hidden="true">
     <span class="ts-emoji">👋</span>
@@ -579,20 +579,17 @@
     /* appearance:execute → the challenge does NOT run until turnstile.execute() is
        called at Draw time. When it runs and needs a tap, it appears centered above a
        dimmed backdrop with a clear instruction, so kids/parents can't miss it. */
+    /* Must stay visible — Cloudflare refuses to run a challenge inside a hidden or
+       zero-size container. interaction-only keeps it empty (no visible box) until a
+       tap is actually required, so there's no clutter when it passes silently. */
     #turnstile-widget {
       position: fixed;
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
       z-index: 2000;
-      /* Hidden by default so its "Verifying…/Success" status never floats over the
-         page; revealed only while we're actively asking the user to verify. */
-      visibility: hidden;
-      opacity: 0;
     }
-    body.ts-verifying #turnstile-widget {
-      visibility: visible;
-      opacity: 1;
+    #turnstile-widget:not(:empty) {
       box-shadow: 0 12px 48px rgba(0,0,0,.28);
       border-radius: 12px;
     }
@@ -647,7 +644,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=181"></script>
+  <script type="module" src="/js/main.js?v=182"></script>
 </body>
 </html>
 
