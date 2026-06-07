@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=176" />
-  <link rel="stylesheet" href="/css/header.css?v=176" />
-  <link rel="stylesheet" href="/css/hero.css?v=176" />
-  <link rel="stylesheet" href="/css/generator.css?v=176" />
-  <link rel="stylesheet" href="/css/layout.css?v=176" />
-  <link rel="stylesheet" href="/css/workspace.css?v=176" />
-  <link rel="stylesheet" href="/css/palette.css?v=176" />
-  <link rel="stylesheet" href="/css/modals.css?v=176" />
-  <link rel="stylesheet" href="/css/footer.css?v=176" />
-  <link rel="stylesheet" href="/css/print.css?v=176" />
-  <link rel="stylesheet" href="/css/cookies.css?v=176" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=176" />
-  <script src="/js/cookies.js?v=176"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=177" />
+  <link rel="stylesheet" href="/css/header.css?v=177" />
+  <link rel="stylesheet" href="/css/hero.css?v=177" />
+  <link rel="stylesheet" href="/css/generator.css?v=177" />
+  <link rel="stylesheet" href="/css/layout.css?v=177" />
+  <link rel="stylesheet" href="/css/workspace.css?v=177" />
+  <link rel="stylesheet" href="/css/palette.css?v=177" />
+  <link rel="stylesheet" href="/css/modals.css?v=177" />
+  <link rel="stylesheet" href="/css/footer.css?v=177" />
+  <link rel="stylesheet" href="/css/print.css?v=177" />
+  <link rel="stylesheet" href="/css/cookies.css?v=177" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=177" />
+  <script src="/js/cookies.js?v=177"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -560,11 +560,27 @@
   <div id="turnstile-widget"
        class="cf-turnstile"
        data-sitekey="0x4AAAAAAC1F8nOkL4VkmWEd"
-       data-callback="onTurnstileSuccess">
+       data-callback="onTurnstileSuccess"
+       data-error-callback="onTurnstileError"
+       data-expired-callback="onTurnstileExpired"
+       data-appearance="interaction-only">
   </div>
   <style>
     html.is-native #turnstile-widget { display: none !important; }
-    #turnstile-widget { position: fixed; bottom: -300px; left: -300px; }
+    /* interaction-only: the widget is invisible/zero-size until Cloudflare needs a
+       tap. When it DOES appear (common on mobile) it must be on-screen and centered
+       so the user can complete it — never positioned off-screen. */
+    #turnstile-widget {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2000;
+    }
+    #turnstile-widget:not(:empty) {
+      box-shadow: 0 12px 48px rgba(0,0,0,.28);
+      border-radius: 12px;
+    }
   </style>
 
   <!-- Safety net: if the main module throws before it can hide the splash screen,
@@ -583,7 +599,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=176"></script>
+  <script type="module" src="/js/main.js?v=177"></script>
 </body>
 </html>
 

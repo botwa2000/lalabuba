@@ -94,6 +94,8 @@ function checkCompletion() {
 // Auto-render uses data-callback="onTurnstileSuccess" on the widget div.
 // This fires regardless of script/module load order — no manual render needed.
 window.onTurnstileSuccess = (token) => { state.turnstileToken = token; };
+window.onTurnstileExpired = () => { state.turnstileToken = null; };
+window.onTurnstileError   = () => { state.turnstileToken = null; };
 
 function getTurnstileToken() {
   const isNative = window.Capacitor?.isNativePlatform?.() ||
@@ -106,12 +108,14 @@ function getTurnstileToken() {
   const el = document.getElementById('turnstile-widget');
   const existing = el ? window.turnstile.getResponse(el) : null;
   if (existing) return Promise.resolve(existing);
-  // Poll — covers the case where user needs to complete a checkbox challenge
+  // Poll — covers the case where Cloudflare shows an interactive challenge
+  // (common on mobile). With interaction-only the widget auto-runs and, when a tap
+  // is required, appears centered on-screen — so give the user time to complete it.
   return new Promise((resolve) => {
     const poll = setInterval(() => {
       if (state.turnstileToken) { clearInterval(poll); resolve(state.turnstileToken); }
     }, 100);
-    setTimeout(() => { clearInterval(poll); resolve(null); }, 10000);
+    setTimeout(() => { clearInterval(poll); resolve(null); }, 30000);
   });
 }
 
