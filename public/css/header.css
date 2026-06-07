@@ -300,6 +300,9 @@
   top: 50%;
   transform: translateY(-50%);
   flex-shrink: 0;
+  /* Sit above .lang-picker, which is a full-width flex box painted after this
+     button in DOM order and would otherwise intercept taps on the hamburger. */
+  z-index: 350;
 }
 .mobile-menu-btn:hover { background: var(--purple); color: #fff; }
 
