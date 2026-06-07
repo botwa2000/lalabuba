@@ -146,11 +146,17 @@ workflows:
       - name: Build Flutter IPA
         script: |
           cd $FLUTTER_APP_DIR
-          flutter build ipa --release \
-            --export-options-plist=$CM_EXPORT_OPTIONS_PLIST
+          # Capture full verbose output to a log file that is published as an artifact
+          # (Codemagic's API does not expose step logs; artifacts ARE downloadable).
+          # pipefail keeps the step failing on error while still writing the log.
+          set -o pipefail
+          flutter build ipa --release --verbose \
+            --export-options-plist=$CM_EXPORT_OPTIONS_PLIST 2>&1 | tee "$CM_BUILD_DIR/flutter_build_ipa.log"
 
     artifacts:
       - flutter_app/build/ios/ipa/*.ipa
+      - $CM_BUILD_DIR/flutter_build_ipa.log
+      - /tmp/xcodebuild_logs/*.log
 
     publishing:
       app_store_connect:
