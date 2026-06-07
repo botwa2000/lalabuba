@@ -26,11 +26,40 @@
 
 .canvas-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 10px 14px;
+  flex-wrap: nowrap;   /* single scrollable row on desktop */
+  gap: 6px;
+  padding: 8px 12px;
   border-bottom: 1.5px solid var(--border);
   background: var(--bg);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.canvas-actions::-webkit-scrollbar { display: none; }
+
+/* ─── Action bar groups ──────────────────────────────────────────────────── */
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+/* Segment control (Tap / Paint): buttons must be flush — override .action-group gap */
+.action-group.color-mode-group { gap: 0; }
+
+.action-sep {
+  width: 1.5px;
+  height: 20px;
+  background: var(--border);
+  border-radius: 1px;
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+/* Grows to fill gap between tool groups and output group */
+.action-spacer {
+  flex: 1;
+  min-width: 8px;
+  max-width: 32px;
 }
 
 .action-btn {
@@ -244,6 +273,20 @@
   .side-panel { display: none !important; }
 }
 
+/* Mobile portrait (not landscape): wrap action bar, hide separators, pad for fixed palette strip */
+@media (max-width: 767px) and (min-height: 501px) {
+  .canvas-actions {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    gap: 6px;
+  }
+  .action-sep, .action-spacer { display: none; }
+  /* Workspace needs bottom padding so content doesn't hide behind the fixed palette strip */
+  .app:not(.app-hero) .workspace {
+    padding-bottom: 76px !important;
+  }
+}
+
 /* Tablet and below: stack palette under canvas */
 @media (max-width: 640px) {
   .workspace {
@@ -266,7 +309,7 @@
   .go-btn { flex: 1; min-width: 0; }
   .regen-btn { flex: 1; min-width: 0; }
   /* !important beats container queries that appear later in the file */
-  .canvas-actions { gap: 3px !important; padding: 5px 4px !important; flex-wrap: wrap !important; }
+  .canvas-actions { gap: 4px !important; padding: 6px 8px !important; flex-wrap: wrap !important; overflow-x: visible !important; }
   .action-btn { font-size: .74rem !important; padding: 4px 7px !important; }
   .mode-btn   { font-size: .74rem !important; padding: 4px 5px !important; }
   /* Pencil draw + clear-strokes hidden on narrow portrait — too small to use precisely */
@@ -392,12 +435,12 @@
 /* ─── Container queries: canvas-actions adapts to canvas width, not viewport ── */
 /* Desktop with sidebar open: canvas-wrapper ~740px — compact slightly so no button clips */
 @container canvas-wrapper (max-width: 770px) {
-  .canvas-actions { gap: 6px; padding: 8px 10px; flex-wrap: wrap; }
+  .canvas-actions { gap: 5px; padding: 8px 10px; }
   .action-btn { font-size: .78rem; padding: 5px 12px; }
   .mode-btn   { font-size: .78rem; padding: 5px 8px;  }
 }
 @container canvas-wrapper (max-width: 500px) {
-  .canvas-actions { gap: 6px; padding: 8px 10px; flex-wrap: wrap; }
+  .canvas-actions { gap: 5px; padding: 8px 10px; }
   .action-btn { font-size: .78rem; padding: 6px 11px; }
 }
 @container canvas-wrapper (max-width: 360px) {

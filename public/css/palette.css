@@ -151,6 +151,85 @@
   }
 }
 
+/* ── Mobile portrait (≤767px, min-height 501px = not landscape phones):
+   palette-sidebar escapes the grid and pins to the viewport bottom as a
+   horizontally-scrollable colour strip. Canvas gets padding-bottom for it. ── */
+@media (max-width: 767px) and (min-height: 501px) {
+  .palette-sidebar {
+    position: fixed;
+    inset: auto 0 0 0;
+    top: auto;
+    max-height: none;
+    border-radius: 16px 16px 0 0;
+    border: none;
+    border-top: 2px solid var(--border);
+    padding: 10px 12px max(10px, env(safe-area-inset-bottom, 10px));
+    z-index: 150;
+    box-shadow: 0 -6px 24px rgba(0,0,0,.13);
+    flex-direction: row;
+    align-items: center;
+    overflow: visible;
+    background: var(--card);
+  }
+  .palette-strip {
+    display: flex;
+    flex-direction: row;
+    grid-template-columns: unset;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+    gap: 8px;
+    padding: 4px 4px;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+  }
+  .palette-strip::-webkit-scrollbar { display: none; }
+  /* Swatches become circles in horizontal strip */
+  .color-swatch {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    aspect-ratio: unset;
+  }
+  /* Tool items: no full-width span, sit in the horizontal flow */
+  .legend-tool-item { grid-column: unset; flex-shrink: 0; }
+  .legend-free-item { grid-column: unset; }
+  /* Erase button: circle */
+  .erase-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+    min-width: 44px;
+    flex-shrink: 0;
+  }
+  .erase-btn span { display: none; }
+  .erase-btn svg  { flex-shrink: 0; }
+  /* Free colour button: compact pill */
+  .free-color-btn {
+    width: auto;
+    height: 44px;
+    border-radius: 22px;
+    padding: 0 14px;
+    font-size: .78rem;
+    flex-shrink: 0;
+    gap: 6px;
+  }
+  /* Separator: vertical line */
+  .legend-sep {
+    grid-column: unset;
+    width: 1.5px;
+    height: 28px;
+    flex-shrink: 0;
+    margin: 0 2px;
+    background: linear-gradient(to bottom, transparent, rgba(0,0,0,.15), transparent);
+  }
+}
+
 /* Phone landscape: compact palette in 140px column beside canvas */
 @media (orientation: landscape) and (max-height: 500px) {
   .palette-sidebar {

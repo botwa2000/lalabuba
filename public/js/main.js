@@ -77,7 +77,7 @@ function checkCompletion() {
 
   function syncIcon() {
     btn.textContent = isDark() ? '☀️' : '🌙';
-    btn.setAttribute('aria-label', isDark() ? 'Switch to light mode' : 'Switch to dark mode');
+    btn.setAttribute('aria-label', isDark() ? t('themeToLight') : t('themeToDark'));
   }
 
   btn.addEventListener('click', () => {
@@ -548,6 +548,7 @@ document.querySelectorAll('.lang-option').forEach(btn => {
       dailyWordValue.textContent = getTranslatedDailyWord(dailyWord, getCurrentLang());
     }
     updateDiffChip(); updatePaletteChip(); updateNumbersChip(); // refresh translated chip titles
+    syncCanvasNumbersBtn(); // re-sync after applyTranslations() resets data-i18n buttons
     langDropdown.hidden = true;
     langToggle.setAttribute('aria-expanded', 'false');
   });
@@ -821,7 +822,7 @@ function syncCanvasNumbersBtn() {
   if (!canvasNumbersBtn) return;
   const on = showNumbersInput.checked;
   canvasNumbersBtn.classList.toggle('action-btn--on', on);
-  canvasNumbersBtn.textContent = on ? '🔢 Numbers' : '🔡 Numbers';
+  canvasNumbersBtn.textContent = on ? t('numbersBtn') : t('numbersBtnOff');
 }
 
 // ─── Go Free button ───────────────────────────────────────────────────────────
@@ -878,7 +879,7 @@ function _activateFreeMode() {
   syncCanvasNumbersBtn();
   // Update go-free button appearance
   if (goFreeBtn) {
-    goFreeBtn.textContent = '🎨 Free!';
+    goFreeBtn.textContent = t('goFreeBtn');
     goFreeBtn.classList.add('action-btn--active');
     goFreeBtn.disabled = true;
   }

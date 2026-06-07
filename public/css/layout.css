@@ -214,10 +214,6 @@
   .config-panel .shuffle-cards-btn { display: none; } /* shuffle btn still hidden to save space */
 }
 
-/* Landscape hint: phones only — tablets at 768px+ don't need a rotation nudge */
-@media (max-width: 540px) {
-  .landscape-hint { display: flex; }
-}
 
 /* Phone landscape: detected by short viewport height (phones rotated sideways).
    Works on all phones regardless of their portrait width (S Ultra, iPhone, etc.) */

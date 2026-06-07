@@ -1,5 +1,6 @@
 import { state } from './state.js';
 import { DIFFICULTY } from './data.js';
+import { t } from './i18n.js';
 import {
   previewCanvas, drawCanvas, context, drawCtx,
   previewStage, showNumbersInput, printButton, downloadButton, pencilBtn, clearPencilBtn,
@@ -745,8 +746,8 @@ export async function renderGeneratedImage(imageBase64) {
     canvasNums.disabled = false;
     const numsOn = showNumbersInput.checked;
     canvasNums.classList.toggle('action-btn--on', numsOn);
-    canvasNums.textContent = numsOn ? '🔢 Numbers' : '🔡 Numbers';
+    canvasNums.textContent = numsOn ? t('numbersBtn') : t('numbersBtnOff');
   }
   const goFree = document.getElementById('go-free-btn');
-  if (goFree) { goFree.disabled = false; goFree.classList.remove('action-btn--active'); goFree.textContent = '🎨 Free!'; }
+  if (goFree) { goFree.disabled = false; goFree.classList.remove('action-btn--active'); goFree.textContent = t('goFreeBtn'); }
 }

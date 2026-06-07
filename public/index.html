@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=169" />
-  <link rel="stylesheet" href="/css/header.css?v=169" />
-  <link rel="stylesheet" href="/css/hero.css?v=169" />
-  <link rel="stylesheet" href="/css/generator.css?v=169" />
-  <link rel="stylesheet" href="/css/layout.css?v=169" />
-  <link rel="stylesheet" href="/css/workspace.css?v=169" />
-  <link rel="stylesheet" href="/css/palette.css?v=169" />
-  <link rel="stylesheet" href="/css/modals.css?v=169" />
-  <link rel="stylesheet" href="/css/footer.css?v=169" />
-  <link rel="stylesheet" href="/css/print.css?v=169" />
-  <link rel="stylesheet" href="/css/cookies.css?v=169" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=169" />
-  <script src="/js/cookies.js?v=169"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=170" />
+  <link rel="stylesheet" href="/css/header.css?v=170" />
+  <link rel="stylesheet" href="/css/hero.css?v=170" />
+  <link rel="stylesheet" href="/css/generator.css?v=170" />
+  <link rel="stylesheet" href="/css/layout.css?v=170" />
+  <link rel="stylesheet" href="/css/workspace.css?v=170" />
+  <link rel="stylesheet" href="/css/palette.css?v=170" />
+  <link rel="stylesheet" href="/css/modals.css?v=170" />
+  <link rel="stylesheet" href="/css/footer.css?v=170" />
+  <link rel="stylesheet" href="/css/print.css?v=170" />
+  <link rel="stylesheet" href="/css/cookies.css?v=170" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=170" />
+  <script src="/js/cookies.js?v=170"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -318,10 +318,6 @@
 
       <!-- Right: canvas + workspace -->
       <main class="canvas-area">
-        <!-- Landscape hint — only visible on portrait mobile -->
-        <div class="landscape-hint" id="landscape-hint">
-          <span data-i18n="landscapeHint">Rotate device for best experience 🔄</span>
-        </div>
 
         <!-- ─── Workspace ──────────────────────────────────────────────── -->
       <section class="workspace" aria-labelledby="workspace-heading">
@@ -335,20 +331,37 @@
           </div>
 
           <div class="canvas-actions">
-            <button id="undo-button"         type="button" disabled class="action-btn" data-i18n="undoBtn">↩ Undo</button>
-            <button id="canvas-numbers-btn"  type="button" disabled class="action-btn action-btn--toggle action-btn--on" data-i18n="numbersBtn">🔢 Numbers</button>
-            <button id="go-free-btn"         type="button" disabled class="action-btn action-btn--free" data-i18n="goFreeBtn">🎨 Free!</button>
-            <!-- Color mode toggle: tap-to-fill vs manual paint -->
-            <div class="color-mode-group" role="group" aria-label="Coloring mode">
+            <!-- Group 1: Undo -->
+            <div class="action-group">
+              <button id="undo-button" type="button" disabled class="action-btn" data-i18n="undoBtn">↩ Undo</button>
+            </div>
+            <div class="action-sep" aria-hidden="true"></div>
+            <!-- Group 2: Color mode (numbers ↔ free paint) -->
+            <div class="action-group">
+              <button id="canvas-numbers-btn" type="button" disabled class="action-btn action-btn--toggle action-btn--on" data-i18n="numbersBtn">🔢 Numbers</button>
+              <button id="go-free-btn"        type="button" disabled class="action-btn action-btn--free" data-i18n="goFreeBtn">🎨 Free!</button>
+            </div>
+            <div class="action-sep" aria-hidden="true"></div>
+            <!-- Group 3: Fill mode toggle (tap-to-fill vs manual paint) -->
+            <div class="action-group color-mode-group" role="group" aria-label="Coloring mode">
               <button id="mode-tap-btn"   type="button" disabled class="mode-btn active" data-i18n="tapModeBtn">🎯 Tap</button>
               <button id="mode-paint-btn" type="button" disabled class="mode-btn"        data-i18n="paintModeBtn">🖌️ Paint</button>
             </div>
-            <button id="pencil-button"       type="button" disabled class="action-btn" data-i18n="pencilBtn">✏️ Draw</button>
-            <button id="clear-pencil-button" type="button" disabled class="action-btn" data-i18n="clearPencilBtn">🗑️ Clear</button>
-            <button id="print-button"        type="button" disabled class="action-btn" data-i18n="printBtn">🖨️ Print</button>
-            <button id="download-button"     type="button" disabled class="action-btn" data-i18n="saveBtn">💾 Save</button>
-            <button id="share-artwork-btn"   type="button" disabled class="action-btn" data-i18n="shareArtBtn">🖼️ Share art</button>
-            <button id="share-button"        type="button" disabled class="action-btn share-action-btn" data-i18n="shareBtn">🏆 Challenge!</button>
+            <div class="action-sep" aria-hidden="true"></div>
+            <!-- Group 4: Drawing/annotation tools -->
+            <div class="action-group">
+              <button id="pencil-button"       type="button" disabled class="action-btn" data-i18n="pencilBtn">✏️ Draw</button>
+              <button id="clear-pencil-button" type="button" disabled class="action-btn" data-i18n="clearPencilBtn">🗑️ Clear</button>
+            </div>
+            <!-- Spacer: pushes output group to right edge -->
+            <div class="action-spacer" aria-hidden="true"></div>
+            <!-- Group 5: Output (print / save / share) -->
+            <div class="action-group action-group--output">
+              <button id="print-button"      type="button" disabled class="action-btn" data-i18n="printBtn">🖨️ Print</button>
+              <button id="download-button"   type="button" disabled class="action-btn" data-i18n="saveBtn">💾 Save</button>
+              <button id="share-artwork-btn" type="button" disabled class="action-btn" data-i18n="shareArtBtn">🖼️ Share art</button>
+              <button id="share-button"      type="button" disabled class="action-btn share-action-btn" data-i18n="shareBtn">🏆 Challenge!</button>
+            </div>
           </div>
 
           <!-- B4: Zoom controls — shown after first image generates -->
@@ -563,7 +576,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=169"></script>
+  <script type="module" src="/js/main.js?v=170"></script>
 </body>
 </html>
 
