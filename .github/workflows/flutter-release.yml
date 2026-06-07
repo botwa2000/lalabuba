@@ -46,7 +46,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.x'
+          flutter-version: '3.44.1'
           channel: 'stable'
 
       - name: Set up Java 21
@@ -80,7 +80,11 @@ jobs:
         working-directory: flutter_app
         run: |
           CURRENT=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
-          sed -i "s/^version: .*/version: ${CURRENT}+${GITHUB_RUN_NUMBER}/" pubspec.yaml
+          # Offset by 1000 so the Flutter versionCode always exceeds the legacy
+          # Capacitor Play releases (which used raw run numbers, up to ~60).
+          CODE=$((1000 + GITHUB_RUN_NUMBER))
+          sed -i "s/^version: .*/version: ${CURRENT}+${CODE}/" pubspec.yaml
+          echo "pubspec version → ${CURRENT}+${CODE}"
 
       - name: Build release App Bundle (AAB)
         working-directory: flutter_app

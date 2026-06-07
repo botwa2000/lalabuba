@@ -108,8 +108,12 @@ workflows:
         script: |
           cd $FLUTTER_APP_DIR
           # Flutter version format: major.minor.patch+buildNumber
+          # Offset CFBundleVersion by 1000 so the Flutter iOS build always exceeds the
+          # legacy Capacitor TestFlight builds (which used BUILD_NUMBER+100, up to ~1xx).
           CURRENT=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
-          sed -i "s/^version: .*/version: ${CURRENT}+${BUILD_NUMBER}/" pubspec.yaml
+          CODE=$((BUILD_NUMBER + 1000))
+          sed -i "s/^version: .*/version: ${CURRENT}+${CODE}/" pubspec.yaml
+          echo "pubspec version → ${CURRENT}+${CODE}"
 
       - name: Get Flutter dependencies
         script: |
