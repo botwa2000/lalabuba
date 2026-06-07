@@ -362,7 +362,8 @@
     flex-wrap: wrap;
     overflow-x: visible;
   }
-  .canvas-actions.show-more .action-group { display: flex; }
+  /* Must out-specify the hide rule above (which has two :not() class checks) */
+  .canvas-actions.show-more .action-group:not(.action-group--primary):not(.action-group--more) { display: flex; }
   .canvas-actions.show-more .action-group--output { margin-left: 0; }
 
   /* Bigger, kid-friendly touch targets for the always-visible controls */
