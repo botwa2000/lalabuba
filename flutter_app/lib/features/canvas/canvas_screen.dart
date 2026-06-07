@@ -732,8 +732,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             child: Row(
               children: [
                 _ActionBtn(
+                  // In free mode this button returns to numbered coloring, so label
+                  // it with the noun ("Numbers") not the ON/OFF toggle state.
                   label: canvas.isFreeMode
-                      ? '🔢 ${l10n.t("numbersOn")}'
+                      ? '🔢 ${l10n.t("numbersLabel")}'
                       : (canvas.showNumbers
                           ? '🔢 ${l10n.t("numbersOn")}'
                           : '🔡 ${l10n.t("numbersOff")}'),
