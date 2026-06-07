@@ -269,11 +269,12 @@
 /* Portrait: fill available height, hide debug panel */
 @media (max-width: 767px) {
   .workspace { align-items: stretch; }
-  .canvas-wrapper { min-height: 60dvh; }
+  /* Let canvas-wrapper shrink to its content — palette then appears naturally below in document flow */
+  .canvas-wrapper { min-height: 0; }
   .side-panel { display: none !important; }
 }
 
-/* Mobile portrait (not landscape): wrap action bar, hide separators, pad for fixed palette strip */
+/* Mobile portrait (not landscape phones): wrap action bar, hide separators */
 @media (max-width: 767px) and (min-height: 501px) {
   .canvas-actions {
     flex-wrap: wrap;
@@ -281,10 +282,6 @@
     gap: 6px;
   }
   .action-sep, .action-spacer { display: none; }
-  /* Workspace needs bottom padding so content doesn't hide behind the fixed palette strip */
-  .app:not(.app-hero) .workspace {
-    padding-bottom: 76px !important;
-  }
 }
 
 /* Tablet and below: stack palette under canvas */
