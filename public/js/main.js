@@ -691,6 +691,27 @@ window.addEventListener('resize', () => syncSidebarToOrientation());
 panelToggleBtn?.addEventListener('click', togglePanel);
 mobileMenuBtn?.addEventListener('click', (e) => { e.stopPropagation(); togglePanel(); });
 
+// ─── New drawing button (canvas action bar) ──────────────────────────────────
+// Re-opens the prompt so a new subject can be entered without losing canvas space.
+const newDrawingBtn = document.getElementById('new-drawing-btn');
+newDrawingBtn?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const isMobilePortrait = window.innerWidth < 768 && !isPhoneLandscape();
+  if (isMobilePortrait) {
+    configPanel?.classList.add('mobile-open');
+    if (mobileMenuBtn) { mobileMenuBtn.textContent = '✕'; mobileMenuBtn.setAttribute('aria-label', 'Close settings'); }
+  } else {
+    configPanel?.classList.remove('collapsed');
+    if (panelToggleBtn) panelToggleBtn.textContent = '◀';
+  }
+  // Clear the prompt and any pending daily-word/card seed so the user starts fresh
+  subjectInput.value = '';
+  _pendingSeedOverride = null;
+  _pendingEnglishSubject = null;
+  configPanel?.scrollTo({ top: 0, behavior: 'smooth' });
+  subjectInput.focus();
+});
+
 // Close mobile portrait panel when clicking outside
 document.addEventListener('click', (e) => {
   if (window.innerWidth < 768 && !isPhoneLandscape() &&

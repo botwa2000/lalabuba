@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=172" />
-  <link rel="stylesheet" href="/css/header.css?v=172" />
-  <link rel="stylesheet" href="/css/hero.css?v=172" />
-  <link rel="stylesheet" href="/css/generator.css?v=172" />
-  <link rel="stylesheet" href="/css/layout.css?v=172" />
-  <link rel="stylesheet" href="/css/workspace.css?v=172" />
-  <link rel="stylesheet" href="/css/palette.css?v=172" />
-  <link rel="stylesheet" href="/css/modals.css?v=172" />
-  <link rel="stylesheet" href="/css/footer.css?v=172" />
-  <link rel="stylesheet" href="/css/print.css?v=172" />
-  <link rel="stylesheet" href="/css/cookies.css?v=172" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=172" />
-  <script src="/js/cookies.js?v=172"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=173" />
+  <link rel="stylesheet" href="/css/header.css?v=173" />
+  <link rel="stylesheet" href="/css/hero.css?v=173" />
+  <link rel="stylesheet" href="/css/generator.css?v=173" />
+  <link rel="stylesheet" href="/css/layout.css?v=173" />
+  <link rel="stylesheet" href="/css/workspace.css?v=173" />
+  <link rel="stylesheet" href="/css/palette.css?v=173" />
+  <link rel="stylesheet" href="/css/modals.css?v=173" />
+  <link rel="stylesheet" href="/css/footer.css?v=173" />
+  <link rel="stylesheet" href="/css/print.css?v=173" />
+  <link rel="stylesheet" href="/css/cookies.css?v=173" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=173" />
+  <script src="/js/cookies.js?v=173"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -331,6 +331,11 @@
           </div>
 
           <div class="canvas-actions">
+            <!-- Group 0: New drawing — re-opens the prompt (sidebar stays collapsed for canvas space) -->
+            <div class="action-group">
+              <button id="new-drawing-btn" type="button" class="action-btn action-btn--new" data-i18n="newDrawingBtn">🆕 New</button>
+            </div>
+            <div class="action-sep" aria-hidden="true"></div>
             <!-- Group 1: Undo -->
             <div class="action-group">
               <button id="undo-button" type="button" disabled class="action-btn" data-i18n="undoBtn">↩ Undo</button>
@@ -578,7 +583,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=172"></script>
+  <script type="module" src="/js/main.js?v=173"></script>
 </body>
 </html>
 
