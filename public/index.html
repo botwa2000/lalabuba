@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=183" />
-  <link rel="stylesheet" href="/css/header.css?v=183" />
-  <link rel="stylesheet" href="/css/hero.css?v=183" />
-  <link rel="stylesheet" href="/css/generator.css?v=183" />
-  <link rel="stylesheet" href="/css/layout.css?v=183" />
-  <link rel="stylesheet" href="/css/workspace.css?v=183" />
-  <link rel="stylesheet" href="/css/palette.css?v=183" />
-  <link rel="stylesheet" href="/css/modals.css?v=183" />
-  <link rel="stylesheet" href="/css/footer.css?v=183" />
-  <link rel="stylesheet" href="/css/print.css?v=183" />
-  <link rel="stylesheet" href="/css/cookies.css?v=183" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=183" />
-  <script src="/js/cookies.js?v=183"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=184" />
+  <link rel="stylesheet" href="/css/header.css?v=184" />
+  <link rel="stylesheet" href="/css/hero.css?v=184" />
+  <link rel="stylesheet" href="/css/generator.css?v=184" />
+  <link rel="stylesheet" href="/css/layout.css?v=184" />
+  <link rel="stylesheet" href="/css/workspace.css?v=184" />
+  <link rel="stylesheet" href="/css/palette.css?v=184" />
+  <link rel="stylesheet" href="/css/modals.css?v=184" />
+  <link rel="stylesheet" href="/css/footer.css?v=184" />
+  <link rel="stylesheet" href="/css/print.css?v=184" />
+  <link rel="stylesheet" href="/css/cookies.css?v=184" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=184" />
+  <script src="/js/cookies.js?v=184"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -610,9 +610,14 @@
       gap: 6px;
       position: fixed;
       left: 50%;
-      top: calc(50% - 96px);
+      /* Anchor the card's BOTTOM above the checkbox (which is centred at 50%), with a
+         clear gap, so it never covers the box. */
+      bottom: calc(50% + 55px);
+      top: auto;
       transform: translateX(-50%);
       z-index: 2001;
+      /* Never intercept taps meant for the Cloudflare checkbox below it. */
+      pointer-events: none;
       width: min(300px, 86vw);
       text-align: center;
       background: #fff;
@@ -644,7 +649,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=183"></script>
+  <script type="module" src="/js/main.js?v=184"></script>
 </body>
 </html>
 
