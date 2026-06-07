@@ -100,6 +100,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "Go free!",
     goFreeCancel: "Keep guided",
     pickColorBtn: "Tap to pick color",
+    eyeDropperBtn: "Pick from screen",
   },
   de: {
     heroHeading: "Was sollen wir heute zeichnen? ✨",
@@ -197,6 +198,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "Los geht's!",
     goFreeCancel: "Weiter mit Nummern",
     pickColorBtn: "Farbe wählen",
+    eyeDropperBtn: "Farbe aufnehmen",
   },
   ru: {
     heroHeading: "Что мы нарисуем сегодня? ✨",
@@ -294,6 +296,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "Вперёд!",
     goFreeCancel: "Оставить цифры",
     pickColorBtn: "Выбрать цвет",
+    eyeDropperBtn: "Пипетка",
   },
   fr: {
     heroHeading: "Qu'allons-nous dessiner aujourd'hui ? ✨",
@@ -391,6 +394,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "Go libre!",
     goFreeCancel: "Garder les numéros",
     pickColorBtn: "Choisir couleur",
+    eyeDropperBtn: "Pipette",
   },
   es: {
     heroHeading: "¿Qué dibujamos hoy? ✨",
@@ -488,6 +492,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "¡A colorear!",
     goFreeCancel: "Seguir con números",
     pickColorBtn: "Elegir color",
+    eyeDropperBtn: "Cuentagotas",
   },
   pt: {
     heroHeading: "O que vamos desenhar hoje? ✨",
@@ -585,6 +590,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "Vamos lá!",
     goFreeCancel: "Manter números",
     pickColorBtn: "Escolher cor",
+    eyeDropperBtn: "Conta-gotas",
   },
   it: {
     heroHeading: "Cosa disegniamo oggi? ✨",
@@ -682,6 +688,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "Via libera!",
     goFreeCancel: "Continua con numeri",
     pickColorBtn: "Scegli colore",
+    eyeDropperBtn: "Contagocce",
   },
   nl: {
     heroHeading: "Wat tekenen we vandaag? ✨",
@@ -779,6 +786,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "Laat gaan!",
     goFreeCancel: "Nummers houden",
     pickColorBtn: "Kleur kiezen",
+    eyeDropperBtn: "Pipet",
   },
   pl: {
     heroHeading: "Co dzisiaj narysujemy? ✨",
@@ -876,6 +884,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "Do dzieła!",
     goFreeCancel: "Zostaw cyfry",
     pickColorBtn: "Wybierz kolor",
+    eyeDropperBtn: "Pipeta",
   },
   tr: {
     heroHeading: "Bugün ne çizelim? ✨",
@@ -973,6 +982,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "Hadi gidelim!",
     goFreeCancel: "Sayıları koru",
     pickColorBtn: "Renk seç",
+    eyeDropperBtn: "Damlalık",
   },
   zh: {
     heroHeading: "今天画什么呢？✨",
@@ -1070,6 +1080,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "去自由涂色！",
     goFreeCancel: "保留数字",
     pickColorBtn: "选择颜色",
+    eyeDropperBtn: "取色",
   },
   hi: {
     heroHeading: "आज क्या बनाएं? ✨",
@@ -1167,6 +1178,7 @@ const TRANSLATIONS = {
     goFreeConfirm: "चलो करते हैं!",
     goFreeCancel: "नंबर रखें",
     pickColorBtn: "रंग चुनें",
+    eyeDropperBtn: "रंग लें",
   },
 };
 

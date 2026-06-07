@@ -272,6 +272,9 @@
   .config-panel .hero-section { padding: 8px 0 4px; }
 }
 
+/* Numbers chip in sidebar duplicates the action bar Numbers button — hide in coloring mode */
+.app:not(.app-hero) #chip-numbers { display: none; }
+
 /* ── Container queries: config-panel inner content adapts to sidebar width ─── */
 /* Match app-body bleed margin to app padding at each mobile breakpoint to prevent viewport overflow */
 @media (max-width: 480px) { .app-body { margin: 0 -10px; } }

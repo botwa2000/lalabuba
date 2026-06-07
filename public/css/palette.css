@@ -300,6 +300,9 @@
 .free-color-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 18px rgba(0,0,0,.24); }
 .free-color-icon { font-size: 1.3rem; pointer-events: none; }
 
+.eyedropper-btn { background: linear-gradient(120deg, #e3f2fd, #f3e5f5); color: #4527a0; border-color: rgba(69,39,160,.25); }
+.eyedropper-btn:hover { border-color: #7c4dff; color: #7c4dff; }
+
 /* ─── Go-free confirmation dialog ────────────────────────────────────────── */
 .go-free-backdrop {
   position: fixed;

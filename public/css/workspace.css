@@ -26,15 +26,12 @@
 
 .canvas-actions {
   display: flex;
-  flex-wrap: nowrap;   /* single scrollable row on desktop */
+  flex-wrap: wrap;     /* two-row layout: tools row 1, output row 2 */
   gap: 6px;
   padding: 8px 12px;
   border-bottom: 1.5px solid var(--border);
   background: var(--bg);
-  overflow-x: auto;
-  scrollbar-width: none;
 }
-.canvas-actions::-webkit-scrollbar { display: none; }
 
 /* ─── Action bar groups ──────────────────────────────────────────────────── */
 .action-group {
@@ -55,11 +52,24 @@
   flex-shrink: 0;
 }
 
-/* Grows to fill gap between tool groups and output group */
+/* Fills remaining space at end of tool row */
 .action-spacer {
   flex: 1;
   min-width: 8px;
   max-width: 32px;
+}
+
+/* Forces output group to start on a new row */
+.action-row-break {
+  flex-basis: 100%;
+  height: 0;
+  flex-shrink: 0;
+}
+
+/* Output group: right-aligned on its own row */
+.action-group--output {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .action-btn {
@@ -356,6 +366,8 @@
     scrollbar-width: none;
   }
   .canvas-actions::-webkit-scrollbar { display: none; }
+  .action-row-break { display: none; }  /* single scrollable row in landscape */
+  .action-group--output { margin-left: 0; }
   .action-btn  { font-size: .72rem !important; padding: 4px 8px !important; white-space: nowrap; flex-shrink: 0; }
   .mode-btn    { font-size: .72rem !important; padding: 4px 6px !important; white-space: nowrap; flex-shrink: 0; }
   .zoom-controls { padding: 5px 8px; gap: 4px; }

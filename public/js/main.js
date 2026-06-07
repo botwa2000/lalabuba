@@ -729,9 +729,7 @@ function updateDiffChip() {
 }
 function updateCountChip() {
   if (!chipCount) return;
-  chipCount.textContent = state.colorCount >= (PALETTES[paletteSelect.value]?.length || 24)
-    ? `🎨 Max`
-    : `🎨 ${state.colorCount}`;
+  chipCount.textContent = `🎨 ${state.colorCount}`;
 }
 function updatePaletteChip() {
   if (!chipPalette) return;
@@ -810,6 +808,7 @@ syncHeroNumbersBtn();
 const canvasNumbersBtn = document.getElementById('canvas-numbers-btn');
 if (canvasNumbersBtn) {
   canvasNumbersBtn.addEventListener('click', () => {
+    if (state.isFreeMode) { _exitFreeMode(); return; }
     showNumbersInput.checked = !showNumbersInput.checked;
     showNumbersInput.dispatchEvent(new Event('change'));
     updateNumbersChip();
@@ -883,9 +882,29 @@ function _activateFreeMode() {
     goFreeBtn.classList.add('action-btn--active');
     goFreeBtn.disabled = true;
   }
-  if (canvasNumbersBtn) canvasNumbersBtn.disabled = true;
+  if (canvasNumbersBtn) canvasNumbersBtn.disabled = false;
   // Show free mode picker in legend
   renderLegend();
+}
+
+function _exitFreeMode() {
+  state.isFreeMode = false;
+  // Re-enable free button
+  if (goFreeBtn) {
+    goFreeBtn.disabled = false;
+    goFreeBtn.classList.remove('action-btn--active');
+    goFreeBtn.textContent = t('goFreeBtn');
+  }
+  // Reset color count to max
+  const maxN = PALETTES[paletteSelect.value].length;
+  setColorCount(maxN, true);
+  updateCountChip();
+  // Turn numbers back on (setColorCount already called renderLegend with isFreeMode=false)
+  showNumbersInput.checked = true;
+  showNumbersInput.dispatchEvent(new Event('change'));
+  updateNumbersChip();
+  syncHeroNumbersBtn();
+  syncCanvasNumbersBtn();
 }
 
 // ─── Populate-only helpers (A1) ───────────────────────────────────────────────

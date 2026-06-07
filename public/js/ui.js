@@ -34,6 +34,26 @@ export function renderLegend() {
     freeItem.querySelector('button').addEventListener('click', () => openMaxPicker());
     legendList.appendChild(freeItem);
 
+    // EyeDropper — only in browsers that support the Web EyeDropper API (Chrome/Edge)
+    if (window.EyeDropper) {
+      const eyeItem = document.createElement('li');
+      eyeItem.className = 'legend-tool-item';
+      eyeItem.innerHTML = `<button class="tool-btn eyedropper-btn" title="${t('eyeDropperBtn')}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <path d="M20.71 5.63l-2.34-2.34a1 1 0 0 0-1.41 0l-3.12 3.12-1.41-1.42-1.42 1.42 1.41 1.41-6.6 6.6A2 2 0 0 0 5 16v3h3a2 2 0 0 0 1.42-.59l6.6-6.6 1.41 1.42 1.42-1.42-1.42-1.41 3.12-3.12a1 1 0 0 0 .16-1.65z"/>
+        </svg>
+        <span>${t('eyeDropperBtn')}</span>
+      </button>`;
+      eyeItem.querySelector('button').addEventListener('click', () => {
+        new EyeDropper().open().then(({ sRGBHex }) => {
+          state.customColor = sRGBHex;
+          state.selectedPaletteIndex = -1;
+          renderLegend();
+        }).catch(() => {});
+      });
+      legendList.appendChild(eyeItem);
+    }
+
     const sep = document.createElement('li');
     sep.className = 'legend-sep';
     sep.setAttribute('aria-hidden', 'true');

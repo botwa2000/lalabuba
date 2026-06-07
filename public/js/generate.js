@@ -97,6 +97,14 @@ export function buildDemoImage(subject) {
 export async function generatePage(subject, seedOverride = null, isPreDefined = false) {
   // Transition to coloring layout immediately so canvas & loading overlay are visible
   document.querySelector('.app')?.classList.remove('app-hero');
+  // Auto-collapse sidebar so canvas gets full width on first draw
+  const cp = document.querySelector('.config-panel');
+  if (cp) {
+    cp.classList.add('collapsed');
+    cp.classList.remove('mobile-open');
+    const toggleBtn = document.getElementById('panel-toggle');
+    if (toggleBtn) toggleBtn.textContent = '▶';
+  }
   const difficulty = difficultySelect.value;
   setStatus(t('generating', subject, difficulty));
   showLoading();

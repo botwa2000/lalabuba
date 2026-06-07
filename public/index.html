@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=171" />
-  <link rel="stylesheet" href="/css/header.css?v=171" />
-  <link rel="stylesheet" href="/css/hero.css?v=171" />
-  <link rel="stylesheet" href="/css/generator.css?v=171" />
-  <link rel="stylesheet" href="/css/layout.css?v=171" />
-  <link rel="stylesheet" href="/css/workspace.css?v=171" />
-  <link rel="stylesheet" href="/css/palette.css?v=171" />
-  <link rel="stylesheet" href="/css/modals.css?v=171" />
-  <link rel="stylesheet" href="/css/footer.css?v=171" />
-  <link rel="stylesheet" href="/css/print.css?v=171" />
-  <link rel="stylesheet" href="/css/cookies.css?v=171" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=171" />
-  <script src="/js/cookies.js?v=171"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=172" />
+  <link rel="stylesheet" href="/css/header.css?v=172" />
+  <link rel="stylesheet" href="/css/hero.css?v=172" />
+  <link rel="stylesheet" href="/css/generator.css?v=172" />
+  <link rel="stylesheet" href="/css/layout.css?v=172" />
+  <link rel="stylesheet" href="/css/workspace.css?v=172" />
+  <link rel="stylesheet" href="/css/palette.css?v=172" />
+  <link rel="stylesheet" href="/css/modals.css?v=172" />
+  <link rel="stylesheet" href="/css/footer.css?v=172" />
+  <link rel="stylesheet" href="/css/print.css?v=172" />
+  <link rel="stylesheet" href="/css/cookies.css?v=172" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=172" />
+  <script src="/js/cookies.js?v=172"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -353,8 +353,10 @@
               <button id="pencil-button"       type="button" disabled class="action-btn" data-i18n="pencilBtn">✏️ Draw</button>
               <button id="clear-pencil-button" type="button" disabled class="action-btn" data-i18n="clearPencilBtn">🗑️ Clear</button>
             </div>
-            <!-- Spacer: pushes output group to right edge -->
+            <!-- Spacer: fills remaining row-1 space on desktop -->
             <div class="action-spacer" aria-hidden="true"></div>
+            <!-- Row break: forces output group to row 2 on all viewports -->
+            <div class="action-row-break" aria-hidden="true"></div>
             <!-- Group 5: Output (print / save / share) -->
             <div class="action-group action-group--output">
               <button id="print-button"      type="button" disabled class="action-btn" data-i18n="printBtn">🖨️ Print</button>
@@ -576,7 +578,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=171"></script>
+  <script type="module" src="/js/main.js?v=172"></script>
 </body>
 </html>
 
