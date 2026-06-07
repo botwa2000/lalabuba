@@ -103,6 +103,10 @@
 .action-btn--new { color: #2e7d32; border-color: rgba(46,125,50,.35); }
 .action-btn--new:hover:not(:disabled) { border-color: #2e7d32 !important; color: #2e7d32 !important; background: rgba(46,125,50,.08); transform: translateY(-1px); }
 
+/* "More" — collapses secondary actions on mobile; never shown on desktop */
+.action-group--more { display: none; }
+.action-btn--more { color: var(--muted); }
+
 .share-action-btn { color: var(--purple); border-color: rgba(124,77,255,.25); }
 .share-action-btn:hover:not(:disabled) { border-color: var(--purple) !important; color: var(--purple) !important; background: rgba(124,77,255,.08); transform: translateY(-1px); }
 
@@ -313,14 +317,56 @@
   .side-panel { display: none !important; }
 }
 
-/* Mobile portrait (not landscape phones): wrap action bar, hide separators */
+/* ── Mobile portrait coloring: fit-to-viewport (header / canvas / bottom dock) ──
+   No page scroll — the picture fills the space and colors live in a fixed bottom
+   dock, so there's never a scroll/touch conflict on the canvas. */
 @media (max-width: 767px) and (min-height: 501px) {
+  .app:not(.app-hero) .canvas-area { overflow: hidden; }
+  .app:not(.app-hero) .workspace {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 0;
+    padding: 0;
+  }
+  .app:not(.app-hero) .canvas-wrapper {
+    flex: 1;
+    min-height: 0;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+  .app:not(.app-hero) .canvas-body { flex: 1; min-height: 0; }
+  .app:not(.app-hero) #preview-canvas { max-height: 100%; }
+  /* Challenge lives in the More menu on mobile — drop the strip to save height */
+  .app:not(.app-hero) .challenge-strip { display: none; }
+
+  /* Slim single-row toolbar: New + Undo on the left, More on the right.
+     Secondary groups are hidden until "More" is tapped. */
   .canvas-actions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    align-items: center;
+    scrollbar-width: none;
+  }
+  .canvas-actions::-webkit-scrollbar { display: none; }
+  .action-sep { display: none; }
+  .action-row-break { display: none; }
+  .action-spacer { display: block; flex: 1 1 auto; min-width: 0; max-width: none; }
+  .action-group--more { display: flex; }
+
+  /* Hide everything that isn't a primary group or the More button */
+  .canvas-actions .action-group:not(.action-group--primary):not(.action-group--more) { display: none; }
+  .canvas-actions.show-more {
     flex-wrap: wrap;
     overflow-x: visible;
-    gap: 6px;
   }
-  .action-sep, .action-spacer { display: none; }
+  .canvas-actions.show-more .action-group { display: flex; }
+  .canvas-actions.show-more .action-group--output { margin-left: 0; }
+
+  /* Bigger, kid-friendly touch targets for the always-visible controls */
+  .action-btn { min-height: 40px; }
 }
 
 /* Tablet and below: stack palette under canvas */
@@ -340,18 +386,14 @@
              40px
              max(10px, env(safe-area-inset-left, 0px));
   }
-  .workspace { padding: 0 6px 12px !important; }
   .search-bar { flex-wrap: wrap; gap: 6px; }
   .go-btn { flex: 1; min-width: 0; }
   .regen-btn { flex: 1; min-width: 0; }
-  /* !important beats container queries that appear later in the file */
-  .canvas-actions { gap: 4px !important; padding: 6px 8px !important; flex-wrap: wrap !important; overflow-x: visible !important; }
-  .action-btn { font-size: .74rem !important; padding: 4px 7px !important; }
-  .mode-btn   { font-size: .74rem !important; padding: 4px 5px !important; }
-  /* Pencil draw + clear-strokes hidden on narrow portrait — too small to use precisely */
-  #print-button { display: none; }
-  #pencil-button { display: none; }
-  #clear-pencil-button { display: none; }
+  /* Coloring mode uses the fit-viewport layout (see 767/min-height block); keep the
+     slim toolbar single-row, just shrink fonts on the smallest phones. */
+  .canvas-actions { gap: 4px !important; padding: 6px 8px !important; }
+  .action-btn { font-size: .76rem !important; padding: 5px 11px !important; }
+  .mode-btn   { font-size: .76rem !important; padding: 5px 8px !important; }
 }
 
 /* Very small phones */

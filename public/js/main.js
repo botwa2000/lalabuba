@@ -718,6 +718,14 @@ newDrawingBtn?.addEventListener('click', (e) => {
   subjectInput.focus();
 });
 
+// ─── More actions toggle (mobile): reveal secondary action buttons ────────────
+const moreActionsBtn = document.getElementById('more-actions-btn');
+const canvasActionsEl = document.querySelector('.canvas-actions');
+moreActionsBtn?.addEventListener('click', () => {
+  const open = canvasActionsEl?.classList.toggle('show-more');
+  moreActionsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+
 // Close mobile portrait panel when clicking outside
 document.addEventListener('click', (e) => {
   if (window.innerWidth < 768 && !isPhoneLandscape() &&

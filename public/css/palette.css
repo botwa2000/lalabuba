@@ -112,42 +112,58 @@
   pointer-events: none;
 }
 
-/* Mobile: compact wrap grid below canvas — no scrolling */
-@media (max-width: 640px) {
+/* Mobile: color dock — fixed-height bottom bar with horizontally-scrolling swatches.
+   Stays in normal flow (last flex item of .workspace) so .app{overflow:hidden}
+   never clips it the way position:fixed would. Matches the fit-viewport breakpoint. */
+@media (max-width: 767px) and (min-height: 501px) {
   .palette-sidebar {
     position: static;
     flex-direction: column;
     overflow: visible;
-    padding: 10px 14px 14px;
+    flex-shrink: 0;
     max-height: none;
     align-items: stretch;
-    gap: 8px;
-    border-radius: var(--radius);
+    gap: 0;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+    border: none;
+    border-top: 2px solid var(--border);
+    border-radius: 0;
+    box-shadow: 0 -4px 16px rgba(0,0,0,.08);
   }
   .palette-strip {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 7px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 10px;
     padding: 2px;
+    align-items: center;
+    scrollbar-width: none;
   }
+  .palette-strip::-webkit-scrollbar { display: none; }
   .color-swatch {
-    width: 100%;
-    height: auto;
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
     aspect-ratio: 1;
-    flex-shrink: unset;
+    flex-shrink: 0;
   }
-  /* Tools span full width, sit below the color grid */
+  /* Tools (erase / free color / eyedropper) sit inline in the dock, not full-width */
   .legend-tool-item {
-    grid-column: 1 / -1;
-    flex-shrink: unset;
+    grid-column: auto;
+    flex-shrink: 0;
+    width: auto;
   }
-  .tool-btn { padding: 8px 12px; gap: 6px; font-size: .76rem; border-radius: 10px; }
+  .tool-btn { width: auto; height: 46px; padding: 0 14px; gap: 6px; font-size: .72rem; border-radius: 12px; white-space: nowrap; }
   .picker-dot { width: 12px; height: 12px; }
-  /* Separator becomes a horizontal line */
+  .legend-free-item { width: auto; flex-shrink: 0; }
+  .free-color-btn { width: auto; height: 46px; padding: 0 16px; }
+  /* Vertical divider between swatches and tools */
   .legend-sep {
-    width: auto; height: 1px; flex-shrink: unset;
-    margin: 0;
-    background: linear-gradient(to right, transparent, rgba(0,0,0,.13), transparent);
+    width: 1.5px; height: 34px; flex-shrink: 0;
+    margin: 0 2px;
+    align-self: center;
+    background: linear-gradient(to bottom, transparent, rgba(0,0,0,.16), transparent);
   }
 }
 
