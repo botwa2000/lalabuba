@@ -738,4 +738,10 @@ export async function renderGeneratedImage(imageBase64) {
   if (shareButton) shareButton.disabled = false;
   const shareArtworkBtn = document.getElementById('share-artwork-btn');
   if (shareArtworkBtn) shareArtworkBtn.disabled = false;
+  // Reset free mode on new generation, then enable canvas controls
+  state.isFreeMode = false;
+  const canvasNums = document.getElementById('canvas-numbers-btn');
+  if (canvasNums) { canvasNums.disabled = false; canvasNums.classList.remove('action-btn--on'); canvasNums.textContent = '🔢 Numbers'; }
+  const goFree = document.getElementById('go-free-btn');
+  if (goFree) { goFree.disabled = false; goFree.classList.remove('action-btn--active'); goFree.textContent = '🎨 Free!'; }
 }

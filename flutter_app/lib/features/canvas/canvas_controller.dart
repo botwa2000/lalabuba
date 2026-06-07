@@ -151,8 +151,8 @@ class CanvasNotifier extends Notifier<CanvasState> {
 
     final isErasing = s.activeColor == Colors.transparent;
 
-    // Color-by-number enforcement (skip when erasing)
-    if (!isErasing && s.showNumbers && s.regionColorMap.isNotEmpty) {
+    // Color-by-number enforcement (skip when erasing or in free mode)
+    if (!isErasing && !s.isFreeMode && s.showNumbers && s.regionColorMap.isNotEmpty) {
       final assignedColor = s.regionColorMap[regionId];
       if (assignedColor != null && assignedColor != s.activeColor) {
         // Wrong color — flash hint, block fill
@@ -207,6 +207,8 @@ class CanvasNotifier extends Notifier<CanvasState> {
       state = state.copyWith(mode: m, clearCurrentStroke: true);
   void toggleNumbers() =>
       state = state.copyWith(showNumbers: !state.showNumbers);
+  void setFreeMode() =>
+      state = state.copyWith(isFreeMode: true, showNumbers: false);
 
   void beginStroke(Offset p) {
     state = state.copyWith(

@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Was sollen wir heute zeichnen? ✨",
   "heroSub": "Deine Fantasie… gezeichnet von Lalabuba",
   "tagline": "Zeichne · Färbe · Liebe es 🌈",
@@ -74,4 +74,13 @@
   "backConfirmStay": "Weiterzeichnen",
   "shareImageText": "Ich habe {subject} mit Lalabuba ausgemalt! 🎨",
   "challengeText": "Challenge: Male {subject} aus und sieh wer zuerst fertig ist! 🏆"
+,
+  "homeBtn": "Start",
+  "goFreeBtn": "🎨 Frei!",
+  "goFreeTitle": "Freies Malen?",
+  "goFreeBody": "Male überall mit jeder Farbe! Dein Fortschritt bleibt. 🎉",
+  "goFreeConfirm": "Los geht's!",
+  "goFreeCancel": "Weiter mit Nummern",
+  "pickColorBtn": "Farbe wählen",
+  "pickColorConfirm": "Diese Farbe nehmen!"
 }

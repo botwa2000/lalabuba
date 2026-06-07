@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Bugün ne çizelim? ✨",
   "heroSub": "Hayal gücün… Lalabuba tarafından çizildi",
   "tagline": "Çiz · Boya · Sev 🌈",
@@ -74,4 +74,13 @@
   "backConfirmStay": "Boyamaya devam et",
   "shareImageText": "{subject}'yi Lalabuba ile boyadım! 🎨",
   "challengeText": "Meydan Okuma: {subject}'yi boya ve kimin önce bitireceğini gör! 🏆"
+,
+  "homeBtn": "Ev",
+  "goFreeBtn": "🎨 Özgür!",
+  "goFreeTitle": "Özgürce renklendir?",
+  "goFreeBody": "Her alana her rengi kullan! Boyaman kalir. 🎉",
+  "goFreeConfirm": "Hadi gidelim!",
+  "goFreeCancel": "Sayilari koru",
+  "pickColorBtn": "Renk seç",
+  "pickColorConfirm": "Bu rengi kullan!"
 }

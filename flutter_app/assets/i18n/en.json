@@ -115,5 +115,13 @@
   "consentTitle": "We care about your privacy",
   "consentBody": "We use analytics to improve Lalabuba. No personal data is collected from children.",
   "consentAccept": "That's fine",
-  "consentDecline": "No thanks"
+  "consentDecline": "No thanks",
+  "homeBtn": "Home",
+  "goFreeBtn": "🎨 Free!",
+  "goFreeTitle": "Switch to free coloring?",
+  "goFreeBody": "Color any area with any color! Your coloring stays. 🎉",
+  "goFreeConfirm": "Go free!",
+  "goFreeCancel": "Keep guided",
+  "pickColorBtn": "Tap to pick color",
+  "pickColorConfirm": "Use this color!"
 }

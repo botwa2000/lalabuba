@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "O que vamos desenhar hoje? ✨",
   "heroSub": "Sua imaginação… desenhada pelo Lalabuba",
   "tagline": "Desenhe · Pinte · Ame 🌈",
@@ -74,4 +74,13 @@
   "backConfirmStay": "Continuar",
   "shareImageText": "Eu colori {subject} com Lalabuba! 🎨",
   "challengeText": "Desafio: Pinte {subject} e veja quem termina primeiro! 🏆"
+,
+  "homeBtn": "Início",
+  "goFreeBtn": "🎨 Livre!",
+  "goFreeTitle": "Colorir livremente?",
+  "goFreeBody": "Pinte qualquer área! Sua coloração fica. 🎉",
+  "goFreeConfirm": "Vamos lá!",
+  "goFreeCancel": "Manter números",
+  "pickColorBtn": "Escolher cor",
+  "pickColorConfirm": "Usar esta cor!"
 }

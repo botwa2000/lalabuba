@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Cosa disegniamo oggi? ✨",
   "heroSub": "La tua fantasia… disegnata da Lalabuba",
   "tagline": "Disegna · Colora · Amalo 🌈",
@@ -74,4 +74,13 @@
   "backConfirmStay": "Continua",
   "shareImageText": "Ho colorato {subject} con Lalabuba! 🎨",
   "challengeText": "Sfida: Colora {subject} e vedi chi finisce prima! 🏆"
+,
+  "homeBtn": "Casa",
+  "goFreeBtn": "🎨 Libero!",
+  "goFreeTitle": "Colorare liberamente?",
+  "goFreeBody": "Colora ovunque! I tuoi progressi restano. 🎉",
+  "goFreeConfirm": "Via libera!",
+  "goFreeCancel": "Continua con numeri",
+  "pickColorBtn": "Scegli colore",
+  "pickColorConfirm": "Usa questo colore!"
 }

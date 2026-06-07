@@ -121,9 +121,10 @@ class CanvasState {
   final List<Stroke> strokes;
   final Stroke? currentStroke;
   final List<CanvasAction> undoStack;
-  final bool isProcessing; // region detection running
-  final Map<int, Color> regionColorMap; // pre-assigned colors for color-by-number
-  final Color? hintColor;              // transient: pulses correct color swatch on wrong tap
+  final bool isProcessing;
+  final Map<int, Color> regionColorMap; // pre-assigned colors for guided mode
+  final Color? hintColor;              // transient: pulses correct swatch on wrong tap
+  final bool isFreeMode;               // one-way unlock: no enforcement, free color picker
 
   const CanvasState({
     this.baseImage,
@@ -140,6 +141,7 @@ class CanvasState {
     this.isProcessing = false,
     this.regionColorMap = const {},
     this.hintColor,
+    this.isFreeMode = false,
   });
 
   bool get hasImage => baseImage != null;
@@ -162,6 +164,7 @@ class CanvasState {
     Map<int, Color>? regionColorMap,
     Color? hintColor,
     bool clearHintColor = false,
+    bool? isFreeMode,
   }) => CanvasState(
         baseImage: baseImage ?? this.baseImage,
         compositeImage: compositeImage ?? this.compositeImage,
@@ -177,5 +180,6 @@ class CanvasState {
         isProcessing: isProcessing ?? this.isProcessing,
         regionColorMap: regionColorMap ?? this.regionColorMap,
         hintColor: clearHintColor ? null : (hintColor ?? this.hintColor),
+        isFreeMode: isFreeMode ?? this.isFreeMode,
       );
 }

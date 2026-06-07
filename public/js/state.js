@@ -25,4 +25,5 @@ export const state = {
   undoStack: [],        // [{regionId, record: Uint8Array, completedBefore: boolean}]
   colorMode: 'tap',     // 'tap' | 'paint'
   paletteOverride: null, // when set, activePalette() uses this instead of PALETTES[selected]
+  isFreeMode: false,    // one-way unlock: no enforcement, any color any area
 };

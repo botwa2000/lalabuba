@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Что мы нарисуем сегодня? ✨",
   "heroSub": "Твоя фантазия… нарисована Lalabuba",
   "tagline": "Рисуй · Раскрашивай · Люби 🌈",
@@ -74,4 +74,13 @@
   "backConfirmStay": "Продолжить",
   "shareImageText": "Я раскрасил {subject} в Lalabuba! 🎨",
   "challengeText": "Вызов: Раскрась {subject} и посмотри кто первый! 🏆"
+,
+  "homeBtn": "Домой",
+  "goFreeBtn": "🎨 Свободно!",
+  "goFreeTitle": "Свободное раскрашивание?",
+  "goFreeBody": "Любой цвет в любой области! Прогресс сохраняется. 🎉",
+  "goFreeConfirm": "Вперёд!",
+  "goFreeCancel": "Оставить цифры",
+  "pickColorBtn": "Выбрать цвет",
+  "pickColorConfirm": "Выбрать этот цвет!"
 }

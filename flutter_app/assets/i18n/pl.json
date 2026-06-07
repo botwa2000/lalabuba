@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Co dzisiaj narysujemy? ✨",
   "heroSub": "Twoja wyobraźnia… narysowana przez Lalabuba",
   "tagline": "Rysuj · Koloruj · Kochaj 🌈",
@@ -74,4 +74,13 @@
   "backConfirmStay": "Koloruj dalej",
   "shareImageText": "Pokolorowałem {subject} w Lalabuba! 🎨",
   "challengeText": "Wyzwanie: Pokoloruj {subject} i sprawdź kto skończy pierwszy! 🏆"
+,
+  "homeBtn": "Dom",
+  "goFreeBtn": "🎨 Swoboda!",
+  "goFreeTitle": "Kolorowac swobodnie?",
+  "goFreeBody": "Koloruj gdziekolwiek! Twoje kolorowanie zostaje. 🎉",
+  "goFreeConfirm": "Do dziela!",
+  "goFreeCancel": "Zostaw cyfry",
+  "pickColorBtn": "Wybierz kolor",
+  "pickColorConfirm": "Uzyj tego koloru!"
 }

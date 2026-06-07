@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "¿Qué dibujamos hoy? ✨",
   "heroSub": "Tu imaginación… dibujada por Lalabuba",
   "tagline": "Dibuja · Colorea · Disfrútalo 🌈",
@@ -74,4 +74,13 @@
   "backConfirmStay": "Seguir coloreando",
   "shareImageText": "¡Colorié {subject} con Lalabuba! 🎨",
   "challengeText": "Desafío: ¡Colorea {subject} y ve quién termina primero! 🏆"
+,
+  "homeBtn": "Inicio",
+  "goFreeBtn": "🎨 ¡Libre!",
+  "goFreeTitle": "¿Colorear libremente?",
+  "goFreeBody": "¡Colorea donde quieras! Tu progreso se queda. 🎉",
+  "goFreeConfirm": "¡A colorear!",
+  "goFreeCancel": "Seguir con números",
+  "pickColorBtn": "Elegir color",
+  "pickColorConfirm": "¡Usar este color!"
 }

@@ -19,6 +19,48 @@ export function renderLegend() {
   const palette = activePalette();
   legendList.innerHTML = "";
 
+  // ── Free mode: big color picker button + eraser only ──────────────
+  if (state.isFreeMode) {
+    const currentHex = state.selectedPaletteIndex === -1
+      ? state.customColor
+      : (palette[state.selectedPaletteIndex]?.color ?? '#e91e63');
+
+    const freeItem = document.createElement('li');
+    freeItem.className = 'legend-tool-item legend-free-item';
+    freeItem.innerHTML = `<button class="tool-btn free-color-btn" style="background:${currentHex}" title="${t('pickColorBtn')}">
+      <span class="free-color-icon">🎨</span>
+      <span>${t('pickColorBtn')}</span>
+    </button>`;
+    freeItem.querySelector('button').addEventListener('click', () => openMaxPicker());
+    legendList.appendChild(freeItem);
+
+    const sep = document.createElement('li');
+    sep.className = 'legend-sep';
+    sep.setAttribute('aria-hidden', 'true');
+    legendList.appendChild(sep);
+
+    const erFreeItem = document.createElement('li');
+    erFreeItem.className = 'legend-tool-item';
+    erFreeItem.innerHTML = `<button class="tool-btn erase-btn${state.eraseMode ? ' active' : ''}" title="${t('eraseMode')}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20" width="28" height="20" aria-hidden="true">
+        <rect x="8" y="1" width="19" height="12" rx="2.5" fill="#fff0ee" stroke="#ef9a9a" stroke-width="1.5"/>
+        <rect x="1" y="1" width="11" height="12" rx="2.5" fill="#ef9a9a" stroke="#e57373" stroke-width="1.5"/>
+        <line x1="9" y1="1.5" x2="9" y2="12.5" stroke="#e57373" stroke-width="1.5"/>
+        <line x1="4" y1="18" x2="24" y2="18" stroke="#ddd" stroke-width="2" stroke-linecap="round"/>
+        <line x1="4" y1="18" x2="12" y2="18" stroke="#ef9a9a" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>${t('eraseBtn')}</span>
+    </button>`;
+    erFreeItem.querySelector('button').addEventListener('click', () => {
+      state.eraseMode = true;
+      renderLegend();
+      setStatus(t('eraseMode'));
+    });
+    legendList.appendChild(erFreeItem);
+    setPaletteContext(palette, state.colorCount);
+    return;
+  }
+
   // ── Erase tool — full-width pill button, not a circle ──────────────
   const eraseItem = document.createElement("li");
   eraseItem.className = "legend-tool-item";

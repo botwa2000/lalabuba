@@ -328,7 +328,8 @@ previewCanvas.addEventListener("click", (event) => {
   if (state.selectedPaletteIndex === -1) {
     fillColor = hexToRgb(state.customColor);
   } else {
-    if (showNumbersInput.checked && state.regionColorMap && state.regionColorMap.has(regionId)) {
+    // Color enforcement — skip in free mode
+    if (!state.isFreeMode && showNumbersInput.checked && state.regionColorMap && state.regionColorMap.has(regionId)) {
       const required = state.regionColorMap.get(regionId);
       if (state.selectedPaletteIndex !== required) {
         const c = activePalette()[required];
@@ -337,7 +338,11 @@ previewCanvas.addEventListener("click", (event) => {
         return;
       }
     }
-    fillColor = hexToRgb(activePalette()[state.selectedPaletteIndex].color);
+    if (state.isFreeMode && state.selectedPaletteIndex === -1) {
+      fillColor = hexToRgb(state.customColor);
+    } else {
+      fillColor = hexToRgb(activePalette()[state.selectedPaletteIndex].color);
+    }
   }
 
   // ── Double-click/tap: fill ALL regions of the same color number ──────────
@@ -807,6 +812,88 @@ if (heroNumbersToggle) {
 
 updateAllChips();
 syncHeroNumbersBtn();
+
+// ─── Canvas numbers toggle (in drawing area) ──────────────────────────────────
+const canvasNumbersBtn = document.getElementById('canvas-numbers-btn');
+if (canvasNumbersBtn) {
+  canvasNumbersBtn.addEventListener('click', () => {
+    showNumbersInput.checked = !showNumbersInput.checked;
+    showNumbersInput.dispatchEvent(new Event('change'));
+    updateNumbersChip();
+    syncHeroNumbersBtn();
+    syncCanvasNumbersBtn();
+  });
+}
+
+function syncCanvasNumbersBtn() {
+  if (!canvasNumbersBtn) return;
+  const on = showNumbersInput.checked;
+  canvasNumbersBtn.classList.toggle('action-btn--on', on);
+  canvasNumbersBtn.textContent = on ? '🔢 Numbers' : '🔡 Numbers';
+}
+
+// ─── Go Free button ───────────────────────────────────────────────────────────
+const goFreeBtn = document.getElementById('go-free-btn');
+if (goFreeBtn) {
+  goFreeBtn.addEventListener('click', () => {
+    if (state.isFreeMode) return;
+    const hasProgress = state.undoStack.length > 0;
+    if (hasProgress) {
+      _showGoFreeDialog();
+    } else {
+      _activateFreeMode();
+    }
+  });
+}
+
+function _showGoFreeDialog() {
+  // Remove existing dialog if any
+  const existing = document.getElementById('go-free-dialog');
+  if (existing) existing.remove();
+
+  const dialog = document.createElement('div');
+  dialog.id = 'go-free-dialog';
+  dialog.className = 'go-free-backdrop';
+  dialog.innerHTML = `
+    <div class="go-free-panel" role="dialog" aria-modal="true">
+      <div class="go-free-icon">🎨</div>
+      <h3 class="go-free-title" data-i18n="goFreeTitle">Switch to free coloring?</h3>
+      <p class="go-free-body" data-i18n="goFreeBody">Color any area with any color! Your coloring stays. 🎉</p>
+      <div class="go-free-actions">
+        <button class="go-free-cancel" data-i18n="goFreeCancel">Keep guided</button>
+        <button class="go-free-confirm" data-i18n="goFreeConfirm">Go free!</button>
+      </div>
+    </div>`;
+  document.body.appendChild(dialog);
+  applyTranslations(dialog);
+
+  dialog.querySelector('.go-free-confirm').addEventListener('click', () => {
+    dialog.remove();
+    _activateFreeMode();
+  });
+  dialog.querySelector('.go-free-cancel').addEventListener('click', () => dialog.remove());
+  dialog.addEventListener('click', e => { if (e.target === dialog) dialog.remove(); });
+
+  requestAnimationFrame(() => dialog.classList.add('open'));
+}
+
+function _activateFreeMode() {
+  state.isFreeMode = true;
+  // Hide numbers
+  showNumbersInput.checked = false;
+  showNumbersInput.dispatchEvent(new Event('change'));
+  updateNumbersChip();
+  syncCanvasNumbersBtn();
+  // Update go-free button appearance
+  if (goFreeBtn) {
+    goFreeBtn.textContent = '🎨 Free!';
+    goFreeBtn.classList.add('action-btn--active');
+    goFreeBtn.disabled = true;
+  }
+  if (canvasNumbersBtn) canvasNumbersBtn.disabled = true;
+  // Show free mode picker in legend
+  renderLegend();
+}
 
 // ─── Populate-only helpers (A1) ───────────────────────────────────────────────
 function pulseDraw() {

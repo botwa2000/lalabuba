@@ -274,3 +274,95 @@
   .max-picker-panel { border-radius: 16px; }
   .max-picker-title { font-size: 0.95rem; }
 }
+
+/* ─── Free-mode legend: big color-picker button ──────────────────────────── */
+.legend-free-item {
+  grid-column: 1 / -1;
+}
+.free-color-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 2.5px solid rgba(255,255,255,.45);
+  background: var(--free-color, #e91e63);
+  color: inherit;  /* overridden inline by JS for contrast */
+  font-family: var(--ff-body);
+  font-size: .82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .18s, box-shadow .18s;
+  box-shadow: 0 4px 14px rgba(0,0,0,.18);
+}
+.free-color-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 18px rgba(0,0,0,.24); }
+.free-color-icon { font-size: 1.3rem; pointer-events: none; }
+
+/* ─── Go-free confirmation dialog ────────────────────────────────────────── */
+.go-free-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1300;
+  opacity: 0;
+  transition: opacity .18s ease;
+  padding: 16px;
+  backdrop-filter: blur(3px);
+}
+.go-free-backdrop.open { opacity: 1; }
+
+.go-free-panel {
+  background: #fff;
+  border-radius: 24px;
+  padding: 28px 24px 20px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 16px 56px rgba(0,0,0,.28);
+  transform: scale(.88) translateY(20px);
+  transition: transform .26s cubic-bezier(.34,1.56,.64,1);
+}
+.go-free-backdrop.open .go-free-panel { transform: scale(1) translateY(0); }
+
+.go-free-icon { font-size: 3.2rem; line-height: 1; margin-bottom: 10px; }
+.go-free-title { font-family: var(--ff-brand); font-size: 1.15rem; font-weight: 800; color: #222; margin-bottom: 8px; }
+.go-free-body { font-size: .88rem; color: #555; line-height: 1.45; margin-bottom: 20px; }
+
+.go-free-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.go-free-cancel {
+  padding: 9px 20px;
+  border-radius: 50px;
+  border: 2px solid var(--border);
+  background: transparent;
+  font-family: var(--ff-body);
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.go-free-cancel:hover { border-color: var(--orange); color: var(--orange); }
+.go-free-confirm {
+  padding: 9px 22px;
+  border-radius: 50px;
+  border: none;
+  background: linear-gradient(120deg, #7c4dff, #448aff);
+  font-family: var(--ff-body);
+  font-size: .85rem;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(124,77,255,.35);
+  transition: transform .15s, box-shadow .15s;
+}
+.go-free-confirm:hover { transform: translateY(-1px); box-shadow: 0 7px 18px rgba(124,77,255,.45); }

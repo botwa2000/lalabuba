@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Wat tekenen we vandaag? ✨",
   "heroSub": "Jouw fantasie… getekend door Lalabuba",
   "tagline": "Teken · Kleur · Geniet 🌈",
@@ -74,4 +74,13 @@
   "backConfirmStay": "Doorgaan",
   "shareImageText": "Ik heb {subject} ingekleurd met Lalabuba! 🎨",
   "challengeText": "Uitdaging: Kleur {subject} in en zie wie het eerst klaar is! 🏆"
+,
+  "homeBtn": "Thuis",
+  "goFreeBtn": "🎨 Vrij!",
+  "goFreeTitle": "Vrij kleuren?",
+  "goFreeBody": "Kleur overal! Je voortgang blijft. 🎉",
+  "goFreeConfirm": "Laat gaan!",
+  "goFreeCancel": "Nummers houden",
+  "pickColorBtn": "Kleur kiezen",
+  "pickColorConfirm": "Gebruik deze kleur!"
 }

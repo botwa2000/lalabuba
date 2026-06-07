@@ -47,6 +47,18 @@
 .action-btn:hover:not(:disabled) { border-color: var(--orange); color: var(--orange); transform: translateY(-1px); }
 .action-btn:disabled { opacity: .4; cursor: not-allowed; }
 .action-btn.active { border-color: var(--purple); color: var(--purple); background: rgba(124,77,255,0.09); }
+
+/* Numbers toggle — teal tint */
+.action-btn--toggle { border-color: var(--border); color: var(--muted); }
+.action-btn--toggle.action-btn--on { border-color: #00bcd4; color: #007c91; background: rgba(0,188,212,.10); }
+.action-btn--toggle.action-btn--on:hover:not(:disabled) { border-color: #007c91; color: #007c91; transform: translateY(-1px); }
+
+/* Go free button — purple gradient accent */
+.action-btn--free { border-color: rgba(124,77,255,.4); color: var(--purple); }
+.action-btn--free:hover:not(:disabled) { border-color: var(--purple); background: rgba(124,77,255,.08); transform: translateY(-1px); }
+.action-btn--free.action-btn--active { background: linear-gradient(120deg, #7c4dff, #448aff); border-color: transparent; color: #fff !important; }
+.action-btn--free.action-btn--active:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(124,77,255,.4); }
+
 .share-action-btn { color: var(--purple); border-color: rgba(124,77,255,.25); }
 .share-action-btn:hover:not(:disabled) { border-color: var(--purple) !important; color: var(--purple) !important; background: rgba(124,77,255,.08); transform: translateY(-1px); }
 

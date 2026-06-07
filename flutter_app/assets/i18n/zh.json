@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "今天画什么呢？✨",
   "heroSub": "你的想象力…由 Lalabuba 绘制",
   "tagline": "画 · 涂色 · 享受 🌈",
@@ -74,4 +74,13 @@
   "backConfirmStay": "继续涂色",
   "shareImageText": "我用 Lalabuba 画了{subject}！🎨",
   "challengeText": "挑战：给{subject}涂色，看谁先完成！🏆"
+,
+  "homeBtn": "首页",
+  "goFreeBtn": "🎨 自由!",
+  "goFreeTitle": "切换到自由涂色？",
+  "goFreeBody": "用任意颜色涂任意区域！你的涂色保留。🎉",
+  "goFreeConfirm": "去自由涂色！",
+  "goFreeCancel": "保留数字",
+  "pickColorBtn": "选择颜色",
+  "pickColorConfirm": "使用这个颜色！"
 }

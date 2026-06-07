@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Qu'allons-nous dessiner aujourd'hui ? ✨",
   "heroSub": "Ton imagination… dessinée par Lalabuba",
   "tagline": "Dessine · Colorie · Adore-le 🌈",
@@ -74,4 +74,13 @@
   "backConfirmStay": "Continuer",
   "shareImageText": "J'ai colorié {subject} avec Lalabuba ! 🎨",
   "challengeText": "Défi : Colorie {subject} et vois qui finit en premier ! 🏆"
+,
+  "homeBtn": "Accueil",
+  "goFreeBtn": "🎨 Libre!",
+  "goFreeTitle": "Passer au coloriage libre?",
+  "goFreeBody": "Colorie n'importe où! Ton coloriage reste. 🎉",
+  "goFreeConfirm": "Go libre!",
+  "goFreeCancel": "Garder les numéros",
+  "pickColorBtn": "Choisir couleur",
+  "pickColorConfirm": "Choisir cette couleur!"
 }

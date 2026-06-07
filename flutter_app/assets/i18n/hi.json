@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "आज क्या बनाएं? ✨",
   "heroSub": "तुम्हारी कल्पना… Lalabuba द्वारा बनाई गई",
   "tagline": "बनाओ · रंगो · प्यार करो 🌈",
@@ -74,4 +74,13 @@
   "backConfirmStay": "रंग भरते रहो",
   "shareImageText": "मैंने Lalabuba से {subject} रंगा! 🎨",
   "challengeText": "चुनौती: {subject} रंगो और देखो कौन पहले खत्म करता है! 🏆"
+,
+  "homeBtn": "घर",
+  "goFreeBtn": "🎨 आजाद!",
+  "goFreeTitle": "स्वतंत्र रंग भरना?",
+  "goFreeBody": "किसी भी क्षेत्र में कोई भी रंग! रंग बना रहेगा। 🎉",
+  "goFreeConfirm": "चलो करते हैं!",
+  "goFreeCancel": "नंबर रखें",
+  "pickColorBtn": "रंग चुनें",
+  "pickColorConfirm": "इस रंग का उपयोग करें!"
 }
