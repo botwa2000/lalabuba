@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=180" />
-  <link rel="stylesheet" href="/css/header.css?v=180" />
-  <link rel="stylesheet" href="/css/hero.css?v=180" />
-  <link rel="stylesheet" href="/css/generator.css?v=180" />
-  <link rel="stylesheet" href="/css/layout.css?v=180" />
-  <link rel="stylesheet" href="/css/workspace.css?v=180" />
-  <link rel="stylesheet" href="/css/palette.css?v=180" />
-  <link rel="stylesheet" href="/css/modals.css?v=180" />
-  <link rel="stylesheet" href="/css/footer.css?v=180" />
-  <link rel="stylesheet" href="/css/print.css?v=180" />
-  <link rel="stylesheet" href="/css/cookies.css?v=180" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=180" />
-  <script src="/js/cookies.js?v=180"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=181" />
+  <link rel="stylesheet" href="/css/header.css?v=181" />
+  <link rel="stylesheet" href="/css/hero.css?v=181" />
+  <link rel="stylesheet" href="/css/generator.css?v=181" />
+  <link rel="stylesheet" href="/css/layout.css?v=181" />
+  <link rel="stylesheet" href="/css/workspace.css?v=181" />
+  <link rel="stylesheet" href="/css/palette.css?v=181" />
+  <link rel="stylesheet" href="/css/modals.css?v=181" />
+  <link rel="stylesheet" href="/css/footer.css?v=181" />
+  <link rel="stylesheet" href="/css/print.css?v=181" />
+  <link rel="stylesheet" href="/css/cookies.css?v=181" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=181" />
+  <script src="/js/cookies.js?v=181"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -585,8 +585,14 @@
       top: 50%;
       transform: translate(-50%, -50%);
       z-index: 2000;
+      /* Hidden by default so its "Verifying…/Success" status never floats over the
+         page; revealed only while we're actively asking the user to verify. */
+      visibility: hidden;
+      opacity: 0;
     }
-    #turnstile-widget:not(:empty) {
+    body.ts-verifying #turnstile-widget {
+      visibility: visible;
+      opacity: 1;
       box-shadow: 0 12px 48px rgba(0,0,0,.28);
       border-radius: 12px;
     }
@@ -641,7 +647,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=180"></script>
+  <script type="module" src="/js/main.js?v=181"></script>
 </body>
 </html>
 
