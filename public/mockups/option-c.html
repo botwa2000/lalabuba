@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Option C — Studio Split (Redesigned)</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:#ff4757;--orange:#ff7043;--yellow:#ffca28;--green:#26c281;
+  --blue:#1e90ff;--purple:#7c4dff;--pink:#f06292;--coral:#ff6b81;
+  --bg:#f8f6ff;--card:#fff;--ink:#1a1a2e;--muted:#6668a0;--border:#e0ddf5;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:#d4cff0;padding:24px 16px;}
+
+.meta{text-align:center;padding:16px;font-family:'Fredoka',sans-serif;}
+.meta h1{font-size:2rem;color:var(--purple);margin-bottom:4px;}
+.meta p{font-size:1rem;color:var(--muted);}
+.section-label{text-align:center;margin:28px 0 8px;font-size:.7rem;font-weight:800;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+
+.desktop{max-width:1200px;height:720px;background:var(--bg);border-radius:14px;
+  box-shadow:0 24px 64px rgba(0,0,0,.18);overflow:hidden;margin:0 auto 32px;
+  border:3px solid #bbb;display:flex;flex-direction:column;}
+.phones{display:flex;gap:32px;justify-content:center;flex-wrap:wrap;margin:0 auto 40px;}
+.phone{width:375px;height:812px;background:var(--bg);border-radius:42px;
+  box-shadow:0 24px 64px rgba(0,0,0,.22);overflow:hidden;
+  border:12px solid #1a1a2e;position:relative;flex-shrink:0;}
+.phone::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:110px;height:26px;background:#1a1a2e;border-radius:0 0 16px 16px;z-index:10;}
+.phone-inner{height:100%;overflow:auto;padding-top:10px;}
+.phone-label{text-align:center;font-weight:800;font-size:.7rem;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;}
+
+/* Header */
+.app-header{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 24px;background:var(--card);border-bottom:2px solid var(--border);
+  flex-shrink:0;}
+.logo{font-family:'Fredoka',sans-serif;font-size:1.9rem;font-weight:700;line-height:1;}
+.logo span:nth-child(1){color:var(--red);}
+.logo span:nth-child(2){color:var(--orange);}
+.logo span:nth-child(3){color:var(--yellow);}
+.logo span:nth-child(4){color:var(--green);}
+.logo span:nth-child(5){color:var(--blue);}
+.logo span:nth-child(6){color:var(--purple);}
+.logo span:nth-child(7){color:var(--pink);}
+.logo span:nth-child(8){color:var(--coral);}
+.hdr-actions{display:flex;gap:8px;align-items:center;}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:2px solid var(--border);
+  background:var(--card);font-size:1.1rem;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;}
+.lang-btn{padding:6px 14px;border-radius:50px;border:2px solid var(--border);
+  background:var(--card);font-size:.85rem;font-weight:700;}
+
+/* ── OPTION C: STUDIO SPLIT ── */
+.body-split{display:grid;grid-template-columns:380px 1fr;flex:1;overflow:hidden;}
+
+/* LEFT: Studio Panel */
+.studio{background:white;border-right:2px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;}
+.studio-inner{padding:20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1;}
+
+/* Tagline */
+.tagline{font-size:.88rem;font-weight:700;color:var(--muted);text-align:center;
+  padding:4px 0;}
+
+/* Big prompt section */
+.prompt-section{background:var(--bg);border-radius:18px;padding:16px;border:2px solid var(--border);}
+.prompt-label{font-family:'Fredoka',sans-serif;font-size:1.1rem;color:var(--ink);
+  margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.big-input{width:100%;padding:13px 16px;border:2.5px solid var(--purple);
+  border-radius:14px;font-family:'Nunito',sans-serif;font-size:1.05rem;
+  background:white;outline:none;color:var(--ink);margin-bottom:10px;
+  box-shadow:0 4px 16px rgba(124,77,255,.1);}
+.big-input::placeholder{color:#aab;}
+.big-draw-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--purple),var(--blue));
+  color:white;border:none;border-radius:14px;font-family:'Fredoka',sans-serif;
+  font-size:1.25rem;font-weight:700;cursor:pointer;
+  box-shadow:0 6px 20px rgba(124,77,255,.3);margin-bottom:10px;}
+.prompt-quick{display:flex;gap:8px;}
+.qpill{padding:7px 14px;border-radius:50px;border:2px solid var(--border);
+  background:white;font-size:.82rem;font-weight:700;cursor:pointer;color:var(--ink);}
+.qpill.daily{border-color:var(--yellow);background:#fff9e0;color:#a07000;}
+
+/* Difficulty */
+.diff-section{}
+.diff-label{font-size:.72rem;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.diff-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.dtab{padding:8px 4px;border-radius:12px;border:2px solid var(--border);
+  background:white;font-size:.78rem;font-weight:700;cursor:pointer;
+  color:var(--muted);text-align:center;}
+.dtab.active{background:var(--purple);border-color:var(--purple);color:white;}
+
+/* Divider */
+.or-divider{display:flex;align-items:center;gap:10px;color:var(--muted);
+  font-size:.78rem;font-weight:800;}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* Cards */
+.cards-header{display:flex;align-items:center;justify-content:space-between;}
+.cards-label{font-size:.72rem;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;}
+.shuffle-btn{padding:5px 12px;border-radius:50px;border:2px solid var(--border);
+  background:white;font-size:.78rem;font-weight:700;cursor:pointer;}
+.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.card{background:var(--bg);border:2px solid var(--border);border-radius:14px;
+  padding:12px 6px;text-align:center;cursor:pointer;}
+.card:hover{border-color:var(--purple);background:#f3f0ff;}
+.card em{font-size:1.7rem;display:block;font-style:normal;margin-bottom:3px;}
+.card span{font-size:.72rem;font-weight:700;color:var(--muted);}
+
+/* RIGHT: Canvas + Palette area */
+.canvas-area{display:flex;flex-direction:column;background:var(--bg);}
+.canvas-toolbar{display:flex;gap:8px;padding:12px 16px;background:white;
+  border-bottom:2px solid var(--border);flex-wrap:wrap;align-items:center;}
+.act-btn{padding:7px 14px;border-radius:50px;border:2px solid var(--border);
+  background:white;font-size:.8rem;font-weight:700;cursor:pointer;}
+.act-btn.primary{background:var(--purple);border-color:var(--purple);color:white;}
+.act-btn:disabled{opacity:.4;cursor:not-allowed;}
+.canvas-main{flex:1;display:flex;overflow:hidden;}
+.canvas-box{flex:1;display:flex;align-items:center;justify-content:center;
+  padding:16px;}
+.canvas-inner{width:100%;max-width:500px;aspect-ratio:1;background:white;
+  border-radius:16px;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.empty-icon{font-size:3.5rem;}
+.empty-text{font-family:'Fredoka',sans-serif;font-size:1.1rem;color:var(--muted);
+  text-align:center;line-height:1.4;padding:0 20px;}
+.canvas-placeholder-art{font-size:5rem;}
+
+/* Palette sidebar within canvas area */
+.palette-side{width:180px;background:white;border-left:2px solid var(--border);
+  padding:12px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;}
+.palette-title{font-family:'Fredoka',sans-serif;font-size:1rem;color:var(--ink);}
+.swatches{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+.swatch{border-radius:10px;border:2px solid var(--border);padding:6px 4px;
+  text-align:center;cursor:pointer;font-size:.62rem;font-weight:800;
+  display:flex;flex-direction:column;gap:3px;align-items:center;}
+.swatch .dot{width:24px;height:24px;border-radius:50%;display:block;}
+.p-btn{padding:8px;border-radius:10px;border:2px solid var(--border);
+  background:white;font-size:.75rem;font-weight:700;cursor:pointer;text-align:center;}
+
+/* ── MOBILE SPECIFIC ── */
+.mob-header{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;background:white;border-bottom:2px solid var(--border);}
+.mob-logo{font-family:'Fredoka',sans-serif;font-size:1.4rem;font-weight:700;}
+.mob-actions{display:flex;gap:6px;}
+.mob-icon{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);
+  background:white;font-size:1rem;display:flex;align-items:center;justify-content:center;}
+
+/* Mobile studio panel (collapsible top section) */
+.mob-studio{background:white;border-bottom:3px solid var(--border);}
+.mob-studio-toggle{width:100%;padding:10px 16px;display:flex;align-items:center;
+  justify-content:space-between;background:white;border:none;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:800;color:var(--ink);}
+.mob-studio-inner{padding:14px;}
+.mob-big-input{width:100%;padding:13px 16px;border:2.5px solid var(--purple);
+  border-radius:14px;font-family:'Nunito',sans-serif;font-size:1rem;
+  background:white;outline:none;color:#aab;margin-bottom:10px;
+  box-shadow:0 4px 14px rgba(124,77,255,.12);}
+.mob-draw-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--purple),var(--blue));
+  color:white;border:none;border-radius:14px;font-family:'Fredoka',sans-serif;
+  font-size:1.2rem;font-weight:700;margin-bottom:10px;}
+.mob-quick{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.mob-qpill{padding:6px 14px;border-radius:50px;font-size:.78rem;font-weight:700;
+  border:2px solid var(--border);background:white;color:var(--ink);}
+.mob-qpill.daily{border-color:var(--yellow);background:#fff9e0;color:#a07000;}
+.mob-diff{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;}
+.mob-dtab{flex-shrink:0;padding:6px 14px;border-radius:50px;border:2px solid var(--border);
+  background:white;font-size:.78rem;font-weight:700;color:var(--muted);}
+.mob-dtab.active{background:var(--purple);border-color:var(--purple);color:white;}
+.mob-cards-mini{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.mob-card-mini{background:var(--bg);border:2px solid var(--border);border-radius:10px;
+  padding:8px 4px;text-align:center;cursor:pointer;}
+.mob-card-mini em{font-size:1.5rem;display:block;font-style:normal;}
+.mob-card-mini span{font-size:.62rem;font-weight:700;color:var(--muted);}
+
+/* Mobile canvas area */
+.mob-canvas-area{display:flex;flex-direction:column;}
+.mob-canvas{background:white;aspect-ratio:1;display:flex;align-items:center;
+  justify-content:center;border-bottom:2px solid var(--border);}
+.mob-canvas .placeholder-txt{text-align:center;padding:20px;}
+.mob-canvas .placeholder-txt .icon{font-size:3rem;display:block;margin-bottom:8px;}
+.mob-canvas .placeholder-txt p{font-family:'Fredoka',sans-serif;font-size:1rem;
+  color:var(--muted);line-height:1.4;}
+.mob-canvas .big-emoji{font-size:4rem;}
+.mob-hint{background:#fff9e0;padding:9px 14px;font-size:.8rem;font-weight:700;
+  color:#a07000;border-bottom:2px solid var(--border);}
+.mob-palette{padding:10px 12px;border-bottom:2px solid var(--border);background:white;}
+.mob-swatches{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;}
+.mob-swatch{flex-shrink:0;text-align:center;width:42px;}
+.mob-swatch .dot{width:34px;height:34px;border-radius:50%;margin:0 auto 3px;border:2px solid #ddd;}
+.mob-swatch span{font-size:.62rem;font-weight:800;color:var(--muted);}
+.mob-toolbar{display:flex;gap:6px;padding:10px 12px;background:white;overflow-x:auto;}
+.mob-tbtn{flex-shrink:0;padding:8px 13px;border-radius:50px;border:2px solid var(--border);
+  background:white;font-size:.78rem;font-weight:700;}
+.mob-tbtn.primary{background:var(--purple);border-color:var(--purple);color:white;}
+</style>
+</head>
+<body>
+
+<div class="meta">
+  <h1>Option C — "Studio Split" (Redesigned)</h1>
+  <p>Always-visible 2-column layout, but the left panel is completely rethought: bigger input, clearer labels, better hierarchy. Input is no longer buried in a sidebar.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- DESKTOP: INITIAL STATE                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-label">Desktop — Initial State (Canvas Empty)</div>
+<div class="desktop">
+  <div class="app-header">
+    <div class="logo"><span>L</span><span>a</span><span>l</span><span>a</span><span>b</span><span>u</span><span>b</span><span>a</span></div>
+    <div class="hdr-actions">
+      <button class="icon-btn">🖼️</button>
+      <button class="icon-btn">🌙</button>
+      <button class="lang-btn">🇬🇧 EN ▾</button>
+    </div>
+  </div>
+
+  <div class="body-split">
+    <!-- LEFT: STUDIO PANEL -->
+    <div class="studio">
+      <div class="studio-inner">
+        <div class="tagline">Draw it · Color it · Love it 🌈</div>
+
+        <!-- Big prompt -->
+        <div class="prompt-section">
+          <div class="prompt-label">
+            <span>🎨</span>
+            <span>What should we draw?</span>
+          </div>
+          <input class="big-input" placeholder="🦋 butterfly · 🐉 dragon · 🏰 castle · 🦄 unicorn…" />
+          <button class="big-draw-btn">✨ Draw it!</button>
+          <div class="prompt-quick">
+            <button class="qpill">💡 Surprise me</button>
+            <button class="qpill daily">🌟 Today: Dinosaur</button>
+          </div>
+        </div>
+
+        <!-- Difficulty -->
+        <div class="diff-section">
+          <div class="diff-label">Difficulty</div>
+          <div class="diff-tabs">
+            <button class="dtab">⭐<br>Easy</button>
+            <button class="dtab active">⭐⭐<br>Medium</button>
+            <button class="dtab">⭐⭐⭐<br>Hard</button>
+            <button class="dtab">🔥<br>Extreme</button>
+          </div>
+        </div>
+
+        <div class="or-divider">or pick one</div>
+
+        <!-- Cards -->
+        <div>
+          <div class="cards-header">
+            <div class="cards-label">Ideas</div>
+            <button class="shuffle-btn">🎲 Shuffle</button>
+          </div>
+          <div style="height:8px;"></div>
+          <div class="cards-grid">
+            <div class="card"><em>🦁</em><span>Lion</span></div>
+            <div class="card"><em>🦄</em><span>Unicorn</span></div>
+            <div class="card"><em>🚀</em><span>Rocket</span></div>
+            <div class="card"><em>🏰</em><span>Castle</span></div>
+            <div class="card"><em>🐉</em><span>Dragon</span></div>
+            <div class="card"><em>🦋</em><span>Butterfly</span></div>
+            <div class="card"><em>🐬</em><span>Dolphin</span></div>
+            <div class="card"><em>🤖</em><span>Robot</span></div>
+            <div class="card"><em>🎂</em><span>Cake</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: CANVAS AREA (empty state) -->
+    <div class="canvas-area">
+      <div class="canvas-toolbar">
+        <button class="act-btn" disabled>↩ Undo</button>
+        <button class="act-btn" disabled>🎯 Tap</button>
+        <button class="act-btn" disabled>🖌️ Paint</button>
+        <div style="flex:1;"></div>
+        <button class="act-btn" disabled>🖨️ Print</button>
+        <button class="act-btn" disabled>💾 Save</button>
+        <button class="act-btn primary" disabled>🏆 Challenge!</button>
+      </div>
+      <div class="canvas-main">
+        <div class="canvas-box">
+          <div class="canvas-inner">
+            <div class="empty-icon">🖌️</div>
+            <div class="empty-text">
+              Pick a card or type your own idea —<br>
+              AI will draw a coloring page just for you!
+            </div>
+          </div>
+        </div>
+        <!-- Palette hidden initially -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- DESKTOP: AFTER GENERATION                               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-label">Desktop — After Generation (Coloring Mode)</div>
+<div class="desktop">
+  <div class="app-header">
+    <div class="logo"><span>L</span><span>a</span><span>l</span><span>a</span><span>b</span><span>u</span><span>b</span><span>a</span></div>
+    <div class="hdr-actions">
+      <button class="icon-btn">🖼️</button>
+      <button class="icon-btn">🌙</button>
+      <button class="lang-btn">🇬🇧 EN ▾</button>
+    </div>
+  </div>
+
+  <div class="body-split">
+    <!-- LEFT: STUDIO PANEL (same as initial, input ready for next drawing) -->
+    <div class="studio">
+      <div class="studio-inner">
+        <div class="tagline">Draw it · Color it · Love it 🌈</div>
+
+        <div class="prompt-section">
+          <div class="prompt-label"><span>🎨</span><span>What should we draw?</span></div>
+          <!-- Shows current subject, ready to be edited -->
+          <input class="big-input" value="butterfly on a train" style="border-color:var(--purple);background:#faf9ff;" />
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <button class="big-draw-btn" style="margin:0;flex:1;padding:11px;">🎲 Again!</button>
+            <button class="big-draw-btn" style="margin:0;flex:1;padding:11px;background:linear-gradient(135deg,var(--green),var(--blue));">✨ New drawing</button>
+          </div>
+          <div class="prompt-quick">
+            <button class="qpill">💡 Surprise me</button>
+            <button class="qpill daily">🌟 Today: Dinosaur</button>
+          </div>
+        </div>
+
+        <div class="diff-section">
+          <div class="diff-label">Difficulty</div>
+          <div class="diff-tabs">
+            <button class="dtab">⭐<br>Easy</button>
+            <button class="dtab active">⭐⭐<br>Medium</button>
+            <button class="dtab">⭐⭐⭐<br>Hard</button>
+            <button class="dtab">🔥<br>Extreme</button>
+          </div>
+        </div>
+
+        <div class="or-divider">more ideas</div>
+
+        <div>
+          <div class="cards-header">
+            <div class="cards-label">Ideas</div>
+            <button class="shuffle-btn">🎲 Shuffle</button>
+          </div>
+          <div style="height:8px;"></div>
+          <div class="cards-grid">
+            <div class="card"><em>🦁</em><span>Lion</span></div>
+            <div class="card"><em>🦄</em><span>Unicorn</span></div>
+            <div class="card"><em>🚀</em><span>Rocket</span></div>
+            <div class="card"><em>🏰</em><span>Castle</span></div>
+            <div class="card"><em>🐉</em><span>Dragon</span></div>
+            <div class="card"><em>🦋</em><span>Butterfly</span></div>
+            <div class="card"><em>🐬</em><span>Dolphin</span></div>
+            <div class="card"><em>🤖</em><span>Robot</span></div>
+            <div class="card"><em>🎂</em><span>Cake</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: CANVAS with palette -->
+    <div class="canvas-area">
+      <div class="canvas-toolbar">
+        <button class="act-btn">↩ Undo</button>
+        <button class="act-btn">🎯 Tap</button>
+        <button class="act-btn">🖌️ Paint</button>
+        <div style="flex:1;"></div>
+        <button class="act-btn">🖨️ Print</button>
+        <button class="act-btn">💾 Save</button>
+        <button class="act-btn primary">🏆 Challenge!</button>
+      </div>
+      <!-- Coloring hint -->
+      <div style="background:#fff9e0;padding:9px 18px;font-size:.85rem;font-weight:700;
+        color:#a07000;border-bottom:2px solid var(--border);display:flex;
+        align-items:center;justify-content:space-between;">
+        <span>👆 Tap a color in the panel on the right, then tap any numbered region!</span>
+        <button style="background:none;border:none;cursor:pointer;color:#a07000;font-size:1rem;">✕</button>
+      </div>
+      <div class="canvas-main">
+        <div class="canvas-box">
+          <div class="canvas-inner" style="position:relative;">
+            <div class="canvas-placeholder-art">🦋🚂</div>
+            <div style="font-size:.82rem;color:var(--muted);">[ butterfly on a train · Medium ⭐⭐ ]</div>
+          </div>
+        </div>
+        <!-- Palette appears after generation -->
+        <div class="palette-side">
+          <div class="palette-title">🎨 Colors</div>
+          <div class="swatches">
+            <div class="swatch"><div class="dot" style="background:#ff4757;"></div><span>① Red</span></div>
+            <div class="swatch"><div class="dot" style="background:#ff7043;"></div><span>② Orange</span></div>
+            <div class="swatch"><div class="dot" style="background:#ffca28;"></div><span>③ Yellow</span></div>
+            <div class="swatch"><div class="dot" style="background:#26c281;"></div><span>④ Green</span></div>
+            <div class="swatch"><div class="dot" style="background:#1e90ff;"></div><span>⑤ Blue</span></div>
+            <div class="swatch"><div class="dot" style="background:#7c4dff;"></div><span>⑥ Purple</span></div>
+            <div class="swatch"><div class="dot" style="background:#f06292;"></div><span>⑦ Pink</span></div>
+            <div class="swatch"><div class="dot" style="background:#8d4e0a;"></div><span>⑧ Brown</span></div>
+            <div class="swatch"><div class="dot" style="background:#aaa;"></div><span>⑨ Gray</span></div>
+            <div class="swatch"><div class="dot" style="background:#000;"></div><span>⑩ Black</span></div>
+            <div class="swatch"><div class="dot" style="background:#fff;border:2px solid #ddd;"></div><span>⑪ White</span></div>
+            <div class="swatch"><div class="dot" style="background:#00bcd4;"></div><span>⑫ Cyan</span></div>
+          </div>
+          <div class="p-btn">🔢 Numbers: ON</div>
+          <div class="p-btn">🖍️ Classic</div>
+          <div class="p-btn">🎨 12 colors</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- MOBILE                                                   -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-label">Mobile — Initial State &amp; After Generation</div>
+<div class="phones">
+
+  <!-- MOBILE INITIAL -->
+  <div>
+    <div class="phone-label">Landing — Studio panel open</div>
+    <div class="phone">
+      <div class="phone-inner">
+        <div class="mob-header">
+          <div class="mob-logo"><span style="color:var(--red)">L</span><span style="color:var(--orange)">a</span><span style="color:var(--yellow)">l</span><span style="color:var(--green)">a</span><span style="color:var(--blue)">b</span><span style="color:var(--purple)">u</span><span style="color:var(--pink)">b</span><span style="color:var(--coral)">a</span></div>
+          <div class="mob-actions">
+            <button class="mob-icon">🌙</button>
+            <button class="mob-icon">🇬🇧</button>
+          </div>
+        </div>
+
+        <!-- Studio panel: always open on mobile landing -->
+        <div class="mob-studio">
+          <div class="mob-studio-inner">
+            <input class="mob-big-input" placeholder="🦋 butterfly · 🐉 dragon · 🏰 castle…" readonly>
+            <button class="mob-draw-btn">✨ Draw it!</button>
+            <div class="mob-quick">
+              <button class="mob-qpill">💡 Surprise</button>
+              <button class="mob-qpill daily">🌟 Today: Dinosaur</button>
+            </div>
+            <div class="mob-diff">
+              <button class="mob-dtab">⭐ Easy</button>
+              <button class="mob-dtab active">⭐⭐ Medium</button>
+              <button class="mob-dtab">⭐⭐⭐ Hard</button>
+              <button class="mob-dtab">🔥 Extreme</button>
+            </div>
+            <div class="mob-cards-mini">
+              <div class="mob-card-mini"><em>🦁</em><span>Lion</span></div>
+              <div class="mob-card-mini"><em>🦄</em><span>Unicorn</span></div>
+              <div class="mob-card-mini"><em>🚀</em><span>Rocket</span></div>
+              <div class="mob-card-mini"><em>🏰</em><span>Castle</span></div>
+              <div class="mob-card-mini"><em>🐉</em><span>Dragon</span></div>
+              <div class="mob-card-mini"><em>🦋</em><span>Butterfly</span></div>
+              <div class="mob-card-mini"><em>🐬</em><span>Dolphin</span></div>
+              <div class="mob-card-mini"><em>🤖</em><span>Robot</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Canvas area below -->
+        <div class="mob-canvas-area">
+          <div class="mob-canvas">
+            <div class="placeholder-txt">
+              <span class="icon">🖌️</span>
+              <p>Type your idea above and hit Draw!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE AFTER GEN -->
+  <div>
+    <div class="phone-label">After Generation — Coloring</div>
+    <div class="phone">
+      <div class="phone-inner">
+        <div class="mob-header">
+          <div class="mob-logo"><span style="color:var(--red)">L</span><span style="color:var(--orange)">a</span><span style="color:var(--yellow)">l</span><span style="color:var(--green)">a</span><span style="color:var(--blue)">b</span><span style="color:var(--purple)">u</span><span style="color:var(--pink)">b</span><span style="color:var(--coral)">a</span></div>
+          <div class="mob-actions">
+            <button class="mob-icon">🌙</button>
+            <button class="mob-icon">🇬🇧</button>
+          </div>
+        </div>
+
+        <!-- Studio panel collapsed to just the input + buttons -->
+        <div style="background:white;border-bottom:3px solid var(--border);padding:10px 14px;">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div style="flex:1;background:var(--bg);border:2px solid var(--border);
+              border-radius:50px;padding:8px 14px;font-size:.85rem;color:var(--muted);">
+              🦋 butterfly on a train ✏️
+            </div>
+            <button style="padding:8px 14px;border-radius:50px;
+              background:linear-gradient(135deg,var(--purple),var(--blue));
+              color:white;border:none;font-size:.82rem;font-weight:700;">✨ New</button>
+          </div>
+        </div>
+
+        <div class="mob-canvas-area">
+          <div class="mob-canvas">
+            <span class="big-emoji">🦋🚂</span>
+          </div>
+          <div class="mob-hint">👆 Tap a color below, then tap a numbered region!</div>
+          <div class="mob-palette">
+            <div class="mob-swatches">
+              <div class="mob-swatch"><div class="dot" style="background:#ff4757;"></div><span>①</span></div>
+              <div class="mob-swatch"><div class="dot" style="background:#ff7043;"></div><span>②</span></div>
+              <div class="mob-swatch"><div class="dot" style="background:#ffca28;"></div><span>③</span></div>
+              <div class="mob-swatch"><div class="dot" style="background:#26c281;"></div><span>④</span></div>
+              <div class="mob-swatch"><div class="dot" style="background:#1e90ff;"></div><span>⑤</span></div>
+              <div class="mob-swatch"><div class="dot" style="background:#7c4dff;"></div><span>⑥</span></div>
+              <div class="mob-swatch"><div class="dot" style="background:#f06292;"></div><span>⑦</span></div>
+              <div class="mob-swatch"><div class="dot" style="background:#8d4e0a;"></div><span>⑧</span></div>
+              <div class="mob-swatch"><div class="dot" style="background:#aaa;"></div><span>⑨</span></div>
+              <div class="mob-swatch"><div class="dot" style="background:#000;"></div><span>⑩</span></div>
+              <div class="mob-swatch"><div class="dot" style="background:#fff;border:2px solid #ddd;"></div><span>⑪</span></div>
+              <div class="mob-swatch"><div class="dot" style="background:#00bcd4;"></div><span>⑫</span></div>
+            </div>
+          </div>
+          <div class="mob-toolbar">
+            <button class="mob-tbtn">↩ Undo</button>
+            <button class="mob-tbtn">🎯 Tap</button>
+            <button class="mob-tbtn">🖌️ Paint</button>
+            <button class="mob-tbtn">🖨️</button>
+            <button class="mob-tbtn">💾</button>
+            <button class="mob-tbtn primary">🏆 Share!</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

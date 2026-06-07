@@ -15,6 +15,29 @@ CSS uses `.app.app-hero` and `.app:not(.app-hero)` to show/hide sections per sta
 
 ---
 
+## CSS change discipline (REQUIRED before writing any CSS)
+
+Before writing or editing any CSS rule, explicitly audit:
+1. All existing rules targeting the same element (class, id, tag, state variants)
+2. Rules on parent containers that constrain children (overflow, flex, grid, position)
+3. `.app.app-hero` and `.app:not(.app-hero)` variants — does the rule apply in both states?
+4. Media queries and container queries that modify any of the above
+5. Non-inheriting properties that must be set directly: `touch-action`, `pointer-events`, `z-index` stacking contexts
+
+Edge cases to reason through before writing: 375px viewport, text wrapping at 2× expected length, 6+ flex items, keyboard-open viewport shrink, iOS safe-area-inset.
+
+## Claim discipline (REQUIRED for every fix)
+
+After every fix, state exactly:
+1. What bug existed (specific wrong code path)
+2. What changed (specific file:line)
+3. Full call chain from user action to visible result
+4. What is NOT verifiable without a running browser (be explicit)
+
+Never say "tested", "working", "QA passed". Only say "code-traced" for logic you actually traced end-to-end.
+
+---
+
 ## Deploy + QA routine (REQUIRED after every change)
 
 ### 1. Bump version
@@ -40,6 +63,23 @@ Write-Host "$($dep[0].sha.Substring(0,7)): $($st[0].state)"   # must be "success
 
 ### 4. Verify live assets
 Fetch `https://lalabuba.com/css/hero.css?v=NNN` and `https://lalabuba.com/js/main.js?v=NNN` — confirm new version number and the specific lines changed.
+
+### 4b. Visual screenshot QA (REQUIRED for any HTML/CSS/layout change)
+
+Run Playwright screenshots and READ every image before proceeding:
+```powershell
+$env:NODE_PATH = "C:\Users\Alexa\lalabuba\scripts\node_modules"
+node scripts/screenshot-qa.js https://lalabuba.com
+```
+Screenshots saved to `public/mockups/`. Read each PNG with the Read tool and inspect for:
+- Overlapping or clipped elements
+- Oversized or undersized components
+- Misaligned layout at each viewport
+- Any element that should be visible but isn't
+
+Viewports captured: desktop (1440×900), mobile-portrait (390×844), mobile-landscape (844×390).
+
+If any screenshot shows a layout problem: fix it, redeploy, re-run screenshots. Do NOT skip this step or report done without reviewing all three screenshots.
 
 ### 5. Functional QA checklist — check EVERY item on web before reporting done
 
