@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { t } from './i18n.js';
 import { subjectInput, difficultySelect, providerSelect } from './dom.js';
-import { setStatus, showLoading, hideLoading, activePalette } from './ui.js';
+import { setStatus, showLoading, hideLoading, activePalette, showCanvasError } from './ui.js';
 import { renderGeneratedImage } from './canvas.js';
 import { SIZE_DIMS } from './data.js';
 
@@ -124,7 +124,9 @@ export async function generatePage(subject, seedOverride = null, isPreDefined = 
     if (challengeStrip) challengeStrip.hidden = false;
     document.getElementById('regen-button').disabled = false;
   } catch (err) {
-    setStatus(err.message || 'Generation failed. Please try again.', true);
+    const msg = err.message || t('genFailed');
+    setStatus(msg, true);
+    showCanvasError(msg); // visible in the canvas area even when the panel/status bar is closed (mobile)
   } finally {
     hideLoading();
   }

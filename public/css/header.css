@@ -9,6 +9,9 @@
   align-items: center;
   gap: 0.05em;
   justify-content: center;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 
 .logo-mascot {

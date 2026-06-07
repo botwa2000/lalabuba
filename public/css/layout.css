@@ -206,6 +206,9 @@
   }
   /* Override collapsed: on mobile collapsed = hidden = 0 height */
   .config-panel.collapsed { width: 100%; min-width: 0; max-height: 0; }
+  /* When the drawer is explicitly opened it MUST win over the desktop "collapsed"
+     rail class that generatePage() also applies. Higher specificity beats both above. */
+  .config-panel.collapsed.mobile-open { max-height: 70dvh; overflow-y: auto; }
 
   .panel-inner  { min-width: 0; width: 100%; padding: 0 14px 16px; }
   .panel-toggle-btn { display: none; } /* replaced by header menu btn on mobile */

@@ -185,6 +185,31 @@
 }
 .loading-overlay.hidden { display: none; }
 
+/* ─── Canvas error overlay (visible failure feedback, esp. mobile) ────────── */
+.canvas-error-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: #fff;
+  border-radius: inherit;
+}
+.canvas-error-icon { font-size: 3.2rem; line-height: 1; }
+.canvas-error-overlay p {
+  font-family: var(--ff-body);
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--muted);
+  max-width: 320px;
+  margin: 0;
+}
+
 .loading-pencil {
   font-size: 4rem;
   display: block;

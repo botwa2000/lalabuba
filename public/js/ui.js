@@ -131,10 +131,31 @@ export function renderLegend() {
 let loadingTimer1 = null, loadingTimer2 = null, loadingShownAt = 0;
 const MIN_LOADING_MS = 900;
 
+// Visible error inside the canvas area — the #status bar lives in the config panel,
+// which is closed on mobile after a draw, so failures must be shown here too.
+export function showCanvasError(message) {
+  const stage = document.getElementById('preview-stage');
+  if (!stage) return;
+  clearCanvasError();
+  const el = document.createElement('div');
+  el.id = 'canvas-error-overlay';
+  el.className = 'canvas-error-overlay';
+  const p = document.createElement('p');
+  p.textContent = message; // textContent — never inject HTML from error strings
+  el.innerHTML = '<span class="canvas-error-icon" aria-hidden="true">😕</span>';
+  el.appendChild(p);
+  stage.appendChild(el);
+}
+
+export function clearCanvasError() {
+  document.getElementById('canvas-error-overlay')?.remove();
+}
+
 export function showLoading() {
   const loadingOverlay = document.getElementById('loading-overlay');
   const emptyHint = document.querySelector('.empty-hint');
   const text = document.getElementById('loading-text');
+  clearCanvasError();
   text.textContent = t('loadingMsg');
   if (emptyHint) emptyHint.style.display = 'none';
   loadingOverlay.style.display = 'flex';

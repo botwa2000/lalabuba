@@ -649,6 +649,7 @@ function togglePanel() {
   const isMobilePortrait = window.innerWidth < 768 && !isPhoneLandscape();
   if (isMobilePortrait) {
     const willOpen = !configPanel?.classList.contains('mobile-open');
+    if (willOpen) configPanel?.classList.remove('collapsed'); // collapsed would pin max-height:0
     configPanel?.classList.toggle('mobile-open', willOpen);
     if (mobileMenuBtn) {
       mobileMenuBtn.textContent = willOpen ? '✕' : '☰';
@@ -698,6 +699,7 @@ newDrawingBtn?.addEventListener('click', (e) => {
   e.stopPropagation();
   const isMobilePortrait = window.innerWidth < 768 && !isPhoneLandscape();
   if (isMobilePortrait) {
+    configPanel?.classList.remove('collapsed'); // collapsed would pin max-height:0
     configPanel?.classList.add('mobile-open');
     if (mobileMenuBtn) { mobileMenuBtn.textContent = '✕'; mobileMenuBtn.setAttribute('aria-label', 'Close settings'); }
   } else {
