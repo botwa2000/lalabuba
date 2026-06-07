@@ -209,6 +209,10 @@ class CanvasNotifier extends Notifier<CanvasState> {
       state = state.copyWith(showNumbers: !state.showNumbers);
   void setFreeMode() =>
       state = state.copyWith(isFreeMode: true, showNumbers: false);
+  /// Reverse of [setFreeMode]: return to guided color-by-number coloring.
+  /// Existing fills are preserved (regionColors untouched); numbers come back on.
+  void exitFreeMode() =>
+      state = state.copyWith(isFreeMode: false, showNumbers: true);
 
   void beginStroke(Offset p) {
     state = state.copyWith(

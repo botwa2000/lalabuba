@@ -725,30 +725,35 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               ],
             ),
           ),
-          // Row 2: Numbers toggle + Go free (guided mode only)
-          if (!canvas.isFreeMode)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-              child: Row(
-                children: [
-                  _ActionBtn(
-                    label: canvas.showNumbers
-                        ? '🔢 ${l10n.t("numbersOn")}'
-                        : '🔡 ${l10n.t("numbersOff")}',
-                    active: canvas.showNumbers,
-                    onTap: () =>
-                        ref.read(canvasProvider.notifier).toggleNumbers(),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _ActionBtn(
-                      label: l10n.t('goFreeBtn'),
-                      onTap: () => _onGoFree(context, canvas, l10n),
-                    ),
-                  ),
-                ],
-              ),
+          // Row 2: Numbers toggle + Go free. In free mode the Numbers button
+          // returns to guided coloring (reversible, mirrors the web app).
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+            child: Row(
+              children: [
+                _ActionBtn(
+                  label: canvas.isFreeMode
+                      ? '🔢 ${l10n.t("numbersOn")}'
+                      : (canvas.showNumbers
+                          ? '🔢 ${l10n.t("numbersOn")}'
+                          : '🔡 ${l10n.t("numbersOff")}'),
+                  active: !canvas.isFreeMode && canvas.showNumbers,
+                  onTap: () => canvas.isFreeMode
+                      ? ref.read(canvasProvider.notifier).exitFreeMode()
+                      : ref.read(canvasProvider.notifier).toggleNumbers(),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: canvas.isFreeMode
+                      ? const SizedBox.shrink()
+                      : _ActionBtn(
+                          label: l10n.t('goFreeBtn'),
+                          onTap: () => _onGoFree(context, canvas, l10n),
+                        ),
+                ),
+              ],
             ),
+          ),
           // Row 3: Color section — swatches (guided) or HSV picker (free)
           if (canvas.isFreeMode)
             _buildFreeColorRow(context, canvas, l10n)
@@ -848,19 +853,23 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                         : () => ref.read(canvasProvider.notifier).undo(),
                   ),
                 ),
-                // Numbers + Go free (guided only)
-                if (!canvas.isFreeMode) ...[
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _SidebarBtn(
-                          label: canvas.showNumbers ? '🔢' : '🔡',
-                          active: canvas.showNumbers,
-                          onTap: () =>
-                              ref.read(canvasProvider.notifier).toggleNumbers(),
-                        ),
+                // Numbers + Go free. In free mode the Numbers button returns to
+                // guided coloring (reversible, mirrors the web app).
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SidebarBtn(
+                        label: canvas.isFreeMode
+                            ? '🔢'
+                            : (canvas.showNumbers ? '🔢' : '🔡'),
+                        active: !canvas.isFreeMode && canvas.showNumbers,
+                        onTap: () => canvas.isFreeMode
+                            ? ref.read(canvasProvider.notifier).exitFreeMode()
+                            : ref.read(canvasProvider.notifier).toggleNumbers(),
                       ),
+                    ),
+                    if (!canvas.isFreeMode) ...[
                       const SizedBox(width: 6),
                       Expanded(
                         child: _SidebarBtn(
@@ -869,8 +878,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                         ),
                       ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ],
             ),
           ),
