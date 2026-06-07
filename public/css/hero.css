@@ -236,6 +236,13 @@
   display: none;
 }
 
+/* Coloring mode: keep the suggestion cards reachable inside the (collapsed-by-default)
+   sidebar so the 🆕 New button re-opens to cards as well as the prompt. The big hero
+   headings above stay hidden; only the picker content is restored. Higher specificity
+   (+.config-panel) beats the display:none rule above. */
+.app:not(.app-hero) .config-panel .hero-section { display: block; }
+.app:not(.app-hero) .config-panel .hero-section .hero-tagline { display: none; }
+
 /* ── Hero mode overrides ──────────────────────────────────────────────────── */
 .app.app-hero .config-panel .hero-section {
   text-align: center;
