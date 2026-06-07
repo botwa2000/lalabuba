@@ -741,7 +741,12 @@ export async function renderGeneratedImage(imageBase64) {
   // Reset free mode on new generation, then enable canvas controls
   state.isFreeMode = false;
   const canvasNums = document.getElementById('canvas-numbers-btn');
-  if (canvasNums) { canvasNums.disabled = false; canvasNums.classList.remove('action-btn--on'); canvasNums.textContent = '🔢 Numbers'; }
+  if (canvasNums) {
+    canvasNums.disabled = false;
+    const numsOn = showNumbersInput.checked;
+    canvasNums.classList.toggle('action-btn--on', numsOn);
+    canvasNums.textContent = numsOn ? '🔢 Numbers' : '🔡 Numbers';
+  }
   const goFree = document.getElementById('go-free-btn');
   if (goFree) { goFree.disabled = false; goFree.classList.remove('action-btn--active'); goFree.textContent = '🎨 Free!'; }
 }

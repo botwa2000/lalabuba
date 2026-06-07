@@ -89,6 +89,7 @@
   width: auto;
   height: auto;
   cursor: crosshair;
+  touch-action: none;
 }
 @media (max-width: 640px) {
   #preview-canvas { max-height: 70vw; } /* square canvas stays compact on mobile */

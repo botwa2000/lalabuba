@@ -160,16 +160,8 @@ form.addEventListener("submit", async (event) => {
 });
 
 // ─── Show numbers checkbox ───────────────────────────────────────────────────
-showNumbersInput.addEventListener("change", async () => {
-  if (!state.currentImage) {
-    return;
-  }
-
-  try {
-    await renderGeneratedImage(state.currentImage);
-  } catch (error) {
-    setStatus(error.message || "Failed to redraw preview.", true);
-  }
+showNumbersInput.addEventListener("change", () => {
+  redrawCanvas(); // just re-overlays/removes number badges — never resets fills
 });
 
 // ─── Palette select ──────────────────────────────────────────────────────────

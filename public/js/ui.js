@@ -102,52 +102,8 @@ export function renderLegend() {
     legendList.appendChild(item);
   });
 
-  // ── Separator ───────────────────────────────────────────────────────
-  const sep2 = document.createElement("li");
-  sep2.className = "legend-sep";
-  sep2.setAttribute("aria-hidden", "true");
-  legendList.appendChild(sep2);
-
-  // ── Custom colour picker — full-width pill button, not a circle ─────
-  const customItem = document.createElement("li");
-  customItem.className = "legend-tool-item";
-  const isCustomActive = !state.eraseMode && state.selectedPaletteIndex === -1;
-  customItem.innerHTML = `<label class="tool-btn picker-btn${isCustomActive ? " active" : ""}" style="--c:${state.customColor}" title="${t('customColorHint')}">
-    <input type="color" class="color-input-hidden" value="${state.customColor}">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-      <path d="M10 2C5.58 2 2 5.58 2 10c0 3.31 2 5 4 5 1.54 0 2-1 2-2 0-.55.45-1 1-1h3c2.76 0 5-2.24 5-5C17 5.13 13.87 2 10 2z" fill="rgba(255,255,255,.8)" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/>
-      <circle cx="6.5" cy="8.5" r="1.4" fill="#e74c3c"/>
-      <circle cx="9.5" cy="5.5" r="1.4" fill="#f39c12"/>
-      <circle cx="13.2" cy="7.2" r="1.4" fill="#27ae60"/>
-      <circle cx="14.2" cy="11" r="1.4" fill="#2980b9"/>
-    </svg>
-    <span class="picker-label">${t('customColorLabel')}</span>
-    <span class="picker-dot" style="background:${state.customColor}"></span>
-  </label>`;
-  const colorInput = customItem.querySelector('input');
-  colorInput.addEventListener('input', (e) => {
-    state.customColor = e.target.value;
-    state.eraseMode = false;
-    state.selectedPaletteIndex = -1;
-    const lbl = customItem.querySelector('label');
-    lbl.style.setProperty('--c', state.customColor);
-    lbl.classList.add('active');
-    customItem.querySelector('.picker-dot').style.background = state.customColor;
-  });
-  colorInput.addEventListener('change', (e) => {
-    state.customColor = e.target.value;
-    state.eraseMode = false;
-    state.selectedPaletteIndex = -1;
-    renderLegend();
-    setStatus(t('customColorSelected'));
-  });
-  customItem.querySelector('label').addEventListener('click', () => {
-    state.eraseMode = false;
-    state.selectedPaletteIndex = -1;
-  });
-  legendList.appendChild(customItem);
-
-  // Sync palette context to canvas module
+  // Guided mode: palette swatches + eraser only — no custom color picker
+  // (custom/free color is only available after tapping 🎨 Free!)
   setPaletteContext(activePalette(), state.colorCount);
 }
 
