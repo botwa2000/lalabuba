@@ -578,15 +578,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                _buildIconPill(
+                _buildSurprisePill(
                   context,
-                  '💡',
+                  l10n,
                   onTap: () {
                     HapticFeedback.lightImpact();
-                    ref.read(homeProvider.notifier).surpriseMe();
-                    final s =
-                        ref.read(homeProvider).valueOrNull?.subject ?? '';
-                    if (s.isNotEmpty) _fillSubject(s);
+                    final card = ref.read(homeProvider.notifier).surpriseMe();
+                    if (card != null) {
+                      // Show the localized label; send the English prompt to the API.
+                      _fillSubject(
+                        card.label(_currentLocale),
+                        englishOverride: card.englishPrompt,
+                      );
+                    }
                   },
                 ),
               ],
@@ -693,21 +697,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildIconPill(BuildContext context, String emoji,
+  // Labeled "💡 Surprise me" pill (the i18n string already includes the emoji).
+  // Labeled rather than a bare lamp icon so its purpose is clear; scales down to
+  // fit so it never crowds the prompt field on narrow screens.
+  Widget _buildSurprisePill(BuildContext context, L10n l10n,
       {required VoidCallback onTap}) {
     final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 42,
         height: 42,
+        constraints: const BoxConstraints(maxWidth: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest,
+          color: cs.secondaryContainer,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: cs.outlineVariant),
         ),
         child: Center(
-            child: Text(emoji, style: const TextStyle(fontSize: 20))),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              l10n.t('surpriseMe'),
+              maxLines: 1,
+              softWrap: false,
+              style: GoogleFonts.fredoka(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: cs.onSecondaryContainer,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

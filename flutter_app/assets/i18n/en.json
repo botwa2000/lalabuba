@@ -123,5 +123,6 @@
   "goFreeConfirm": "Go free!",
   "goFreeCancel": "Keep guided",
   "pickColorBtn": "Tap to pick color",
+  "eyedropperHint": "Tap the picture to pick a color",
   "pickColorConfirm": "Use this color!"
 }

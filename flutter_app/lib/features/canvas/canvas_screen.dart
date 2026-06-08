@@ -480,8 +480,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         canvas.mode == DrawMode.paint || canvas.mode == DrawMode.pencil;
     return InteractiveViewer(
       transformationController: _transformCtrl,
+      // Disable BOTH pan and pinch while painting/drawing. Leaving scale on lets
+      // the InteractiveViewer's scale recognizer contend with the one-finger
+      // draw gesture, so the first movement is swallowed by the gesture arena
+      // and the stroke "jumps". With it off, strokes register immediately and
+      // smoothly. Zooming is still available via the zoom buttons.
       panEnabled: !isPaintOrPencil,
-      scaleEnabled: true,
+      scaleEnabled: !isPaintOrPencil,
       minScale: 0.5,
       maxScale: 6.0,
       boundaryMargin: const EdgeInsets.all(40),
@@ -493,8 +498,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     return LayoutBuilder(builder: (ctx, constraints) {
       final size = Size(constraints.maxWidth, constraints.maxHeight);
       return GestureDetector(
-        onTapUp: canvas.mode == DrawMode.tap
-            ? (d) => _onTap(d.localPosition, size)
+        onTapUp: (canvas.mode == DrawMode.tap ||
+                canvas.mode == DrawMode.eyedropper)
+            ? (d) => _onCanvasTap(d.localPosition, size)
             : null,
         onPanStart: canvas.mode == DrawMode.paint
             ? (d) => _onPanUpdate(d.localPosition, size)
@@ -521,6 +527,21 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         ),
       );
     });
+  }
+
+  void _onCanvasTap(Offset pos, Size size) {
+    final canvas = ref.read(canvasProvider);
+    if (canvas.mode == DrawMode.eyedropper) {
+      final c = ref.read(canvasProvider.notifier).colorAtOffset(pos, size);
+      if (c != null) {
+        HapticFeedback.selectionClick();
+        ref.read(canvasProvider.notifier).setActiveColor(c);
+      }
+      // Sample once, then return to painting with the picked colour.
+      ref.read(canvasProvider.notifier).setMode(DrawMode.paint);
+      return;
+    }
+    _onTap(pos, size);
   }
 
   void _onTap(Offset pos, Size size) {
@@ -888,7 +909,16 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           if (canvas.isFreeMode)
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
-              child: _buildSidebarColorPicker(context, canvas, l10n),
+              child: Column(
+                children: [
+                  _buildSidebarColorPicker(context, canvas, l10n),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _buildEyedropperBtn(context, canvas, l10n, size: 48),
+                  ),
+                ],
+              ),
             )
           else
             Expanded(
@@ -935,36 +965,90 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         : canvas.activeColor;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-      child: GestureDetector(
-        onTap: () => _showColorPickerDialog(context, canvas, l10n),
-        child: Container(
-          height: 52,
-          decoration: BoxDecoration(
-            color: currentColor,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: currentColor.withValues(alpha: 0.35),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('🎨', style: TextStyle(fontSize: 22)),
-              const SizedBox(width: 8),
-              Text(
-                l10n.t('pickColorBtn'),
-                style: GoogleFonts.fredoka(
-                  color: _isLight(currentColor) ? Colors.black87 : Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _showColorPickerDialog(context, canvas, l10n),
+              child: Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  color: currentColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: currentColor.withValues(alpha: 0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('🎨', style: TextStyle(fontSize: 22)),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          l10n.t('pickColorBtn'),
+                          maxLines: 1,
+                          style: GoogleFonts.fredoka(
+                            color: _isLight(currentColor)
+                                ? Colors.black87
+                                : Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
+          const SizedBox(width: 8),
+          _buildEyedropperBtn(context, canvas, l10n, size: 52),
+        ],
+      ),
+    );
+  }
+
+  // Eyedropper: arms sample-from-canvas mode. Active until the next canvas tap,
+  // which sets the picked colour and returns to painting.
+  Widget _buildEyedropperBtn(
+      BuildContext context, CanvasState canvas, L10n l10n,
+      {required double size}) {
+    final cs = Theme.of(context).colorScheme;
+    final active = canvas.mode == DrawMode.eyedropper;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        ref.read(canvasProvider.notifier).setMode(DrawMode.eyedropper);
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text(l10n.t('eyedropperHint'), style: GoogleFonts.nunito()),
+            duration: const Duration(seconds: 2),
+          ));
+      },
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: active ? cs.primaryContainer : cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: active ? cs.primary : cs.outlineVariant,
+            width: active ? 2 : 1,
+          ),
+        ),
+        child: Icon(
+          Icons.colorize_rounded,
+          color: active ? cs.onPrimaryContainer : cs.onSurface,
+          size: size * 0.5,
         ),
       ),
     );

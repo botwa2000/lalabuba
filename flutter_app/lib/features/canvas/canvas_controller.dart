@@ -34,6 +34,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
       baseImage: img,
       compositeImage: img,
       originalRgba: rgba,
+      compositeRgba: rgba, // composite == base until the first fill
       isProcessing: true,
     );
 
@@ -107,8 +108,31 @@ class CanvasNotifier extends Notifier<CanvasState> {
     final rgba = await Isolate.run(() => buildCompositeRgba(params));
     final img = await _rgbaToImage(rgba, params.width, params.height);
     if (state.detection != null) {
-      state = state.copyWith(compositeImage: img);
+      state = state.copyWith(compositeImage: img, compositeRgba: rgba);
     }
+  }
+
+  /// Samples the colour currently shown at canvas-space [pos] (eyedropper).
+  /// Reads the composite pixels (line art + fills), mapping through the same
+  /// letterbox rect the painter uses. Returns null if [pos] is in the margins.
+  Color? colorAtOffset(Offset pos, Size canvasSize) {
+    final d = state.detection;
+    final rgba = state.compositeRgba ?? state.originalRgba;
+    if (d == null || rgba == null) return null;
+
+    final displayRect = fitImageRect(
+      d.width.toDouble(), d.height.toDouble(),
+      canvasSize.width, canvasSize.height,
+    );
+    if (!displayRect.contains(pos)) return null;
+
+    final nx = (pos.dx - displayRect.left) / displayRect.width;
+    final ny = (pos.dy - displayRect.top) / displayRect.height;
+    final x = (nx * d.width).round().clamp(0, d.width - 1);
+    final y = (ny * d.height).round().clamp(0, d.height - 1);
+    final idx = (y * d.width + x) * 4;
+    if (idx < 0 || idx + 2 >= rgba.length) return null;
+    return Color.fromARGB(255, rgba[idx], rgba[idx + 1], rgba[idx + 2]);
   }
 
   static Future<ui.Image> _rgbaToImage(Uint8List rgba, int w, int h) {

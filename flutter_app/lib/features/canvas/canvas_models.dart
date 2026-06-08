@@ -19,7 +19,7 @@ Rect fitImageRect(double imgW, double imgH, double canvasW, double canvasH) {
   }
 }
 
-enum DrawMode { tap, paint, pencil }
+enum DrawMode { tap, paint, pencil, eyedropper }
 
 class Region {
   final int id;
@@ -113,6 +113,7 @@ class CanvasState {
   final ui.Image? baseImage;
   final ui.Image? compositeImage;
   final Uint8List? originalRgba;
+  final Uint8List? compositeRgba; // current composite pixels — for the eyedropper
   final RegionDetectionResult? detection;
   final Map<int, Color> regionColors;
   final Color activeColor;
@@ -130,6 +131,7 @@ class CanvasState {
     this.baseImage,
     this.compositeImage,
     this.originalRgba,
+    this.compositeRgba,
     this.detection,
     this.regionColors = const {},
     this.activeColor = const Color(0xFFFF4757),
@@ -151,6 +153,7 @@ class CanvasState {
     ui.Image? baseImage,
     ui.Image? compositeImage,
     Uint8List? originalRgba,
+    Uint8List? compositeRgba,
     RegionDetectionResult? detection,
     Map<int, Color>? regionColors,
     Color? activeColor,
@@ -169,6 +172,7 @@ class CanvasState {
         baseImage: baseImage ?? this.baseImage,
         compositeImage: compositeImage ?? this.compositeImage,
         originalRgba: originalRgba ?? this.originalRgba,
+        compositeRgba: compositeRgba ?? this.compositeRgba,
         detection: detection ?? this.detection,
         regionColors: regionColors ?? this.regionColors,
         activeColor: activeColor ?? this.activeColor,

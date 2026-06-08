@@ -61,7 +61,7 @@ class CanvasPainter extends CustomPainter {
       final cx = displayRect.left + region.centroid.dx * scaleX;
       final cy = displayRect.top + region.centroid.dy * scaleY;
 
-      final fontSize = _numberSize(region.pixelCount, scaleX, scaleY, displayRect);
+      final fontSize = _numberSize(region.pixelCount, scaleX);
       final textPainter = TextPainter(
         text: TextSpan(
           text: label,
@@ -100,18 +100,15 @@ class CanvasPainter extends CustomPainter {
     }
   }
 
-  // Glyph size is derived from the region's *displayed* footprint and bounded
-  // by a fraction of the displayed image — so numbers scale with the canvas
-  // (portrait ↔ landscape) rather than being a fixed pixel size. pixelCount is in
-  // source-image pixels; scaleX/scaleY convert it to on-screen pixels.
-  double _numberSize(
-      int pixelCount, double scaleX, double scaleY, Rect displayRect) {
-    final displayedArea = pixelCount * scaleX * scaleY;
-    final regionRadius = math.sqrt(displayedArea / math.pi);
-    final raw = regionRadius * 0.8;
-    final minFs = displayRect.shortestSide * 0.028;
-    final maxFs = displayRect.shortestSide * 0.060;
-    return raw.clamp(minFs, maxFs);
+  // Mirrors the web badge sizing exactly (canvas.js): the radius is proportional
+  // to sqrt(region area) measured in SOURCE-image pixels, clamped to [14, 26]
+  // source px, then multiplied by the letterbox [scale] (displayRect.width /
+  // image width). That makes the badge proportional to both the region and the
+  // displayed picture, and — because the painter is drawn inside the
+  // InteractiveViewer — it grows when the user zooms in, just like the artwork.
+  double _numberSize(int pixelCount, double scale) {
+    final srcRadius = (math.sqrt(pixelCount.toDouble()) * 0.08).clamp(14.0, 26.0);
+    return srcRadius * scale;
   }
 
   void _drawStroke(Canvas canvas, Stroke stroke) {

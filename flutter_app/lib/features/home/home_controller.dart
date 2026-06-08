@@ -80,12 +80,15 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
     state = AsyncData(s.copyWith(subject: subject));
   }
 
-  void surpriseMe() {
+  /// Picks a random subject card. Returns it so the UI can show the *localized*
+  /// label while still sending the English prompt to the API. The stored
+  /// subject stays English (used as the generation prompt).
+  SubjectCard? surpriseMe() {
     final s = state.valueOrNull;
-    if (s == null) return;
-    if (s.allCards.isEmpty) return;
+    if (s == null || s.allCards.isEmpty) return null;
     final card = s.allCards[_rng.nextInt(s.allCards.length)];
     state = AsyncData(s.copyWith(subject: card.englishPrompt));
+    return card;
   }
 
   void selectCard(SubjectCard card) {
