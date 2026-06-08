@@ -662,60 +662,54 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Row 1: Mode buttons
+          // Row 1: Mode buttons. A Wrap (not a Row of Expanded) so each button
+          // keeps a readable natural width and the set flows onto a second line
+          // when the localized labels don't all fit — instead of squeezing the
+          // text until it wraps vertically inside each button.
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-            child: Row(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
               children: [
-                Expanded(
-                  child: _ActionBtn(
-                    label: l10n.t('tapModeBtn'),
-                    active: mode == DrawMode.tap && !isEraser,
-                    onTap: () {
-                      ref.read(canvasProvider.notifier).setMode(DrawMode.tap);
-                      if (isEraser) {
-                        final colors = _getPaletteColors(
-                            settings?.palette ?? 'classic', settings?.colorCount ?? 12);
-                        if (colors.isNotEmpty) {
-                          ref.read(canvasProvider.notifier).setActiveColor(colors.first);
-                        }
+                _ActionBtn(
+                  label: l10n.t('tapModeBtn'),
+                  active: mode == DrawMode.tap && !isEraser,
+                  onTap: () {
+                    ref.read(canvasProvider.notifier).setMode(DrawMode.tap);
+                    if (isEraser) {
+                      final colors = _getPaletteColors(
+                          settings?.palette ?? 'classic', settings?.colorCount ?? 12);
+                      if (colors.isNotEmpty) {
+                        ref.read(canvasProvider.notifier).setActiveColor(colors.first);
                       }
-                    },
-                  ),
+                    }
+                  },
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _ActionBtn(
-                    label: l10n.t('paintModeBtn'),
-                    active: mode == DrawMode.paint && !isEraser,
-                    onTap: () =>
-                        ref.read(canvasProvider.notifier).setMode(DrawMode.paint),
-                  ),
+                _ActionBtn(
+                  label: l10n.t('paintModeBtn'),
+                  active: mode == DrawMode.paint && !isEraser,
+                  onTap: () =>
+                      ref.read(canvasProvider.notifier).setMode(DrawMode.paint),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _ActionBtn(
-                    label: l10n.t('pencilBtn'),
-                    active: mode == DrawMode.pencil,
-                    onTap: () => ref.read(canvasProvider.notifier).setMode(
-                        mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
-                  ),
+                _ActionBtn(
+                  label: l10n.t('pencilBtn'),
+                  active: mode == DrawMode.pencil,
+                  onTap: () => ref.read(canvasProvider.notifier).setMode(
+                      mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _ActionBtn(
-                    label: l10n.t('eraserBtn'),
-                    active: isEraser,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      ref.read(canvasProvider.notifier)
-                          .setActiveColor(Colors.transparent);
-                      ref.read(canvasProvider.notifier)
-                          .setMode(DrawMode.paint);
-                    },
-                  ),
+                _ActionBtn(
+                  label: l10n.t('eraserBtn'),
+                  active: isEraser,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref.read(canvasProvider.notifier)
+                        .setActiveColor(Colors.transparent);
+                    ref.read(canvasProvider.notifier)
+                        .setMode(DrawMode.paint);
+                  },
                 ),
-                const SizedBox(width: 8),
                 _ActionBtn(
                   label: l10n.t('undoBtn'),
                   onTap: canvas.undoStack.isEmpty
@@ -1277,16 +1271,23 @@ class _ActionBtn extends StatelessWidget {
               active ? cs.primaryContainer : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(22),
         ),
-        child: Text(
-          label,
-          style: GoogleFonts.fredoka(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: onTap == null
-                ? cs.onSurface.withValues(alpha: 0.3)
-                : active
-                    ? cs.onPrimaryContainer
-                    : cs.onSurface,
+        // Keep the label on a single line; if a (localized) label is wider than
+        // its box it scales down rather than wrapping vertically.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            style: GoogleFonts.fredoka(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: onTap == null
+                  ? cs.onSurface.withValues(alpha: 0.3)
+                  : active
+                      ? cs.onPrimaryContainer
+                      : cs.onSurface,
+            ),
           ),
         ),
       ),
