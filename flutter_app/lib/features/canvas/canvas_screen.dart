@@ -774,8 +774,12 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final mode = canvas.mode;
     final isEraser = canvas.activeColor == Colors.transparent;
 
+    // Width scales with the screen (relative, not a fixed 128px) so the German
+    // labels ("Zeichnen", "Rückgängig", …) have room instead of truncating.
+    final sidebarW = (MediaQuery.sizeOf(context).width * 0.20).clamp(140.0, 184.0);
+
     return Container(
-      width: 128,
+      width: sidebarW,
       decoration: BoxDecoration(
         color: cs.surface,
         border: Border(left: BorderSide(color: cs.outlineVariant, width: 0.5)),
@@ -1305,24 +1309,29 @@ class _SidebarBtn extends StatelessWidget {
       child: Container(
         height: 34,
         alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
           color: active ? cs.primaryContainer : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Text(
-          label,
-          style: GoogleFonts.fredoka(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w700,
-            color: onTap == null
-                ? cs.onSurface.withValues(alpha: 0.3)
-                : active
-                    ? cs.onPrimaryContainer
-                    : cs.onSurface,
+        // Scale the label down to fit the button width instead of truncating —
+        // keeps full words readable at any sidebar width.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: GoogleFonts.fredoka(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: onTap == null
+                  ? cs.onSurface.withValues(alpha: 0.3)
+                  : active
+                      ? cs.onPrimaryContainer
+                      : cs.onSurface,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
           ),
-          textAlign: TextAlign.center,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
         ),
       ),
     );

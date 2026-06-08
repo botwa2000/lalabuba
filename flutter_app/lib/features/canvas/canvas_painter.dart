@@ -49,15 +49,19 @@ class CanvasPainter extends CustomPainter {
       if (filled.containsKey(region.id)) continue;
       if (region.pixelCount < 200) continue;
 
-      // Map centroid from image-space to canvas-space via letterbox rect
+      // Only label regions that map to a palette colour. The background region
+      // has no palette index, so skip it — otherwise it was drawn with a
+      // fallback "id+1" label, producing a stray "1" floating in empty space.
+      final pi = detection.regionPaletteIndex[region.id];
+      if (pi == null) continue;
+      // Show the 1-based palette index so it matches the palette swatch order.
+      final label = (pi + 1).toString();
+
+      // Map the interior label point from image-space to canvas-space.
       final cx = displayRect.left + region.centroid.dx * scaleX;
       final cy = displayRect.top + region.centroid.dy * scaleY;
 
-      // Show 1-based palette index so it matches the palette position in the UI
-      final pi = detection.regionPaletteIndex[region.id];
-      final label = pi != null ? (pi + 1).toString() : (region.id + 1).toString();
-
-      final fontSize = _numberSize(region.pixelCount, size);
+      final fontSize = _numberSize(region.pixelCount, scaleX, scaleY, displayRect);
       final textPainter = TextPainter(
         text: TextSpan(
           text: label,
@@ -70,9 +74,10 @@ class CanvasPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      // Visible background circle — large enough to contain the label
+      // Visible background circle — large enough to contain the label. Padding
+      // scales with the glyph (relative, not a fixed pixel amount).
       final bgRadius =
-          math.max(textPainter.width, textPainter.height) * 0.65 + 4;
+          math.max(textPainter.width, textPainter.height) * 0.65 + fontSize * 0.28;
 
       canvas.drawCircle(
           Offset(cx, cy),
@@ -95,10 +100,18 @@ class CanvasPainter extends CustomPainter {
     }
   }
 
-  double _numberSize(int pixelCount, Size canvasSize) {
-    final area = canvasSize.width * canvasSize.height;
-    final fraction = pixelCount / area;
-    return (14.0 + fraction * 200).clamp(14.0, 30.0);
+  // Glyph size is derived from the region's *displayed* footprint and bounded
+  // by a fraction of the displayed image — so numbers scale with the canvas
+  // (portrait ↔ landscape) rather than being a fixed pixel size. pixelCount is in
+  // source-image pixels; scaleX/scaleY convert it to on-screen pixels.
+  double _numberSize(
+      int pixelCount, double scaleX, double scaleY, Rect displayRect) {
+    final displayedArea = pixelCount * scaleX * scaleY;
+    final regionRadius = math.sqrt(displayedArea / math.pi);
+    final raw = regionRadius * 0.8;
+    final minFs = displayRect.shortestSide * 0.028;
+    final maxFs = displayRect.shortestSide * 0.060;
+    return raw.clamp(minFs, maxFs);
   }
 
   void _drawStroke(Canvas canvas, Stroke stroke) {
