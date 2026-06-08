@@ -116,7 +116,11 @@ jobs:
           releaseFiles: flutter_app/build/app/outputs/bundle/release/app-release.aab
           tracks: ${{ inputs.track }}
           status: completed
-          changesNotSentForReview: true
+          # Must be false for the internal track: internal-test releases are not
+          # held for review, so Google rejects this param being set ("Changes are
+          # sent for review automatically. The query parameter
+          # changesNotSentForReview must not be set."). false → action omits it.
+          changesNotSentForReview: false
 
   # ── iOS: trigger Codemagic flutter-release workflow ───────────────────────────
   ios-trigger:
