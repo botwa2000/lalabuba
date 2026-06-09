@@ -347,42 +347,91 @@ Uint8List buildCompositeRgba(CompositeParams params) {
     }
   }
 
-  // 1-pixel dilation: bleed fill color into adjacent light-colored outline pixels
-  // to eliminate the white fringe at region boundaries.
+  // Multi-pass bleed: flood fill color through the light "outline" (-2) band up
+  // to the closing radius, eliminating the white fringe AND the white concave
+  // corners the morphological closing (8-px dilate/erode) carved out of genuine
+  // interior. A single 1-px pass only recolored the innermost ring and left up
+  // to ~7 px of white hugging every line. The flood is stopped by the genuine
+  // dark outline core (luma < 60), so one region's color cannot cross the line
+  // into its neighbour. maxBleed matches the closing radius so it exactly undoes
+  // the white band closing created — no more, no less.
   final w = params.width;
   final h = params.height;
+  const maxBleed = 8;
+
+  // Per-pixel original luma, reused by both the dark-core gate and the final
+  // shading factor (cheaper than recomputing inside the BFS).
+  final luma = Uint8List(n);
+  for (var i = 0; i < n; i++) {
+    luma[i] = (0.299 * orig[i * 4] +
+            0.587 * orig[i * 4 + 1] +
+            0.114 * orig[i * 4 + 2])
+        .round()
+        .clamp(0, 255);
+  }
+
+  // claimColor[i] = ARGB a -2 pixel inherits from the nearest filled region
+  //                 (0 = unclaimed). Fill colors always carry alpha, so 0 is a
+  //                 safe sentinel.
+  final claimColor = Int32List(n);
+  final claimDist = Uint8List(n);
+  final queue = Int32List(n);
+  var qHead = 0, qTail = 0;
+
+  // Seed: every light -2 pixel directly touching a filled region pixel.
   for (var y = 1; y < h - 1; y++) {
     for (var x = 1; x < w - 1; x++) {
       final i = y * w + x;
-      if (p2r[i] != -2) continue; // only process outline/excluded pixels
-
-      // Skip truly dark pixels (hard outline lines) — keep them as-is
-      final origLuma = (0.299 * orig[i * 4] +
-              0.587 * orig[i * 4 + 1] +
-              0.114 * orig[i * 4 + 2])
-          .round();
-      if (origLuma < 60) continue;
-
-      // Find an adjacent filled region pixel
-      int? fillArgb;
-      for (final n in [i - 1, i + 1, i - w, i + w]) {
-        final ri = p2r[n];
+      if (p2r[i] != -2 || luma[i] < 60) continue;
+      for (final nb in [i - 1, i + 1, i - w, i + w]) {
+        final ri = p2r[nb];
         if (ri >= 0 && colors.containsKey(ri)) {
-          fillArgb = colors[ri];
+          claimColor[i] = colors[ri]!;
+          claimDist[i] = 1;
+          queue[qTail++] = i;
           break;
         }
       }
-      if (fillArgb == null) continue;
-
-      final fr = (fillArgb >> 16) & 0xFF;
-      final fg = (fillArgb >> 8) & 0xFF;
-      final fb = fillArgb & 0xFF;
-      final factor = origLuma / 255.0;
-      out[i * 4] = (fr * factor).round().clamp(0, 255);
-      out[i * 4 + 1] = (fg * factor).round().clamp(0, 255);
-      out[i * 4 + 2] = (fb * factor).round().clamp(0, 255);
-      out[i * 4 + 3] = 255;
     }
+  }
+
+  // Expand the frontier through light -2 pixels only, bounded by maxBleed. The
+  // queue snapshots each pixel's claim, so a pixel never re-spreads unboundedly
+  // within a single pass.
+  while (qHead < qTail) {
+    final i = queue[qHead++];
+    final d = claimDist[i];
+    if (d >= maxBleed) continue;
+    final argb = claimColor[i];
+    final x = i % w;
+    final neighbors = [
+      if (x > 0) i - 1,
+      if (x < w - 1) i + 1,
+      i - w,
+      i + w,
+    ];
+    for (final nb in neighbors) {
+      if (nb < 0 || nb >= n) continue;
+      if (p2r[nb] != -2 || claimColor[nb] != 0 || luma[nb] < 60) continue;
+      claimColor[nb] = argb;
+      claimDist[nb] = d + 1;
+      queue[qTail++] = nb;
+    }
+  }
+
+  // Paint every claimed pixel, darkened by its original luma so the colored edge
+  // fades naturally into the dark outline core.
+  for (var i = 0; i < n; i++) {
+    final argb = claimColor[i];
+    if (argb == 0) continue;
+    final fr = (argb >> 16) & 0xFF;
+    final fg = (argb >> 8) & 0xFF;
+    final fb = argb & 0xFF;
+    final factor = luma[i] / 255.0;
+    out[i * 4] = (fr * factor).round().clamp(0, 255);
+    out[i * 4 + 1] = (fg * factor).round().clamp(0, 255);
+    out[i * 4 + 2] = (fb * factor).round().clamp(0, 255);
+    out[i * 4 + 3] = 255;
   }
 
   return out;
