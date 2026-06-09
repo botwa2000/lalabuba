@@ -104,22 +104,21 @@ workflows:
       flutter: stable
 
     scripts:
-      - name: Set build number in pubspec.yaml
+      - name: Compute CFBundleVersion (must exceed latest TestFlight)
         script: |
-          cd $FLUTTER_APP_DIR
-          # Flutter version format: major.minor.patch+buildNumber
           # CFBundleVersion MUST be strictly greater than the latest build already on
           # App Store Connect. A fixed BUILD_NUMBER+offset scheme broke when Codemagic's
           # build index reset (index 6 → 1006) and collided below an existing TestFlight
-          # build (1067). Fetch the real latest from ASC and increment instead.
-          CURRENT=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
+          # build (1067). Fetch the real latest from ASC and increment. The value is
+          # exported via $CM_ENV and passed EXPLICITLY to `flutter build ipa
+          # --build-number` below, so it can never be silently dropped.
           LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo "")
           if ! echo "$LATEST" | grep -qE '^[0-9]+$'; then LATEST=0; fi
           CODE=$((LATEST + 1))
           # Safety floor: never publish at/below the known-good baseline (1067).
           if [ "$CODE" -le 1067 ]; then CODE=1068; fi
-          sed -i "s/^version: .*/version: ${CURRENT}+${CODE}/" pubspec.yaml
-          echo "latest TestFlight build=${LATEST}; pubspec version → ${CURRENT}+${CODE}"
+          echo "BUILD_CODE=$CODE" >> $CM_ENV
+          echo ">>> latest TestFlight build=${LATEST}; will build CFBundleVersion=${CODE}"
 
       - name: Get Flutter dependencies
         script: |
@@ -159,7 +158,9 @@ workflows:
           # (Codemagic's API does not expose step logs; artifacts ARE downloadable).
           # pipefail keeps the step failing on error while still writing the log.
           set -o pipefail
+          echo ">>> building IPA with CFBundleVersion (--build-number) = ${BUILD_CODE}"
           flutter build ipa --release --verbose \
+            --build-number="${BUILD_CODE}" \
             --export-options-plist="$CM_BUILD_DIR/export_options.plist" 2>&1 | tee "$CM_BUILD_DIR/flutter_build_ipa.log"
 
     artifacts:
