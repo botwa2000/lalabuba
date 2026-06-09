@@ -19,6 +19,7 @@ on:
         options:
           - android
           - both
+          - ios
       track:
         description: 'Android Play Store track'
         required: true
@@ -124,21 +125,42 @@ jobs:
 
   # ── iOS: trigger Codemagic flutter-release workflow ───────────────────────────
   ios-trigger:
-    if: ${{ inputs.platform == 'both' }}
+    # Run for ios-only, or for 'both' once Android has succeeded.
+    if: ${{ always() && (inputs.platform == 'ios' || (inputs.platform == 'both' && needs.android.result == 'success')) }}
     name: Trigger Codemagic Flutter iOS build
     runs-on: ubuntu-latest
-    needs: android   # only trigger iOS if Android succeeded
+    needs: android
 
     steps:
-      - name: Trigger Codemagic flutter-release
+      - name: Verify Codemagic token is present
+        env:
+          CM_TOKEN: ${{ secrets.CODEMAGIC_API_TOKEN }}
         run: |
-          curl -sf -X POST \
-            -H "x-auth-token: ${{ secrets.CODEMAGIC_API_TOKEN }}" \
+          if [ -z "$CM_TOKEN" ]; then
+            echo "::error::CODEMAGIC_API_TOKEN secret is empty/unset — set it in repo Settings → Secrets."
+            exit 1
+          fi
+          echo "Codemagic token present (length: ${#CM_TOKEN})"
+
+      - name: Trigger Codemagic flutter-release
+        env:
+          CM_TOKEN: ${{ secrets.CODEMAGIC_API_TOKEN }}
+        run: |
+          resp=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "x-auth-token: $CM_TOKEN" \
             -H "Content-Type: application/json" \
             --data '{
               "appId": "69d2bd72c09ad496ab57741d",
               "workflowId": "flutter-release",
               "branch": "main"
             }' \
-            https://api.codemagic.io/builds
-          echo "Codemagic flutter-release triggered"
+            https://api.codemagic.io/builds)
+          code=$(echo "$resp" | tail -n1)
+          body=$(echo "$resp" | sed '$d')
+          echo "HTTP $code"
+          echo "$body"
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Codemagic build trigger failed (HTTP $code)"
+            exit 1
+          fi
+          echo "Codemagic flutter-release triggered successfully"
