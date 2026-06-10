@@ -99,7 +99,12 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   }
 
   // ── 4. BFS region detection ──
-  // pixelToRegion: -1 = unvisited, -2 = outline, regionId >= 0 (tentative)
+  // pixelToRegion: -1 = unvisited, -2 = outline, regionId >= 0 (tentative).
+  // Unlike before we keep EVERY region (even sub-minArea ones) labelled with a
+  // tentative id; small regions are merged into their enclosing region in step
+  // 4b rather than discarded to -2. Discarding them left tiny white specks: a
+  // speck sits inside its own dark outline ring, and the composite bleed stops
+  // at that dark ring, so the speck interior could never be coloured.
   final pixelToRegion = Int32List(w * h);
   for (var i = 0; i < w * h; i++) {
     pixelToRegion[i] = outlineMask[i] == 1 ? -2 : -1;
@@ -108,7 +113,10 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   // Use a pre-allocated Int32List as a BFS queue to avoid Dart List GC pressure
   final bfsQueue = Int32List(w * h);
 
-  final rawRegions = <_RegionData>[];
+  // Per-tentative-region accumulators (index = tentative id).
+  final tentCount = <int>[];
+  final tentSumX = <int>[];
+  final tentSumY = <int>[];
   var nextId = 0;
 
   for (var startIdx = 0; startIdx < w * h; startIdx++) {
@@ -123,9 +131,6 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     var sumX = 0;
     var sumY = 0;
     var count = 0;
-    var sumR = 0;
-    var sumG = 0;
-    var sumB = 0;
 
     while (head < tail) {
       final idx = bfsQueue[head++];
@@ -134,9 +139,6 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
       sumX += x;
       sumY += y;
       count++;
-      sumR += pixels[idx * 4];
-      sumG += pixels[idx * 4 + 1];
-      sumB += pixels[idx * 4 + 2];
 
       // 4-connected neighbors
       if (x > 0) {
@@ -169,31 +171,103 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
       }
     }
 
-    if (count >= minArea) {
-      final centroid = Offset(sumX / count, sumY / count);
-      final avgR = sumR ~/ count;
-      final avgG = sumG ~/ count;
-      final avgB = sumB ~/ count;
-      rawRegions.add(_RegionData(
-        id: nextId,
-        centroid: centroid,
-        pixelCount: count,
-        avgR: avgR,
-        avgG: avgG,
-        avgB: avgB,
-      ));
-      nextId++;
-    } else {
-      // Too small — reclassify as outline/discard (-2).
-      // bfsQueue[head-count .. head-1] are the pixels belonging to this region.
-      final qStart = head - count;
-      for (var qi = qStart; qi < head; qi++) {
-        pixelToRegion[bfsQueue[qi]] = -2;
-      }
-    }
+    tentCount.add(count);
+    tentSumX.add(sumX);
+    tentSumY.add(sumY);
+    nextId++;
   }
 
-  // ── 5. Sort by pixelCount desc, remap IDs ──
+  // ── 4b. Merge sub-minArea regions into the enclosing kept region ──
+  // kept = region big enough to stand on its own and be colour-by-numbered.
+  final kept = List<bool>.generate(nextId, (i) => tentCount[i] >= minArea);
+
+  // nearestKept[i]: for every NON-kept pixel (outline -2 and small-region
+  // pixels alike) the tentative id of the nearest KEPT region, by 4-connected
+  // BFS distance. Seeded from non-kept pixels that touch a kept region and
+  // expanded only through other non-kept pixels — so it flows across the dark
+  // ring around a speck and reaches the big region that surrounds it.
+  bool isKeptPixel(int i) {
+    final r = pixelToRegion[i];
+    return r >= 0 && kept[r];
+  }
+
+  final nearestKept = Int32List(w * h)..fillRange(0, w * h, -1);
+  final nq = Int32List(w * h);
+  var nqHead = 0, nqTail = 0;
+  for (var i = 0; i < w * h; i++) {
+    if (isKeptPixel(i)) continue;
+    final x = i % w, y = i ~/ w;
+    int? seed;
+    if (x > 0 && isKeptPixel(i - 1)) {
+      seed = pixelToRegion[i - 1];
+    } else if (x < w - 1 && isKeptPixel(i + 1)) {
+      seed = pixelToRegion[i + 1];
+    } else if (y > 0 && isKeptPixel(i - w)) {
+      seed = pixelToRegion[i - w];
+    } else if (y < h - 1 && isKeptPixel(i + w)) {
+      seed = pixelToRegion[i + w];
+    }
+    if (seed != null) {
+      nearestKept[i] = seed;
+      nq[nqTail++] = i;
+    }
+  }
+  while (nqHead < nqTail) {
+    final i = nq[nqHead++];
+    final id = nearestKept[i];
+    final x = i % w, y = i ~/ w;
+    if (x > 0)     { final n = i - 1; if (!isKeptPixel(n) && nearestKept[n] == -1) { nearestKept[n] = id; nq[nqTail++] = n; } }
+    if (x < w - 1) { final n = i + 1; if (!isKeptPixel(n) && nearestKept[n] == -1) { nearestKept[n] = id; nq[nqTail++] = n; } }
+    if (y > 0)     { final n = i - w; if (!isKeptPixel(n) && nearestKept[n] == -1) { nearestKept[n] = id; nq[nqTail++] = n; } }
+    if (y < h - 1) { final n = i + w; if (!isKeptPixel(n) && nearestKept[n] == -1) { nearestKept[n] = id; nq[nqTail++] = n; } }
+  }
+
+  // Each small region adopts the nearest kept region (majority vote across its
+  // own pixels). A speck enclosed by a coloured region adopts that colour; a
+  // speck in the background adopts the background and stays uncoloured.
+  final mergeTo = List<int>.generate(nextId, (i) => i); // kept → itself
+  final votes = <int, Map<int, int>>{}; // smallId → {keptId: pixelVotes}
+  for (var i = 0; i < w * h; i++) {
+    final r = pixelToRegion[i];
+    if (r < 0 || kept[r]) continue;
+    final nk = nearestKept[i];
+    if (nk < 0) continue;
+    (votes[r] ??= <int, int>{}).update(nk, (v) => v + 1, ifAbsent: () => 1);
+  }
+  for (var s = 0; s < nextId; s++) {
+    if (kept[s]) continue;
+    final v = votes[s];
+    if (v == null || v.isEmpty) {
+      mergeTo[s] = -2; // isolated speck with no kept neighbour → outline
+      continue;
+    }
+    var best = -1, bestVotes = -1;
+    v.forEach((keptId, n) {
+      if (n > bestVotes) { bestVotes = n; best = keptId; }
+    });
+    mergeTo[s] = best;
+  }
+
+  // Apply merges to pixelToRegion (small-region pixels take the kept id, or -2).
+  for (var i = 0; i < w * h; i++) {
+    final r = pixelToRegion[i];
+    if (r >= 0 && !kept[r]) pixelToRegion[i] = mergeTo[r];
+  }
+
+  // ── 5. Build kept regions, sort by pixelCount desc, remap IDs ──
+  final rawRegions = <_RegionData>[];
+  for (var t = 0; t < nextId; t++) {
+    if (!kept[t]) continue;
+    final c = tentCount[t];
+    rawRegions.add(_RegionData(
+      id: t,
+      centroid: Offset(tentSumX[t] / c, tentSumY[t] / c),
+      pixelCount: c,
+      avgR: 0,
+      avgG: 0,
+      avgB: 0,
+    ));
+  }
   rawRegions.sort((a, b) => b.pixelCount.compareTo(a.pixelCount));
 
   // oldId → newId

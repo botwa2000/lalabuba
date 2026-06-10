@@ -67,7 +67,6 @@ void main() {
       int b(int x) => out[(1 * w + x) * 4 + 2];
 
       bool isRed(int x) => r(x) > 200 && g(x) < 50 && b(x) < 50;
-      bool isWhite(int x) => r(x) > 250 && g(x) > 250 && b(x) > 250;
 
       // The whole 8-px white band adjacent to fill is now coloured — no white gap.
       for (var x = 0; x <= 9; x++) {

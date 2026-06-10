@@ -10,8 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
+import 'package:gal/gal.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../../core/di/providers.dart';
 import '../../features/generate/generate_service.dart';
@@ -498,7 +497,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     return LayoutBuilder(builder: (ctx, constraints) {
       final size = Size(constraints.maxWidth, constraints.maxHeight);
       return GestureDetector(
+        // A tap fills in BOTH tap and paint modes (and samples in eyedropper).
+        // Paint mode used to react only to drags, so after the eraser forced
+        // paint mode a single tap did nothing — users reported "it takes several
+        // taps to colour". Treating a tap as a zero-length paint makes a single
+        // tap always fill the region under the finger.
         onTapUp: (canvas.mode == DrawMode.tap ||
+                canvas.mode == DrawMode.paint ||
                 canvas.mode == DrawMode.eyedropper)
             ? (d) => _onCanvasTap(d.localPosition, size)
             : null,
@@ -537,8 +542,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         HapticFeedback.selectionClick();
         ref.read(canvasProvider.notifier).setActiveColor(c);
       }
-      // Sample once, then return to painting with the picked colour.
-      ref.read(canvasProvider.notifier).setMode(DrawMode.paint);
+      // Sample once, then return to TAP mode so the very next tap applies the
+      // picked colour to a region (paint mode would need a drag).
+      ref.read(canvasProvider.notifier).setMode(DrawMode.tap);
       return;
     }
     _onTap(pos, size);
@@ -790,8 +796,12 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final isEraser = canvas.activeColor == Colors.transparent;
 
     // Width scales with the screen (relative, not a fixed 128px) so the German
-    // labels ("Zeichnen", "Rückgängig", …) have room instead of truncating.
-    final sidebarW = (MediaQuery.sizeOf(context).width * 0.20).clamp(140.0, 184.0);
+    // labels ("Freihand", "Rückgängig", …) have room instead of truncating.
+    // Tablets get a wider sidebar so the palette isn't a cramped speck-grid.
+    final isTablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+    final sidebarW = isTablet
+        ? 252.0
+        : (MediaQuery.sizeOf(context).width * 0.20).clamp(140.0, 184.0);
 
     return Container(
       width: sidebarW,
@@ -924,7 +934,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
-                child: _buildColorSwatches(context, canvas, settings, swatch: 44),
+                child: _buildColorSwatches(context, canvas, settings,
+                    swatch: isTablet ? 56 : 44),
               ),
             ),
         ],
@@ -950,8 +961,15 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             size: swatch,
             active: canvas.activeColor == color,
             pulse: hintColor != null && hintColor == color,
-            onTap: () =>
-                ref.read(canvasProvider.notifier).setActiveColor(color),
+            onTap: () {
+              final n = ref.read(canvasProvider.notifier);
+              n.setActiveColor(color);
+              // Picking a swatch while the eyedropper is armed cancels it back
+              // to tap-to-fill so the next tap colours a region.
+              if (ref.read(canvasProvider).mode == DrawMode.eyedropper) {
+                n.setMode(DrawMode.tap);
+              }
+            },
           ),
       ],
     );
@@ -1132,25 +1150,32 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   // ─── Save / Share ─────────────────────────────────────────────────────────────
 
   Future<void> _saveArtwork(CanvasState canvas) async {
+    final l10n = ref.read(l10nProvider);
     try {
       final bytes = await _captureCanvas(canvas);
       if (bytes == null) return;
-      final dir = await getApplicationDocumentsDirectory();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final file = File('${dir.path}/lalabuba_$timestamp.png');
-      await file.writeAsBytes(bytes);
+      // Save to the device PHOTO GALLERY (not the app's private documents dir,
+      // which is invisible to the user — the old behaviour looked like "Save
+      // does nothing"). gal handles MediaStore on Android and prompts for
+      // add-only Photos access on iOS.
+      if (!await Gal.hasAccess()) {
+        await Gal.requestAccess();
+      }
+      await Gal.putImageBytes(bytes,
+          name: 'lalabuba_${DateTime.now().millisecondsSinceEpoch}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('💾 Saved!', style: GoogleFonts.nunito()),
+            content: Text(l10n.t('savedToGallery'), style: GoogleFonts.nunito()),
             duration: const Duration(seconds: 2),
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Could not save: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.t('saveFailed'), style: GoogleFonts.nunito())),
+        );
       }
     }
   }

@@ -8,6 +8,7 @@ class LalaCard extends StatefulWidget {
   final List<Color> gradient;
   final VoidCallback? onTap;
   final int animationIndex; // stagger delay index
+  final double scale; // 1.0 = phone sizing; >1 enlarges emoji/label for tablets
 
   const LalaCard({
     super.key,
@@ -16,6 +17,7 @@ class LalaCard extends StatefulWidget {
     required this.gradient,
     this.onTap,
     this.animationIndex = 0,
+    this.scale = 1.0,
   });
 
   @override
@@ -104,7 +106,8 @@ class _LalaCardState extends State<LalaCard>
                           child: Text(
                             widget.emoji,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 32, height: 1.1),
+                            style: TextStyle(
+                                fontSize: 32 * widget.scale, height: 1.1),
                           ),
                         ),
                       ),
@@ -115,7 +118,8 @@ class _LalaCardState extends State<LalaCard>
                 Container(
                   width: double.infinity,
                   color: cs.surface,
-                  padding: const EdgeInsets.fromLTRB(6, 5, 6, 6),
+                  padding: EdgeInsets.fromLTRB(
+                      6, 5 * widget.scale, 6, 6 * widget.scale),
                   child: Text(
                     widget.label,
                     textAlign: TextAlign.center,
@@ -123,7 +127,7 @@ class _LalaCardState extends State<LalaCard>
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.fredoka(
                       color: cs.onSurface,
-                      fontSize: 12,
+                      fontSize: 12 * widget.scale,
                       fontWeight: FontWeight.w700,
                       height: 1.25,
                     ),

@@ -85,17 +85,140 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final homeAsync = ref.watch(homeProvider);
     final settingsAsync = ref.watch(settingsProvider);
     final sub = ref.watch(subscriptionProvider).valueOrNull;
+
+    // Choose the layout by actual available SIZE, not orientation alone:
+    //  • Tablet (shortest side ≥ 600dp) → roomy centered hero in BOTH
+    //    orientations (a tablet has space either way; serving it the
+    //    phone-landscape sidebar made everything tiny in a sea of whitespace).
+    //  • Phone landscape (short height) → compact two-pane sidebar, which keeps
+    //    the prompt + Draw visible without burning the scarce vertical space.
+    //  • Phone portrait → single-column hero.
+    final size = MediaQuery.sizeOf(context);
+    final isTablet = size.shortestSide >= 600;
     final isLandscape =
         MediaQuery.orientationOf(context) == Orientation.landscape;
 
+    final Widget body;
+    if (isTablet) {
+      body = _buildTabletHero(context, l10n, homeAsync, settingsAsync, sub);
+    } else if (isLandscape) {
+      body =
+          _buildLandscapeLayout(context, l10n, homeAsync, settingsAsync, sub);
+    } else {
+      body =
+          _buildPortraitLayout(context, l10n, homeAsync, settingsAsync, sub);
+    }
+
     return Scaffold(
       appBar: _buildAppBar(context, l10n, themeMode),
-      body: SafeArea(
-        top: false,
-        bottom: false,
-        child: isLandscape
-            ? _buildLandscapeLayout(context, l10n, homeAsync, settingsAsync, sub)
-            : _buildPortraitLayout(context, l10n, homeAsync, settingsAsync, sub),
+      body: SafeArea(top: false, bottom: false, child: body),
+    );
+  }
+
+  // ─── Tablet hero (centered single column, both orientations) ─────────────────
+  // One responsive hero: content capped to a comfortable max-width and centered,
+  // type/cards scaled up, 4 cards in one row when wide enough else 2×2. Replaces
+  // the two-pane split on the home screen, where the second pane had no content
+  // (the image only exists after Draw, on the canvas screen).
+
+  Widget _buildTabletHero(
+    BuildContext context,
+    L10n l10n,
+    AsyncValue<HomeState> homeAsync,
+    AsyncValue<SettingsState> settingsAsync,
+    SubscriptionState? sub,
+  ) {
+    final cs = Theme.of(context).colorScheme;
+    final settings = settingsAsync.valueOrNull;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(32, 28, 32, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.t('heroHeading'),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.fredoka(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l10n.t('tagline'),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.nunito(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface.withValues(alpha: 0.55),
+                ),
+              ),
+              const SizedBox(height: 22),
+              homeAsync.whenOrNull(
+                    data: (home) => home.dailyChallenge != null
+                        ? Center(
+                            child: _buildDailyPill(
+                                context, cs, l10n, home, _currentLocale))
+                        : const SizedBox.shrink(),
+                  ) ??
+                  const SizedBox.shrink(),
+              const SizedBox(height: 22),
+              _buildPickDivider(context, l10n),
+              const SizedBox(height: 18),
+              homeAsync.when(
+                loading: () => const SizedBox(
+                    height: 240,
+                    child: Center(child: CircularProgressIndicator())),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (home) => _buildCardGrid(
+                  context, home, l10n, _currentLocale,
+                  columns: 4,
+                  cardScale: 1.25,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Prompt + surprise-me
+              Row(
+                children: [
+                  Expanded(
+                    child: LalaTextField(
+                      placeholder: l10n.t('placeholder'),
+                      controller: _textCtrl,
+                      focusNode: _focusNode,
+                      onSubmitted: _canDraw ? _onDraw : null,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _buildSurprisePill(
+                    context,
+                    l10n,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      final card = ref.read(homeProvider.notifier).surpriseMe();
+                      if (card != null) {
+                        _fillSubject(
+                          card.label(_currentLocale),
+                          englishOverride: card.englishPrompt,
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _buildDrawButton(context, l10n, height: 58, fontSize: 20),
+              const SizedBox(height: 18),
+              Center(
+                child: _buildSettingsChips(context, cs, l10n, settings, sub),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -348,8 +471,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           value: _diffLabelShort(settings?.difficulty ?? 'medium'),
           onTap: () {
             HapticFeedback.selectionClick();
+            // All 4 difficulties are selectable for everyone (mirrors the web app
+            // and the palette chip above) — tier gating, if any, is applied at
+            // generation time, not by hiding levels here.
             ref.read(settingsProvider.notifier).cycleDifficulty(
-                  sub?.entitlements.difficulties ?? ['easy', 'medium'],
+                  const ['easy', 'medium', 'hard', 'extreme'],
                 );
           },
         ),
@@ -372,7 +498,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           value: _cntLabelShort(settings?.colorCount ?? 12),
           onTap: () {
             HapticFeedback.selectionClick();
-            ref.read(settingsProvider.notifier).cycleColorCount([6, 12, 18, 24]);
+            ref.read(settingsProvider.notifier).cycleColorCount([6, 12, 18, 24, 99]);
           },
         ),
         const SizedBox(height: 4),
@@ -429,7 +555,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        _fillSubject(daily.word);
+        // Show the localized word in the input; send the English word to the API
+        // (same display-vs-prompt split the suggestion cards use).
+        _fillSubject(label, englishOverride: daily.word);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -471,6 +599,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     L10n l10n,
     String locale, {
     bool compact = false,
+    int columns = 2,
+    double cardScale = 1.0,
   }) {
     final cs = Theme.of(context).colorScheme;
     const cardColors = [
@@ -487,9 +617,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
+            crossAxisCount: columns,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
             childAspectRatio: compact ? 1.1 : 0.95,
           ),
           itemCount: home.visibleCards.length.clamp(0, 4),
@@ -500,6 +630,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               label: card.label(locale),
               gradient: cardColors[i % cardColors.length],
               animationIndex: i,
+              scale: cardScale,
               onTap: () {
                 HapticFeedback.lightImpact();
                 // Show localized label in the text field; send English to API
@@ -599,50 +730,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Row 2: Draw! button
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width: double.infinity,
-              height: 52,
-              decoration: BoxDecoration(
-                color: _canDraw
-                    ? cs.primary
-                    : cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: _canDraw
-                    ? [
-                        BoxShadow(
-                            color: cs.primary.withValues(alpha: 0.35),
-                            blurRadius: 14,
-                            offset: const Offset(0, 4)),
-                      ]
-                    : null,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: _canDraw ? _onDraw : null,
-                  child: Center(
-                    child: Text(
-                      l10n.t('drawBtn'),
-                      style: GoogleFonts.fredoka(
-                        color: _canDraw
-                            ? Colors.white
-                            : cs.onSurface.withValues(alpha: 0.35),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            child: _buildDrawButton(context, l10n),
           ),
           // Row 3: Settings chips (portrait only — landscape has inline settings)
           if (showChips)
             _buildSettingsChips(context, cs, l10n, settings, sub),
         ],
+      ),
+    );
+  }
+
+  // Shared Draw! button — used by the portrait bottom bar and the tablet hero.
+  Widget _buildDrawButton(BuildContext context, L10n l10n,
+      {double height = 52, double fontSize = 18}) {
+    final cs = Theme.of(context).colorScheme;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: double.infinity,
+      height: height,
+      decoration: BoxDecoration(
+        color: _canDraw ? cs.primary : cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: _canDraw
+            ? [
+                BoxShadow(
+                    color: cs.primary.withValues(alpha: 0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4)),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: _canDraw ? _onDraw : null,
+          child: Center(
+            child: Text(
+              l10n.t('drawBtn'),
+              style: GoogleFonts.fredoka(
+                color: _canDraw
+                    ? Colors.white
+                    : cs.onSurface.withValues(alpha: 0.35),
+                fontSize: fontSize,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -665,7 +801,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onTap: () => ref
                 .read(settingsProvider.notifier)
                 .cycleDifficulty(
-                    sub?.entitlements.difficulties ?? ['easy', 'medium']),
+                    const ['easy', 'medium', 'hard', 'extreme']),
           ),
           LalaChip(
             label: _palLabel(settings?.palette ?? 'classic'),
@@ -678,7 +814,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             label: _cntLabel(settings?.colorCount ?? 12),
             onTap: () => ref
                 .read(settingsProvider.notifier)
-                .cycleColorCount([6, 12, 18, 24]),
+                .cycleColorCount([6, 12, 18, 24, 99]),
           ),
           LalaChip(
             label: settings?.showNumbers == true

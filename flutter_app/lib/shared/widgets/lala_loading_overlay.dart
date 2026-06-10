@@ -65,10 +65,16 @@ class _LalaLoadingOverlayState extends State<LalaLoadingOverlay>
           AnimatedBuilder(
             animation: _pencil,
             builder: (_, __) {
+              // Every term MUST be periodic over the controller's 0→1 cycle, or
+              // the motion jumps when value wraps 1.0→0.0. Using non-integer
+              // frequency multipliers (1.3, 0.7) made y and rotation discontinuous
+              // at the wrap — the pencil "dropped" then resumed. Integer harmonics
+              // (1×, 2×) complete whole cycles, so the loop is seamless: x/y trace
+              // a smooth figure-eight and the tilt eases back to 0 at the seam.
               final t = _pencil.value * 2 * pi;
-              final x = sin(t) * 28;
-              final y = cos(t * 1.3) * 18;
-              final r = sin(t * 0.7) * 25 * (pi / 180);
+              final x = sin(t) * 26;
+              final y = sin(2 * t) * 12;
+              final r = sin(t) * 18 * (pi / 180);
               return Transform.translate(
                 offset: Offset(x, y),
                 child: Transform.rotate(
