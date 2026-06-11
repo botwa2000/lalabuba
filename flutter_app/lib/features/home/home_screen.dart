@@ -1,11 +1,18 @@
+// showcaseview 5.0.2's ShowCaseWidget/of/startShowCase are marked deprecated
+// (slated for removal in v6) but are the documented, self-contained per-screen
+// API for this pinned version; the v6 register() replacement adds global scope
+// lifecycle we don't need. Intentional until we bump the package major.
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:showcaseview/showcaseview.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../../core/di/providers.dart';
 import '../../core/router/app_router.dart';
+import '../../shared/services/storage_service.dart';
 import '../../shared/widgets/lala_card.dart';
 import '../../shared/widgets/lala_chip.dart';
 import '../../shared/widgets/lala_text_field.dart';
@@ -27,9 +34,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? _englishSubjectOverride;
   bool _programmaticFill = false;
 
+  // Coach-mark tutorial: highlight the prompt + Draw button on first launch and
+  // when replayed via "How to play". Default seen=true so nothing flashes before
+  // the persisted flag loads.
+  final _scPrompt = GlobalKey();
+  final _scDraw = GlobalKey();
+  bool _homeTutorialSeen = true;
+  bool _tutorialScheduled = false;
+  // A context BELOW the ShowCaseWidget, captured in its builder, so chip
+  // callbacks (which receive the Scaffold-level context above ShowCaseWidget)
+  // can still resolve ShowCaseWidget.of(...).
+  BuildContext? _showcaseCtx;
+
   @override
   void initState() {
     super.initState();
+    StorageService.readBool(StorageService.kTutorialHome, false).then((seen) {
+      if (mounted && !seen) setState(() => _homeTutorialSeen = false);
+    });
     _textCtrl.addListener(() {
       if (_programmaticFill) return;
       // User typed manually — clear the card-tap override
@@ -111,8 +133,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: _buildAppBar(context, l10n, themeMode),
-      body: SafeArea(top: false, bottom: false, child: body),
+      body: ShowCaseWidget(
+        onFinish: _onHomeTutorialFinish,
+        disableMovingAnimation: true,
+        builder: (showcaseCtx) {
+          _showcaseCtx = showcaseCtx;
+          // Auto-run the coach-marks once, after the first frame, if unseen.
+          if (!_homeTutorialSeen && !_tutorialScheduled) {
+            _tutorialScheduled = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                ShowCaseWidget.of(showcaseCtx)
+                    .startShowCase([_scPrompt, _scDraw]);
+              }
+            });
+          }
+          return SafeArea(top: false, bottom: false, child: body);
+        },
+      ),
     );
+  }
+
+  // Replay the coloring walkthrough too: clear the canvas-tutorial flag so the
+  // in-canvas coach-marks run again next time a page is opened.
+  void _startHowToPlay(BuildContext showcaseCtx) {
+    HapticFeedback.lightImpact();
+    StorageService.writeBool(StorageService.kTutorialCanvas, false);
+    ShowCaseWidget.of(showcaseCtx).startShowCase([_scPrompt, _scDraw]);
+  }
+
+  void _onHomeTutorialFinish() {
+    StorageService.writeBool(StorageService.kTutorialHome, true);
   }
 
   // ─── Tablet hero (centered single column, both orientations) ─────────────────
@@ -186,11 +237,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: LalaTextField(
-                      placeholder: l10n.t('placeholder'),
-                      controller: _textCtrl,
-                      focusNode: _focusNode,
-                      onSubmitted: _canDraw ? _onDraw : null,
+                    child: Showcase(
+                      key: _scPrompt,
+                      title: l10n.t('tipPromptTitle'),
+                      description: l10n.t('tipPromptBody'),
+                      targetBorderRadius: BorderRadius.circular(14),
+                      child: LalaTextField(
+                        placeholder: l10n.t('placeholder'),
+                        controller: _textCtrl,
+                        focusNode: _focusNode,
+                        onSubmitted: _canDraw ? _onDraw : null,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -284,6 +341,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           icon: const Icon(Icons.photo_library_rounded),
           tooltip: l10n.t('galleryBtn'),
           onPressed: () => context.pushNamed('gallery'),
+        ),
+        IconButton(
+          icon: const Icon(Icons.settings_rounded),
+          tooltip: l10n.t('settingsTitle'),
+          onPressed: () => context.pushNamed('settings'),
         ),
         const SizedBox(width: 4),
       ],
@@ -516,6 +578,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(height: 4),
         _SettingRow(
+          icon: '❓',
+          label: l10n.t('howToPlayBtn'),
+          value: '›',
+          onTap: () {
+            final c = _showcaseCtx;
+            if (c != null) _startHowToPlay(c);
+          },
+        ),
+        const SizedBox(height: 4),
+        _SettingRow(
           icon: '⚙️',
           label: l10n.t('settingsTitle'),
           value: '›',
@@ -701,11 +773,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: LalaTextField(
-                    placeholder: l10n.t('placeholder'),
-                    controller: _textCtrl,
-                    focusNode: _focusNode,
-                    onSubmitted: _canDraw ? _onDraw : null,
+                  child: Showcase(
+                    key: _scPrompt,
+                    title: l10n.t('tipPromptTitle'),
+                    description: l10n.t('tipPromptBody'),
+                    targetBorderRadius: BorderRadius.circular(14),
+                    child: LalaTextField(
+                      placeholder: l10n.t('placeholder'),
+                      controller: _textCtrl,
+                      focusNode: _focusNode,
+                      onSubmitted: _canDraw ? _onDraw : null,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -744,7 +822,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildDrawButton(BuildContext context, L10n l10n,
       {double height = 52, double fontSize = 18}) {
     final cs = Theme.of(context).colorScheme;
-    return AnimatedContainer(
+    return Showcase(
+      key: _scDraw,
+      title: l10n.t('tipDrawTitle'),
+      description: l10n.t('tipDrawBody'),
+      targetBorderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       width: double.infinity,
       height: height,
@@ -779,6 +862,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
@@ -824,9 +908,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onTap: () =>
                 ref.read(settingsProvider.notifier).toggleNumbers(),
           ),
+          // Replaces the old "Settings" chip, which just opened a screen that
+          // duplicated the top-bar theme + language icons. This launches the
+          // coach-mark tutorial instead (full settings live behind the top gear).
           LalaChip(
-            label: l10n.t('settingsBtn'),
-            onTap: () => context.pushNamed('settings'),
+            label: l10n.t('howToPlayBtn'),
+            onTap: () {
+              final c = _showcaseCtx;
+              if (c != null) _startHowToPlay(c);
+            },
           ),
         ],
       ),

@@ -15,6 +15,9 @@ class StorageService {
   static const kDailyDate = 'daily_gen_date';
   static const kSubscriptionTier = 'sub_tier';
   static const kSubscriptionToken = 'sub_token';
+  // Tutorial / onboarding "seen" flags (coach-marks auto-run once each).
+  static const kTutorialHome = 'tutorial_home_seen';
+  static const kTutorialCanvas = 'tutorial_canvas_seen';
 
   static Future<String?> read(String key) => _storage.read(key: key);
   static Future<void> write(String key, String value) =>

@@ -138,5 +138,20 @@
   "goFreeConfirm": "Do dziela!",
   "goFreeCancel": "Zostaw cyfry",
   "pickColorBtn": "Wybierz kolor",
-  "pickColorConfirm": "Uzyj tego koloru!"
+  "pickColorConfirm": "Uzyj tego koloru!",
+  "howToPlayBtn": "❓ Jak grać",
+  "pickerGrid": "Siatka",
+  "pickerSpectrum": "Spektrum",
+  "tipPromptTitle": "Wpisz swój pomysł",
+  "tipPromptBody": "Wpisz, co chcesz pokolorować — zwierzę, samochód, zamek…",
+  "tipDrawTitle": "Stwórz stronę",
+  "tipDrawBody": "Dotknij Rysuj!, a zamienimy Twój pomysł w kolorowankę.",
+  "tipCanvasTitle": "Pokoloruj",
+  "tipCanvasBody": "Dotknij obszaru z numerem i użyj tego koloru. Obszary bez numeru możesz pokolorować DOWOLNYM kolorem!",
+  "tipColorsTitle": "Wybierz kolor",
+  "tipColorsBody": "Najpierw dotknij koloru tutaj, a potem obszaru, aby go wypełnić.",
+  "tipModesTitle": "Narzędzia",
+  "tipModesBody": "Przełączaj między Dotknij, Maluj, Ołówek i Gumka — i cofnij ostatnie wypełnienie.",
+  "tipSaveTitle": "Zapisz i udostępnij",
+  "tipSaveBody": "Zapisz rysunek w galerii, wydrukuj go lub udostępnij rodzinie."
 }

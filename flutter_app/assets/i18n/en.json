@@ -96,8 +96,23 @@
   "freeLimitReached": "You've used all {limit} free drawings today 🎨\nCome back tomorrow, or go Plus for unlimited!",
   "featureLocked": "This feature requires Lalabuba Plus ✨",
   "unlockPlus": "Unlock Plus",
-  "plusFeatures": ["Unlimited drawings", "All difficulties", "HD quality", "All palettes", "Gallery", "Pencil mode", "Zoom & pan", "Exact sharing"],
-  "familyFeatures": ["Everything in Plus", "Up to 5 child profiles", "Unlimited gallery", "Family challenge mode", "Parent dashboard"],
+  "plusFeatures": [
+    "Unlimited drawings",
+    "All difficulties",
+    "HD quality",
+    "All palettes",
+    "Gallery",
+    "Pencil mode",
+    "Zoom & pan",
+    "Exact sharing"
+  ],
+  "familyFeatures": [
+    "Everything in Plus",
+    "Up to 5 child profiles",
+    "Unlimited gallery",
+    "Family challenge mode",
+    "Parent dashboard"
+  ],
   "contentSafetyError": "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…",
   "networkError": "Connection error — please check your network and try again",
   "generationError": "The drawing service is busy right now — please try again in a moment! 🎨",
@@ -126,5 +141,20 @@
   "goFreeCancel": "Keep guided",
   "pickColorBtn": "Tap to pick color",
   "eyedropperHint": "Tap the picture to pick a color",
-  "pickColorConfirm": "Use this color!"
+  "pickColorConfirm": "Use this color!",
+  "howToPlayBtn": "❓ How to play",
+  "pickerGrid": "Grid",
+  "pickerSpectrum": "Spectrum",
+  "tipPromptTitle": "Type your idea",
+  "tipPromptBody": "Type anything you want to color — an animal, a car, a castle…",
+  "tipDrawTitle": "Make your page",
+  "tipDrawBody": "Tap Draw! and we'll turn your idea into a coloring page.",
+  "tipCanvasTitle": "Color it in",
+  "tipCanvasBody": "Tap an area with a number and use that color. Areas with no number you can fill with ANY color you like!",
+  "tipColorsTitle": "Pick a color",
+  "tipColorsBody": "Tap a color here first, then tap an area to fill it.",
+  "tipModesTitle": "Tools",
+  "tipModesBody": "Switch between Tap, Paint, Pencil and Eraser — and Undo your last fill.",
+  "tipSaveTitle": "Save & share",
+  "tipSaveBody": "Save your art to the gallery, print it, or share it with family."
 }

@@ -138,5 +138,20 @@
   "goFreeConfirm": "Hadi gidelim!",
   "goFreeCancel": "Sayilari koru",
   "pickColorBtn": "Renk seç",
-  "pickColorConfirm": "Bu rengi kullan!"
+  "pickColorConfirm": "Bu rengi kullan!",
+  "howToPlayBtn": "❓ Nasıl oynanır",
+  "pickerGrid": "Izgara",
+  "pickerSpectrum": "Spektrum",
+  "tipPromptTitle": "Fikrini yaz",
+  "tipPromptBody": "Boyamak istediğin şeyi yaz — bir hayvan, bir araba, bir kale…",
+  "tipDrawTitle": "Sayfanı oluştur",
+  "tipDrawBody": "Çiz!'e dokun, fikrini boyama sayfasına çevirelim.",
+  "tipCanvasTitle": "Boya",
+  "tipCanvasBody": "Numaralı bir alana dokun ve o rengi kullan. Numarasız alanları İSTEDİĞİN her renkle boyayabilirsin!",
+  "tipColorsTitle": "Bir renk seç",
+  "tipColorsBody": "Önce buradan bir renge dokun, sonra doldurmak için bir alana dokun.",
+  "tipModesTitle": "Araçlar",
+  "tipModesBody": "Dokun, Boya, Kalem ve Silgi arasında geçiş yap — ve son doldurmayı geri al.",
+  "tipSaveTitle": "Kaydet & paylaş",
+  "tipSaveBody": "Resmini galeriye kaydet, yazdır veya ailenle paylaş."
 }

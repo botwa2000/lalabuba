@@ -138,5 +138,20 @@
   "goFreeConfirm": "Laat gaan!",
   "goFreeCancel": "Nummers houden",
   "pickColorBtn": "Kleur kiezen",
-  "pickColorConfirm": "Gebruik deze kleur!"
+  "pickColorConfirm": "Gebruik deze kleur!",
+  "howToPlayBtn": "❓ Hoe het werkt",
+  "pickerGrid": "Raster",
+  "pickerSpectrum": "Spectrum",
+  "tipPromptTitle": "Typ je idee",
+  "tipPromptBody": "Typ wat je wilt kleuren — een dier, een auto, een kasteel…",
+  "tipDrawTitle": "Maak je pagina",
+  "tipDrawBody": "Tik op Tekenen! en wij maken van jouw idee een kleurplaat.",
+  "tipCanvasTitle": "Kleur het in",
+  "tipCanvasBody": "Tik op een vlak met een cijfer en gebruik die kleur. Vlakken zonder cijfer mag je met ELKE kleur kleuren!",
+  "tipColorsTitle": "Kies een kleur",
+  "tipColorsBody": "Tik eerst hier op een kleur en dan op een vlak om het te vullen.",
+  "tipModesTitle": "Gereedschap",
+  "tipModesBody": "Wissel tussen Tikken, Verven, Potlood en Gum — en maak je laatste vulling ongedaan.",
+  "tipSaveTitle": "Opslaan & delen",
+  "tipSaveBody": "Bewaar je tekening in de galerij, print hem of deel hem met je familie."
 }

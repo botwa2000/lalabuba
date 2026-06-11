@@ -53,6 +53,7 @@ dependencies:
   vector_math: ^2.2.0
   flutter_colorpicker: ^1.0.6
   gal: ^2.3.2
+  showcaseview: ^5.0.2
 
 dev_dependencies:
   flutter_test:

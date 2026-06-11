@@ -347,10 +347,20 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   // Fallback: largest region (id=0 after sort)
   final backgroundRegionId = bgOrigId >= 0 ? bgOrigId : 0;
 
-  // ── 7. Color assignment — sequential round-robin ──
+  // ── 7. Color assignment — sequential round-robin, capped to numbered count ──
   // Coloring pages have white/near-white fill regions so nearest-palette would
   // assign ALL regions to the SAME color. Sequential assignment ensures each
   // region gets a distinct, meaningful palette position for enforcement to work.
+  //
+  // Only the largest [maxNumbered] regions get a palette number (regions are
+  // sorted by size desc, so id order == size order). Smaller regions are left
+  // OUT of regionColorMap/regionPaletteIndex on purpose: they show no number
+  // badge and, because they carry no enforced colour, the user can fill them
+  // with ANY colour they pick (handled in CanvasNotifier.fillRegion). This keeps
+  // the painter's badges and the fill enforcement in exact agreement — before,
+  // every region was enforced but only the first 40 showed a number, so regions
+  // 41+ silently rejected every colour and were impossible to fill.
+  const maxNumbered = 48;
   final regionColorMap = <int, int>{};
   final regionPaletteIndex = <int, int>{};
   if (palette.isNotEmpty) {
@@ -358,6 +368,7 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     for (var i = 0; i < rawRegions.length; i++) {
       final newId = i;
       if (newId == backgroundRegionId) continue;
+      if (colorIdx >= maxNumbered) break; // remaining regions stay free-fill
       final paletteIdx = colorIdx % palette.length;
       regionColorMap[newId] = palette[paletteIdx];
       regionPaletteIndex[newId] = paletteIdx;
@@ -421,17 +432,26 @@ Uint8List buildCompositeRgba(CompositeParams params) {
     }
   }
 
-  // Multi-pass bleed: flood fill color through the light "outline" (-2) band up
-  // to the closing radius, eliminating the white fringe AND the white concave
-  // corners the morphological closing (8-px dilate/erode) carved out of genuine
-  // interior. A single 1-px pass only recolored the innermost ring and left up
-  // to ~7 px of white hugging every line. The flood is stopped by the genuine
-  // dark outline core (luma < 60), so one region's color cannot cross the line
-  // into its neighbour. maxBleed matches the closing radius so it exactly undoes
-  // the white band closing created — no more, no less.
+  // Multi-source Voronoi bleed: flood each filled region's color through the
+  // light "outline" (-2) band ALL THE WAY to the genuine dark ink (luma < 60),
+  // with NO distance cap. This is the key to eliminating the white halos.
+  //
+  // Why no cap: morphological closing (8-px dilate/erode) reabsorbs an ~8-px
+  // ring of white interior into the -2 outline mask, but at concave corners and
+  // wherever two regions meet, the closed band is WIDER than 8 px and cannot be
+  // fully eroded back — so a fixed 8-px bleed left a permanent white halo there
+  // (visible as the white seams along every colour boundary). Flooding to the
+  // real ink instead paints every light pixel between the lines.
+  //
+  // Why it stays safe: the flood only travels through -2 pixels that are light
+  // (luma >= 60); the genuine black line (luma < 60) is an impassable wall, so
+  // one region's colour can never cross into a neighbour. A region's interior is
+  // labelled >= 0 (never -2), so the bleed never enters an intentionally-white
+  // area (eyes, feet) — those are their own regions. Where two differently
+  // coloured regions share a wide light band, the two floods meet at the Voronoi
+  // midline: both sides coloured, no white left over.
   final w = params.width;
   final h = params.height;
-  const maxBleed = 8;
 
   // Per-pixel original luma, reused by both the dark-core gate and the final
   // shading factor (cheaper than recomputing inside the BFS).
@@ -448,7 +468,6 @@ Uint8List buildCompositeRgba(CompositeParams params) {
   //                 (0 = unclaimed). Fill colors always carry alpha, so 0 is a
   //                 safe sentinel.
   final claimColor = Int32List(n);
-  final claimDist = Uint8List(n);
   final queue = Int32List(n);
   var qHead = 0, qTail = 0;
 
@@ -461,7 +480,6 @@ Uint8List buildCompositeRgba(CompositeParams params) {
         final ri = p2r[nb];
         if (ri >= 0 && colors.containsKey(ri)) {
           claimColor[i] = colors[ri]!;
-          claimDist[i] = 1;
           queue[qTail++] = i;
           break;
         }
@@ -469,13 +487,12 @@ Uint8List buildCompositeRgba(CompositeParams params) {
     }
   }
 
-  // Expand the frontier through light -2 pixels only, bounded by maxBleed. The
-  // queue snapshots each pixel's claim, so a pixel never re-spreads unboundedly
-  // within a single pass.
+  // Expand the frontier through light -2 pixels only, with no distance limit.
+  // Each pixel is claimed exactly once (claimColor[nb] == 0 guard), so the BFS
+  // terminates when the light band is exhausted — bounded by the dark ink, not
+  // by an arbitrary radius.
   while (qHead < qTail) {
     final i = queue[qHead++];
-    final d = claimDist[i];
-    if (d >= maxBleed) continue;
     final argb = claimColor[i];
     final x = i % w;
     final neighbors = [
@@ -488,7 +505,6 @@ Uint8List buildCompositeRgba(CompositeParams params) {
       if (nb < 0 || nb >= n) continue;
       if (p2r[nb] != -2 || claimColor[nb] != 0 || luma[nb] < 60) continue;
       claimColor[nb] = argb;
-      claimDist[nb] = d + 1;
       queue[qTail++] = nb;
     }
   }

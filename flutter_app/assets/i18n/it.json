@@ -138,5 +138,20 @@
   "goFreeConfirm": "Via libera!",
   "goFreeCancel": "Continua con numeri",
   "pickColorBtn": "Scegli colore",
-  "pickColorConfirm": "Usa questo colore!"
+  "pickColorConfirm": "Usa questo colore!",
+  "howToPlayBtn": "❓ Come si gioca",
+  "pickerGrid": "Griglia",
+  "pickerSpectrum": "Spettro",
+  "tipPromptTitle": "Scrivi la tua idea",
+  "tipPromptBody": "Scrivi cosa vuoi colorare — un animale, un'auto, un castello…",
+  "tipDrawTitle": "Crea la tua pagina",
+  "tipDrawBody": "Tocca Disegna! e trasformiamo la tua idea in un disegno da colorare.",
+  "tipCanvasTitle": "Coloralo",
+  "tipCanvasBody": "Tocca un'area con un numero e usa quel colore. Le aree senza numero puoi colorarle con QUALSIASI colore!",
+  "tipColorsTitle": "Scegli un colore",
+  "tipColorsBody": "Tocca prima un colore qui, poi un'area per riempirla.",
+  "tipModesTitle": "Strumenti",
+  "tipModesBody": "Passa tra Tocca, Pittura, Matita e Gomma — e annulla l'ultimo riempimento.",
+  "tipSaveTitle": "Salva e condividi",
+  "tipSaveBody": "Salva il disegno nella galleria, stampalo o condividilo con la famiglia."
 }

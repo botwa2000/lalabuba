@@ -138,5 +138,20 @@
   "goFreeConfirm": "¡A colorear!",
   "goFreeCancel": "Seguir con números",
   "pickColorBtn": "Elegir color",
-  "pickColorConfirm": "¡Usar este color!"
+  "pickColorConfirm": "¡Usar este color!",
+  "howToPlayBtn": "❓ Cómo jugar",
+  "pickerGrid": "Cuadrícula",
+  "pickerSpectrum": "Espectro",
+  "tipPromptTitle": "Escribe tu idea",
+  "tipPromptBody": "Escribe lo que quieras colorear: un animal, un coche, un castillo…",
+  "tipDrawTitle": "Crea tu página",
+  "tipDrawBody": "¡Toca Dibujar! y convertiremos tu idea en una página para colorear.",
+  "tipCanvasTitle": "Coloréalo",
+  "tipCanvasBody": "Toca una zona con número y usa ese color. ¡Las zonas sin número puedes pintarlas con CUALQUIER color!",
+  "tipColorsTitle": "Elige un color",
+  "tipColorsBody": "Toca primero un color aquí y luego una zona para rellenarla.",
+  "tipModesTitle": "Herramientas",
+  "tipModesBody": "Cambia entre Tocar, Pintar, Lápiz y Goma — y deshaz tu último relleno.",
+  "tipSaveTitle": "Guardar y compartir",
+  "tipSaveBody": "Guarda tu dibujo en la galería, imprímelo o compártelo con la familia."
 }

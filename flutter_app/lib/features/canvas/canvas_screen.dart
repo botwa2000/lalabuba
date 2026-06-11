@@ -1,3 +1,8 @@
+// showcaseview 5.0.2's ShowCaseWidget/of/startShowCase are marked deprecated
+// (slated for removal in v6) but are the documented, self-contained per-screen
+// API for this pinned version; the v6 register() replacement adds global scope
+// lifecycle we don't need. Intentional until we bump the package major.
+// ignore_for_file: deprecated_member_use
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -11,9 +16,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:gal/gal.dart';
+import 'package:showcaseview/showcaseview.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../../core/di/providers.dart';
 import '../../features/generate/generate_service.dart';
+import '../../shared/services/storage_service.dart';
 import '../../shared/widgets/lala_color_swatch.dart';
 import '../../shared/widgets/lala_loading_overlay.dart';
 import 'canvas_models.dart';
@@ -46,13 +53,28 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   bool _hintVisible = true;
   String _subject = '';
   int? _currentSeed;
+  // Colour currently under the finger while dragging the eyedropper (null when
+  // not sampling). Shown as a floating preview pill.
+  Color? _eyedropperPreview;
   final _canvasKey = GlobalKey();
   final _transformCtrl = TransformationController();
+
+  // Coach-mark tutorial targets (colours, canvas, modes, save). Runs once the
+  // first time a page is ready, and again when replayed from home's How-to-play.
+  final _scColors = GlobalKey();
+  final _scCanvas = GlobalKey();
+  final _scModes = GlobalKey();
+  final _scSave = GlobalKey();
+  bool _canvasTutorialSeen = true;
+  bool _canvasTutorialScheduled = false;
 
   @override
   void initState() {
     super.initState();
     _subject = widget.args.subject;
+    StorageService.readBool(StorageService.kTutorialCanvas, false).then((seen) {
+      if (mounted && !seen) setState(() => _canvasTutorialSeen = false);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _generate());
   }
 
@@ -228,11 +250,27 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     }
   }
 
+  // A broad grid of kid-friendly colours — the default picker, mirroring the web
+  // app's swatch grid (far more intuitive for children than dragging an HSV
+  // spectrum). The rainbow spectrum is still available behind a toggle for
+  // mixing a custom shade.
+  static const _gridColors = <Color>[
+    Color(0xFFFF4757), Color(0xFFFF6B6B), Color(0xFFFF7043), Color(0xFFFF8E53),
+    Color(0xFFFFA726), Color(0xFFFFCA28), Color(0xFFFFEB3B), Color(0xFFD4E157),
+    Color(0xFF9CCC65), Color(0xFF66BB6A), Color(0xFF26C281), Color(0xFF00BFA5),
+    Color(0xFF26C6DA), Color(0xFF29B6F6), Color(0xFF1E90FF), Color(0xFF42A5F5),
+    Color(0xFF5C6BC0), Color(0xFF7C4DFF), Color(0xFF9C27B0), Color(0xFFAB47BC),
+    Color(0xFFEC407A), Color(0xFFE91E63), Color(0xFFF06292), Color(0xFFFFB3BA),
+    Color(0xFF8D6E63), Color(0xFF795548), Color(0xFFA1887F), Color(0xFFFFCC80),
+    Color(0xFF000000), Color(0xFF616161), Color(0xFF9E9E9E), Color(0xFFFFFFFF),
+  ];
+
   void _showColorPickerDialog(BuildContext context, CanvasState canvas, L10n l10n) {
     final initial = canvas.activeColor == Colors.transparent
         ? const Color(0xFFFF4757)
         : canvas.activeColor;
     Color picked = initial;
+    bool gridMode = true; // grid by default; toggle to the spectrum
 
     showDialog(
       context: context,
@@ -250,15 +288,59 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                   l10n.t('pickColorBtn'),
                   style: GoogleFonts.fredoka(fontSize: 20, fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(height: 14),
-                ColorPicker(
-                  pickerColor: picked,
-                  onColorChanged: (c) => setS(() => picked = c),
-                  pickerAreaHeightPercent: 0.7,
-                  enableAlpha: false,
-                  displayThumbColor: true,
-                ),
                 const SizedBox(height: 12),
+                // Grid ⇄ Spectrum toggle
+                _PickerModeToggle(
+                  gridMode: gridMode,
+                  gridLabel: l10n.t('pickerGrid'),
+                  spectrumLabel: l10n.t('pickerSpectrum'),
+                  onChanged: (g) => setS(() => gridMode = g),
+                ),
+                const SizedBox(height: 14),
+                if (gridMode)
+                  SizedBox(
+                    width: 300,
+                    child: Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        for (final c in _gridColors)
+                          GestureDetector(
+                            onTap: () => setS(() => picked = c),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: c,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: picked.toARGB32() == c.toARGB32()
+                                      ? Theme.of(ctx2).colorScheme.primary
+                                      : Colors.black12,
+                                  width: picked.toARGB32() == c.toARGB32() ? 4 : 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.08),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2)),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  )
+                else
+                  ColorPicker(
+                    pickerColor: picked,
+                    onColorChanged: (c) => setS(() => picked = c),
+                    pickerAreaHeightPercent: 0.7,
+                    enableAlpha: false,
+                    displayThumbColor: true,
+                  ),
+                const SizedBox(height: 14),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
@@ -311,12 +393,34 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         body: SafeArea(
           top: false,
           bottom: false,
-          child: isLandscape
-              ? _buildLandscape(context, canvas, settings, l10n)
-              : _buildPortrait(context, canvas, settings, l10n),
+          child: ShowCaseWidget(
+            onFinish: _onCanvasTutorialFinish,
+            disableMovingAnimation: true,
+            builder: (sctx) {
+              if (canvas.isReady &&
+                  !_isGenerating &&
+                  !_canvasTutorialSeen &&
+                  !_canvasTutorialScheduled) {
+                _canvasTutorialScheduled = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    ShowCaseWidget.of(sctx).startShowCase(
+                        [_scColors, _scCanvas, _scModes, _scSave]);
+                  }
+                });
+              }
+              return isLandscape
+                  ? _buildLandscape(context, canvas, settings, l10n)
+                  : _buildPortrait(context, canvas, settings, l10n);
+            },
+          ),
         ),
       ),
     );
+  }
+
+  void _onCanvasTutorialFinish() {
+    StorageService.writeBool(StorageService.kTutorialCanvas, true);
   }
 
   // ─── Kids-friendly AppBar ────────────────────────────────────────────────────
@@ -405,6 +509,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                   top: 0, left: 0, right: 0,
                   child: _buildHintBanner(context, l10n),
                 ),
+              if (_eyedropperPreview != null)
+                Positioned(
+                  top: 12, left: 0, right: 0,
+                  child: _buildEyedropperPreview(context, l10n),
+                ),
               if (_isGenerating || canvas.isProcessing)
                 Positioned.fill(
                   child: LalaLoadingOverlay(
@@ -442,6 +551,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                       Positioned(
                           top: 0, left: 0, right: 0,
                           child: _buildHintBanner(context, l10n)),
+                    if (_eyedropperPreview != null)
+                      Positioned(
+                          top: 12, left: 0, right: 0,
+                          child: _buildEyedropperPreview(context, l10n)),
                     if (_isGenerating || canvas.isProcessing)
                       Positioned.fill(
                           child: LalaLoadingOverlay(
@@ -466,26 +579,35 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
   Widget _buildCanvasArea(BuildContext context, CanvasState canvas) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      color: cs.surfaceContainerLow,
-      child: canvas.isReady
-          ? _buildZoomableCanvas(context, canvas)
-          : const SizedBox.expand(),
+    final l10n = ref.read(l10nProvider);
+    return Showcase(
+      key: _scCanvas,
+      title: l10n.t('tipCanvasTitle'),
+      description: l10n.t('tipCanvasBody'),
+      child: Container(
+        color: cs.surfaceContainerLow,
+        child: canvas.isReady
+            ? _buildZoomableCanvas(context, canvas)
+            : const SizedBox.expand(),
+      ),
     );
   }
 
   Widget _buildZoomableCanvas(BuildContext context, CanvasState canvas) {
-    final isPaintOrPencil =
-        canvas.mode == DrawMode.paint || canvas.mode == DrawMode.pencil;
+    // Lock pan/zoom while painting, drawing OR eyedropping. Leaving scale on lets
+    // the InteractiveViewer's scale recognizer contend with the one-finger
+    // gesture, so the first movement is swallowed by the gesture arena and the
+    // stroke "jumps" — and for the eyedropper the tap was swallowed entirely, so
+    // sampling never fired ("wherever I touch, nothing is picked"). With it off,
+    // taps/strokes/samples register immediately. Zooming is still available via
+    // the zoom buttons.
+    final lockGestures = canvas.mode == DrawMode.paint ||
+        canvas.mode == DrawMode.pencil ||
+        canvas.mode == DrawMode.eyedropper;
     return InteractiveViewer(
       transformationController: _transformCtrl,
-      // Disable BOTH pan and pinch while painting/drawing. Leaving scale on lets
-      // the InteractiveViewer's scale recognizer contend with the one-finger
-      // draw gesture, so the first movement is swallowed by the gesture arena
-      // and the stroke "jumps". With it off, strokes register immediately and
-      // smoothly. Zooming is still available via the zoom buttons.
-      panEnabled: !isPaintOrPencil,
-      scaleEnabled: !isPaintOrPencil,
+      panEnabled: !lockGestures,
+      scaleEnabled: !lockGestures,
       minScale: 0.5,
       maxScale: 6.0,
       boundaryMargin: const EdgeInsets.all(40),
@@ -512,17 +634,23 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             : canvas.mode == DrawMode.pencil
                 ? (d) =>
                     ref.read(canvasProvider.notifier).beginStroke(d.localPosition)
-                : null,
+                : canvas.mode == DrawMode.eyedropper
+                    ? (d) => _onEyedropperSample(d.localPosition, size)
+                    : null,
         onPanUpdate: canvas.mode == DrawMode.paint
             ? (d) => _onPanUpdate(d.localPosition, size)
             : canvas.mode == DrawMode.pencil
                 ? (d) => ref
                     .read(canvasProvider.notifier)
                     .continueStroke(d.localPosition)
+                : canvas.mode == DrawMode.eyedropper
+                    ? (d) => _onEyedropperSample(d.localPosition, size)
+                    : null,
+        onPanEnd: canvas.mode == DrawMode.eyedropper
+            ? (_) => _commitEyedropper()
+            : canvas.mode != DrawMode.tap
+                ? (_) => ref.read(canvasProvider.notifier).endStroke()
                 : null,
-        onPanEnd: canvas.mode != DrawMode.tap
-            ? (_) => ref.read(canvasProvider.notifier).endStroke()
-            : null,
         child: RepaintBoundary(
           key: _canvasKey,
           child: CustomPaint(
@@ -545,9 +673,32 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       // Sample once, then return to TAP mode so the very next tap applies the
       // picked colour to a region (paint mode would need a drag).
       ref.read(canvasProvider.notifier).setMode(DrawMode.tap);
+      if (_eyedropperPreview != null) setState(() => _eyedropperPreview = null);
       return;
     }
     _onTap(pos, size);
+  }
+
+  // Eyedropper drag: live-sample the colour under the finger and show it in a
+  // floating preview pill so the child can SEE the colour before committing.
+  void _onEyedropperSample(Offset pos, Size size) {
+    final c = ref.read(canvasProvider.notifier).colorAtOffset(pos, size);
+    if (c == null) return;
+    if (_eyedropperPreview?.toARGB32() != c.toARGB32()) {
+      HapticFeedback.selectionClick();
+      setState(() => _eyedropperPreview = c);
+    }
+  }
+
+  // Release after dragging the eyedropper: adopt the previewed colour and return
+  // to tap-to-fill so the next tap paints with it.
+  void _commitEyedropper() {
+    final c = _eyedropperPreview;
+    if (c != null) {
+      ref.read(canvasProvider.notifier).setActiveColor(c);
+    }
+    ref.read(canvasProvider.notifier).setMode(DrawMode.tap);
+    setState(() => _eyedropperPreview = null);
   }
 
   void _onTap(Offset pos, Size size) {
@@ -616,6 +767,53 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     );
   }
 
+  // ─── Eyedropper live preview pill ────────────────────────────────────────────
+
+  Widget _buildEyedropperPreview(BuildContext context, L10n l10n) {
+    final c = _eyedropperPreview!;
+    final hex = '#${c.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.78),
+          borderRadius: BorderRadius.circular(50),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 10,
+                offset: const Offset(0, 3)),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.colorize_rounded, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: c,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              hex,
+              style: GoogleFonts.nunito(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ─── Action bar (zoom + utilities) ──────────────────────────────────────────
 
   Widget _buildActionBar(BuildContext context, CanvasState canvas, L10n l10n) {
@@ -651,9 +849,14 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               onTap: canvas.isReady ? () => _printArtwork(canvas) : null,
             ),
             const SizedBox(width: 8),
-            _ActionBtn(
-              label: l10n.t('saveBtn'),
-              onTap: canvas.isReady ? () => _saveArtwork(canvas) : null,
+            Showcase(
+              key: _scSave,
+              title: l10n.t('tipSaveTitle'),
+              description: l10n.t('tipSaveBody'),
+              child: _ActionBtn(
+                label: l10n.t('saveBtn'),
+                onTap: canvas.isReady ? () => _saveArtwork(canvas) : null,
+              ),
             ),
             const SizedBox(width: 8),
             _ActionBtn(
@@ -693,7 +896,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           // keeps a readable natural width and the set flows onto a second line
           // when the localized labels don't all fit — instead of squeezing the
           // text until it wraps vertically inside each button.
-          Padding(
+          Showcase(
+            key: _scModes,
+            title: l10n.t('tipModesTitle'),
+            description: l10n.t('tipModesBody'),
+            child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
             child: Wrap(
               spacing: 8,
@@ -746,6 +953,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               ],
             ),
           ),
+          ),
           // Row 2: Numbers toggle + Go free. In free mode the Numbers button
           // returns to guided coloring (reversible, mirrors the web app).
           Padding(
@@ -778,10 +986,14 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             ),
           ),
           // Row 3: Color section — swatches (guided) or HSV picker (free)
-          if (canvas.isFreeMode)
-            _buildFreeColorRow(context, canvas, l10n)
-          else
-            _buildColorSwatches(context, canvas, settings, swatch: 40),
+          Showcase(
+            key: _scColors,
+            title: l10n.t('tipColorsTitle'),
+            description: l10n.t('tipColorsBody'),
+            child: canvas.isFreeMode
+                ? _buildFreeColorRow(context, canvas, l10n)
+                : _buildColorSwatches(context, canvas, settings, swatch: 40),
+          ),
         ],
       ),
     );
@@ -812,7 +1024,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       child: Column(
         children: [
           // Mode buttons
-          Padding(
+          Showcase(
+            key: _scModes,
+            title: l10n.t('tipModesTitle'),
+            description: l10n.t('tipModesBody'),
+            child: Padding(
             padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
             child: Column(
               children: [
@@ -914,28 +1130,40 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               ],
             ),
           ),
+          ),
           Divider(height: 1, thickness: 0.5, color: cs.outlineVariant),
           // Color section
           if (canvas.isFreeMode)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
-              child: Column(
-                children: [
-                  _buildSidebarColorPicker(context, canvas, l10n),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: _buildEyedropperBtn(context, canvas, l10n, size: 48),
-                  ),
-                ],
+            Showcase(
+              key: _scColors,
+              title: l10n.t('tipColorsTitle'),
+              description: l10n.t('tipColorsBody'),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+                child: Column(
+                  children: [
+                    _buildSidebarColorPicker(context, canvas, l10n),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child:
+                          _buildEyedropperBtn(context, canvas, l10n, size: 48),
+                    ),
+                  ],
+                ),
               ),
             )
           else
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
-                child: _buildColorSwatches(context, canvas, settings,
-                    swatch: isTablet ? 56 : 44),
+              child: Showcase(
+                key: _scColors,
+                title: l10n.t('tipColorsTitle'),
+                description: l10n.t('tipColorsBody'),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+                  child: _buildColorSwatches(context, canvas, settings,
+                      swatch: isTablet ? 56 : 44),
+                ),
               ),
             ),
         ],
@@ -1399,6 +1627,73 @@ class _ActionBtn extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// Segmented Grid ⇄ Spectrum toggle for the free-mode colour dialog.
+class _PickerModeToggle extends StatelessWidget {
+  final bool gridMode;
+  final String gridLabel;
+  final String spectrumLabel;
+  final ValueChanged<bool> onChanged;
+
+  const _PickerModeToggle({
+    required this.gridMode,
+    required this.gridLabel,
+    required this.spectrumLabel,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    Widget seg(String label, IconData icon, bool selected, VoidCallback onTap) {
+      return Expanded(
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: selected ? cs.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon,
+                    size: 16,
+                    color: selected ? Colors.white : cs.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: GoogleFonts.fredoka(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: selected ? Colors.white : cs.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(50),
+      ),
+      child: Row(
+        children: [
+          seg(gridLabel, Icons.grid_view_rounded, gridMode, () => onChanged(true)),
+          seg(spectrumLabel, Icons.gradient_rounded, !gridMode,
+              () => onChanged(false)),
+        ],
       ),
     );
   }

@@ -42,16 +42,17 @@ class CanvasPainter extends CustomPainter {
     final scaleY = displayRect.height / ih;
 
     final filled = canvasState.regionColors;
-    final maxShow = detection.regions.length.clamp(0, 40);
 
-    for (var i = 0; i < maxShow; i++) {
+    for (var i = 0; i < detection.regions.length; i++) {
       final region = detection.regions[i];
       if (filled.containsKey(region.id)) continue;
-      if (region.pixelCount < 200) continue;
 
-      // Only label regions that map to a palette colour. The background region
-      // has no palette index, so skip it — otherwise it was drawn with a
-      // fallback "id+1" label, producing a stray "1" floating in empty space.
+      // Only label regions that carry a palette number. Regions without a
+      // palette index (the background and the smaller "free-fill" regions that
+      // exceed the numbered cap) intentionally show NO badge — the user is free
+      // to colour them with any colour. This matches the enforcement in
+      // CanvasNotifier.fillRegion exactly, so a numberless region is always
+      // free-fill rather than silently locked to a hidden colour.
       final pi = detection.regionPaletteIndex[region.id];
       if (pi == null) continue;
       // Show the 1-based palette index so it matches the palette swatch order.

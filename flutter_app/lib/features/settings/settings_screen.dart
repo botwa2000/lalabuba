@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../core/di/providers.dart';
 import '../../core/l10n/l10n_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -13,8 +12,11 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final themeMode = ref.watch(themeModeProvider);
 
+    // Language + Theme intentionally live ONLY in the home top bar now (a 🌙
+    // toggle and 🌐 picker). They used to be duplicated here, which made the
+    // Settings screen feel like a redundant repeat of the top icons. This screen
+    // now holds only what has no quick-access home: subscription + about.
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -25,17 +27,7 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Language
-          _SectionHeader(l10n.t('settingsLanguage')),
-          _buildLanguagePicker(context, ref, l10n),
-          const SizedBox(height: 16),
-
-          // Theme
-          _SectionHeader(l10n.t('settingsTheme')),
-          _buildThemeSelector(context, ref, l10n, themeMode),
-          const SizedBox(height: 16),
-
-          // Subscription placeholder
+          // Subscription
           _SectionHeader(l10n.t('settingsSubscription')),
           _buildSubscriptionTile(context, l10n),
           const SizedBox(height: 16),
@@ -44,108 +36,6 @@ class SettingsScreen extends ConsumerWidget {
           _buildAboutSection(context, l10n),
         ],
       ),
-    );
-  }
-
-  Widget _buildLanguagePicker(
-      BuildContext context, WidgetRef ref, L10n l10n) {
-    final currentLocale =
-        ref.watch(localeProvider).valueOrNull?.locale ?? 'en';
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: languageMeta.entries.map((e) {
-        final selected = e.key == currentLocale;
-        final cs = Theme.of(context).colorScheme;
-        return GestureDetector(
-          onTap: () =>
-              ref.read(localeProvider.notifier).setLocale(e.key),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: selected ? cs.primaryContainer : cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(50),
-              border: Border.all(
-                  color: selected ? cs.primary : cs.outlineVariant,
-                  width: selected ? 2 : 1),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(e.value.flag,
-                    style: const TextStyle(fontSize: 16)),
-                const SizedBox(width: 6),
-                Text(
-                  e.value.code,
-                  style: GoogleFonts.nunito(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                    color: selected
-                        ? cs.onPrimaryContainer
-                        : cs.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildThemeSelector(BuildContext context, WidgetRef ref, L10n l10n,
-      ThemeMode current) {
-    final options = [
-      (ThemeMode.light, l10n.t('settingsThemeLight'), Icons.light_mode_rounded),
-      (ThemeMode.dark, l10n.t('settingsThemeDark'), Icons.dark_mode_rounded),
-      (ThemeMode.system, l10n.t('settingsThemeSystem'), Icons.brightness_auto_rounded),
-    ];
-    final cs = Theme.of(context).colorScheme;
-    return Row(
-      children: options.map((o) {
-        final selected = o.$1 == current;
-        return Expanded(
-          child: GestureDetector(
-            onTap: () =>
-                ref.read(themeModeProvider.notifier).state = o.$1,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: selected
-                    ? cs.primaryContainer
-                    : cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: selected ? cs.primary : cs.outlineVariant,
-                    width: selected ? 2 : 1),
-              ),
-              child: Column(
-                children: [
-                  Icon(o.$3,
-                      color: selected
-                          ? cs.onPrimaryContainer
-                          : cs.onSurface),
-                  const SizedBox(height: 4),
-                  Text(
-                    o.$2,
-                    style: GoogleFonts.nunito(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: selected
-                          ? cs.onPrimaryContainer
-                          : cs.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 

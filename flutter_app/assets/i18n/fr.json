@@ -138,5 +138,20 @@
   "goFreeConfirm": "Go libre!",
   "goFreeCancel": "Garder les numéros",
   "pickColorBtn": "Choisir couleur",
-  "pickColorConfirm": "Choisir cette couleur!"
+  "pickColorConfirm": "Choisir cette couleur!",
+  "howToPlayBtn": "❓ Comment jouer",
+  "pickerGrid": "Grille",
+  "pickerSpectrum": "Spectre",
+  "tipPromptTitle": "Écris ton idée",
+  "tipPromptBody": "Écris ce que tu veux colorier — un animal, une voiture, un château…",
+  "tipDrawTitle": "Crée ta page",
+  "tipDrawBody": "Appuie sur Dessiner ! et on transforme ton idée en coloriage.",
+  "tipCanvasTitle": "Colorie",
+  "tipCanvasBody": "Touche une zone avec un numéro et utilise cette couleur. Les zones sans numéro, tu peux les colorier avec N'IMPORTE quelle couleur !",
+  "tipColorsTitle": "Choisis une couleur",
+  "tipColorsBody": "Touche d'abord une couleur ici, puis une zone pour la remplir.",
+  "tipModesTitle": "Outils",
+  "tipModesBody": "Passe de Toucher à Peindre, Crayon et Gomme — et annule ton dernier remplissage.",
+  "tipSaveTitle": "Enregistrer & partager",
+  "tipSaveBody": "Enregistre ton dessin dans la galerie, imprime-le ou partage-le en famille."
 }

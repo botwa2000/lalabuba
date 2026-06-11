@@ -138,5 +138,20 @@
   "goFreeConfirm": "去自由涂色！",
   "goFreeCancel": "保留数字",
   "pickColorBtn": "选择颜色",
-  "pickColorConfirm": "使用这个颜色！"
+  "pickColorConfirm": "使用这个颜色！",
+  "howToPlayBtn": "❓ 玩法",
+  "pickerGrid": "色块",
+  "pickerSpectrum": "色谱",
+  "tipPromptTitle": "写下你的想法",
+  "tipPromptBody": "写下你想涂色的东西——动物、汽车、城堡……",
+  "tipDrawTitle": "生成图画",
+  "tipDrawBody": "点击“画！”，我们会把你的想法变成涂色页。",
+  "tipCanvasTitle": "开始涂色",
+  "tipCanvasBody": "点击带数字的区域并使用那个颜色。没有数字的区域可以用任意颜色填充！",
+  "tipColorsTitle": "选择颜色",
+  "tipColorsBody": "先点这里选一个颜色，再点区域填色。",
+  "tipModesTitle": "工具",
+  "tipModesBody": "在点按、涂抹、铅笔和橡皮之间切换——还能撤销上一步。",
+  "tipSaveTitle": "保存与分享",
+  "tipSaveBody": "把作品保存到相册、打印，或分享给家人。"
 }
