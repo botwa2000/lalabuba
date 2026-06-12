@@ -154,5 +154,7 @@
   "tipModesBody": "在点按、涂抹、铅笔和橡皮之间切换——还能撤销上一步。",
   "tipSaveTitle": "保存与分享",
   "tipSaveBody": "把作品保存到相册、打印，或分享给家人。",
-  "eyedropperHint": "点按屏幕上任意位置即可拾取该颜色"
+  "eyedropperHint": "点按屏幕上任意位置即可拾取该颜色",
+  "savedToGallery": "💾 已保存到你的 Lalabuba 相册！",
+  "saveFailed": "无法保存——请允许照片访问后重试"
 }

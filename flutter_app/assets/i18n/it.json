@@ -154,5 +154,7 @@
   "tipModesBody": "Passa tra Tocca, Pittura, Matita e Gomma — e annulla l'ultimo riempimento.",
   "tipSaveTitle": "Salva e condividi",
   "tipSaveBody": "Salva il disegno nella galleria, stampalo o condividilo con la famiglia.",
-  "eyedropperHint": "Tocca un punto qualsiasi dello schermo per scegliere quel colore"
+  "eyedropperHint": "Tocca un punto qualsiasi dello schermo per scegliere quel colore",
+  "savedToGallery": "💾 Salvato nel tuo album Lalabuba!",
+  "saveFailed": "Salvataggio non riuscito — consenti l'accesso alle foto e riprova"
 }

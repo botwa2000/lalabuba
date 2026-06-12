@@ -1505,7 +1505,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       if (!await Gal.hasAccess()) {
         await Gal.requestAccess();
       }
+      // Save into a dedicated "Lalabuba" album so the artwork is easy to FIND.
+      // Without an album, gal drops the file into the Photos/Pictures root where
+      // it's buried among everything else — users reported "Save did nothing"
+      // because they couldn't locate it. An album surfaces it as its own group
+      // in the gallery (Android) / Photos (iOS).
       await Gal.putImageBytes(bytes,
+          album: 'Lalabuba',
           name: 'lalabuba_${DateTime.now().millisecondsSinceEpoch}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

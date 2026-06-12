@@ -154,5 +154,7 @@
   "tipModesBody": "Przełączaj między Dotknij, Maluj, Ołówek i Gumka — i cofnij ostatnie wypełnienie.",
   "tipSaveTitle": "Zapisz i udostępnij",
   "tipSaveBody": "Zapisz rysunek w galerii, wydrukuj go lub udostępnij rodzinie.",
-  "eyedropperHint": "Dotknij dowolnego miejsca na ekranie, aby wybrać ten kolor"
+  "eyedropperHint": "Dotknij dowolnego miejsca na ekranie, aby wybrać ten kolor",
+  "savedToGallery": "💾 Zapisano w albumie Lalabuba!",
+  "saveFailed": "Nie udało się zapisać — zezwól na dostęp do zdjęć i spróbuj ponownie"
 }

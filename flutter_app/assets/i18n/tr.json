@@ -154,5 +154,7 @@
   "tipModesBody": "Dokun, Boya, Kalem ve Silgi arasında geçiş yap — ve son doldurmayı geri al.",
   "tipSaveTitle": "Kaydet & paylaş",
   "tipSaveBody": "Resmini galeriye kaydet, yazdır veya ailenle paylaş.",
-  "eyedropperHint": "O rengi seçmek için ekranda herhangi bir yere dokun"
+  "eyedropperHint": "O rengi seçmek için ekranda herhangi bir yere dokun",
+  "savedToGallery": "💾 Lalabuba albümüne kaydedildi!",
+  "saveFailed": "Kaydedilemedi — lütfen foto erişimine izin ver ve tekrar dene"
 }
