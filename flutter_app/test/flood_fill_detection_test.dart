@@ -70,4 +70,55 @@ void main() {
     expect(speckCore, equals(rId),
         reason: 'speck must merge into the region (R) that encloses it');
   });
+
+  // Proves the "can't colour the non-numbered spaces" fix: a small shape (below
+  // minArea) that sits directly ON the background must become its OWN free-fill
+  // region — NOT dissolved into the uncolourable background, and NOT given a
+  // number. Layout: white background → a 32×32 white shape ringed in black.
+  test('sub-minArea shape on the background is promoted to its own free-fill region',
+      () {
+    const w = 200, h = 200;
+    final rgba = Uint8List(w * h * 4);
+    void set(int x, int y, int v) {
+      final i = (y * w + x) * 4;
+      rgba[i] = v;
+      rgba[i + 1] = v;
+      rgba[i + 2] = v;
+      rgba[i + 3] = 255;
+    }
+    for (var i = 0; i < w * h; i++) {
+      rgba[i * 4] = 255;
+      rgba[i * 4 + 1] = 255;
+      rgba[i * 4 + 2] = 255;
+      rgba[i * 4 + 3] = 255;
+    }
+    // A black ring (x80..120, y80..120) with a 32×32 white interior (x84..116).
+    // ~1024px: above the 50-px promote floor but below minArea (2000) → promote.
+    for (var y = 80; y <= 120; y++) {
+      for (var x = 80; x <= 120; x++) {
+        final onBorder = x < 84 || x > 116 || y < 84 || y > 116;
+        if (onBorder) set(x, y, 0);
+      }
+    }
+
+    final result = detectRegions(RegionDetectParams(
+      rgbaBytes: rgba,
+      width: w,
+      height: h,
+      minArea: 2000,
+      paletteArgb: const [0xFFFF0000, 0xFF00FF00, 0xFF0000FF],
+    ));
+
+    final bgId = result.backgroundRegionId;
+    final shapeId = result.pixelToRegion[100 * w + 100]; // centre of the shape
+
+    expect(shapeId, greaterThanOrEqualTo(0),
+        reason: 'promoted shape must be a real, tappable region');
+    expect(shapeId, isNot(-2),
+        reason: 'promoted shape must NOT be left as uncolourable outline');
+    expect(shapeId, isNot(bgId),
+        reason: 'promoted shape must be independent of the background');
+    expect(result.regionPaletteIndex.containsKey(shapeId), isFalse,
+        reason: 'promoted shape is free-fill — it must carry NO number');
+  });
 }

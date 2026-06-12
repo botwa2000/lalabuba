@@ -153,5 +153,6 @@
   "tipModesTitle": "Herramientas",
   "tipModesBody": "Cambia entre Tocar, Pintar, Lápiz y Goma — y deshaz tu último relleno.",
   "tipSaveTitle": "Guardar y compartir",
-  "tipSaveBody": "Guarda tu dibujo en la galería, imprímelo o compártelo con la familia."
+  "tipSaveBody": "Guarda tu dibujo en la galería, imprímelo o compártelo con la familia.",
+  "eyedropperHint": "Toca cualquier parte de la pantalla para elegir ese color"
 }

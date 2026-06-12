@@ -153,5 +153,6 @@
   "tipModesTitle": "Araçlar",
   "tipModesBody": "Dokun, Boya, Kalem ve Silgi arasında geçiş yap — ve son doldurmayı geri al.",
   "tipSaveTitle": "Kaydet & paylaş",
-  "tipSaveBody": "Resmini galeriye kaydet, yazdır veya ailenle paylaş."
+  "tipSaveBody": "Resmini galeriye kaydet, yazdır veya ailenle paylaş.",
+  "eyedropperHint": "O rengi seçmek için ekranda herhangi bir yere dokun"
 }

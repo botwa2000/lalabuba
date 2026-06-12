@@ -177,6 +177,22 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     nextId++;
   }
 
+  // Identify the outer background tentative region (corner sample, just inside
+  // the virtual frame) BEFORE merging. Small shapes that merely SIT ON the
+  // background must not be dissolved into it (see promotion in 4b) — otherwise
+  // they take the background's id and become impossible to colour.
+  var bgTentId = -1;
+  bgScan:
+  for (var dy = 1; dy <= 4; dy++) {
+    for (var dx = 1; dx <= 4; dx++) {
+      final v = pixelToRegion[dy * w + dx];
+      if (v >= 0) {
+        bgTentId = v;
+        break bgScan;
+      }
+    }
+  }
+
   // ── 4b. Merge sub-minArea regions into the enclosing kept region ──
   // kept = region big enough to stand on its own and be colour-by-numbered.
   final kept = List<bool>.generate(nextId, (i) => tentCount[i] >= minArea);
@@ -248,6 +264,26 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     mergeTo[s] = best;
   }
 
+  // Promote sizeable shapes that merely sit ON the outer background into their
+  // own free-fill regions instead of dissolving them into the (uncolourable)
+  // background. A child must be able to colour small details — toes, teeth, tiny
+  // spikes, gaps between limbs — that fall below minArea; absorbing them into the
+  // background made them un-tappable ("can't colour the non-numbered spaces").
+  // Promoted regions never receive a number (excluded from step 7), so they are
+  // always free-fill. Genuine dust (< promoteFloor) still merges so specks vanish.
+  const promoteFloor = 50;
+  final promotedTent = <int>{};
+  if (bgTentId >= 0) {
+    for (var s = 0; s < nextId; s++) {
+      if (kept[s]) continue;
+      if (mergeTo[s] == bgTentId && tentCount[s] >= promoteFloor) {
+        kept[s] = true;      // stands on its own now
+        mergeTo[s] = s;      // identity → apply-merges loop leaves it untouched
+        promotedTent.add(s);
+      }
+    }
+  }
+
   // Apply merges to pixelToRegion (small-region pixels take the kept id, or -2).
   for (var i = 0; i < w * h; i++) {
     final r = pixelToRegion[i];
@@ -274,6 +310,13 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   final idRemap = <int, int>{};
   for (var i = 0; i < rawRegions.length; i++) {
     idRemap[rawRegions[i].id] = i;
+  }
+
+  // New ids of the promoted free-fill shapes (never numbered — see step 7).
+  final promotedNewIds = <int>{};
+  for (final t in promotedTent) {
+    final nid = idRemap[t];
+    if (nid != null) promotedNewIds.add(nid);
   }
 
   // Remap pixelToRegion in-place
@@ -368,6 +411,7 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     for (var i = 0; i < rawRegions.length; i++) {
       final newId = i;
       if (newId == backgroundRegionId) continue;
+      if (promotedNewIds.contains(newId)) continue; // promoted = always free-fill
       if (colorIdx >= maxNumbered) break; // remaining regions stay free-fill
       final paletteIdx = colorIdx % palette.length;
       regionColorMap[newId] = palette[paletteIdx];
@@ -432,26 +476,30 @@ Uint8List buildCompositeRgba(CompositeParams params) {
     }
   }
 
-  // Multi-source Voronoi bleed: flood each filled region's color through the
-  // light "outline" (-2) band ALL THE WAY to the genuine dark ink (luma < 60),
-  // with NO distance cap. This is the key to eliminating the white halos.
+  // Seam bleed: flood each filled region's colour OUTWARD through the light
+  // "outline" (-2) band, but only a short, bounded distance (maxBleed px). This
+  // closes the thin white halo that morphological closing leaves between a fill
+  // and the black line WITHOUT painting arbitrary midlines across open white.
   //
-  // Why no cap: morphological closing (8-px dilate/erode) reabsorbs an ~8-px
-  // ring of white interior into the -2 outline mask, but at concave corners and
-  // wherever two regions meet, the closed band is WIDER than 8 px and cannot be
-  // fully eroded back — so a fixed 8-px bleed left a permanent white halo there
-  // (visible as the white seams along every colour boundary). Flooding to the
-  // real ink instead paints every light pixel between the lines.
+  // Why bounded (this is the fix for the "border is a random line in the middle
+  // of a white area" bug): an UNBOUNDED flood travels through every connected
+  // light -2 pixel until it hits dark ink. Where two regions are separated by a
+  // faint/broken grey line, that one connected band spans the whole gap, so the
+  // two colours flood toward each other and meet at a Voronoi midline sitting in
+  // open white — a coloured boundary with no black divider. Capping each flood at
+  // maxBleed px confines colour to the immediate seam: it can only ever reach
+  // ~maxBleed px past a region edge, never across an open area. A region interior
+  // is labelled >= 0 (never -2), so a bounded bleed still cannot enter a
+  // neighbour's interior; at worst two colours meet inside a narrow junction
+  // pocket, which is invisible.
   //
-  // Why it stays safe: the flood only travels through -2 pixels that are light
-  // (luma >= 60); the genuine black line (luma < 60) is an impassable wall, so
-  // one region's colour can never cross into a neighbour. A region's interior is
-  // labelled >= 0 (never -2), so the bleed never enters an intentionally-white
-  // area (eyes, feet) — those are their own regions. Where two differently
-  // coloured regions share a wide light band, the two floods meet at the Voronoi
-  // midline: both sides coloured, no white left over.
+  // maxBleed (12) ≈ 1.5× the closing radius (8): enough to refill the ring that
+  // closing rounded off at concave corners, not enough to cross an open gap.
+  // The dark-ink gate is raised to luma < 90 so faint grey lines act as walls
+  // too, further preventing one colour from creeping along a light divider.
   final w = params.width;
   final h = params.height;
+  const maxBleed = 12;
 
   // Per-pixel original luma, reused by both the dark-core gate and the final
   // shading factor (cheaper than recomputing inside the BFS).
@@ -465,21 +513,23 @@ Uint8List buildCompositeRgba(CompositeParams params) {
   }
 
   // claimColor[i] = ARGB a -2 pixel inherits from the nearest filled region
-  //                 (0 = unclaimed). Fill colors always carry alpha, so 0 is a
-  //                 safe sentinel.
+  //                 (0 = unclaimed). claimDist[i] = its BFS distance from a fill
+  //                 edge, used to enforce the maxBleed cap.
   final claimColor = Int32List(n);
+  final claimDist = Uint8List(n);
   final queue = Int32List(n);
   var qHead = 0, qTail = 0;
 
-  // Seed: every light -2 pixel directly touching a filled region pixel.
+  // Seed: every light -2 pixel directly touching a filled region pixel (dist 1).
   for (var y = 1; y < h - 1; y++) {
     for (var x = 1; x < w - 1; x++) {
       final i = y * w + x;
-      if (p2r[i] != -2 || luma[i] < 60) continue;
+      if (p2r[i] != -2 || luma[i] < 90) continue;
       for (final nb in [i - 1, i + 1, i - w, i + w]) {
         final ri = p2r[nb];
         if (ri >= 0 && colors.containsKey(ri)) {
           claimColor[i] = colors[ri]!;
+          claimDist[i] = 1;
           queue[qTail++] = i;
           break;
         }
@@ -487,12 +537,11 @@ Uint8List buildCompositeRgba(CompositeParams params) {
     }
   }
 
-  // Expand the frontier through light -2 pixels only, with no distance limit.
-  // Each pixel is claimed exactly once (claimColor[nb] == 0 guard), so the BFS
-  // terminates when the light band is exhausted — bounded by the dark ink, not
-  // by an arbitrary radius.
+  // Expand the frontier through light -2 pixels only, stopping at maxBleed px.
   while (qHead < qTail) {
     final i = queue[qHead++];
+    final d = claimDist[i];
+    if (d >= maxBleed) continue; // reached the cap — go no further
     final argb = claimColor[i];
     final x = i % w;
     final neighbors = [
@@ -503,8 +552,9 @@ Uint8List buildCompositeRgba(CompositeParams params) {
     ];
     for (final nb in neighbors) {
       if (nb < 0 || nb >= n) continue;
-      if (p2r[nb] != -2 || claimColor[nb] != 0 || luma[nb] < 60) continue;
+      if (p2r[nb] != -2 || claimColor[nb] != 0 || luma[nb] < 90) continue;
       claimColor[nb] = argb;
+      claimDist[nb] = d + 1;
       queue[qTail++] = nb;
     }
   }

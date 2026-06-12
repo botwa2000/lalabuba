@@ -59,6 +59,19 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   final _canvasKey = GlobalKey();
   final _transformCtrl = TransformationController();
 
+  // Whole-screen eyedropper. When the dropper is armed we snapshot the entire
+  // page into a bitmap once, then sample that bitmap under the finger — so the
+  // child can pick ANY colour visible anywhere on screen (the artwork, a fill
+  // they already placed, a palette swatch, the line art), not only regions that
+  // happen to be coloured. Captured once on arm (before the preview pill paints)
+  // and reused for every sample, so the pill never contaminates the snapshot.
+  final _pageKey = GlobalKey();
+  ui.Image? _screenSnap;
+  ByteData? _screenSnapBytes;
+  double _snapRatio = 1;
+  int _snapW = 0;
+  int _snapH = 0;
+
   // Coach-mark tutorial targets (colours, canvas, modes, save). Runs once the
   // first time a page is ready, and again when replayed from home's How-to-play.
   final _scColors = GlobalKey();
@@ -81,6 +94,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   @override
   void dispose() {
     _transformCtrl.dispose();
+    _disposeScreenSnap();
     super.dispose();
   }
 
@@ -390,7 +404,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       child: Scaffold(
         backgroundColor: cs.surface,
         appBar: _buildAppBar(context, cs, l10n),
-        body: SafeArea(
+        body: RepaintBoundary(
+          key: _pageKey,
+          child: Stack(children: [
+            SafeArea(
           top: false,
           bottom: false,
           child: ShowCaseWidget(
@@ -414,9 +431,103 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                   : _buildPortrait(context, canvas, settings, l10n);
             },
           ),
+            ),
+            // Full-screen sampling layer — only present while the dropper is
+            // armed. It intercepts touches anywhere on the page so the child can
+            // lift a colour from ANY pixel, then returns to tap-to-fill.
+            if (canvas.mode == DrawMode.eyedropper)
+              Positioned.fill(child: _buildEyedropperOverlay(context, l10n)),
+          ]),
         ),
       ),
     );
+  }
+
+  // Transparent gesture layer covering the whole page while the eyedropper is
+  // armed. A tap lifts the colour under the finger; a drag live-previews and
+  // commits on release. Samples the page snapshot taken when the dropper armed.
+  Widget _buildEyedropperOverlay(BuildContext context, L10n l10n) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapUp: (d) {
+        final c = _sampleScreenAt(d.globalPosition);
+        if (c != null) {
+          HapticFeedback.selectionClick();
+          ref.read(canvasProvider.notifier).setActiveColor(c);
+        }
+        _endEyedropper();
+      },
+      onPanStart: (d) => _onScreenEyedropperSample(d.globalPosition),
+      onPanUpdate: (d) => _onScreenEyedropperSample(d.globalPosition),
+      onPanEnd: (_) {
+        final c = _eyedropperPreview;
+        if (c != null) ref.read(canvasProvider.notifier).setActiveColor(c);
+        _endEyedropper();
+      },
+      child: const SizedBox.expand(),
+    );
+  }
+
+  void _onScreenEyedropperSample(Offset globalPos) {
+    final c = _sampleScreenAt(globalPos);
+    if (c == null) return;
+    if (_eyedropperPreview?.toARGB32() != c.toARGB32()) {
+      HapticFeedback.selectionClick();
+      setState(() => _eyedropperPreview = c);
+    }
+  }
+
+  void _endEyedropper() {
+    ref.read(canvasProvider.notifier).setMode(DrawMode.tap);
+    _disposeScreenSnap();
+    if (_eyedropperPreview != null) {
+      setState(() => _eyedropperPreview = null);
+    }
+  }
+
+  // Snapshot the whole page into a bitmap so the eyedropper can read any pixel.
+  Future<void> _captureScreen() async {
+    try {
+      final boundary =
+          _pageKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final ratio = MediaQuery.devicePixelRatioOf(context);
+      final img = await boundary.toImage(pixelRatio: ratio);
+      final bytes = await img.toByteData(format: ui.ImageByteFormat.rawRgba);
+      _screenSnap?.dispose();
+      _screenSnap = img;
+      _screenSnapBytes = bytes;
+      _snapRatio = ratio;
+      _snapW = img.width;
+      _snapH = img.height;
+    } catch (_) {
+      // Boundary not painted yet / platform refused — sampling will no-op until
+      // the next arm. Never throw into the gesture path.
+    }
+  }
+
+  void _disposeScreenSnap() {
+    _screenSnap?.dispose();
+    _screenSnap = null;
+    _screenSnapBytes = null;
+  }
+
+  // Reads the page snapshot at a GLOBAL screen position. Converts to the page
+  // boundary's local space, scales by the capture pixel ratio, and returns the
+  // pixel colour. null if outside the snapshot or before it was captured.
+  Color? _sampleScreenAt(Offset globalPos) {
+    final bytes = _screenSnapBytes;
+    final boundary =
+        _pageKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    if (bytes == null || boundary == null) return null;
+    final local = boundary.globalToLocal(globalPos);
+    final px = (local.dx * _snapRatio).round();
+    final py = (local.dy * _snapRatio).round();
+    if (px < 0 || py < 0 || px >= _snapW || py >= _snapH) return null;
+    final idx = (py * _snapW + px) * 4;
+    if (idx < 0 || idx + 2 >= bytes.lengthInBytes) return null;
+    return Color.fromARGB(
+        255, bytes.getUint8(idx), bytes.getUint8(idx + 1), bytes.getUint8(idx + 2));
   }
 
   void _onCanvasTutorialFinish() {
@@ -1273,6 +1384,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       onTap: () {
         HapticFeedback.selectionClick();
         ref.read(canvasProvider.notifier).setMode(DrawMode.eyedropper);
+        // Snapshot the page on the NEXT frame (after the overlay mounts but
+        // before the preview pill paints) so the dropper can read any pixel.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _captureScreen();
+        });
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
           ..showSnackBar(SnackBar(
@@ -1551,29 +1667,35 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   // ─── Palette ──────────────────────────────────────────────────────────────────
 
   List<Color> _getPaletteColors(String palette, int count) {
+    // Each palette is ordered so that ANY prefix (the user picks 6/12/18/24) is
+    // maximally distinct: the first 12 walk the full hue wheel (red→orange→
+    // yellow→lime→green→teal→cyan→blue→indigo→purple→pink→brown/neutral) with no
+    // two near-identical shades, then 13–24 add a second tier + neutrals. This
+    // replaces the old lists where slots 7–12 repeated the hues of 1–6 and the
+    // nature set was eight near-identical greens in a row.
     const classic = [
-      Color(0xFFFF4757), Color(0xFFFF7043), Color(0xFFFFCA28), Color(0xFF26C281),
-      Color(0xFF1E90FF), Color(0xFF7C4DFF), Color(0xFFE91E63), Color(0xFF00BCD4),
-      Color(0xFF795548), Color(0xFF607D8B), Color(0xFF4CAF50), Color(0xFFFF5722),
-      Color(0xFF9C27B0), Color(0xFF3F51B5), Color(0xFFFFC107), Color(0xFF009688),
-      Color(0xFF673AB7), Color(0xFFF44336), Color(0xFF2196F3), Color(0xFF8BC34A),
-      Color(0xFFCDDC39), Color(0xFF00BFA5), Color(0xFFFF6F00), Color(0xFF212121),
+      Color(0xFFE53935), Color(0xFFFB8C00), Color(0xFFFDD835), Color(0xFFC0CA33),
+      Color(0xFF43A047), Color(0xFF00897B), Color(0xFF00ACC1), Color(0xFF1E88E5),
+      Color(0xFF3949AB), Color(0xFF8E24AA), Color(0xFFD81B60), Color(0xFF6D4C41),
+      Color(0xFFB71C1C), Color(0xFFFFB300), Color(0xFF7CB342), Color(0xFF00695C),
+      Color(0xFF4FC3F7), Color(0xFF5E35B1), Color(0xFFF06292), Color(0xFFA1887F),
+      Color(0xFF212121), Color(0xFF757575), Color(0xFFBDBDBD), Color(0xFF0D47A1),
     ];
     const pastel = [
-      Color(0xFFFFB3BA), Color(0xFFFFDFBA), Color(0xFFFFFFBA), Color(0xFFBAFFC9),
-      Color(0xFFBAE1FF), Color(0xFFCDB4DB), Color(0xFFF7B2C1), Color(0xFFA8D8EA),
-      Color(0xFFFDD2BF), Color(0xFFCFEACA), Color(0xFFE8C8E8), Color(0xFFB5D5C5),
-      Color(0xFFFFD1DC), Color(0xFFBDE0FE), Color(0xFFC8F7C5), Color(0xFFF6C5AF),
-      Color(0xFFE8D5B7), Color(0xFFD4E1F7), Color(0xFFF0E6CA), Color(0xFFDAEFDB),
-      Color(0xFFE5D0F5), Color(0xFFFFE4B5), Color(0xFFB0E0E6), Color(0xFFF5DEB3),
+      Color(0xFFFFADAD), Color(0xFFFFD6A5), Color(0xFFFDFFB6), Color(0xFFD0F4A0),
+      Color(0xFFB9FBC0), Color(0xFFA0F0E0), Color(0xFFA0E7E5), Color(0xFFA8D0FF),
+      Color(0xFFBDB2FF), Color(0xFFD4B8FF), Color(0xFFFFC6FF), Color(0xFFE7D3B3),
+      Color(0xFFFFB5A7), Color(0xFFFCD5CE), Color(0xFFFAE588), Color(0xFFC7E9B0),
+      Color(0xFFB5EAD7), Color(0xFFBDE0FE), Color(0xFFCAB8FF), Color(0xFFE0C3FC),
+      Color(0xFFFFD1DC), Color(0xFFEAD9C4), Color(0xFFE2E2E2), Color(0xFFC9CCD3),
     ];
     const nature = [
-      Color(0xFF5D8233), Color(0xFF3B7A57), Color(0xFF1B4332), Color(0xFF52B788),
-      Color(0xFF2D6A4F), Color(0xFF40916C), Color(0xFF74C69D), Color(0xFFB7E4C7),
-      Color(0xFF8B4513), Color(0xFFA0522D), Color(0xFFCD853F), Color(0xFFDEB887),
-      Color(0xFF6B4226), Color(0xFF8B6914), Color(0xFFD4A017), Color(0xFFF5DEB3),
-      Color(0xFF4682B4), Color(0xFF1E90FF), Color(0xFF87CEEB), Color(0xFFB0C4DE),
-      Color(0xFF708090), Color(0xFF2F4F4F), Color(0xFF696969), Color(0xFF808080),
+      Color(0xFF5BA82F), Color(0xFF1B5E20), Color(0xFF2A9D8F), Color(0xFF5BC0EB),
+      Color(0xFF1D6FA3), Color(0xFFE07A5F), Color(0xFFBC4B2F), Color(0xFFE9C46A),
+      Color(0xFFD4A373), Color(0xFF7F5539), Color(0xFF6C757D), Color(0xFFF4A261),
+      Color(0xFF8FB339), Color(0xFFA7C957), Color(0xFF40916C), Color(0xFF14532D),
+      Color(0xFF277DA1), Color(0xFF9D4EDD), Color(0xFFE5989B), Color(0xFF6B4226),
+      Color(0xFF495057), Color(0xFF2B2D42), Color(0xFFADB5BD), Color(0xFFF2E8CF),
     ];
 
     final src = palette == 'pastel'

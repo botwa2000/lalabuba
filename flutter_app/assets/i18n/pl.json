@@ -153,5 +153,6 @@
   "tipModesTitle": "Narzędzia",
   "tipModesBody": "Przełączaj między Dotknij, Maluj, Ołówek i Gumka — i cofnij ostatnie wypełnienie.",
   "tipSaveTitle": "Zapisz i udostępnij",
-  "tipSaveBody": "Zapisz rysunek w galerii, wydrukuj go lub udostępnij rodzinie."
+  "tipSaveBody": "Zapisz rysunek w galerii, wydrukuj go lub udostępnij rodzinie.",
+  "eyedropperHint": "Dotknij dowolnego miejsca na ekranie, aby wybrać ten kolor"
 }
