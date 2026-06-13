@@ -90,6 +90,11 @@ function checkCompletion() {
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('lalabuba-theme', next);
     syncIcon();
+    // Auto-close the ⚙️ settings menu after the choice is applied.
+    const sm = document.getElementById('settings-menu');
+    const st = document.getElementById('settings-toggle');
+    if (sm) sm.hidden = true;
+    if (st) st.setAttribute('aria-expanded', 'false');
   });
 
   syncIcon();
@@ -579,6 +584,11 @@ document.querySelectorAll('.lang-option').forEach(btn => {
     syncCanvasNumbersBtn(); // re-sync after applyTranslations() resets data-i18n buttons
     langDropdown.hidden = true;
     langToggle.setAttribute('aria-expanded', 'false');
+    // Language is a terminal choice — auto-close the whole ⚙️ settings menu too.
+    const sm = document.getElementById('settings-menu');
+    const st = document.getElementById('settings-toggle');
+    if (sm) sm.hidden = true;
+    if (st) st.setAttribute('aria-expanded', 'false');
   });
 });
 
