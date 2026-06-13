@@ -159,5 +159,10 @@
   "tipSaveBody": "Speichere dein Bild in der Galerie, drucke es oder teile es mit der Familie.",
   "dailyLimitTitle": "Zeit für eine Pause!",
   "dailyLimitBody": "Du hast heute schon viele Bilder gemalt! Komm morgen wieder zum Weitermalen. 🎨",
-  "ok": "OK"
+  "ok": "OK",
+  "parentalGateTitle": "Frag einen Erwachsenen",
+  "parentalGatePrompt": "Nur für Erwachsene! Was ist {a} × {b}?",
+  "parentalGateWrong": "Nicht ganz — versuch es nochmal.",
+  "parentalGateContinue": "Weiter",
+  "cancel": "Abbrechen"
 }

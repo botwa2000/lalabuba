@@ -159,5 +159,10 @@
   "saveFailed": "Kaydedilemedi — lütfen foto erişimine izin ver ve tekrar dene",
   "dailyLimitTitle": "Mola zamanı!",
   "dailyLimitBody": "Bugün çok resim yaptın! Daha fazla boyamak için yarın tekrar gel. 🎨",
-  "ok": "Tamam"
+  "ok": "Tamam",
+  "parentalGateTitle": "Bir yetişkine sor",
+  "parentalGatePrompt": "Sadece yetişkinler! {a} × {b} kaç eder?",
+  "parentalGateWrong": "Pek değil — tekrar dene.",
+  "parentalGateContinue": "Devam",
+  "cancel": "İptal"
 }

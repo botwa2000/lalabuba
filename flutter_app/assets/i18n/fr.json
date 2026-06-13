@@ -159,5 +159,10 @@
   "saveFailed": "Échec de l'enregistrement — autorise l'accès aux photos et réessaie",
   "dailyLimitTitle": "C'est l'heure d'une pause !",
   "dailyLimitBody": "Tu as fait beaucoup de dessins aujourd'hui ! Reviens demain pour colorier encore. 🎨",
-  "ok": "OK"
+  "ok": "OK",
+  "parentalGateTitle": "Demande à un adulte",
+  "parentalGatePrompt": "Réservé aux adultes ! Combien font {a} × {b} ?",
+  "parentalGateWrong": "Pas tout à fait — réessaie.",
+  "parentalGateContinue": "Continuer",
+  "cancel": "Annuler"
 }

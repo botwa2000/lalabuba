@@ -159,5 +159,10 @@
   "saveFailed": "Nie udało się zapisać — zezwól na dostęp do zdjęć i spróbuj ponownie",
   "dailyLimitTitle": "Czas na przerwę!",
   "dailyLimitBody": "Dziś zrobiłeś dużo rysunków! Wróć jutro, żeby kolorować dalej. 🎨",
-  "ok": "OK"
+  "ok": "OK",
+  "parentalGateTitle": "Zapytaj dorosłego",
+  "parentalGatePrompt": "Tylko dla dorosłych! Ile to {a} × {b}?",
+  "parentalGateWrong": "Niezupełnie — spróbuj ponownie.",
+  "parentalGateContinue": "Dalej",
+  "cancel": "Anuluj"
 }

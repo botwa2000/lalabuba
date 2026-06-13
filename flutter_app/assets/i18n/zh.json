@@ -159,5 +159,10 @@
   "saveFailed": "无法保存——请允许照片访问后重试",
   "dailyLimitTitle": "休息一下吧！",
   "dailyLimitBody": "你今天画了好多画！明天再来涂色吧。🎨",
-  "ok": "好的"
+  "ok": "好的",
+  "parentalGateTitle": "请问大人",
+  "parentalGatePrompt": "仅限大人！{a} × {b} 等于多少？",
+  "parentalGateWrong": "不对哦——再试一次。",
+  "parentalGateContinue": "继续",
+  "cancel": "取消"
 }

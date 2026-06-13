@@ -159,5 +159,10 @@
   "saveFailed": "Opslaan mislukt — geef toegang tot foto's en probeer opnieuw",
   "dailyLimitTitle": "Tijd voor een pauze!",
   "dailyLimitBody": "Je hebt vandaag veel tekeningen gemaakt! Kom morgen terug om verder te kleuren. 🎨",
-  "ok": "OK"
+  "ok": "OK",
+  "parentalGateTitle": "Vraag een volwassene",
+  "parentalGatePrompt": "Alleen voor volwassenen! Hoeveel is {a} × {b}?",
+  "parentalGateWrong": "Net niet — probeer opnieuw.",
+  "parentalGateContinue": "Doorgaan",
+  "cancel": "Annuleren"
 }

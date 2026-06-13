@@ -159,5 +159,10 @@
   "tipSaveBody": "Save your art to the gallery, print it, or share it with family.",
   "dailyLimitTitle": "Time for a break!",
   "dailyLimitBody": "You've made lots of drawings today! Come back tomorrow for more coloring fun. 🎨",
-  "ok": "OK"
+  "ok": "OK",
+  "parentalGateTitle": "Ask a grown-up",
+  "parentalGatePrompt": "Grown-ups only! To continue, what is {a} × {b}?",
+  "parentalGateWrong": "Not quite — try again.",
+  "parentalGateContinue": "Continue",
+  "cancel": "Cancel"
 }

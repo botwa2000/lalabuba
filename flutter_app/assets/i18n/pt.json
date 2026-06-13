@@ -159,5 +159,10 @@
   "saveFailed": "Não foi possível salvar — permita o acesso às fotos e tente de novo",
   "dailyLimitTitle": "Hora de uma pausa!",
   "dailyLimitBody": "Você fez muitos desenhos hoje! Volte amanhã para colorir mais. 🎨",
-  "ok": "OK"
+  "ok": "OK",
+  "parentalGateTitle": "Pergunte a um adulto",
+  "parentalGatePrompt": "Apenas para adultos! Quanto é {a} × {b}?",
+  "parentalGateWrong": "Quase — tente de novo.",
+  "parentalGateContinue": "Continuar",
+  "cancel": "Cancelar"
 }

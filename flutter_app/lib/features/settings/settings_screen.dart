@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/l10n/l10n_service.dart';
+import '../../shared/widgets/parental_gate.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -33,6 +34,14 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  // Gate external links behind a parental check (Kids Category / Families
+  // requirement) before leaving the app to the web.
+  Future<void> _openExternal(BuildContext context, L10n l10n, String url) async {
+    final ok = await showParentalGate(context, l10n);
+    if (!ok) return;
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
   Widget _buildAboutSection(BuildContext context, L10n l10n) {
     return FutureBuilder<PackageInfo>(
       future: PackageInfo.fromPlatform(),
@@ -58,9 +67,8 @@ class SettingsScreen extends ConsumerWidget {
                         style: GoogleFonts.nunito(fontSize: 14)),
                     leading: const Icon(Icons.privacy_tip_outlined),
                     trailing: const Icon(Icons.open_in_new_rounded, size: 16),
-                    onTap: () => launchUrl(
-                        Uri.parse('https://lalabuba.com/privacy'),
-                        mode: LaunchMode.externalApplication),
+                    onTap: () => _openExternal(
+                        ctx, l10n, 'https://lalabuba.com/privacy'),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -68,9 +76,8 @@ class SettingsScreen extends ConsumerWidget {
                         style: GoogleFonts.nunito(fontSize: 14)),
                     leading: const Icon(Icons.description_outlined),
                     trailing: const Icon(Icons.open_in_new_rounded, size: 16),
-                    onTap: () => launchUrl(
-                        Uri.parse('https://lalabuba.com/terms'),
-                        mode: LaunchMode.externalApplication),
+                    onTap: () => _openExternal(
+                        ctx, l10n, 'https://lalabuba.com/terms'),
                   ),
                 ],
               ),

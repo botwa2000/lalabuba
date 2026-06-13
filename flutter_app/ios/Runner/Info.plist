@@ -49,5 +49,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- The app uses only standard HTTPS (exempt encryption), so no French
+	     encryption declaration / export-compliance docs are required. Setting
+	     this skips the "missing compliance" prompt on every TestFlight build. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
