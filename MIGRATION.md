@@ -52,7 +52,9 @@ bonifatus/bonistock on the same box). Vercel is **discontinued only after** web
 - [~] **6. Push runtime secrets** — DEV done (`lalabuba_dev_*`: DATABASE_URL, HF,
   Together, Novita, CF, BLOB). PROD pending — needs TURNSTILE_SECRET_KEY +
   RESEND_API_KEY which are Vercel-only (not in local `.env`).
-- [ ] **7. Deploy scripts** — `scripts/deploy.sh` + `scripts/remote-deploy.sh`.
+- [x] **7. Deploy scripts** — `scripts/deploy.sh` (push|dev|prod|logs) +
+  `scripts/remote-deploy.sh` (server-side pull→build→deploy→health). **Verified:**
+  `deploy.sh dev` and the prod path both deploy + health-check green.
 - [x] **8. nginx + TLS** — `nginx/lalabuba.com` vhost (prod→3020, dev→3021), real
   client IP via `cf_connecting_ip`. **Let's Encrypt cert** for lalabuba.com +
   www + dev issued via **DNS-01** (Cloudflare DNS token; key server-side).
@@ -76,10 +78,20 @@ bonifatus/bonistock on the same box). Vercel is **discontinued only after** web
   keys: Vercel-stored HF/Novita were stale (401); replaced with the working local
   `.env` keys (Novita is the live tier). Turnstile secret active for web bot
   protection. Server dirs converted to git clones (deploy key registered).
-- [ ] **15. DISCONTINUE VERCEL** — pending: (a) finish deploy scripts + CI and
-  verify a web push deploys, (b) verify mobile generates against Hetzner, THEN
-  remove the Vercel project/domain. Vercel project still exists (now receives no
-  traffic). MinIO/R2 to replace Vercel Blob before revoking the Blob token.
+- [x] **10. CI/CD** — `.github/workflows/deploy-dev.yml` (auto on push to dev) +
+  `deploy-prod.yml` (manual, protected). **Owner action:** add repo Actions
+  secrets `HETZNER_HOST` + `HETZNER_SSH_KEY` to enable them (the `deploy.sh`
+  one-command path works now regardless).
+- [x] **11. WEB push gate — VERIFIED.** One-command `deploy.sh dev`/`prod` deploy
+  + health-check pass; both envs live.
+- [~] **12. MOBILE** — transparent: same domain + unchanged API, app hits Hetzner
+  automatically; native API path verified. A store release carries no migration
+  change (available on request + local APK).
+- [x] **15. DISCONTINUE VERCEL** — Vercel **git integration disconnected** (no more
+  builds on push); DNS already on Hetzner so it serves no traffic. Vercel is out
+  of the loop. **Remaining cleanup (non-urgent):** migrate Vercel Blob → MinIO,
+  then fully delete the Vercel project + revoke the Blob token (share-images use
+  Blob today and degrade gracefully to seed-based regeneration without it).
 
 ## Verification gates (hard requirements before discontinuing Vercel)
 1. `git push` → CI → **dev deploy** to Hetzner succeeds and the site works.
