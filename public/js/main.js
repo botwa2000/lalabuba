@@ -76,8 +76,13 @@ function checkCompletion() {
   }
 
   function syncIcon() {
-    btn.textContent = isDark() ? '☀️' : '🌙';
-    btn.setAttribute('aria-label', isDark() ? t('themeToLight') : t('themeToDark'));
+    const dark = isDark();
+    const aria = dark ? t('themeToLight') : t('themeToDark');
+    const icon = document.getElementById('theme-toggle-icon');
+    const label = document.getElementById('theme-toggle-label');
+    if (icon)  icon.textContent  = dark ? '☀️' : '🌙';
+    if (label) label.textContent = aria;
+    btn.setAttribute('aria-label', aria);
   }
 
   btn.addEventListener('click', () => {
@@ -538,6 +543,13 @@ regenButton.addEventListener('click', async () => {
 document.getElementById('help-btn').addEventListener('click', () => {
   const panel = document.getElementById('help-panel');
   panel.hidden = !panel.hidden;
+  // The button now lives in the ⚙️ menu — close the menu and bring the panel
+  // (which renders down in the form) into view.
+  const sm = document.getElementById('settings-menu');
+  const st = document.getElementById('settings-toggle');
+  if (sm) sm.hidden = true;
+  if (st) st.setAttribute('aria-expanded', 'false');
+  if (!panel.hidden) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
 
 // ─── Language picker ──────────────────────────────────────────────────────────
@@ -569,6 +581,32 @@ document.querySelectorAll('.lang-option').forEach(btn => {
     langToggle.setAttribute('aria-expanded', 'false');
   });
 });
+
+// ─── Settings (⚙️) menu — holds Theme, Language, How-to-play ───────────────────
+const settingsToggle = document.getElementById('settings-toggle');
+const settingsMenu   = document.getElementById('settings-menu');
+if (settingsToggle && settingsMenu) {
+  settingsToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const opening = settingsMenu.hidden;
+    settingsMenu.hidden = !opening;
+    settingsToggle.setAttribute('aria-expanded', String(opening));
+    if (!opening) langDropdown.hidden = true; // closing the menu also closes lang list
+  });
+  // Clicks inside the menu shouldn't close it — except the language controls,
+  // which manage their own state and should let the menu close after a pick.
+  settingsMenu.addEventListener('click', (e) => {
+    if (!e.target.closest('#lang-toggle') && !e.target.closest('.lang-option')) {
+      e.stopPropagation();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (!settingsMenu.contains(e.target) && e.target !== settingsToggle) {
+      settingsMenu.hidden = true;
+      settingsToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
 
 // ─── Drawing tool ─────────────────────────────────────────────────────────────
 initDrawingTool();

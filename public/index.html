@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=185" />
-  <link rel="stylesheet" href="/css/header.css?v=185" />
-  <link rel="stylesheet" href="/css/hero.css?v=185" />
-  <link rel="stylesheet" href="/css/generator.css?v=185" />
-  <link rel="stylesheet" href="/css/layout.css?v=185" />
-  <link rel="stylesheet" href="/css/workspace.css?v=185" />
-  <link rel="stylesheet" href="/css/palette.css?v=185" />
-  <link rel="stylesheet" href="/css/modals.css?v=185" />
-  <link rel="stylesheet" href="/css/footer.css?v=185" />
-  <link rel="stylesheet" href="/css/print.css?v=185" />
-  <link rel="stylesheet" href="/css/cookies.css?v=185" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=185" />
-  <script src="/js/cookies.js?v=185"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=186" />
+  <link rel="stylesheet" href="/css/header.css?v=186" />
+  <link rel="stylesheet" href="/css/hero.css?v=186" />
+  <link rel="stylesheet" href="/css/generator.css?v=186" />
+  <link rel="stylesheet" href="/css/layout.css?v=186" />
+  <link rel="stylesheet" href="/css/workspace.css?v=186" />
+  <link rel="stylesheet" href="/css/palette.css?v=186" />
+  <link rel="stylesheet" href="/css/modals.css?v=186" />
+  <link rel="stylesheet" href="/css/footer.css?v=186" />
+  <link rel="stylesheet" href="/css/print.css?v=186" />
+  <link rel="stylesheet" href="/css/cookies.css?v=186" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=186" />
+  <script src="/js/cookies.js?v=186"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -165,9 +165,15 @@
     <header class="site-header">
       <!-- Mobile-only: opens the config panel as a drawer -->
       <button id="mobile-menu-btn" class="mobile-menu-btn" type="button" aria-label="Open settings">☰</button>
-      <div class="lang-picker">
-        <button id="theme-toggle" class="theme-toggle-btn" type="button" aria-label="Switch to dark mode">🌙</button>
-        <button id="lang-toggle" class="lang-toggle-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose language">
+      <div class="settings-wrap">
+        <button id="settings-toggle" class="settings-toggle-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">⚙️</button>
+        <div id="settings-menu" class="settings-menu" hidden role="menu">
+        <button id="theme-toggle" class="settings-menu-item" type="button" role="menuitem" aria-label="Switch to dark mode">
+          <span class="smi-icon" id="theme-toggle-icon">🌙</span>
+          <span class="smi-label" id="theme-toggle-label">Dark mode</span>
+        </button>
+        <div class="settings-menu-lang">
+        <button id="lang-toggle" class="settings-menu-item lang-toggle-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose language">
           <span class="lang-flag" id="lang-current-flag" data-lang="en"></span>
           <span id="lang-current-code">EN</span>
           <svg class="lang-caret" viewBox="0 0 10 6" width="9" height="6" aria-hidden="true"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>
@@ -186,7 +192,10 @@
           <button class="lang-option" data-lang="tr" data-code="TR" role="option"><span class="lang-flag" data-lang="tr"></span> Türkçe</button>
           <button class="lang-option" data-lang="zh" data-code="ZH" role="option"><span class="lang-flag" data-lang="zh"></span> 中文</button>
         </div>
-      </div>
+        </div><!-- /settings-menu-lang -->
+        <button id="help-btn" class="settings-menu-item help-btn" type="button" role="menuitem" data-i18n="helpBtn">❓ How it works</button>
+        </div><!-- /settings-menu -->
+      </div><!-- /settings-wrap -->
       <a class="logo-lockup" href="/" aria-label="Lalabuba — home">
         <img src="/logo.png" alt="" class="logo-mascot" aria-hidden="true" width="240" height="160" />
         <h1 class="logo" aria-label="Lalabuba">
@@ -270,7 +279,6 @@
             <button type="button" class="setting-chip" id="chip-palette">🖍️</button>
             <button type="button" class="setting-chip setting-chip--on" id="chip-numbers">🔢 ●</button>
             <button type="button" id="gallery-btn" class="setting-chip" data-i18n="galleryBtn" aria-label="Gallery">🖼️ Gallery</button>
-            <button type="button" id="help-btn" class="help-btn" data-i18n="helpBtn">❓ How it works</button>
           </div>
 
           <!-- Help panel (toggled by help button) -->
@@ -649,7 +657,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=185"></script>
+  <script type="module" src="/js/main.js?v=186"></script>
 </body>
 </html>
 

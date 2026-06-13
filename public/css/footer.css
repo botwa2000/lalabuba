@@ -137,7 +137,9 @@
   flex-shrink: 0;
 }
 
-/* Portrait phones: footer takes space the canvas needs — hide it */
+/* Portrait phones: in the coloring state the canvas needs the full height, so
+   the footer stays hidden there. In the hero (landing) state the page scrolls,
+   so we DO show the footer — otherwise the app-store links are unreachable. */
 @media (max-width: 767px) {
-  .site-footer { display: none; }
+  .app:not(.app-hero) .site-footer { display: none; }
 }
