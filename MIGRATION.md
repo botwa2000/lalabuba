@@ -44,16 +44,22 @@ bonifatus/bonistock on the same box). Vercel is **discontinued only after** web
   `/api/health` + `/api/generate-image` + `/api/contact`. **Verified locally:**
   health ok, static 200, 405 on bad method, handlers load. Blob stays optional/
   inert at launch (MinIO fast-follow).
-- [ ] **5. Provision non-root `deploy` user** + app dirs `/opt/lalabuba`,
-  `/opt/lalabuba-dev`; GitHub deploy key (separate from server key).
-- [ ] **6. Push all runtime secrets** to Swarm (`lalabuba_{env}_*`): image
-  providers (HF/Together/Novita/CF), Turnstile secret, APP_API_KEY, R2 keys,
-  DATABASE_URL (done).
-- [ ] **7. Deploy scripts** — `scripts/deploy.sh` + Windows-safe
-  `scripts/remote-deploy.sh`; `.secrets.example`; `.gitignore`.
-- [ ] **8. nginx** — `lalabuba.com` + `dev.lalabuba.com` server blocks → 3020/
-  3021; Cloudflare Origin cert installed.
-- [ ] **9. Deploy DEV** → build, stack deploy, health-check `dev.lalabuba.com`.
+- [~] **5. Provision** — `/opt/lalabuba{,-dev}` created; deploy runs as root
+  (matches other apps). Code currently delivered via **tar-over-SSH** (the GitHub
+  PAT lacks `Administration` scope, so the deploy key couldn't be registered via
+  API; clone is blocked). **Owner action:** add the deploy key (printed in
+  session) to the repo, or grant an admin-scoped PAT, to enable git-pull/CI.
+- [~] **6. Push runtime secrets** — DEV done (`lalabuba_dev_*`: DATABASE_URL, HF,
+  Together, Novita, CF, BLOB). PROD pending — needs TURNSTILE_SECRET_KEY +
+  RESEND_API_KEY which are Vercel-only (not in local `.env`).
+- [ ] **7. Deploy scripts** — `scripts/deploy.sh` + `scripts/remote-deploy.sh`.
+- [x] **8. nginx + TLS** — `nginx/lalabuba.com` vhost (prod→3020, dev→3021), real
+  client IP via `cf_connecting_ip`. **Let's Encrypt cert** for lalabuba.com +
+  www + dev issued via **DNS-01** (Cloudflare DNS token; key server-side).
+- [x] **9. Deploy DEV — DONE & VERIFIED.** `dev.lalabuba.com` live: health 200,
+  static 200, TLS valid, and **live image generation returns a real PNG**
+  (internal + external through Cloudflare). Waterfall hardened to skip
+  auth-failed tiers. `dev.lalabuba.com` A→91.99.212.17 (proxied) created.
 - [ ] **10. GitHub Actions** — `ci.yml`, `deploy-dev.yml` (auto on `dev`),
   `deploy-prod.yml` (manual, protected).
 - [ ] **11. VERIFY GATE (web)** — `scripts/deploy.sh push` + dev deploy succeed;
@@ -61,12 +67,19 @@ bonifatus/bonistock on the same box). Vercel is **discontinued only after** web
 - [ ] **12. VERIFY GATE (mobile)** — point Flutter `AppConfig.generateUrl` at the
   Hetzner API; build + a successful generation from the app; trigger a store
   build (and save a local APK per standing rule).
-- [ ] **13. Cloudflare DNS cutover** — point `lalabuba.com` + `dev.` A/proxied
-  records to `91.99.212.17` (Full-Strict). **GATED:** needs a valid DNS-scoped
-  Cloudflare API token (the one in `.env` is invalid) OR a manual change by owner.
-- [ ] **14. Deploy PROD** + verify `lalabuba.com` live on Hetzner.
-- [ ] **15. DISCONTINUE VERCEL** — only after 11–14 pass: remove the Vercel
-  project/domain, revoke Vercel Blob token (after R2 cutover), update repo docs.
+- [x] **13. Cloudflare DNS cutover — DONE.** `lalabuba.com` + `www` A records
+  flipped 216.198.79.1 (Vercel) → 91.99.212.17 (Hetzner), proxied. Verified live:
+  `/api/health` (an endpoint that exists only on the new server) returns ok via
+  the real domain — proves traffic hits Hetzner, not Vercel.
+- [x] **14. Deploy PROD — DONE & LIVE.** `lalabuba.com` serving on Hetzner:
+  health/index/www 200, **live generation returns a real PNG**. Prod provider
+  keys: Vercel-stored HF/Novita were stale (401); replaced with the working local
+  `.env` keys (Novita is the live tier). Turnstile secret active for web bot
+  protection. Server dirs converted to git clones (deploy key registered).
+- [ ] **15. DISCONTINUE VERCEL** — pending: (a) finish deploy scripts + CI and
+  verify a web push deploys, (b) verify mobile generates against Hetzner, THEN
+  remove the Vercel project/domain. Vercel project still exists (now receives no
+  traffic). MinIO/R2 to replace Vercel Blob before revoking the Blob token.
 
 ## Verification gates (hard requirements before discontinuing Vercel)
 1. `git push` → CI → **dev deploy** to Hetzner succeeds and the site works.
