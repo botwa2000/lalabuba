@@ -13,8 +13,6 @@ class StorageService {
   static const kDeviceId = 'device_id';
   static const kDailyCount = 'daily_gen_count';
   static const kDailyDate = 'daily_gen_date';
-  static const kSubscriptionTier = 'sub_tier';
-  static const kSubscriptionToken = 'sub_token';
   // Tutorial / onboarding "seen" flags (coach-marks auto-run once each).
   static const kTutorialHome = 'tutorial_home_seen';
   static const kTutorialCanvas = 'tutorial_canvas_seen';

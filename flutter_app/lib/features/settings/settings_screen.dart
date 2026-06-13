@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,7 +15,7 @@ class SettingsScreen extends ConsumerWidget {
     // Language + Theme intentionally live ONLY in the home top bar now (a 🌙
     // toggle and 🌐 picker). They used to be duplicated here, which made the
     // Settings screen feel like a redundant repeat of the top icons. This screen
-    // now holds only what has no quick-access home: subscription + about.
+    // now holds only what has no quick-access home: about.
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -27,44 +26,9 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Subscription
-          _SectionHeader(l10n.t('settingsSubscription')),
-          _buildSubscriptionTile(context, l10n),
-          const SizedBox(height: 16),
-
           // About
           _buildAboutSection(context, l10n),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSubscriptionTile(BuildContext context, L10n l10n) {
-    final cs = Theme.of(context).colorScheme;
-    return Card(
-      child: ListTile(
-        onTap: () => context.pushNamed('subscription'),
-        leading: const Text('⭐', style: TextStyle(fontSize: 24)),
-        title: Text(
-          l10n.t('subscribeFreeTier'),
-          style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
-        ),
-        subtitle: Text(
-          l10n.t('subscribeFreeTierDesc'),
-          style: GoogleFonts.nunito(fontSize: 13),
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [cs.primary, cs.secondary]),
-            borderRadius: BorderRadius.circular(50),
-          ),
-          child: Text(
-            'Go Plus',
-            style: GoogleFonts.fredoka(
-                color: Colors.white, fontWeight: FontWeight.w700),
-          ),
-        ),
       ),
     );
   }

@@ -156,5 +156,8 @@
   "tipSaveBody": "Bewaar je tekening in de galerij, print hem of deel hem met je familie.",
   "eyedropperHint": "Tik ergens op het scherm om die kleur te kiezen",
   "savedToGallery": "💾 Opgeslagen in je Lalabuba-album!",
-  "saveFailed": "Opslaan mislukt — geef toegang tot foto's en probeer opnieuw"
+  "saveFailed": "Opslaan mislukt — geef toegang tot foto's en probeer opnieuw",
+  "dailyLimitTitle": "Tijd voor een pauze!",
+  "dailyLimitBody": "Je hebt vandaag veel tekeningen gemaakt! Kom morgen terug om verder te kleuren. 🎨",
+  "ok": "OK"
 }

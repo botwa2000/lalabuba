@@ -110,7 +110,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final sub = ref.read(subscriptionProvider).valueOrNull;
 
     if (sub != null && !sub.canGenerate) {
-      _showPaywall();
+      _showDailyLimitReached();
       return;
     }
 
@@ -172,8 +172,26 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     }
   }
 
-  void _showPaywall() {
-    if (mounted) context.pushNamed('subscription');
+  void _showDailyLimitReached() {
+    if (!mounted) return;
+    final l10n = ref.read(l10nProvider);
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('🌙 ${l10n.t('dailyLimitTitle')}',
+            style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
+        content: Text(l10n.t('dailyLimitBody'),
+            style: GoogleFonts.nunito(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.t('ok'),
+                style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<bool> _confirmLeave(BuildContext context, L10n l10n) async {

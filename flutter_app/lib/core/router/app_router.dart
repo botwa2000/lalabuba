@@ -4,7 +4,6 @@ import '../../features/home/home_screen.dart';
 import '../../features/canvas/canvas_screen.dart';
 import '../../features/gallery/gallery_screen.dart';
 import '../../features/settings/settings_screen.dart';
-import '../../features/subscription/paywall_screen.dart';
 
 export '../../features/canvas/canvas_screen.dart' show CanvasScreenArgs;
 
@@ -13,7 +12,6 @@ class Routes {
   static const canvas = '/canvas';
   static const gallery = '/gallery';
   static const settings = '/settings';
-  static const subscription = '/subscription';
   static const challenge = '/challenge';
 }
 
@@ -61,21 +59,6 @@ final appRouter = GoRouter(
         child: const SettingsScreen(),
         transitionsBuilder: (ctx, anim, _, child) =>
             FadeTransition(opacity: anim, child: child),
-      ),
-    ),
-    GoRoute(
-      path: Routes.subscription,
-      name: 'subscription',
-      pageBuilder: (ctx, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const PaywallScreen(),
-        transitionsBuilder: (ctx, anim, _, child) => SlideTransition(
-          position:
-              Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-                  .animate(CurvedAnimation(
-                      parent: anim, curve: Curves.easeOutCubic)),
-          child: child,
-        ),
       ),
     ),
     GoRoute(

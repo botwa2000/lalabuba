@@ -156,5 +156,8 @@
   "tipModesTitle": "Tools",
   "tipModesBody": "Switch between Tap, Paint, Pencil and Eraser — and Undo your last fill.",
   "tipSaveTitle": "Save & share",
-  "tipSaveBody": "Save your art to the gallery, print it, or share it with family."
+  "tipSaveBody": "Save your art to the gallery, print it, or share it with family.",
+  "dailyLimitTitle": "Time for a break!",
+  "dailyLimitBody": "You've made lots of drawings today! Come back tomorrow for more coloring fun. 🎨",
+  "ok": "OK"
 }

@@ -156,5 +156,8 @@
   "tipSaveBody": "Resmini galeriye kaydet, yazdır veya ailenle paylaş.",
   "eyedropperHint": "O rengi seçmek için ekranda herhangi bir yere dokun",
   "savedToGallery": "💾 Lalabuba albümüne kaydedildi!",
-  "saveFailed": "Kaydedilemedi — lütfen foto erişimine izin ver ve tekrar dene"
+  "saveFailed": "Kaydedilemedi — lütfen foto erişimine izin ver ve tekrar dene",
+  "dailyLimitTitle": "Mola zamanı!",
+  "dailyLimitBody": "Bugün çok resim yaptın! Daha fazla boyamak için yarın tekrar gel. 🎨",
+  "ok": "Tamam"
 }

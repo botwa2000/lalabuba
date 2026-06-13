@@ -156,5 +156,8 @@
   "tipSaveBody": "把作品保存到相册、打印，或分享给家人。",
   "eyedropperHint": "点按屏幕上任意位置即可拾取该颜色",
   "savedToGallery": "💾 已保存到你的 Lalabuba 相册！",
-  "saveFailed": "无法保存——请允许照片访问后重试"
+  "saveFailed": "无法保存——请允许照片访问后重试",
+  "dailyLimitTitle": "休息一下吧！",
+  "dailyLimitBody": "你今天画了好多画！明天再来涂色吧。🎨",
+  "ok": "好的"
 }

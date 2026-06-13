@@ -156,5 +156,8 @@
   "tipSaveBody": "Zapisz rysunek w galerii, wydrukuj go lub udostępnij rodzinie.",
   "eyedropperHint": "Dotknij dowolnego miejsca na ekranie, aby wybrać ten kolor",
   "savedToGallery": "💾 Zapisano w albumie Lalabuba!",
-  "saveFailed": "Nie udało się zapisać — zezwól na dostęp do zdjęć i spróbuj ponownie"
+  "saveFailed": "Nie udało się zapisać — zezwól na dostęp do zdjęć i spróbuj ponownie",
+  "dailyLimitTitle": "Czas na przerwę!",
+  "dailyLimitBody": "Dziś zrobiłeś dużo rysunków! Wróć jutro, żeby kolorować dalej. 🎨",
+  "ok": "OK"
 }

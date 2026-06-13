@@ -156,5 +156,8 @@
   "tipSaveBody": "Salve seu desenho na galeria, imprima ou compartilhe com a família.",
   "eyedropperHint": "Toque em qualquer lugar da tela para escolher essa cor",
   "savedToGallery": "💾 Salvo no seu álbum Lalabuba!",
-  "saveFailed": "Não foi possível salvar — permita o acesso às fotos e tente de novo"
+  "saveFailed": "Não foi possível salvar — permita o acesso às fotos e tente de novo",
+  "dailyLimitTitle": "Hora de uma pausa!",
+  "dailyLimitBody": "Você fez muitos desenhos hoje! Volte amanhã para colorir mais. 🎨",
+  "ok": "OK"
 }

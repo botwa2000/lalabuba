@@ -156,5 +156,8 @@
   "tipSaveBody": "Enregistre ton dessin dans la galerie, imprime-le ou partage-le en famille.",
   "eyedropperHint": "Touche n'importe où sur l'écran pour choisir cette couleur",
   "savedToGallery": "💾 Enregistré dans ton album Lalabuba !",
-  "saveFailed": "Échec de l'enregistrement — autorise l'accès aux photos et réessaie"
+  "saveFailed": "Échec de l'enregistrement — autorise l'accès aux photos et réessaie",
+  "dailyLimitTitle": "C'est l'heure d'une pause !",
+  "dailyLimitBody": "Tu as fait beaucoup de dessins aujourd'hui ! Reviens demain pour colorier encore. 🎨",
+  "ok": "OK"
 }

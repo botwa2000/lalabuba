@@ -54,20 +54,23 @@ class Entitlements {
     );
   }
 
+  // Free-only v1: every feature is unlocked for everyone. The only limit kept
+  // is a generous daily generation cap, which exists purely as a cost guard on
+  // the paid image-generation API — not as a monetization gate.
   static const free = Entitlements(
-    dailyGenerations: 5,
-    difficulties: ['easy', 'medium'],
-    palettes: ['classic'],
-    maxColors: 12,
-    resolution: 768,
-    pencilMode: false,
-    gallery: false,
-    galleryLimit: 0,
-    exactSharing: false,
-    hdPrint: false,
-    zoomControls: false,
-    colorPicker: false,
-    maxPalette: false,
-    childProfiles: 0,
+    dailyGenerations: 20,
+    difficulties: ['easy', 'medium', 'hard', 'extreme'],
+    palettes: ['classic', 'pastel', 'nature', 'vivid', 'mono'],
+    maxColors: 24,
+    resolution: 1024,
+    pencilMode: true,
+    gallery: true,
+    galleryLimit: -1,
+    exactSharing: true,
+    hdPrint: true,
+    zoomControls: true,
+    colorPicker: true,
+    maxPalette: true,
+    childProfiles: 1,
   );
 }
