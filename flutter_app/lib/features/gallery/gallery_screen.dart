@@ -97,6 +97,11 @@ class GalleryScreen extends ConsumerWidget {
         child: Image.file(
           file,
           fit: BoxFit.cover,
+          // Decode at thumbnail resolution instead of full size. Saved artwork
+          // is up to ~3072px wide; decoding that into a 2-column grid cell
+          // wastes memory and can jank the gallery. 400px covers retina tiles.
+          cacheWidth: 400,
+          filterQuality: FilterQuality.low,
           errorBuilder: (_, __, ___) => Container(
             color: cs.surfaceContainerHighest,
             child: const Icon(Icons.broken_image_rounded),

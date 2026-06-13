@@ -15,13 +15,9 @@ dependencies:
 
   # State management
   flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.3.5
 
   # Navigation
   go_router: ^14.6.2
-
-  # Localization
-  easy_localization: ^3.0.7
 
   # Network
   dio: ^5.7.0
@@ -29,20 +25,18 @@ dependencies:
   # Secure storage
   flutter_secure_storage: ^10.3.1
 
-  # Image processing
-  image: ^4.9.1
-
   # Sharing
   share_plus: ^13.1.0
 
   # QR codes
   qr_flutter: ^4.1.0
 
-  # Fonts (Google Fonts caches locally; will bundle in assets/fonts/ in Phase 8)
+  # Fonts — Fredoka + Nunito are bundled under google_fonts/ and runtime
+  # fetching is disabled in main.dart, so fonts load offline and work in
+  # regions where fonts.gstatic.com is blocked (e.g. China / zh locale).
   google_fonts: ^8.1.0
 
   # Utils
-  intl: ^0.20.2
   path_provider: ^2.1.5
   url_launcher: ^6.3.1
   package_info_plus: ^10.1.0
@@ -55,8 +49,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  riverpod_generator: ^2.4.3
-  build_runner: ^2.4.13
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
 
@@ -67,8 +59,8 @@ flutter:
     - assets/i18n/
     - assets/data/
     - assets/config/
-    - assets/images/
     - assets/icon/
+    - google_fonts/
 
 flutter_launcher_icons:
   android: "ic_launcher"

@@ -7,7 +7,12 @@
     <application
         android:label="Lalabuba"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false">
+        <!-- allowBackup=false: the app stores only a device-id and local
+             settings in secure storage; we don't want those auto-backed-up
+             or transferred between devices. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
