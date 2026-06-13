@@ -23,19 +23,23 @@ function isRateLimited(ip) {
 // ─── Turnstile verification ───────────────────────────────────────────────────
 async function verifyTurnstile(token, ip) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true;          // not configured — skip (dev mode)
+  if (!secret) return true;          // not configured — skip (dev mode only)
   if (!token) return false;
-  try {
-    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ secret, response: token, remoteip: ip }),
-    });
-    const data = await res.json();
-    return data.success === true;
-  } catch {
-    return true; // if Cloudflare is unreachable, don't block users
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ secret, response: token, remoteip: ip }),
+        signal: AbortSignal.timeout(5000),
+      });
+      const data = await res.json();
+      return data.success === true;
+    } catch {
+      if (attempt === 1) return false; // unreachable after a retry → fail closed
+    }
   }
+  return false;
 }
 
 // ─── Email validation ─────────────────────────────────────────────────────────
@@ -71,8 +75,13 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Rate limiting
-  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+  // Rate limiting. Prefer the IP headers Vercel sets itself over the
+  // client-controllable x-forwarded-for (which can be spoofed to dodge limits).
+  const ip = (req.headers['x-real-ip']
+    || req.headers['x-vercel-forwarded-for']?.split(',')[0]
+    || req.headers['x-forwarded-for']?.split(',')[0]
+    || req.socket?.remoteAddress
+    || 'unknown').toString().trim();
   if (isRateLimited(ip)) {
     res.status(429).json({ error: "Too many messages — please wait a while before trying again." });
     return;

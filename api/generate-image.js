@@ -56,21 +56,30 @@ function isRateLimited(ip) {
 }
 
 // ─── Turnstile verification ───────────────────────────────────────────────────
+// Fails CLOSED: if a secret is configured but verification can't succeed (no
+// token, rejected token, or Cloudflare unreachable after one retry) the request
+// is blocked. The previous "unreachable → allow" behaviour let anyone bypass the
+// bot check by making the siteverify call fail. Only an explicitly-unset secret
+// (local dev) skips the check.
 async function verifyTurnstile(token, ip) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true;          // not configured — skip (dev mode)
+  if (!secret) return true;          // not configured — skip (dev mode only)
   if (!token) return false;
-  try {
-    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ secret, response: token, remoteip: ip }),
-    });
-    const data = await res.json();
-    return data.success === true;
-  } catch {
-    return true; // if Cloudflare is unreachable, don't block users
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ secret, response: token, remoteip: ip }),
+        signal: AbortSignal.timeout(5000),
+      });
+      const data = await res.json();
+      return data.success === true;
+    } catch {
+      if (attempt === 1) return false; // unreachable after a retry → fail closed
+    }
   }
+  return false;
 }
 
 const ALLOWED_ORIGINS = [
@@ -101,8 +110,14 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Rate limiting
-  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+  // Rate limiting. Prefer the IP headers Vercel sets itself (x-real-ip /
+  // x-vercel-forwarded-for) over the client-controllable x-forwarded-for,
+  // which a caller can spoof to dodge the per-IP limit.
+  const ip = (req.headers['x-real-ip']
+    || req.headers['x-vercel-forwarded-for']?.split(',')[0]
+    || req.headers['x-forwarded-for']?.split(',')[0]
+    || req.socket?.remoteAddress
+    || 'unknown').toString().trim();
   if (isRateLimited(ip)) {
     res.status(429).json({ error: "Too many requests — please wait a while before trying again." });
     return;
@@ -111,15 +126,28 @@ module.exports = async (req, res) => {
   try {
     const body = req.body || {};
 
-    // Turnstile verification — skip for native app origins.
-    // Flutter Dio sends no Origin header; it does send X-Device-ID.
-    // Browsers always send Origin for cross-origin requests.
-    const isNative = !origin
-      || !!req.headers['x-device-id']
-      || origin === 'capacitor://localhost'
-      || origin === 'ionic://localhost'
-      || origin === 'https://localhost';
-    if (!isNative) {
+    // Native vs. web classification.
+    //
+    // A native request is one with no web Origin (Flutter's Dio sends none) or
+    // an explicit native WebView origin. Crucially, X-Device-ID is NO LONGER a
+    // bypass — a browser script could set that header at will to skip the bot
+    // check, so the Turnstile gate now applies to every request carrying a web
+    // Origin regardless of any custom headers.
+    const NATIVE_ORIGINS = ['capacitor://localhost', 'ionic://localhost', 'https://localhost'];
+    const isNative = !origin || NATIVE_ORIGINS.includes(origin);
+
+    if (isNative) {
+      // Optional app-key gate for native callers. When APP_API_KEY is set in the
+      // environment, native requests must present a matching X-App-Key header
+      // (the Flutter build injects it via --dart-define). This closes the
+      // "curl with no Origin skips every check" hole. If APP_API_KEY is unset
+      // the gate is inactive, preserving the current behaviour.
+      const appKey = process.env.APP_API_KEY;
+      if (appKey && req.headers['x-app-key'] !== appKey) {
+        res.status(403).json({ error: "Request blocked — please update the app and try again." });
+        return;
+      }
+    } else {
       const ok = await verifyTurnstile(body.turnstileToken, ip);
       if (!ok) {
         res.status(403).json({ error: "Bot check failed — please try again." });
@@ -179,6 +207,11 @@ module.exports = async (req, res) => {
     res.setHeader("Access-Control-Expose-Headers", exposedHeaders.join(", "));
     res.status(200).send(generated.buffer);
   } catch (error) {
-    res.status(500).json({ error: error.message || "Image generation failed." });
+    // Log the real error server-side; never echo provider URLs, status bodies,
+    // or stack details (which may contain keys/internal hosts) to the client.
+    console.error("generate-image error:", error && error.message ? error.message : error);
+    res.status(500).json({
+      error: "The drawing service is busy right now — please try again in a moment! 🎨",
+    });
   }
 };

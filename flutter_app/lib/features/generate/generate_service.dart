@@ -10,6 +10,12 @@ import 'generate_models.dart';
 class GenerateService {
   final Dio _dio;
 
+  // Optional shared key gating the native API path. Injected at build time via
+  // --dart-define=APP_API_KEY=... and matched server-side against APP_API_KEY.
+  // Empty by default, so the X-App-Key header is simply omitted until both
+  // sides are configured (the server gate is inactive when its env is unset).
+  static const String _appApiKey = String.fromEnvironment('APP_API_KEY');
+
   GenerateService(AppConfig config)
       : _dio = Dio(BaseOptions(
           baseUrl: config.generateUrl.replaceFirst('/api/generate-image', ''),
@@ -46,6 +52,7 @@ class GenerateService {
           headers: {
             'Content-Type': 'application/json',
             'X-Device-ID': deviceId,
+            if (_appApiKey.isNotEmpty) 'X-App-Key': _appApiKey,
           },
         ),
       );

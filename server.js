@@ -130,7 +130,8 @@ const server = http.createServer(async (req, res) => {
       });
       res.end(result.buffer);
     } catch (error) {
-      sendJson(res, 500, { error: error.message || "Image generation failed." });
+      console.error("generate-image error:", error && error.message ? error.message : error);
+      sendJson(res, 500, { error: "The drawing service is busy right now — please try again in a moment! 🎨" });
     }
     return;
   }
@@ -143,6 +144,11 @@ const server = http.createServer(async (req, res) => {
   sendJson(res, 405, { error: "Method not allowed." });
 });
 
-server.listen(PORT, () => {
-  console.log(`Valepic listening on http://localhost:${PORT}`);
+// This is the LOCAL DEV server only — production traffic is served by Vercel's
+// api/generate-image.js (with rate limiting + Turnstile). Bind to loopback by
+// default so a dev box never accidentally exposes the unprotected generator to
+// the network; set HOST=0.0.0.0 explicitly if you really need LAN access.
+const HOST = process.env.HOST || "127.0.0.1";
+server.listen(PORT, HOST, () => {
+  console.log(`Lalabuba dev server listening on http://${HOST}:${PORT}`);
 });
