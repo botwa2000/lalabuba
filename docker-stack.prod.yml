@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  app:
+    image: lalabuba:prod
+    ports:
+      - "3020:3000"
+    environment:
+      APP_ENV: prod
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3000"
+      IMAGE_PROVIDER: huggingface
+    secrets:
+      - lalabuba_prod_DATABASE_URL
+      - lalabuba_prod_HF_TOKEN
+      - lalabuba_prod_NOVITA_API_KEY
+      - lalabuba_prod_CF_ACCOUNT_ID
+      - lalabuba_prod_CF_API_TOKEN
+      - lalabuba_prod_TURNSTILE_SECRET_KEY
+      - lalabuba_prod_BLOB_READ_WRITE_TOKEN
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+secrets:
+  lalabuba_prod_DATABASE_URL: { external: true }
+  lalabuba_prod_HF_TOKEN: { external: true }
+  lalabuba_prod_NOVITA_API_KEY: { external: true }
+  lalabuba_prod_CF_ACCOUNT_ID: { external: true }
+  lalabuba_prod_CF_API_TOKEN: { external: true }
+  lalabuba_prod_TURNSTILE_SECRET_KEY: { external: true }
+  lalabuba_prod_BLOB_READ_WRITE_TOKEN: { external: true }
