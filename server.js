@@ -3,10 +3,16 @@ const fs = require("fs");
 const path = require("path");
 const { URL } = require("url");
 
-const { sanitizeSubject, isSafeSubject } = require("./lib/content-safety");
-const { buildPrompt, generateImage } = require("./lib/image-providers");
+// Production + local server for Lalabuba on Hetzner (Docker Swarm).
+//
+// Single source of request logic: the route handlers in ./api/* are reused
+// verbatim. They were written for Vercel's (req,res) shape, so we add a thin
+// Express-like shim (req.body, res.status().json().send()) on top of Node's raw
+// http req/res and dispatch to them. Secrets arrive as env vars, injected by
+// docker-entrypoint.sh from Docker Swarm secrets (never on disk / in the image).
 
-// Load .env file if present (no extra packages needed)
+// Load .env for LOCAL dev only (no extra packages). In the container all config
+// comes from the environment (Swarm secrets), so a missing .env is expected.
 try {
   const envText = fs.readFileSync(path.join(__dirname, ".env"), "utf8");
   for (const line of envText.split(/\r?\n/)) {
@@ -21,22 +27,63 @@ try {
 } catch { /* .env is optional */ }
 
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || "127.0.0.1"; // container sets HOST=0.0.0.0
 const PUBLIC_DIR = path.join(__dirname, "public");
-const IMAGE_PROVIDER = process.env.IMAGE_PROVIDER || "huggingface";
-const HF_TOKEN = process.env.HF_TOKEN;
-const HF_MODEL = process.env.HF_MODEL || "black-forest-labs/FLUX.1-schnell";
+
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
   ".svg": "image/svg+xml",
+  ".woff2": "font/woff2",
+  ".webmanifest": "application/manifest+json",
+  ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
 };
+
+// Route handlers (reused as-is; require ../lib/* relative to ./api).
+const generateHandler = require("./api/generate-image.js");
+const contactHandler = require("./api/contact.js");
 
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(payload));
+}
+
+// Adapt a Node http response to the subset of the Vercel/Express API the
+// handlers use: res.status(code).json(obj) / .send(buf) / .end().
+function enhanceRes(res) {
+  res.status = (code) => { res.statusCode = code; return res; };
+  res.json = (obj) => {
+    if (!res.headersSent && !res.getHeader("Content-Type")) {
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+    }
+    res.end(JSON.stringify(obj));
+    return res;
+  };
+  res.send = (body) => { res.end(body); return res; };
+  return res;
+}
+
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 1_000_000) reject(new Error("Request body too large."));
+    });
+    req.on("end", () => {
+      try { resolve(body ? JSON.parse(body) : {}); }
+      catch { reject(new Error("Invalid JSON body.")); }
+    });
+    req.on("error", reject);
+  });
 }
 
 function serveStaticFile(req, res, pathname) {
@@ -51,17 +98,15 @@ function serveStaticFile(req, res, pathname) {
 
   fs.readFile(absolutePath, (error, contents) => {
     if (error) {
-      if (error.code === "ENOENT") {
+      if (error.code === "ENOENT" || error.code === "EISDIR") {
         sendJson(res, 404, { error: "Not found" });
         return;
       }
-
       sendJson(res, 500, { error: "Failed to read static file." });
       return;
     }
-
     const extension = path.extname(absolutePath);
-    const noCache = [".js", ".css", ".html"].includes(extension);
+    const noCache = [".js", ".css", ".html", ".webmanifest"].includes(extension);
     res.writeHead(200, {
       "Content-Type": MIME_TYPES[extension] || "application/octet-stream",
       ...(noCache ? { "Cache-Control": "no-store" } : {}),
@@ -70,85 +115,43 @@ function serveStaticFile(req, res, pathname) {
   });
 }
 
-function readJsonBody(req) {
-  return new Promise((resolve, reject) => {
-    let body = "";
-
-    req.on("data", (chunk) => {
-      body += chunk;
-      if (body.length > 1_000_000) {
-        reject(new Error("Request body too large."));
-      }
-    });
-
-    req.on("end", () => {
-      try {
-        resolve(body ? JSON.parse(body) : {});
-      } catch {
-        reject(new Error("Invalid JSON body."));
-      }
-    });
-
-    req.on("error", reject);
-  });
-}
-
 const server = http.createServer(async (req, res) => {
-  const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+  enhanceRes(res);
+  let parsedUrl;
+  try { parsedUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`); }
+  catch { return sendJson(res, 400, { error: "Bad request" }); }
+  const p = parsedUrl.pathname;
 
-  if (req.method === "POST" && parsedUrl.pathname === "/api/generate-image") {
+  // Health check (used by the Docker/Swarm healthcheck + deploy script).
+  if (p === "/api/health") {
+    return sendJson(res, 200, { status: "ok" });
+  }
+
+  // API routes — dispatch to the shared handlers.
+  if (p === "/api/generate-image" || p === "/api/contact") {
+    if (req.method === "POST") {
+      try { req.body = await readJsonBody(req); }
+      catch (e) { return res.status(400).json({ error: e.message || "Invalid JSON body." }); }
+    } else {
+      req.body = {};
+    }
+    const handler = p === "/api/contact" ? contactHandler : generateHandler;
     try {
-      const body = await readJsonBody(req);
-      const subject    = sanitizeSubject(body.subject);
-      const difficulty = ["easy", "medium", "hard", "extreme"].includes(body.difficulty) ? body.difficulty : "medium";
-      const width      = [512, 768, 1024].includes(body.width)  ? body.width  : 1024;
-      const height     = [512, 768, 1024].includes(body.height) ? body.height : 1024;
-      const seedRaw    = Number(body.seed);
-      const seed       = (Number.isFinite(seedRaw) && seedRaw > 0) ? Math.floor(seedRaw) : Math.floor(Math.random() * 2_000_000_000);
-
-      if (!subject) {
-        sendJson(res, 400, { error: "Please provide a subject to draw." });
-        return;
-      }
-
-      if (!isSafeSubject(subject)) {
-        sendJson(res, 400, { error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
-        return;
-      }
-
-      const prompt = buildPrompt(subject, difficulty);
-      const result = await generateImage(prompt, width, height, seed, {
-        provider: IMAGE_PROVIDER,
-        hfToken: HF_TOKEN,
-        hfModel: HF_MODEL,
-      });
-      res.writeHead(200, {
-        "Content-Type": result.contentType,
-        "Cache-Control": "no-store",
-        "X-Image-Seed": String(seed),
-        "Access-Control-Expose-Headers": "X-Image-Seed",
-      });
-      res.end(result.buffer);
-    } catch (error) {
-      console.error("generate-image error:", error && error.message ? error.message : error);
-      sendJson(res, 500, { error: "The drawing service is busy right now — please try again in a moment! 🎨" });
+      await handler(req, res);
+    } catch (err) {
+      console.error("handler error:", err && err.message ? err.message : err);
+      if (!res.headersSent) res.status(500).json({ error: "Something went wrong — please try again." });
     }
     return;
   }
 
   if (req.method === "GET") {
-    serveStaticFile(req, res, parsedUrl.pathname);
-    return;
+    return serveStaticFile(req, res, p);
   }
 
   sendJson(res, 405, { error: "Method not allowed." });
 });
 
-// This is the LOCAL DEV server only — production traffic is served by Vercel's
-// api/generate-image.js (with rate limiting + Turnstile). Bind to loopback by
-// default so a dev box never accidentally exposes the unprotected generator to
-// the network; set HOST=0.0.0.0 explicitly if you really need LAN access.
-const HOST = process.env.HOST || "127.0.0.1";
 server.listen(PORT, HOST, () => {
-  console.log(`Lalabuba dev server listening on http://${HOST}:${PORT}`);
+  console.log(`Lalabuba server listening on http://${HOST}:${PORT}`);
 });

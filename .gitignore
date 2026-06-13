@@ -1,4 +1,9 @@
 .env
+.env.*
+# Deploy credentials — never commit. The template .secrets.example is allowed.
+.secrets
+.secrets.*
+!.secrets.example
 node_modules/
 *.log
 .claude/

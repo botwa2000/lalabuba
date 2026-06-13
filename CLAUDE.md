@@ -131,3 +131,43 @@ If any screenshot shows a layout problem: fix it, redeploy, re-run screenshots. 
 
 ### 6. If anything is wrong
 Fix the bug, increment version again, commit, push, wait for deploy, re-run the relevant QA checks. Repeat until clean. Do NOT report done until all checklist items pass.
+
+---
+
+## Deployment — Hetzner (migrated off Vercel)
+
+> Full migration plan: `MIGRATION.md`. Strategy detail: `IMPLEMENTATION_STRATEGY.md`.
+> Server identity, IP, SSH key path, and DB facts are in the **local auto-memory**
+> `project-hetzner-migration.md` (loaded each session) — NOT committed here.
+
+### Where credentials live & how to retrieve them (do this, don't ask the user)
+- **Server SSH:** key path + host + user are in the taxalex project's gitignored
+  `C:\Users\Alexa\taxalex\.secrets` (`HETZNER_HOST`, `HETZNER_USER`, `HETZNER_SSH_KEY`).
+  The same Hetzner box hosts Lalabuba. Connect with that key as that user.
+  **Never `cat` a secrets file** — `grep` only the specific non-secret field
+  (host/user/key-path) you need; never print key/token/password *values*.
+- **App secrets (image providers, Turnstile, etc.):** Lalabuba's gitignored
+  `.env` (repo root). Other shared creds: `C:\Users\Alexa\OneDrive\Dev\bonifatus-secrets\`.
+- **GitHub:** `GITHUB_PAT` in `bonifatus-secrets\lalabubacreds.txt`; dedicated
+  GitHub SSH key (separate from the server key) for pushes.
+- **Cloudflare DNS:** needs a DNS-edit-scoped API token for the `lalabuba.com`
+  zone (the token in `.env` is invalid). Ask the user once if missing.
+
+### Secret model (never expose creds)
+- **Runtime secrets = Docker Swarm secrets**, prefix `lalabuba_{env}_`, mounted at
+  `/run/secrets/`, loaded by `docker-entrypoint.sh` (strip prefix → export →
+  `node server.js`). Never in the image, on-disk env files, the repo, or any `.md`.
+- **Source of master values = 1Password/Bitwarden CLI** (injected to memory per
+  deploy run; piped to `docker secret create` over **stdin**). Until `op`/`bw` is
+  installed, bootstrap from a chmod-600 gitignored `.secrets` and migrate later.
+- **Non-secret runtime config** (caps/flags/tiers) → the Postgres config record
+  edited via the admin panel, not env.
+
+### One-command deploy (Windows-safe)
+- `scripts/deploy.sh push "msg"` — commit + push (GitHub key).
+- `scripts/deploy.sh dev|prod` — pull → build → `docker stack deploy` → force
+  update → health-check on the server (`prod` requires typed `deploy` confirm).
+  Runs a repo `scripts/remote-deploy.sh` over SSH (no fragile heredoc).
+- `scripts/deploy.sh secrets [dev|prod]` — sync Swarm secrets from the source.
+- CI/CD: GitHub Actions — push to `dev` auto-deploys dev; `prod` = manual,
+  protected workflow. Ports: lalabuba prod/dev = 3020/3021, admin = 3030.
