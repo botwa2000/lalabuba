@@ -7,3 +7,7 @@ codemagic.yaml text eol=lf
 *.html text eol=lf
 *.swift text eol=lf
 *.pbxproj text eol=lf
+# Shell scripts + Docker entrypoint must be LF (CRLF breaks the Linux shebang)
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf
+Dockerfile text eol=lf
