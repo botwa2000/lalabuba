@@ -6,6 +6,9 @@
     { "src": "public/**",             "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "/(.*)\\.(png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf)", "headers": { "Cache-Control": "public, max-age=2592000" }, "continue": true },
+    { "src": "/(.*)\\.(css|js)", "headers": { "Cache-Control": "public, max-age=86400, must-revalidate" }, "continue": true },
+    { "src": "/(.*)\\.html", "headers": { "Cache-Control": "public, max-age=0, must-revalidate" }, "continue": true },
     { "src": "/api/generate-image", "dest": "/api/generate-image.js" },
     { "src": "/api/contact",        "dest": "/api/contact.js" },
     { "src": "/privacy",            "dest": "/public/privacy.html" },

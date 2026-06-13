@@ -15,5 +15,8 @@ export const clearPencilBtn = document.getElementById("clear-pencil-button");
 export const legendList = document.getElementById("legend-list");
 export const colorCountSelect = document.getElementById("color-count-select");
 export const debugPanel = document.getElementById("debug-panel");
-export const context = previewCanvas.getContext("2d", { willReadFrequently: true });
-export const drawCtx = drawCanvas.getContext("2d");
+// Guard getContext: on any page that loads this module without the canvases
+// present (or before they exist), calling getContext on null would throw at
+// import time and break the whole bundle. Degrade to null instead.
+export const context = previewCanvas?.getContext("2d", { willReadFrequently: true }) ?? null;
+export const drawCtx = drawCanvas?.getContext("2d") ?? null;

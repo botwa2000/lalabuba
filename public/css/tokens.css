@@ -103,3 +103,24 @@ body {
 :root[data-theme="dark"] #preview-canvas,
 :root[data-theme="dark"] #draw-canvas { background: #fff; }
 :root[data-theme="dark"] .preview-stage { background: #2a2040; }
+
+/* ── Global keyboard-focus visibility (a11y) ──────────────────────────────
+   Only shows the ring for keyboard navigation (:focus-visible), not on mouse
+   clicks, so it doesn't add visual noise for pointer users. Applies app-wide
+   on top of any component-specific :focus styles. */
+:focus-visible {
+  outline: 3px solid var(--purple, #7c4dff);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* Don't double up when a control already draws its own focus treatment and
+   we explicitly remove the default outline elsewhere. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--purple, #7c4dff);
+  outline-offset: 2px;
+}
