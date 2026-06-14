@@ -349,16 +349,27 @@
   .logo        { font-size: 1.5rem; letter-spacing: 0.01em; }
 }
 
-/* Small phones: logo at default 3.2rem overflows 355px content width — shrink to fit */
+/* Small phones: logo must clear the top-left hamburger AND top-right
+   journal+gear cluster. Sized so the centered wordmark leaves both corners free. */
 @media (max-width: 480px) {
-  .logo-mascot { height: 2.4rem; }
-  .logo        { font-size: 2.6rem; letter-spacing: 0.03em; }
+  .logo-mascot { height: 2rem; }
+  .logo        { font-size: 2.1rem; letter-spacing: 0.02em; }
 }
 
-/* Very small phones (≤360px, content only 344px): 2.6rem still overflows — shrink further */
+/* Very small phones (≤360px): shrink further so the corners stay clear */
 @media (max-width: 360px) {
-  .logo-mascot { height: 2rem; }
-  .logo        { font-size: 2.2rem; letter-spacing: 0.02em; }
+  .logo-mascot { height: 1.6rem; }
+  .logo        { font-size: 1.8rem; letter-spacing: 0.01em; }
+}
+
+/* Mobile: compact corner cluster. The days-colored pill would crowd the
+   centered logo, so it's desktop-only; the streak still surfaces in the
+   completion celebration on every device. The Journal icon (+ its dot)
+   stays as the always-visible collection affordance. */
+@media (max-width: 767px) {
+  .top-actions { right: 48px; gap: 6px; }
+  .top-action-btn { width: 34px; height: 34px; font-size: 1.05rem; }
+  .days-colored-pill { display: none !important; }
 }
 
 .tagline {
