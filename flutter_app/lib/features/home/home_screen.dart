@@ -357,11 +357,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           );
         }),
-        IconButton(
-          icon: const Icon(Icons.photo_library_rounded),
-          tooltip: l10n.t('galleryBtn'),
-          onPressed: () => context.pushNamed('gallery'),
-        ),
+        // Rewards discoverability (parity with web): for a brand-new child
+        // (0 completions) the streak pill + count badge are both empty, so the
+        // Journal would be invisible. Surface a tiny "🏆 Earn stickers!" teaser
+        // that opens the gallery; once they finish their first picture the
+        // count badge below takes over and the teaser disappears.
+        Builder(builder: (_) {
+          final p = ref.watch(progressProvider).valueOrNull;
+          final done = p?.totalCompleted ?? 0;
+          if (done > 0) return const SizedBox.shrink();
+          return Center(
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                context.pushNamed('gallery');
+              },
+              child: Container(
+                margin: const EdgeInsets.only(right: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [Color(0xFFFFE0B2), Color(0xFFFFD166)]),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Text(
+                  l10n.t('rewardsTeaser'),
+                  style: GoogleFonts.fredoka(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF7A4F00)),
+                ),
+              ),
+            ),
+          );
+        }),
+        // Journal/Gallery icon with a masterpiece-count badge (parity with web):
+        // shows totalCompleted once > 0, hidden at 0 (teaser above covers that).
+        Builder(builder: (_) {
+          final p = ref.watch(progressProvider).valueOrNull;
+          final done = p?.totalCompleted ?? 0;
+          final btn = IconButton(
+            icon: const Icon(Icons.photo_library_rounded),
+            tooltip: l10n.t('galleryBtn'),
+            onPressed: () => context.pushNamed('gallery'),
+          );
+          if (done <= 0) return btn;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              btn,
+              Positioned(
+                right: 4,
+                top: 6,
+                child: Container(
+                  constraints:
+                      const BoxConstraints(minWidth: 18, minHeight: 18),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: cs.primary,
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(color: cs.surface, width: 1.5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      done > 99 ? '99+' : '$done',
+                      style: GoogleFonts.fredoka(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: cs.onPrimary,
+                          height: 1.1),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
         IconButton(
           icon: const Icon(Icons.settings_rounded),
           tooltip: l10n.t('settingsTitle'),

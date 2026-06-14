@@ -63,8 +63,11 @@ class GalleryScreen extends ConsumerWidget {
     final progress = ref.watch(progressProvider).valueOrNull ?? const Progress();
     final earned = progress.badges.toSet();
 
+    final isEmpty = progress.totalCompleted == 0;
     final statsText = () {
-      if (progress.totalCompleted == 0) return '';
+      // Brand-new child (no completions): show an encouraging line instead of a
+      // blank header, so the Journal explains what it's for (parity with web).
+      if (isEmpty) return l10n.t('journalEmpty');
       final base =
           l10n.t('celebMasterpieces', {'count': '${progress.totalCompleted}'});
       final streak = progress.streak > 1
@@ -72,6 +75,26 @@ class GalleryScreen extends ConsumerWidget {
           : '';
       return '$base$streak';
     }();
+
+    // "Next sticker" hint: closest unreached count milestone (parity with web).
+    // Milestones mirror kBadges' count thresholds 1/5/10/25/50; hidden past 50.
+    const milestones = <(int, String)>[
+      (1, '🌟'),
+      (5, '🖐️'),
+      (10, '🔟'),
+      (25, '🎨'),
+      (50, '🏆'),
+    ];
+    String? nextHint;
+    for (final m in milestones) {
+      if (progress.totalCompleted < m.$1) {
+        nextHint = l10n.t('journalNext', {
+          'count': '${m.$1 - progress.totalCompleted}',
+          'emoji': m.$2,
+        });
+        break;
+      }
+    }
 
     return Container(
       width: double.infinity,
@@ -90,7 +113,12 @@ class GalleryScreen extends ConsumerWidget {
               child: Text(
                 statsText,
                 style: GoogleFonts.fredoka(
-                    fontSize: 15, fontWeight: FontWeight.w700),
+                  fontSize: isEmpty ? 14 : 15,
+                  fontWeight: FontWeight.w700,
+                  color: isEmpty
+                      ? cs.onSurface.withValues(alpha: 0.7)
+                      : cs.onSurface,
+                ),
               ),
             ),
           SizedBox(
@@ -143,6 +171,18 @@ class GalleryScreen extends ConsumerWidget {
               },
             ),
           ),
+          if (nextHint != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                nextHint,
+                style: GoogleFonts.nunito(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: cs.onSurface.withValues(alpha: 0.65),
+                ),
+              ),
+            ),
         ],
       ),
     );
