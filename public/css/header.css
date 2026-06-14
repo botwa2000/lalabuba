@@ -175,6 +175,66 @@
 /* ─── Settings (⚙️) menu — holds Theme, Language, How-to-play ─────────────── */
 .settings-wrap { position: absolute; top: 8px; right: 12px; z-index: 60; }
 @media (min-width: 768px) { .settings-wrap { top: 14px; right: 22px; } }
+
+/* ─── Top-right action cluster: Journal + days-colored pill ──────────────── */
+.top-actions {
+  position: absolute;
+  top: 8px;
+  right: 60px;            /* sits just left of the 40px gear at right:12px */
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (min-width: 768px) { .top-actions { top: 14px; right: 72px; } }
+
+.top-action-btn {
+  position: relative;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 1.15rem;
+  cursor: pointer;
+  box-shadow: var(--sh-sm);
+  transition: transform .18s, border-color .18s;
+}
+.top-action-btn:hover { border-color: var(--purple); transform: translateY(-2px); }
+
+/* "New sticker waiting" dot */
+.journal-dot {
+  position: absolute;
+  top: -2px; right: -2px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid var(--card);
+  animation: journalDotPulse 1.6s ease-in-out infinite;
+}
+.journal-dot[hidden] { display: none; }
+@keyframes journalDotPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.35); } }
+
+/* Days-colored streak pill (🌱 N) */
+.days-colored-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #d4fc79, #96e6a1);
+  color: #1f6f43;
+  font-family: var(--ff-brand);
+  font-weight: 800;
+  font-size: .95rem;
+  border: 2px solid #7fc99a;
+  box-shadow: var(--sh-sm);
+  white-space: nowrap;
+}
+.days-colored-pill[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) { .journal-dot { animation: none; } }
 .settings-toggle-btn {
   width: 40px; height: 40px;
   display: flex; align-items: center; justify-content: center;

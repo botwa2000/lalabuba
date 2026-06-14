@@ -4,6 +4,7 @@ import { subjectInput, difficultySelect, providerSelect } from './dom.js';
 import { setStatus, showLoading, hideLoading, activePalette, showCanvasError } from './ui.js';
 import { renderGeneratedImage } from './canvas.js';
 import { SIZE_DIMS } from './data.js';
+import { recordGeneration } from './progress.js';
 
 export function svgDataUrl(svg) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
@@ -112,6 +113,7 @@ export async function generatePage(subject, seedOverride = null, isPreDefined = 
   try {
     const imageUrl = await requestGeneratedImage(subject, difficulty, seedOverride, isPreDefined);
     await renderGeneratedImage(imageUrl);
+    try { recordGeneration(); } catch { /* progress is best-effort */ }
     // Clear undo stack for new image
     state.undoStack = [];
     const undoBtn = document.getElementById('undo-button');

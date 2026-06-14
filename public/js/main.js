@@ -1,7 +1,8 @@
 import { state, DEBUG } from './state.js';
 import { PALETTES, EXAMPLE_SUGGESTIONS, randomCardSubject, getDailyChallenge, getTranslatedDailyWord, getSemanticPaletteOrder } from './data.js';
 import { sanitizeSubject, isSafeSubject } from './data.js';
-import { saveArtwork, initGalleryHandlers } from './gallery.js';
+import { saveArtwork, initGalleryHandlers, openGalleryModal } from './gallery.js';
+import { recordCompletion, getProgress } from './progress.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
 import {
   form, subjectInput, showNumbersInput, difficultySelect, providerSelect,
@@ -30,13 +31,72 @@ function formatTime(ms) {
   return `${m}:${String(sec).padStart(2,'0')}`;
 }
 
+// ─── Journal badge dot + days-colored pill ──────────────────────────────────
+const JOURNAL_DIRTY_KEY = 'lalabuba-journal-dirty';
+
+function markJournalDirty() {
+  try { localStorage.setItem(JOURNAL_DIRTY_KEY, '1'); } catch {}
+  const dot = document.getElementById('journal-dot');
+  if (dot) dot.hidden = false;
+}
+
+function clearJournalDirty() {
+  try { localStorage.removeItem(JOURNAL_DIRTY_KEY); } catch {}
+  const dot = document.getElementById('journal-dot');
+  if (dot) dot.hidden = true;
+}
+
+function refreshDaysColoredPill() {
+  const pill = document.getElementById('days-colored-pill');
+  if (!pill) return;
+  let days = 0;
+  try { days = getProgress().daysColored || 0; } catch {}
+  if (days > 0) {
+    pill.textContent = t('daysColoredPill', days);
+    pill.hidden = false;
+  } else {
+    pill.hidden = true;
+  }
+}
+
 function checkCompletion() {
   if (state.celebrationShown || !showNumbersInput.checked || !state.regionColorMap || state.regionColorMap.size === 0) return;
   if ([...state.regionColorMap.keys()].every((id) => state.completedRegions.has(id))) {
     state.celebrationShown = true;
+    const subjectText = subjectInput.value.trim() || '?';
     const elapsed = state.coloringStartTime ? Date.now() - state.coloringStartTime : 0;
     const timeEl = document.getElementById("celebration-time");
     if (timeEl) timeEl.textContent = elapsed > 0 ? t('celebTime', formatTime(elapsed)) : '';
+
+    // Record progress (anonymous, local) and reveal any newly-earned sticker + stats.
+    let progressResult = { progress: null, newBadges: [] };
+    try { progressResult = recordCompletion({ subject: subjectText, difficulty: difficultySelect.value }); } catch {}
+    const { progress, newBadges } = progressResult;
+
+    const journalEl = document.getElementById("celebration-journal");
+    if (journalEl) journalEl.textContent = t('celebJournalSaved');
+    const statsEl = document.getElementById("celebration-stats");
+    if (statsEl && progress) statsEl.textContent = t('celebStats', progress.totalCompleted, progress.streak);
+
+    const stickerEl = document.getElementById("celebration-sticker");
+    if (stickerEl) {
+      if (newBadges && newBadges.length) {
+        const b = newBadges[0]; // reveal the most significant new sticker
+        const emoji = document.getElementById("sticker-emoji");
+        const title = document.getElementById("sticker-title");
+        const desc  = document.getElementById("sticker-desc");
+        if (emoji) emoji.textContent = b.emoji;
+        if (title) title.textContent = t(`badge${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}Title`);
+        if (desc)  desc.textContent  = t(`badge${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}Desc`);
+        stickerEl.hidden = false;
+        markJournalDirty(); // new sticker waiting → badge dot on the Journal icon
+      } else {
+        stickerEl.hidden = true;
+      }
+    }
+    markJournalDirty(); // a new masterpiece is always waiting in the Journal
+    refreshDaysColoredPill();
+
     document.getElementById("celebration").classList.remove("hidden");
     document.getElementById("celebration").setAttribute("aria-hidden", "false");
     // Auto-save completed artwork to local gallery (with restoration data)
@@ -477,17 +537,46 @@ if (shareArtworkBtn) {
   });
 }
 
-// ─── Celebration buttons ─────────────────────────────────────────────────────
-document.getElementById("celebration-keep").addEventListener("click", () => {
-  document.getElementById("celebration").classList.add("hidden");
-  document.getElementById("celebration").setAttribute("aria-hidden", "true");
+// ─── Celebration "what-next" loop ────────────────────────────────────────────
+function closeCelebration() {
+  const c = document.getElementById("celebration");
+  c.classList.add("hidden");
+  c.setAttribute("aria-hidden", "true");
+  // Reset the one-shot sticker reveal for the next completion.
+  const sticker = document.getElementById("celebration-sticker");
+  if (sticker) sticker.hidden = true;
+}
+
+// Keep coloring: dismiss and stay on the finished picture.
+document.getElementById("celebration-keep").addEventListener("click", closeCelebration);
+
+// Again: same subject, new picture — closes the loop straight back to creation.
+document.getElementById("celebration-again").addEventListener("click", () => {
+  closeCelebration();
+  const regen = document.getElementById("regen-button");
+  if (regen && !regen.disabled) regen.click();
 });
 
+// New: clear the subject and return to the create surface.
 document.getElementById("celebration-new").addEventListener("click", () => {
-  document.getElementById("celebration").classList.add("hidden");
-  document.getElementById("celebration").setAttribute("aria-hidden", "true");
+  closeCelebration();
   subjectInput.value = "";
+  document.querySelector('.app')?.classList.add('app-hero');
   subjectInput.focus();
+});
+
+// Share: reuse the existing share-artwork action (the growth engine).
+document.getElementById("celebration-share").addEventListener("click", () => {
+  closeCelebration();
+  const shareBtn = document.getElementById("share-artwork-btn");
+  if (shareBtn && !shareBtn.disabled) shareBtn.click();
+});
+
+// Print: reuse the existing print action.
+document.getElementById("celebration-print").addEventListener("click", () => {
+  closeCelebration();
+  const printBtn = document.getElementById("print-button");
+  if (printBtn) printBtn.click(); else window.print();
 });
 
 // ─── Difficulty pills ─────────────────────────────────────────────────────────
@@ -1165,6 +1254,25 @@ async function continueArtwork(item) {
 }
 
 initGalleryHandlers(continueArtwork);
+
+// ─── Journal access + progress affordances ───────────────────────────────────
+(function initJournalAffordances() {
+  const journalBtn = document.getElementById('journal-btn');
+  if (journalBtn) {
+    journalBtn.addEventListener('click', () => {
+      clearJournalDirty();
+      openGalleryModal(continueArtwork);
+    });
+  }
+  // Restore the "new sticker waiting" dot across sessions.
+  let dirty = false;
+  try { dirty = localStorage.getItem(JOURNAL_DIRTY_KEY) === '1'; } catch {}
+  if (dirty) {
+    const dot = document.getElementById('journal-dot');
+    if (dot) dot.hidden = false;
+  }
+  refreshDaysColoredPill();
+})();
 
 // ─── Hero suggestion cards ────────────────────────────────────────────────────
 const CARD_GRADIENTS = [

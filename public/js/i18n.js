@@ -22,6 +22,25 @@ const TRANSLATIONS = {
     celebTitle: "Well done!", celebMsg: "You colored the whole picture!",
     celebTime: (t) => `⏱ Your time: ${t}`,
     celebKeep: "Keep coloring", celebNew: "Make a new one",
+    // Completion "what-next" loop
+    celebAgain: "🎲 Again", celebShare: "🖼️ Share", celebPrint: "🖨️ Print",
+    celebJournalSaved: "✨ Added to your Journal!",
+    celebStats: (count, streak) => streak > 1
+      ? `🎨 ${count} masterpieces · 🔥 ${streak}-day streak!`
+      : `🎨 ${count} ${count === 1 ? 'masterpiece' : 'masterpieces'} so far!`,
+    celebNewSticker: "New sticker unlocked!",
+    daysColoredPill: (n) => `🌱 ${n}`,
+    // Badge / sticker names + descriptions (id-keyed)
+    badgeFirstTitle: "First Masterpiece", badgeFirstDesc: "You colored your very first picture!",
+    badgeFiveTitle: "High Five", badgeFiveDesc: "5 pictures colored!",
+    badgeTenTitle: "Perfect Ten", badgeTenDesc: "10 pictures colored!",
+    badgeTwentyfiveTitle: "Little Artist", badgeTwentyfiveDesc: "25 pictures colored!",
+    badgeFiftyTitle: "Master Colorer", badgeFiftyDesc: "50 pictures colored!",
+    badgeStreak3Title: "On Fire", badgeStreak3Desc: "Colored 3 days in a row!",
+    badgeStreak7Title: "Lightning", badgeStreak7Desc: "Colored 7 days in a row!",
+    badgeStreak30Title: "Coloring Champion", badgeStreak30Desc: "Colored 30 days in a row!",
+    badgeExplorerTitle: "Explorer", badgeExplorerDesc: "Colored 10 different things!",
+    badgeRainbowTitle: "Brave Artist", badgeRainbowDesc: "Finished a hard picture!",
     eraseMode: "Erase mode — click a colored area to clear it.",
     selected: (name) => `Selected: ${name}. Click the picture to fill! 🎨`,
     filled: (name) => `Filled with ${name}.`,

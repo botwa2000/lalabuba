@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=187" />
-  <link rel="stylesheet" href="/css/header.css?v=187" />
-  <link rel="stylesheet" href="/css/hero.css?v=187" />
-  <link rel="stylesheet" href="/css/generator.css?v=187" />
-  <link rel="stylesheet" href="/css/layout.css?v=187" />
-  <link rel="stylesheet" href="/css/workspace.css?v=187" />
-  <link rel="stylesheet" href="/css/palette.css?v=187" />
-  <link rel="stylesheet" href="/css/modals.css?v=187" />
-  <link rel="stylesheet" href="/css/footer.css?v=187" />
-  <link rel="stylesheet" href="/css/print.css?v=187" />
-  <link rel="stylesheet" href="/css/cookies.css?v=187" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=187" />
-  <script src="/js/cookies.js?v=187"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=188" />
+  <link rel="stylesheet" href="/css/header.css?v=188" />
+  <link rel="stylesheet" href="/css/hero.css?v=188" />
+  <link rel="stylesheet" href="/css/generator.css?v=188" />
+  <link rel="stylesheet" href="/css/layout.css?v=188" />
+  <link rel="stylesheet" href="/css/workspace.css?v=188" />
+  <link rel="stylesheet" href="/css/palette.css?v=188" />
+  <link rel="stylesheet" href="/css/modals.css?v=188" />
+  <link rel="stylesheet" href="/css/footer.css?v=188" />
+  <link rel="stylesheet" href="/css/print.css?v=188" />
+  <link rel="stylesheet" href="/css/cookies.css?v=188" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=188" />
+  <script src="/js/cookies.js?v=188"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -196,6 +196,14 @@
         <button id="help-btn" class="settings-menu-item help-btn" type="button" role="menuitem" data-i18n="helpBtn">❓ How it works</button>
         </div><!-- /settings-menu -->
       </div><!-- /settings-wrap -->
+
+      <!-- Always-visible right cluster: Journal (collection) + days-colored streak -->
+      <div class="top-actions">
+        <span id="days-colored-pill" class="days-colored-pill" hidden aria-label="Days colored"></span>
+        <button id="journal-btn" class="top-action-btn" type="button" aria-label="My Journal" title="My Journal">
+          🖼️<span id="journal-dot" class="journal-dot" hidden aria-hidden="true"></span>
+        </button>
+      </div>
       <a class="logo-lockup" href="/" aria-label="Lalabuba — home">
         <img src="/logo.png" alt="" class="logo-mascot" aria-hidden="true" width="240" height="160" />
         <h1 class="logo" aria-label="Lalabuba">
@@ -494,15 +502,36 @@
   </div>
 
   <div id="celebration" class="celebration hidden" aria-hidden="true" role="dialog" aria-labelledby="celeb-title">
+    <div class="celebration-confetti" aria-hidden="true"></div>
     <div class="celebration-card">
       <div class="celebration-art">🎨</div>
       <h2 id="celeb-title" data-i18n="celebTitle">Well done!</h2>
       <p data-i18n="celebMsg">You colored the whole picture!</p>
       <p id="celebration-time" class="celebration-time"></p>
-      <div class="celebration-actions">
-        <button id="celebration-keep" type="button" data-i18n="celebKeep">Keep coloring</button>
-        <button id="celebration-new"  type="button" data-i18n="celebNew">Make a new one</button>
+
+      <!-- Sticker reveal — shown only when a new badge was just earned -->
+      <div id="celebration-sticker" class="celebration-sticker" hidden>
+        <div class="sticker-burst" aria-hidden="true"></div>
+        <div class="sticker-emoji" id="sticker-emoji"></div>
+        <div class="sticker-text">
+          <div class="sticker-eyebrow" data-i18n="celebNewSticker">New sticker unlocked!</div>
+          <div class="sticker-title" id="sticker-title"></div>
+          <div class="sticker-desc" id="sticker-desc"></div>
+        </div>
       </div>
+
+      <!-- Journal confirmation + running stats -->
+      <p id="celebration-journal" class="celebration-journal"></p>
+      <p id="celebration-stats" class="celebration-stats"></p>
+
+      <!-- What-next loop: closes back to creation -->
+      <div class="celebration-actions celebration-whatnext">
+        <button id="celebration-again"  type="button" class="wn-btn wn-primary" data-i18n="celebAgain">🎲 Again</button>
+        <button id="celebration-new"    type="button" class="wn-btn" data-i18n="celebNew">Make a new one</button>
+        <button id="celebration-share"  type="button" class="wn-btn" data-i18n="celebShare">🖼️ Share</button>
+        <button id="celebration-print"  type="button" class="wn-btn" data-i18n="celebPrint">🖨️ Print</button>
+      </div>
+      <button id="celebration-keep" type="button" class="celebration-keep-link" data-i18n="celebKeep">Keep coloring</button>
     </div>
   </div>
 
@@ -657,7 +686,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=187"></script>
+  <script type="module" src="/js/main.js?v=188"></script>
 </body>
 </html>
 

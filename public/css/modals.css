@@ -41,6 +41,7 @@
   animation: celebFadeIn .25s ease;
 }
 .celebration.hidden { display: none; }
+.celebration-confetti { position: absolute; inset: 0; pointer-events: none; }
 
 .celebration-card {
   background: var(--card);
@@ -71,21 +72,82 @@
 }
 .celebration-time:empty { display: none; }
 .celebration-actions { display: flex; gap: 12px; margin-top: 26px; justify-content: center; flex-wrap: wrap; }
-.celebration-actions button {
+
+/* ── Sticker reveal (only present when a new badge was just earned) ── */
+.celebration-sticker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 22px auto 4px;
+  padding: 14px 20px;
+  max-width: 320px;
+  background: linear-gradient(135deg, #fff7e0, #ffe6f2);
+  border: 2px solid #ffd166;
+  border-radius: 20px;
+  text-align: left;
+  animation: stickerIn .5s cubic-bezier(.34,1.56,.64,1);
+}
+.celebration-sticker[hidden] { display: none; }
+.sticker-emoji { font-size: 3rem; line-height: 1; flex-shrink: 0; animation: floatIcon 2s ease-in-out infinite; }
+.sticker-eyebrow { font-family: var(--ff-body); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #d97706; }
+.sticker-title { font-family: var(--ff-brand); font-size: 1.15rem; font-weight: 700; color: var(--ink); margin-top: 2px; }
+.sticker-desc  { font-family: var(--ff-body); font-size: .85rem; color: var(--muted); }
+
+.celebration-journal {
+  margin-top: 16px;
+  font-family: var(--ff-brand) !important;
+  font-weight: 700;
+  color: var(--green) !important;
+  font-size: 1.05rem !important;
+}
+.celebration-stats {
+  margin-top: 4px;
+  font-size: .95rem !important;
+  color: var(--muted);
+}
+.celebration-stats:empty, .celebration-journal:empty { display: none; }
+
+/* ── What-next loop: Again is primary, the rest are equal secondaries ── */
+.celebration-whatnext { margin-top: 22px; }
+.celebration-whatnext .wn-btn {
   font-family: var(--ff-brand);
   font-size: 1rem;
   font-weight: 700;
-  padding: 12px 26px;
+  padding: 12px 22px;
   border-radius: 50px;
-  border: none;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--ink);
   cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
+  min-height: 44px;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
 }
-.celebration-actions button:first-child { background: var(--bg); color: var(--muted); border: 2px solid var(--border); }
-.celebration-actions button:last-child  { background: linear-gradient(135deg, var(--orange), var(--red)); color: #fff; box-shadow: 0 4px 16px rgba(255,71,87,.35); }
-.celebration-actions button:hover { transform: translateY(-2px); }
+.celebration-whatnext .wn-btn:hover { transform: translateY(-2px); border-color: var(--purple); }
+.celebration-whatnext .wn-primary {
+  background: linear-gradient(135deg, var(--orange), var(--red));
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 16px rgba(255,71,87,.35);
+}
+.celebration-keep-link {
+  display: inline-block;
+  margin-top: 16px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--ff-body);
+  font-size: .9rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
 
 @keyframes celebFadeIn { from { opacity:0 } to { opacity:1 } }
+@keyframes stickerIn { from { opacity:0; transform: scale(.7) translateY(10px) } to { opacity:1; transform: scale(1) translateY(0) } }
+
+@media (prefers-reduced-motion: reduce) {
+  .celebration, .celebration-card, .celebration-sticker, .sticker-emoji, .celebration-art { animation: none !important; }
+}
 @keyframes celebPop    { from { transform:scale(.6); opacity:0 } to { transform:scale(1); opacity:1 } }
 
 /* ─── Share modal ────────────────────────────────────────────────────────── */
