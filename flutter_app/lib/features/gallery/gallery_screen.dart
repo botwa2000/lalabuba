@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/l10n/l10n_service.dart';
+import '../progress/progress_service.dart';
 
 final galleryImagesProvider = FutureProvider<List<File>>((ref) async {
   final dir = await getApplicationDocumentsDirectory();
@@ -28,7 +29,7 @@ class GalleryScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          l10n.t('galleryTitle'),
+          l10n.t('journalTitle'),
           style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
         ),
         actions: [
@@ -38,12 +39,111 @@ class GalleryScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: imagesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (files) => files.isEmpty
-            ? _buildEmpty(context, l10n)
-            : _buildGrid(context, ref, files, l10n),
+      body: Column(
+        children: [
+          _buildJournalHeader(context, ref, l10n),
+          Expanded(
+            child: imagesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+              data: (files) => files.isEmpty
+                  ? _buildEmpty(context, l10n)
+                  : _buildGrid(context, ref, files, l10n),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Masterpiece count + streak, and the sticker shelf (earned in colour, locked
+  // greyed) — the collection that pulls the child back.
+  Widget _buildJournalHeader(BuildContext context, WidgetRef ref, L10n l10n) {
+    final cs = Theme.of(context).colorScheme;
+    final progress = ref.watch(progressProvider).valueOrNull ?? const Progress();
+    final earned = progress.badges.toSet();
+
+    final statsText = () {
+      if (progress.totalCompleted == 0) return '';
+      final base =
+          l10n.t('celebMasterpieces', {'count': '${progress.totalCompleted}'});
+      final streak = progress.streak > 1
+          ? l10n.t('celebStreakSuffix', {'streak': '${progress.streak}'})
+          : '';
+      return '$base$streak';
+    }();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: Border(bottom: BorderSide(color: cs.outlineVariant, width: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (statsText.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                statsText,
+                style: GoogleFonts.fredoka(
+                    fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+            ),
+          SizedBox(
+            height: 86,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: kBadges.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, i) {
+                final b = kBadges[i];
+                final has = earned.contains(b.id);
+                final cap = '${b.id[0].toUpperCase()}${b.id.substring(1)}';
+                return Container(
+                  width: 74,
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  decoration: BoxDecoration(
+                    gradient: has
+                        ? const LinearGradient(
+                            colors: [Color(0xFFFFF7E0), Color(0xFFFFE6F2)])
+                        : null,
+                    color: has ? null : cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: has ? const Color(0xFFFFD166) : cs.outlineVariant,
+                      width: has ? 2 : 1,
+                    ),
+                  ),
+                  child: Opacity(
+                    opacity: has ? 1 : 0.5,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(has ? b.emoji : '🔒',
+                            style: const TextStyle(fontSize: 26)),
+                        const SizedBox(height: 4),
+                        Flexible(
+                          child: Text(
+                            l10n.t('badge${cap}Title'),
+                            maxLines: 2,
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.nunito(
+                                fontSize: 9, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

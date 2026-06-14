@@ -149,6 +149,21 @@ class CanvasState {
   bool get hasImage => baseImage != null;
   bool get isReady => hasImage && detection != null && !isProcessing;
 
+  /// True when every guided (numbered) region has been filled with its assigned
+  /// colour — the trigger for the completion celebration. Mirrors the web app's
+  /// checkCompletion (all regionColorMap keys completed). Only meaningful in
+  /// guided mode (regionColorMap is empty in free mode → never "complete").
+  bool get isComplete {
+    if (regionColorMap.isEmpty) return false;
+    for (final entry in regionColorMap.entries) {
+      final filled = regionColors[entry.key];
+      if (filled == null || filled.toARGB32() != entry.value.toARGB32()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   CanvasState copyWith({
     ui.Image? baseImage,
     ui.Image? compositeImage,

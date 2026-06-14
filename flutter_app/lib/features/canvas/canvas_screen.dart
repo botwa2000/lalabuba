@@ -4,6 +4,7 @@
 // lifecycle we don't need. Intentional until we bump the package major.
 // ignore_for_file: deprecated_member_use
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:vector_math/vector_math_64.dart' show Vector3;
@@ -16,15 +17,18 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:gal/gal.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:showcaseview/showcaseview.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../../core/di/providers.dart';
 import '../../features/generate/generate_service.dart';
+import '../../features/gallery/gallery_screen.dart';
 import '../../shared/services/storage_service.dart';
 import '../../shared/widgets/lala_color_swatch.dart';
 import '../../shared/widgets/lala_loading_overlay.dart';
 import 'canvas_models.dart';
 import 'canvas_painter.dart';
+import 'completion_celebration.dart';
 
 // Args passed when navigating to CanvasScreen
 class CanvasScreenArgs {
@@ -51,6 +55,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   bool _isGenerating = false;
   String? _errorMsg;
   bool _hintVisible = true;
+  // One-shot guard so the completion celebration fires once per finished image.
+  bool _celebrationShown = false;
   String _subject = '';
   int? _currentSeed;
   // Colour currently under the finger while dragging the eyedropper (null when
@@ -117,6 +123,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     setState(() {
       _isGenerating = true;
       _errorMsg = null;
+      _celebrationShown = false; // arm the celebration for the new image
     });
     ref.read(canvasProvider.notifier).reset();
 
@@ -141,6 +148,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       );
 
       await ref.read(subscriptionProvider.notifier).recordGeneration();
+      unawaited(ref.read(progressProvider.notifier).recordGeneration());
 
       if (mounted) {
         setState(() {
@@ -411,6 +419,19 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final settings = ref.watch(settingsProvider).valueOrNull;
     final isLandscape =
         MediaQuery.orientationOf(context) == Orientation.landscape;
+
+    // Fire the completion celebration once when the last guided region is filled.
+    ref.listen<CanvasState>(canvasProvider, (prev, next) {
+      if (!_celebrationShown &&
+          next.isReady &&
+          next.isComplete &&
+          !_isGenerating) {
+        _celebrationShown = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _onColoringComplete(next);
+        });
+      }
+    });
 
     return PopScope(
       canPop: false,
@@ -1506,6 +1527,57 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  // ─── Completion celebration ─────────────────────────────────────────────────
+
+  Future<void> _onColoringComplete(CanvasState canvas) async {
+    final l10n = ref.read(l10nProvider);
+    final settings = ref.read(settingsProvider).valueOrNull;
+
+    // 1. Persist the finished artwork to the in-app Journal. We write to the app
+    //    documents dir (silent, no permission prompt) — this is the dir the
+    //    gallery grid reads. Mirrors the web app's auto-save-on-complete.
+    try {
+      final bytes = await _captureCanvas(canvas);
+      if (bytes != null) {
+        final dir = await getApplicationDocumentsDirectory();
+        final file = File(
+            '${dir.path}/lalabuba_${DateTime.now().millisecondsSinceEpoch}.png');
+        await file.writeAsBytes(bytes);
+        ref.invalidate(galleryImagesProvider);
+      }
+    } catch (_) {
+      // Saving is best-effort; never block the celebration on it.
+    }
+
+    // 2. Record progress + award any new stickers.
+    List<StickerBadge> newBadges = const [];
+    try {
+      newBadges = await ref.read(progressProvider.notifier).recordCompletion(
+            subject: _subject,
+            difficulty: settings?.difficulty,
+          );
+    } catch (_) {}
+    final progress =
+        ref.read(progressProvider).valueOrNull ?? const Progress();
+
+    if (!mounted) return;
+
+    // 3. Celebrate → reveal sticker → what-next loop back to creation.
+    await showCompletionCelebration(
+      context,
+      l10n: l10n,
+      progress: progress,
+      newBadges: newBadges,
+      onAgain: () {
+        if (mounted) _generate();
+      },
+      onNew: () {
+        if (mounted && context.mounted) context.pop();
+      },
+      onShare: () => _shareArtwork(ref.read(canvasProvider)),
     );
   }
 

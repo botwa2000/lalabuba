@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 export '../l10n/l10n_service.dart' show localeProvider, l10nProvider, LocaleNotifier, languageMeta, supportedLocales;
 export '../../features/settings/settings_controller.dart';
 export '../../features/subscription/subscription_service.dart';
+export '../../features/progress/progress_service.dart';
 export '../../features/home/home_controller.dart';
 export '../../features/canvas/canvas_controller.dart';
 

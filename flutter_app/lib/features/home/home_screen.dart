@@ -337,6 +337,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ))
               .toList(),
         ),
+        // 🌱 days-colored streak pill — only once the child has colored a day.
+        Builder(builder: (_) {
+          final p = ref.watch(progressProvider).valueOrNull;
+          if (p == null || p.daysColored <= 0) return const SizedBox.shrink();
+          return Center(
+            child: Container(
+              margin: const EdgeInsets.only(right: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                    colors: [Color(0xFFD4FC79), Color(0xFF96E6A1)]),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: Text(
+                l10n.t('daysColoredPill', {'days': '${p.daysColored}'}),
+                style: GoogleFonts.fredoka(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1F6F43)),
+              ),
+            ),
+          );
+        }),
         IconButton(
           icon: const Icon(Icons.photo_library_rounded),
           tooltip: l10n.t('galleryBtn'),
