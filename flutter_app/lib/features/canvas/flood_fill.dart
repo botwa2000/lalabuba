@@ -574,6 +574,27 @@ Uint8List buildCompositeRgba(CompositeParams params) {
     out[i * 4 + 3] = 255;
   }
 
+  // Final pass — RE-STAMP THE LINE ART ON TOP. The fill and bleed passes above
+  // can paint over the soft, anti-aliased (grey, luma 90-180) edges of an outline
+  // and even its core where the line is thin, leaving two filled regions touching
+  // with no visible black divider ("colours border each other without a dividing
+  // line"). Outlines live in the -2 ("outline band") layer; here we redraw every
+  // genuine line pixel (a -2 pixel whose ORIGINAL luma is below the outline
+  // threshold) back to its original colour, so the black/grey divider always wins
+  // over fills and bleed. Light -2 pixels (luma >= outlineLuma — the white halo
+  // that closing rounds off) are left as the bleed painted them, so the halo
+  // between a fill and the line still closes. This makes a missing divider
+  // structurally impossible regardless of bleed tuning.
+  const outlineLuma = 165;
+  for (var i = 0; i < n; i++) {
+    if (p2r[i] != -2) continue;
+    if (luma[i] >= outlineLuma) continue; // genuine light gap — keep bleed fill
+    out[i * 4] = orig[i * 4];
+    out[i * 4 + 1] = orig[i * 4 + 1];
+    out[i * 4 + 2] = orig[i * 4 + 2];
+    out[i * 4 + 3] = orig[i * 4 + 3];
+  }
+
   return out;
 }
 

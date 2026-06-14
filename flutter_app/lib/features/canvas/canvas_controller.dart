@@ -163,8 +163,37 @@ class CanvasNotifier extends Notifier<CanvasState> {
 
     final idx = y * d.width + x;
     final r = d.pixelToRegion[idx];
-    if (r < 0 || r == d.backgroundRegionId) return null;
-    return r;
+    if (r >= 0 && r != d.backgroundRegionId) return r;
+
+    // The tap landed on the outline band (-2) or the uncolourable background.
+    // Thin lines and small numberless details are easy to "miss" by a pixel —
+    // tapping the black line between two areas, or just inside a tiny shape,
+    // returned null and nothing filled ("can't colour the areas without
+    // numbers"). Snap to the nearest genuine, fillable region within a small
+    // radius so those taps resolve to the area the child clearly meant. We do
+    // NOT snap when the tap is on the true background id directly (r == bg),
+    // since the background is intentionally uncolourable and a near-edge tap on
+    // it should not bleed colour into the subject.
+    if (r != -2) return null;
+    const snap = 5; // image-space px to search outward
+    var bestRegion = -1;
+    var bestDist2 = 1 << 30;
+    for (var dy = -snap; dy <= snap; dy++) {
+      final yy = y + dy;
+      if (yy < 0 || yy >= d.height) continue;
+      for (var dx = -snap; dx <= snap; dx++) {
+        final xx = x + dx;
+        if (xx < 0 || xx >= d.width) continue;
+        final rr = d.pixelToRegion[yy * d.width + xx];
+        if (rr < 0 || rr == d.backgroundRegionId) continue;
+        final dist2 = dx * dx + dy * dy;
+        if (dist2 < bestDist2) {
+          bestDist2 = dist2;
+          bestRegion = rr;
+        }
+      }
+    }
+    return bestRegion >= 0 ? bestRegion : null;
   }
 
   Future<void> fillRegion(int regionId) async {
