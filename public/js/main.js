@@ -82,6 +82,11 @@ function refreshJournalCount() {
   // (the count badge takes over). CSS restricts it to the hero state.
   const teaser = document.getElementById('rewards-teaser');
   if (teaser) teaser.hidden = n > 0;
+  // Mobile (where the wide teaser is hidden): pulse the Journal icon for first-
+  // time users so the rewards entry is still noticeable. CSS scopes the pulse to
+  // the mobile breakpoint, so adding the class on desktop is harmless.
+  const jbtn = document.getElementById('journal-btn');
+  if (jbtn) jbtn.classList.toggle('attention', n === 0);
 }
 
 function checkCompletion() {

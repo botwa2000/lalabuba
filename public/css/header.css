@@ -422,7 +422,16 @@
   .top-actions { right: 48px; gap: 6px; }
   .top-action-btn { width: 34px; height: 34px; font-size: 1.05rem; }
   .days-colored-pill { display: none !important; }
-  .rewards-teaser { font-size: 0.6rem; padding: 4px 7px; }
+  /* The full-text teaser is too wide for the 390px header (it overlapped the
+     centred wordmark). On mobile the first-time announcement is a pulse ring on
+     the always-visible Journal icon instead. */
+  .rewards-teaser { display: none !important; }
+  .top-action-btn.attention { animation: journalAttention 1.8s ease-in-out infinite; }
+  @keyframes journalAttention {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(124,77,255,0.45); }
+    50% { box-shadow: 0 0 0 6px rgba(124,77,255,0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .top-action-btn.attention { animation: none; } }
 }
 
 .tagline {
