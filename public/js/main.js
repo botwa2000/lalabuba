@@ -666,9 +666,15 @@ document.querySelectorAll('.lang-option').forEach(btn => {
   btn.addEventListener('click', () => {
     setLanguage(btn.dataset.lang);
     renderExamples();
+    // Refresh BOTH daily-word displays — the hero pill (config panel) AND the
+    // search-area proxy pill. Previously only the first was updated, so the
+    // word-of-the-day stayed stuck in the prior language on the other element.
+    const lang = getCurrentLang();
     if (dailyWordValue) {
-      dailyWordValue.textContent = getTranslatedDailyWord(dailyWord, getCurrentLang());
+      dailyWordValue.textContent = getTranslatedDailyWord(dailyWord, lang);
     }
+    const hdt = document.getElementById('hero-daily-text');
+    if (hdt) hdt.textContent = getTranslatedDailyWord(dailyWord, lang);
     updateDiffChip(); updatePaletteChip(); updateNumbersChip(); // refresh translated chip titles
     syncCanvasNumbersBtn(); // re-sync after applyTranslations() resets data-i18n buttons
     langDropdown.hidden = true;
