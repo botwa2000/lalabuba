@@ -10,6 +10,20 @@ import 'flood_fill.dart';
 class CanvasNotifier extends Notifier<CanvasState> {
   static const _maxUndo = 20;
 
+  // FIX 1: monotonically increasing token for composite rebuilds. Each
+  // _rebuildComposite captures the value it bumped to; only the rebuild whose
+  // token still matches the latest is allowed to assign state. Rapid taps that
+  // finish out of order no longer let an older composite overwrite a newer one.
+  int _compositeGen = 0;
+
+  // FIX 2: generation token + in-flight isolate handle for region detection.
+  // A new loadImage bumps _detectGen, kills any previous in-flight detection
+  // isolate, and ignores late messages stamped with a stale generation, so an
+  // abandoned full-image flood fill can neither leak nor clobber fresh state.
+  int _detectGen = 0;
+  Isolate? _detectIsolate;
+  ReceivePort? _detectPort;
+
   @override
   CanvasState build() => const CanvasState();
 
@@ -17,6 +31,12 @@ class CanvasNotifier extends Notifier<CanvasState> {
     bool showNumbers = true,
     List<Color> palette = const [],
   }) async {
+    // FIX 2: starting a new load invalidates any earlier in-flight detection.
+    // Bump the generation and tear down a previous detection isolate so its
+    // late result is ignored and it stops consuming CPU on an abandoned image.
+    final gen = ++_detectGen;
+    _killDetectIsolate();
+
     state = CanvasState(isProcessing: true, showNumbers: showNumbers);
 
     final codec = await ui.instantiateImageCodec(imageBytes);
@@ -25,10 +45,15 @@ class CanvasNotifier extends Notifier<CanvasState> {
 
     final byteData = await img.toByteData(format: ui.ImageByteFormat.rawRgba);
     if (byteData == null) {
+      // A newer load superseded us while decoding — don't clobber its state.
+      if (gen != _detectGen) return;
       state = const CanvasState();
       return;
     }
     final rgba = byteData.buffer.asUint8List();
+
+    // A newer load started while we were decoding; abandon this one.
+    if (gen != _detectGen) return;
 
     state = state.copyWith(
       baseImage: img,
@@ -47,7 +72,11 @@ class CanvasNotifier extends Notifier<CanvasState> {
       paletteArgb: paletteArgb,
     );
 
-    final result = await _detectInIsolate(params);
+    final result = await _detectInIsolate(params, gen);
+
+    // FIX 2: a newer loadImage started while detection ran — drop this result
+    // so the stale detection can't overwrite the newer image's state.
+    if (gen != _detectGen) return;
 
     // Convert Map<int,int> regionColorMap → Map<int,Color>
     final colorMap = <int, Color>{};
@@ -65,10 +94,31 @@ class CanvasNotifier extends Notifier<CanvasState> {
     );
   }
 
+  // FIX 2: kill the in-flight detection isolate (if any) and close its port.
+  // Safe to call repeatedly; clears the handles so a stale onError/onDone can't
+  // act on a dead isolate.
+  void _killDetectIsolate() {
+    _detectIsolate?.kill(priority: Isolate.immediate);
+    _detectIsolate = null;
+    _detectPort?.close();
+    _detectPort = null;
+  }
+
   Future<RegionDetectionResult> _detectInIsolate(
-      RegionDetectParams params) async {
+      RegionDetectParams params, int gen) async {
     final recv = ReceivePort();
-    await Isolate.spawn(regionDetectIsolate, recv.sendPort);
+    final isolate = await Isolate.spawn(regionDetectIsolate, recv.sendPort);
+
+    // FIX 2: retain the handle + port so a subsequent loadImage can kill this
+    // detection. If a newer load already superseded us while spawning, kill
+    // immediately rather than leaving an orphaned full-image flood fill.
+    if (gen != _detectGen) {
+      isolate.kill(priority: Isolate.immediate);
+      recv.close();
+      return Completer<RegionDetectionResult>().future; // never completes; caller drops on gen mismatch
+    }
+    _detectIsolate = isolate;
+    _detectPort = recv;
 
     final completer = Completer<RegionDetectionResult>();
     SendPort? workerPort;
@@ -79,10 +129,14 @@ class CanvasNotifier extends Notifier<CanvasState> {
         workerPort!.send(params);
       } else if (msg is RegionDetectionResult) {
         if (!completer.isCompleted) completer.complete(msg);
-        recv.close();
+        // Detection finished cleanly — release the isolate + port.
+        _killDetectIsolate();
       }
     }, onError: (e) {
       if (!completer.isCompleted) completer.completeError(e);
+      // FIX 2: on error, kill the isolate and close the port so the failed
+      // detection doesn't keep running / leak its receive port.
+      _killDetectIsolate();
     });
 
     return completer.future;
@@ -91,6 +145,11 @@ class CanvasNotifier extends Notifier<CanvasState> {
   Future<void> _rebuildComposite() async {
     final s = state;
     if (s.originalRgba == null || s.detection == null) return;
+
+    // FIX 1: stamp this rebuild with the latest generation. If another rebuild
+    // is requested before our isolate returns, _compositeGen advances past ours
+    // and we discard our (now stale) result below.
+    final gen = ++_compositeGen;
 
     final colorsInt = <int, int>{};
     s.regionColors.forEach((rid, color) {
@@ -106,7 +165,14 @@ class CanvasNotifier extends Notifier<CanvasState> {
     );
 
     final rgba = await Isolate.run(() => buildCompositeRgba(params));
+
+    // FIX 1: a newer rebuild was requested while we awaited — discard this
+    // result so the displayed composite always reflects the latest fills.
+    if (gen != _compositeGen) return;
+
     final img = await _rgbaToImage(rgba, params.width, params.height);
+    // Re-check after the async image decode too, for the same reason.
+    if (gen != _compositeGen) return;
     if (state.detection != null) {
       state = state.copyWith(compositeImage: img, compositeRgba: rgba);
     }

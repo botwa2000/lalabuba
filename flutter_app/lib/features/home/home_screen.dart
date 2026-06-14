@@ -17,6 +17,7 @@ import '../../shared/widgets/lala_card.dart';
 import '../../shared/widgets/lala_chip.dart';
 import '../../shared/widgets/lala_text_field.dart';
 import '../../shared/widgets/lala_empty_hint.dart';
+import '../../shared/widgets/lala_bottom_sheet.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -103,7 +104,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
-    final themeMode = ref.watch(themeModeProvider);
     final homeAsync = ref.watch(homeProvider);
     final settingsAsync = ref.watch(settingsProvider);
     final sub = ref.watch(subscriptionProvider).valueOrNull;
@@ -132,7 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return Scaffold(
-      appBar: _buildAppBar(context, l10n, themeMode),
+      appBar: _buildAppBar(context, l10n),
       body: ShowCaseWidget(
         onFinish: _onHomeTutorialFinish,
         disableMovingAnimation: true,
@@ -164,6 +164,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _onHomeTutorialFinish() {
     StorageService.writeBool(StorageService.kTutorialHome, true);
+  }
+
+  // ─── Consolidated settings bottom sheet ──────────────────────────────────────
+  // Single entry point for all *app* settings (appearance, language, tutorial,
+  // about). Reachable from the app-bar gear (portrait/tablet) and the landscape
+  // gear row. Per-drawing gameplay chips stay on the home surface, not here.
+  void _openSettingsSheet(BuildContext context, L10n l10n) {
+    HapticFeedback.lightImpact();
+    // Capture the showcase context now, while it is guaranteed mounted; the sheet
+    // route sits above it, so ShowCaseWidget.of(sheetCtx) would not resolve.
+    final showcaseCtx = _showcaseCtx;
+    showLalaBottomSheet(
+      context: context,
+      title: '⚙️ ${l10n.t('settingsTitle')}',
+      initialChildSize: 0.62,
+      child: _SettingsSheetBody(
+        onHowToPlay: (ctx) {
+          // Close the sheet first, then run the coach-marks on the next frame so
+          // the showcase overlay isn't fighting the dismissing sheet route.
+          Navigator.of(ctx).pop();
+          final c = showcaseCtx;
+          if (c != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _startHowToPlay(c);
+            });
+          }
+        },
+        onAbout: (ctx) {
+          Navigator.of(ctx).pop();
+          context.pushNamed('settings');
+        },
+      ),
+    );
   }
 
   // ─── Tablet hero (centered single column, both orientations) ─────────────────
@@ -280,11 +313,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  AppBar _buildAppBar(BuildContext context, L10n l10n, ThemeMode themeMode) {
+  AppBar _buildAppBar(BuildContext context, L10n l10n) {
     final cs = Theme.of(context).colorScheme;
-    final sysBrightness = MediaQuery.platformBrightnessOf(context);
-    final effectivelyDark = themeMode == ThemeMode.dark ||
-        (themeMode == ThemeMode.system && sysBrightness == Brightness.dark);
     return AppBar(
       automaticallyImplyLeading: false,
       title: Row(
@@ -302,41 +332,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       actions: [
-        IconButton(
-          icon: Icon(
-            effectivelyDark
-                ? Icons.light_mode_rounded
-                : Icons.dark_mode_rounded,
-            color: cs.onSurface,
-          ),
-          onPressed: () {
-            ref.read(themeModeProvider.notifier).state =
-                effectivelyDark ? ThemeMode.light : ThemeMode.dark;
-          },
-        ),
-        PopupMenuButton<String>(
-          icon: Text(
-            languageMeta[ref.watch(localeProvider).valueOrNull?.locale ?? 'en']
-                    ?.flag ??
-                '🌐',
-            style: const TextStyle(fontSize: 20),
-          ),
-          tooltip: 'Language',
-          onSelected: (lang) =>
-              ref.read(localeProvider.notifier).setLocale(lang),
-          itemBuilder: (_) => languageMeta.entries
-              .map((e) => PopupMenuItem(
-                    value: e.key,
-                    child: Row(children: [
-                      Text(e.value.flag,
-                          style: const TextStyle(fontSize: 18)),
-                      const SizedBox(width: 8),
-                      Text(e.value.name,
-                          style: GoogleFonts.nunito(fontSize: 14)),
-                    ]),
-                  ))
-              .toList(),
-        ),
+        // Theme toggle and language picker were standalone actions here; both are
+        // now consolidated into the gear's settings bottom sheet (below).
         // 🌱 days-colored streak pill — only once the child has colored a day.
         Builder(builder: (_) {
           final p = ref.watch(progressProvider).valueOrNull;
@@ -368,7 +365,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         IconButton(
           icon: const Icon(Icons.settings_rounded),
           tooltip: l10n.t('settingsTitle'),
-          onPressed: () => context.pushNamed('settings'),
+          onPressed: () => _openSettingsSheet(context, l10n),
         ),
         const SizedBox(width: 4),
       ],
@@ -600,21 +597,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           },
         ),
         const SizedBox(height: 4),
-        _SettingRow(
-          icon: '❓',
-          label: l10n.t('howToPlayBtn'),
-          value: '›',
-          onTap: () {
-            final c = _showcaseCtx;
-            if (c != null) _startHowToPlay(c);
-          },
-        ),
-        const SizedBox(height: 4),
+        // Single gear row → opens the consolidated settings sheet (appearance,
+        // language, how-to-play, about). Replaces the former separate
+        // "How to play" + "Settings" rows so landscape has no duplicates.
         _SettingRow(
           icon: '⚙️',
           label: l10n.t('settingsTitle'),
           value: '›',
-          onTap: () => context.pushNamed('settings'),
+          onTap: () => _openSettingsSheet(context, l10n),
         ),
       ],
     );
@@ -931,16 +921,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onTap: () =>
                 ref.read(settingsProvider.notifier).toggleNumbers(),
           ),
-          // Replaces the old "Settings" chip, which just opened a screen that
-          // duplicated the top-bar theme + language icons. This launches the
-          // coach-mark tutorial instead (full settings live behind the top gear).
-          LalaChip(
-            label: l10n.t('howToPlayBtn'),
-            onTap: () {
-              final c = _showcaseCtx;
-              if (c != null) _startHowToPlay(c);
-            },
-          ),
+          // "How to play" moved into the consolidated gear settings sheet.
         ],
       ),
     );
@@ -1027,6 +1008,280 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   String _cntLabelShort(int cnt) =>
       cnt == 99 ? 'Max' : cnt.toString();
+}
+
+// ─── Consolidated settings sheet body ────────────────────────────────────────
+// Appearance (Light/Dark/System), Language (12 chips), How to play, About.
+// A ConsumerWidget so it can read/watch theme + locale providers live; reuses the
+// app's fredoka (titles) / nunito (body) type scale and colorScheme.
+
+class _SettingsSheetBody extends ConsumerWidget {
+  final void Function(BuildContext sheetCtx) onHowToPlay;
+  final void Function(BuildContext sheetCtx) onAbout;
+
+  const _SettingsSheetBody({
+    required this.onHowToPlay,
+    required this.onAbout,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
+    final themeMode = ref.watch(themeModeProvider);
+    final currentLocale = ref.watch(localeProvider).valueOrNull?.locale ?? 'en';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // ── APPEARANCE ──
+        _SheetSectionLabel(l10n.t('settingsTheme')),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _ThemeChoiceChip(
+              label: l10n.t('settingsThemeLight'),
+              icon: Icons.light_mode_rounded,
+              selected: themeMode == ThemeMode.light,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                ref.read(themeModeProvider.notifier).state = ThemeMode.light;
+              },
+            ),
+            _ThemeChoiceChip(
+              label: l10n.t('settingsThemeDark'),
+              icon: Icons.dark_mode_rounded,
+              selected: themeMode == ThemeMode.dark,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                ref.read(themeModeProvider.notifier).state = ThemeMode.dark;
+              },
+            ),
+            _ThemeChoiceChip(
+              label: l10n.t('settingsThemeSystem'),
+              icon: Icons.brightness_auto_rounded,
+              selected: themeMode == ThemeMode.system,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                ref.read(themeModeProvider.notifier).state = ThemeMode.system;
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // ── LANGUAGE ──
+        _SheetSectionLabel(l10n.t('settingsLanguage')),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: languageMeta.entries.map((e) {
+            final selected = e.key == currentLocale;
+            return _LangChoiceChip(
+              flag: e.value.flag,
+              name: e.value.name,
+              selected: selected,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                ref.read(localeProvider.notifier).setLocale(e.key);
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 20),
+
+        // ── HOW TO PLAY ──
+        _SheetActionTile(
+          icon: Icons.school_rounded,
+          // howToPlayBtn already carries a ❓ emoji; strip it so the leading icon
+          // isn't doubled up.
+          label: l10n.t('howToPlayBtn').replaceFirst('❓', '').trim(),
+          onTap: () => onHowToPlay(context),
+        ),
+        const SizedBox(height: 8),
+
+        // ── ABOUT ──
+        _SheetActionTile(
+          icon: Icons.info_outline_rounded,
+          label: l10n.t('settingsAbout'),
+          onTap: () => onAbout(context),
+        ),
+      ],
+    );
+  }
+}
+
+class _SheetSectionLabel extends StatelessWidget {
+  final String text;
+  const _SheetSectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Text(
+      text,
+      style: GoogleFonts.fredoka(
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+        color: cs.onSurface.withValues(alpha: 0.7),
+      ),
+    );
+  }
+}
+
+class _ThemeChoiceChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ThemeChoiceChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? cs.primaryContainer : cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? cs.primary.withValues(alpha: 0.55)
+                : cs.outlineVariant.withValues(alpha: 0.5),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: selected ? cs.onPrimaryContainer : cs.onSurface,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.nunito(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: selected ? cs.onPrimaryContainer : cs.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LangChoiceChip extends StatelessWidget {
+  final String flag;
+  final String name;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _LangChoiceChip({
+    required this.flag,
+    required this.name,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected ? cs.primaryContainer : cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? cs.primary.withValues(alpha: 0.55)
+                : cs.outlineVariant.withValues(alpha: 0.5),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(flag, style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 6),
+            Text(
+              name,
+              style: GoogleFonts.nunito(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: selected ? cs.onPrimaryContainer : cs.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetActionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _SheetActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: cs.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.nunito(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded,
+                  size: 20, color: cs.onSurface.withValues(alpha: 0.4)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ─── Landscape setting row ───────────────────────────────────────────────────

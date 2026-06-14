@@ -105,6 +105,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   }
 
   Future<void> _generate({int? seed}) async {
+    // FIX 3: re-entrancy guard. The celebration "Again" callback and the
+    // error-retry button can both fire _generate while one is already running,
+    // racing the detection isolate (fix 2). Bail out if a generation is already
+    // in flight; _isGenerating is set before the first await below and cleared
+    // in finally, so the guard can never get stuck.
+    if (_isGenerating) return;
+
     GenerateService svc;
     try {
       svc = ref.read(generateServiceProvider);
@@ -152,7 +159,6 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
       if (mounted) {
         setState(() {
-          _isGenerating = false;
           _hintVisible = true;
           _currentSeed = result.seed;
         });
@@ -163,9 +169,16 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isGenerating = false;
           _errorMsg = e.toString();
         });
+      }
+    } finally {
+      // FIX 3: always clear the in-flight flag so the guard can't get stuck,
+      // regardless of success or error path.
+      if (mounted) {
+        setState(() => _isGenerating = false);
+      } else {
+        _isGenerating = false;
       }
     }
   }
