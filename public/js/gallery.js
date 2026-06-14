@@ -83,12 +83,41 @@ export async function deleteArtwork(id) {
 // ── Gallery modal UI ─────────────────────────────────────────────────────────
 
 import { t } from './i18n.js';
+import { BADGES, getProgress } from './progress.js';
+
+// Render the masterpiece-count line + the earned/locked sticker shelf.
+function renderJournalProgress() {
+  let p;
+  try { p = getProgress(); } catch { p = null; }
+
+  const statsEl = document.getElementById('journal-stats');
+  if (statsEl) {
+    statsEl.textContent = p ? t('journalStats', p.totalCompleted || 0, p.streak || 0) : '';
+  }
+
+  const shelf = document.getElementById('sticker-shelf');
+  if (shelf) {
+    const earned = new Set(p ? p.badges : []);
+    shelf.innerHTML = BADGES.map((b) => {
+      const has = earned.has(b.id);
+      const cap = `${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}`;
+      const title = t(`badge${cap}Title`);
+      const desc  = has ? t(`badge${cap}Desc`) : t('journalLocked');
+      return `<div class="sticker-chip ${has ? 'earned' : 'locked'}" title="${title} — ${desc}">
+        <span class="sticker-chip-emoji">${has ? b.emoji : '🔒'}</span>
+        <span class="sticker-chip-name">${title}</span>
+      </div>`;
+    }).join('');
+  }
+}
 
 export async function openGalleryModal(onContinue) {
   const modal = document.getElementById('gallery-modal');
   if (!modal) return;
   modal.classList.remove('hidden');
   modal.setAttribute('aria-hidden', 'false');
+
+  renderJournalProgress();
 
   const grid = document.getElementById('gallery-grid');
   grid.innerHTML = '<p class="gallery-loading">…</p>';

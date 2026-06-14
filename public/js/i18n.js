@@ -30,6 +30,13 @@ const TRANSLATIONS = {
       : `🎨 ${count} ${count === 1 ? 'masterpiece' : 'masterpieces'} so far!`,
     celebNewSticker: "New sticker unlocked!",
     daysColoredPill: (n) => `🌱 ${n}`,
+    journalTitle: "My Journal",
+    journalStats: (count, streak) => {
+      const m = `🎨 ${count} ${count === 1 ? 'masterpiece' : 'masterpieces'}`;
+      return streak > 1 ? `${m} · 🔥 ${streak}-day streak` : m;
+    },
+    journalStickers: "Stickers",
+    journalLocked: "Keep coloring to unlock!",
     // Badge / sticker names + descriptions (id-keyed)
     badgeFirstTitle: "First Masterpiece", badgeFirstDesc: "You colored your very first picture!",
     badgeFiveTitle: "High Five", badgeFiveDesc: "5 pictures colored!",

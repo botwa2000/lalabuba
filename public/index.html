@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=189" />
-  <link rel="stylesheet" href="/css/header.css?v=189" />
-  <link rel="stylesheet" href="/css/hero.css?v=189" />
-  <link rel="stylesheet" href="/css/generator.css?v=189" />
-  <link rel="stylesheet" href="/css/layout.css?v=189" />
-  <link rel="stylesheet" href="/css/workspace.css?v=189" />
-  <link rel="stylesheet" href="/css/palette.css?v=189" />
-  <link rel="stylesheet" href="/css/modals.css?v=189" />
-  <link rel="stylesheet" href="/css/footer.css?v=189" />
-  <link rel="stylesheet" href="/css/print.css?v=189" />
-  <link rel="stylesheet" href="/css/cookies.css?v=189" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=189" />
-  <script src="/js/cookies.js?v=189"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=190" />
+  <link rel="stylesheet" href="/css/header.css?v=190" />
+  <link rel="stylesheet" href="/css/hero.css?v=190" />
+  <link rel="stylesheet" href="/css/generator.css?v=190" />
+  <link rel="stylesheet" href="/css/layout.css?v=190" />
+  <link rel="stylesheet" href="/css/workspace.css?v=190" />
+  <link rel="stylesheet" href="/css/palette.css?v=190" />
+  <link rel="stylesheet" href="/css/modals.css?v=190" />
+  <link rel="stylesheet" href="/css/footer.css?v=190" />
+  <link rel="stylesheet" href="/css/print.css?v=190" />
+  <link rel="stylesheet" href="/css/cookies.css?v=190" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=190" />
+  <script src="/js/cookies.js?v=190"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -566,9 +566,12 @@
   <div id="gallery-modal" class="gallery-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="gallery-modal-title">
     <div class="gallery-modal-card">
       <div class="gallery-header">
-        <h3 id="gallery-modal-title" data-i18n="galleryTitle">My Gallery</h3>
+        <h3 id="gallery-modal-title" data-i18n="journalTitle">My Journal</h3>
         <button id="close-gallery-modal" class="gallery-close" aria-label="Close">✕</button>
       </div>
+      <p id="journal-stats" class="journal-stats"></p>
+      <!-- Sticker / badge shelf — earned in colour, locked greyed -->
+      <div id="sticker-shelf" class="sticker-shelf" aria-label="Stickers"></div>
       <div id="gallery-grid" class="gallery-grid"></div>
     </div>
   </div>
@@ -686,7 +689,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=189"></script>
+  <script type="module" src="/js/main.js?v=190"></script>
 </body>
 </html>
 
