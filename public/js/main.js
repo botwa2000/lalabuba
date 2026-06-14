@@ -233,6 +233,12 @@ form.addEventListener("submit", async (event) => {
     _pendingSeedOverride = null;
     state.paletteOverride = getSemanticPaletteOrder(
       pendingEnglish || subject, paletteSelect.value, PALETTES[paletteSelect.value]);
+    // Re-render the legend in the new (semantic) order BEFORE the image draws, so
+    // the displayed/highlighted swatch, the number badges, and the colour a tap
+    // actually fills all use ONE consistent order. Without this the swatches kept
+    // the old order while activePalette() switched to the new one — so a tap
+    // filled a different colour than the one shown selected (e.g. red→blue).
+    renderLegend();
     await generatePage(subject, seedOverride, !!pendingEnglish);
   } catch (error) {
     setStatus(error.message || "Something went wrong.", true);
@@ -624,6 +630,7 @@ regenButton.addEventListener('click', async () => {
   submitButton.disabled = true;
   try {
     state.paletteOverride = getSemanticPaletteOrder(subject, paletteSelect.value, PALETTES[paletteSelect.value]);
+    renderLegend(); // keep swatches/badges/fill in one consistent order (see submit handler)
     await generatePage(subject);
   } catch (error) {
     setStatus(error.message || 'Something went wrong.', true);
