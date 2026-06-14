@@ -32,11 +32,14 @@ const TRANSLATIONS = {
     daysColoredPill: (n) => `🌱 ${n}`,
     journalTitle: "My Journal",
     journalStats: (count, streak) => {
+      if (!count) return "🎨 Color your first picture to start your collection!";
       const m = `🎨 ${count} ${count === 1 ? 'masterpiece' : 'masterpieces'}`;
       return streak > 1 ? `${m} · 🔥 ${streak}-day streak` : m;
     },
     journalStickers: "Stickers",
     journalLocked: "Keep coloring to unlock!",
+    journalNext: (remaining, emoji) => `🎯 ${remaining} more to unlock ${emoji}`,
+    rewardsTeaser: "🏆 Earn stickers!",
     // Badge / sticker names + descriptions (id-keyed)
     badgeFirstTitle: "First Masterpiece", badgeFirstDesc: "You colored your very first picture!",
     badgeFiveTitle: "High Five", badgeFiveDesc: "5 pictures colored!",

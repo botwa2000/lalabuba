@@ -146,13 +146,21 @@ export function overlayNumbers() {
   const palette = _palette;
   const colorCount = _colorCount;
   if (!state.baseImageData) return;
-  // Always use base image data so numbers are stable regardless of user fills.
-  const mask = buildWalkableMask(state.baseImageData.data, previewCanvas.width, previewCanvas.height);
-  const diff = DIFFICULTY[document.getElementById('difficulty-select').value] || DIFFICULTY.medium;
-  // Scale minArea proportionally to image pixel count so region density is
-  // consistent across canvas sizes (same difficulty = same relative region count).
-  const scaledMinArea = Math.round(diff.minArea * (previewCanvas.width * previewCanvas.height) / (1024 * 1024));
-  const regions = findRegions(mask, previewCanvas.width, previewCanvas.height, scaledMinArea, colorCount);
+  // The region set (centroids + areas) is derived from the BASE image, so it is
+  // identical on every redraw — recomputing buildWalkableMask + findRegions (a
+  // full connected-component pass over ~1M pixels) on every single fill was the
+  // dominant cause of coloring jank. Cache it per image; it's invalidated in
+  // drawBaseImage when a new image (or difficulty/colorCount change) loads.
+  let regions = state.numberRegions;
+  if (!regions) {
+    const mask = buildWalkableMask(state.baseImageData.data, previewCanvas.width, previewCanvas.height);
+    const diff = DIFFICULTY[document.getElementById('difficulty-select').value] || DIFFICULTY.medium;
+    // Scale minArea proportionally to image pixel count so region density is
+    // consistent across canvas sizes (same difficulty = same relative region count).
+    const scaledMinArea = Math.round(diff.minArea * (previewCanvas.width * previewCanvas.height) / (1024 * 1024));
+    regions = findRegions(mask, previewCanvas.width, previewCanvas.height, scaledMinArea, colorCount);
+    state.numberRegions = regions;
+  }
   const src = state.baseImageData.data;
   const w = previewCanvas.width;
 
@@ -694,10 +702,12 @@ export function drawBaseImage(image) {
   state.regionMap = null;
   state.regionPixels = null;
   state.regionColorMap = null;
+  state.numberRegions = null; // cached badge regions — recompute for the new image
   state.backgroundRegionId = 0;
   state.eraseMode = false;
   state.completedRegions = new Set();
   state.celebrationShown = false;
+  state.completionRecorded = false; // new image → this coloring may be recorded once
   state.coloringStartTime = null;
   state.undoStack = [];
   if (state.baseImageData) precomputeRegions();

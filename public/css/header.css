@@ -228,6 +228,25 @@
 .journal-dot[hidden] { display: none; }
 @keyframes journalDotPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.35); } }
 
+/* Masterpiece count badge (how many pictures finished) — bottom-right so it never
+   collides with the "new sticker" dot at top-right. */
+.journal-count {
+  position: absolute;
+  bottom: -4px; right: -4px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--purple);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+  border: 2px solid var(--card);
+  box-sizing: content-box;
+}
+.journal-count[hidden] { display: none; }
+
 /* Days-colored streak pill (🌱 N) */
 .days-colored-pill {
   display: inline-flex;
@@ -245,6 +264,27 @@
   white-space: nowrap;
 }
 .days-colored-pill[hidden] { display: none; }
+
+/* First-time "Earn stickers!" announcement pill — hero state only, fades once a
+   masterpiece exists (refreshJournalCount hides it). */
+.rewards-teaser {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--purple);
+  background: linear-gradient(135deg, #fff4d6, #ffe0ef);
+  color: #5b3a8c;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  animation: rewardsTeaserPulse 2.2s ease-in-out infinite;
+}
+.rewards-teaser[hidden] { display: none; }
+.app:not(.app-hero) .rewards-teaser { display: none !important; }
+@keyframes rewardsTeaserPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .rewards-teaser { animation: none; } }
 
 @media (prefers-reduced-motion: reduce) { .journal-dot { animation: none; } }
 .settings-toggle-btn {
@@ -382,6 +422,7 @@
   .top-actions { right: 48px; gap: 6px; }
   .top-action-btn { width: 34px; height: 34px; font-size: 1.05rem; }
   .days-colored-pill { display: none !important; }
+  .rewards-teaser { font-size: 0.6rem; padding: 4px 7px; }
 }
 
 .tagline {

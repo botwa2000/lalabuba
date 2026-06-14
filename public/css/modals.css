@@ -357,6 +357,18 @@
 }
 .journal-stats:empty { display: none; }
 
+/* "Next sticker" milestone hint under the shelf */
+.journal-next {
+  flex-shrink: 0;
+  margin: 2px 0 0;
+  text-align: center;
+  font-family: var(--ff-brand);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--purple);
+}
+.journal-next[hidden] { display: none; }
+
 .sticker-shelf {
   flex-shrink: 0;
   display: flex;

@@ -59,71 +59,115 @@ function refreshDaysColoredPill() {
   }
 }
 
+// Masterpiece count badge on the Journal icon. The header previously showed only
+// a boolean "new" dot, so a child who finished 2 pictures saw no "2" anywhere up
+// top — they read the days-colored pill ("1 day") as a wrong count. This surfaces
+// the real masterpiece tally on the Journal button so the count is unambiguous,
+// and doubles as the always-visible "you have rewards here" announcement.
+function refreshJournalCount() {
+  let n = 0;
+  try { n = getProgress().totalCompleted || 0; } catch {}
+  const badge = document.getElementById('journal-count');
+  if (badge) {
+    if (n > 0) {
+      badge.textContent = n > 99 ? '99+' : String(n);
+      badge.hidden = false;
+    } else {
+      badge.hidden = true;
+    }
+  }
+  // First-time announcement: before any picture is finished, a "🏆 Earn stickers!"
+  // teaser sits beside the Journal icon so it's clear from the very first screen
+  // that rewards/progress exist. It disappears once the child has a masterpiece
+  // (the count badge takes over). CSS restricts it to the hero state.
+  const teaser = document.getElementById('rewards-teaser');
+  if (teaser) teaser.hidden = n > 0;
+}
+
 function checkCompletion() {
   if (state.celebrationShown || !showNumbersInput.checked || !state.regionColorMap || state.regionColorMap.size === 0) return;
-  if ([...state.regionColorMap.keys()].every((id) => state.completedRegions.has(id))) {
-    state.celebrationShown = true;
-    const subjectText = subjectInput.value.trim() || '?';
-    const elapsed = state.coloringStartTime ? Date.now() - state.coloringStartTime : 0;
-    const timeEl = document.getElementById("celebration-time");
-    if (timeEl) timeEl.textContent = elapsed > 0 ? t('celebTime', formatTime(elapsed)) : '';
+  if (![...state.regionColorMap.keys()].every((id) => state.completedRegions.has(id))) return;
 
-    // Record progress (anonymous, local) and reveal any newly-earned sticker + stats.
-    let progressResult = { progress: null, newBadges: [] };
-    try { progressResult = recordCompletion({ subject: subjectText, difficulty: difficultySelect.value }); } catch {}
-    const { progress, newBadges } = progressResult;
+  state.celebrationShown = true;
+  const subjectText = subjectInput.value.trim() || '?';
+  const elapsed = state.coloringStartTime ? Date.now() - state.coloringStartTime : 0;
+  const timeEl = document.getElementById("celebration-time");
+  if (timeEl) timeEl.textContent = elapsed > 0 ? t('celebTime', formatTime(elapsed)) : '';
 
-    const journalEl = document.getElementById("celebration-journal");
-    if (journalEl) journalEl.textContent = t('celebJournalSaved');
-    const statsEl = document.getElementById("celebration-stats");
-    if (statsEl && progress) statsEl.textContent = t('celebStats', progress.totalCompleted, progress.streak);
-
-    const stickerEl = document.getElementById("celebration-sticker");
-    if (stickerEl) {
-      if (newBadges && newBadges.length) {
-        const b = newBadges[0]; // reveal the most significant new sticker
-        const emoji = document.getElementById("sticker-emoji");
-        const title = document.getElementById("sticker-title");
-        const desc  = document.getElementById("sticker-desc");
-        if (emoji) emoji.textContent = b.emoji;
-        if (title) title.textContent = t(`badge${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}Title`);
-        if (desc)  desc.textContent  = t(`badge${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}Desc`);
-        stickerEl.hidden = false;
-        markJournalDirty(); // new sticker waiting → badge dot on the Journal icon
-      } else {
-        stickerEl.hidden = true;
-      }
-    }
-    markJournalDirty(); // a new masterpiece is always waiting in the Journal
-    refreshDaysColoredPill();
-
-    document.getElementById("celebration").classList.remove("hidden");
-    document.getElementById("celebration").setAttribute("aria-hidden", "false");
-    // Auto-save completed artwork to local gallery (with restoration data)
-    let lineArtDataUrl = null;
-    let fillDataUrl = null;
-    if (state.baseImageData && state.paintedImageData) {
-      const artC = document.createElement('canvas');
-      artC.width = previewCanvas.width; artC.height = previewCanvas.height;
-      artC.getContext('2d').putImageData(state.baseImageData, 0, 0);
-      lineArtDataUrl = artC.toDataURL('image/png');
-
-      const fillC = document.createElement('canvas');
-      fillC.width = previewCanvas.width; fillC.height = previewCanvas.height;
-      fillC.getContext('2d').putImageData(state.paintedImageData, 0, 0);
-      fillDataUrl = fillC.toDataURL('image/png');
-    }
-    saveArtwork({
-      subject: subjectInput.value.trim() || '?',
-      difficulty: difficultySelect.value,
-      colorCount: state.colorCount,
-      previewCanvas,
-      drawCanvas,
-      lineArtDataUrl,
-      fillDataUrl,
-      completedRegions: [...state.completedRegions],
-    }).then(() => setStatus(t('gallerySaved'))).catch(() => {});
+  // Record progress + persist the masterpiece exactly ONCE per coloring session.
+  // canvas.js clears state.celebrationShown on undo so the overlay can re-appear
+  // after an undo-then-refill, and a piece continued from the Journal is already
+  // counted — in BOTH cases recording again would double-count stats/badges and
+  // save a duplicate artwork. state.completionRecorded gates the side-effects and
+  // is reset only when a brand-new image loads (drawBaseImage) — never on undo.
+  let progress = null;
+  let newBadges = [];
+  const firstTime = !state.completionRecorded;
+  if (firstTime) {
+    try {
+      const r = recordCompletion({ subject: subjectText, difficulty: difficultySelect.value });
+      progress = r.progress;
+      newBadges = r.newBadges;
+    } catch {}
+    state.completionRecorded = true;
+  } else {
+    try { progress = getProgress(); } catch {}
   }
+
+  const journalEl = document.getElementById("celebration-journal");
+  if (journalEl) journalEl.textContent = t('celebJournalSaved');
+  const statsEl = document.getElementById("celebration-stats");
+  if (statsEl && progress) statsEl.textContent = t('celebStats', progress.totalCompleted, progress.streak);
+
+  const stickerEl = document.getElementById("celebration-sticker");
+  if (stickerEl) {
+    if (newBadges && newBadges.length) {
+      const b = newBadges[0]; // reveal the most significant new sticker
+      const emoji = document.getElementById("sticker-emoji");
+      const title = document.getElementById("sticker-title");
+      const desc  = document.getElementById("sticker-desc");
+      if (emoji) emoji.textContent = b.emoji;
+      if (title) title.textContent = t(`badge${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}Title`);
+      if (desc)  desc.textContent  = t(`badge${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}Desc`);
+      stickerEl.hidden = false;
+      markJournalDirty(); // new sticker waiting → badge dot on the Journal icon
+    } else {
+      stickerEl.hidden = true;
+    }
+  }
+  markJournalDirty(); // a new masterpiece is always waiting in the Journal
+  refreshDaysColoredPill();
+  refreshJournalCount(); // keep the masterpiece count on the Journal icon in sync
+
+  document.getElementById("celebration").classList.remove("hidden");
+  document.getElementById("celebration").setAttribute("aria-hidden", "false");
+
+  if (!firstTime) return; // already saved this session — don't duplicate the artwork
+
+  // Auto-save completed artwork to local gallery (with restoration data)
+  let lineArtDataUrl = null;
+  let fillDataUrl = null;
+  if (state.baseImageData && state.paintedImageData) {
+    const artC = document.createElement('canvas');
+    artC.width = previewCanvas.width; artC.height = previewCanvas.height;
+    artC.getContext('2d').putImageData(state.baseImageData, 0, 0);
+    lineArtDataUrl = artC.toDataURL('image/png');
+
+    const fillC = document.createElement('canvas');
+    fillC.width = previewCanvas.width; fillC.height = previewCanvas.height;
+    fillC.getContext('2d').putImageData(state.paintedImageData, 0, 0);
+    fillDataUrl = fillC.toDataURL('image/png');
+  }
+  saveArtwork({
+    subject: subjectInput.value.trim() || '?',
+    difficulty: difficultySelect.value,
+    colorCount: state.colorCount,
+    previewCanvas,
+    drawCanvas,
+    lineArtDataUrl,
+    fillDataUrl,
+    completedRegions: [...state.completedRegions],
+  }).then(() => setStatus(t('gallerySaved'))).catch(() => {});
 }
 
 // ─── Theme toggle ────────────────────────────────────────────────────────────
@@ -1241,6 +1285,11 @@ async function continueArtwork(item) {
     // 3. Restore which regions were already completed
     state.completedRegions = new Set(item.completedRegions || []);
     state.celebrationShown = false;
+    // This artwork was already saved & counted when first completed; re-finishing
+    // it from the Journal must not re-count stats/badges or duplicate the gallery
+    // entry. (drawBaseImage just reset this to false — restore the "already
+    // recorded" truth here, after the restore.)
+    state.completionRecorded = true;
     state.coloringStartTime = Date.now();
 
     // 4. Reset undo stack (history from a previous session isn't replayable)
@@ -1277,6 +1326,13 @@ initGalleryHandlers(continueArtwork);
       openGalleryModal(continueArtwork);
     });
   }
+  const rewardsTeaser = document.getElementById('rewards-teaser');
+  if (rewardsTeaser) {
+    rewardsTeaser.addEventListener('click', () => {
+      clearJournalDirty();
+      openGalleryModal(continueArtwork);
+    });
+  }
   // Restore the "new sticker waiting" dot across sessions.
   let dirty = false;
   try { dirty = localStorage.getItem(JOURNAL_DIRTY_KEY) === '1'; } catch {}
@@ -1285,6 +1341,7 @@ initGalleryHandlers(continueArtwork);
     if (dot) dot.hidden = false;
   }
   refreshDaysColoredPill();
+  refreshJournalCount();
 })();
 
 // ─── Hero suggestion cards ────────────────────────────────────────────────────

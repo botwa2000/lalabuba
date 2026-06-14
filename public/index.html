@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=193" />
-  <link rel="stylesheet" href="/css/header.css?v=193" />
-  <link rel="stylesheet" href="/css/hero.css?v=193" />
-  <link rel="stylesheet" href="/css/generator.css?v=193" />
-  <link rel="stylesheet" href="/css/layout.css?v=193" />
-  <link rel="stylesheet" href="/css/workspace.css?v=193" />
-  <link rel="stylesheet" href="/css/palette.css?v=193" />
-  <link rel="stylesheet" href="/css/modals.css?v=193" />
-  <link rel="stylesheet" href="/css/footer.css?v=193" />
-  <link rel="stylesheet" href="/css/print.css?v=193" />
-  <link rel="stylesheet" href="/css/cookies.css?v=193" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=193" />
-  <script src="/js/cookies.js?v=193"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=194" />
+  <link rel="stylesheet" href="/css/header.css?v=194" />
+  <link rel="stylesheet" href="/css/hero.css?v=194" />
+  <link rel="stylesheet" href="/css/generator.css?v=194" />
+  <link rel="stylesheet" href="/css/layout.css?v=194" />
+  <link rel="stylesheet" href="/css/workspace.css?v=194" />
+  <link rel="stylesheet" href="/css/palette.css?v=194" />
+  <link rel="stylesheet" href="/css/modals.css?v=194" />
+  <link rel="stylesheet" href="/css/footer.css?v=194" />
+  <link rel="stylesheet" href="/css/print.css?v=194" />
+  <link rel="stylesheet" href="/css/cookies.css?v=194" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=194" />
+  <script src="/js/cookies.js?v=194"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -199,9 +199,10 @@
 
       <!-- Always-visible right cluster: Journal (collection) + days-colored streak -->
       <div class="top-actions">
+        <button id="rewards-teaser" class="rewards-teaser" type="button" hidden data-i18n="rewardsTeaser">🏆 Earn stickers!</button>
         <span id="days-colored-pill" class="days-colored-pill" hidden aria-label="Days colored"></span>
         <button id="journal-btn" class="top-action-btn" type="button" aria-label="My Journal" title="My Journal">
-          🖼️<span id="journal-dot" class="journal-dot" hidden aria-hidden="true"></span>
+          🖼️<span id="journal-count" class="journal-count" hidden aria-hidden="true"></span><span id="journal-dot" class="journal-dot" hidden aria-hidden="true"></span>
         </button>
       </div>
       <a class="logo-lockup" href="/" aria-label="Lalabuba — home">
@@ -572,6 +573,7 @@
       <p id="journal-stats" class="journal-stats"></p>
       <!-- Sticker / badge shelf — earned in colour, locked greyed -->
       <div id="sticker-shelf" class="sticker-shelf" aria-label="Stickers"></div>
+      <p id="journal-next" class="journal-next" hidden></p>
       <div id="gallery-grid" class="gallery-grid"></div>
     </div>
   </div>
@@ -689,7 +691,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=193"></script>
+  <script type="module" src="/js/main.js?v=194"></script>
 </body>
 </html>
 

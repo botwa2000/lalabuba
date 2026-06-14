@@ -6,6 +6,9 @@ const DB_VERSION = 1;
 const STORE = 'artworks';
 const MAX_ENTRIES = 60;
 
+// Disambiguates artwork ids saved within the same millisecond (see saveArtwork).
+let _idCounter = 0;
+
 function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -32,7 +35,11 @@ export async function saveArtwork({ subject, difficulty, colorCount, previewCanv
   const jpeg = tmp.toDataURL('image/jpeg', 0.75);
 
   const entry = {
-    id: Date.now(),
+    // Unique, still chronologically-ordered key. Plain Date.now() collided when
+    // two artworks were saved in the same millisecond (fast "Again" loops), so
+    // the second silently overwrote the first via put(). The sub-ms counter keeps
+    // ids monotonically increasing and numeric (preserves getAll key ordering).
+    id: Date.now() * 1000 + (_idCounter++ % 1000),
     subject: subject || '?',
     difficulty: difficulty || 'medium',
     colorCount: colorCount || 12,
@@ -108,6 +115,25 @@ function renderJournalProgress() {
         <span class="sticker-chip-name">${title}</span>
       </div>`;
     }).join('');
+  }
+
+  // "Next sticker" hint — keeps the reward loop legible by showing the closest
+  // masterpiece-count milestone still to earn. Drives the come-back-and-finish-
+  // one-more behaviour (DESIGN_SPEC retention loop).
+  const nextEl = document.getElementById('journal-next');
+  if (nextEl) {
+    const milestones = [
+      { n: 1, emoji: '🌟' }, { n: 5, emoji: '🖐️' }, { n: 10, emoji: '🔟' },
+      { n: 25, emoji: '🎨' }, { n: 50, emoji: '🏆' },
+    ];
+    const tc = p ? (p.totalCompleted || 0) : 0;
+    const next = milestones.find((m) => m.n > tc);
+    if (next) {
+      nextEl.textContent = t('journalNext', next.n - tc, next.emoji);
+      nextEl.hidden = false;
+    } else {
+      nextEl.hidden = true;
+    }
   }
 }
 
