@@ -506,8 +506,11 @@
 /* Status bar: hidden on landing page */
 .app.app-hero #status { display: none; }
 
-/* Hero mode: override surprise-btn circle to pill style */
-.app.app-hero .surprise-btn {
+/* Override surprise-btn circle → pill style. Needed in BOTH hero AND coloring
+   mode: in the config panel the button shows its "💡 Surprise me" label, so the
+   48px circle would overflow and overlap the neighbouring "Today" pill. */
+.app.app-hero .surprise-btn,
+.app:not(.app-hero) .config-panel .surprise-btn {
   width: auto;
   height: auto;
   border-radius: 50px;

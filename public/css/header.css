@@ -2,7 +2,19 @@
 .site-header {
   text-align: center;
   padding: 12px 0 4px;
+  /* Sticky so the Journal button + settings stay reachable while coloring
+     (the page can scroll when the canvas is tall). */
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
 }
+
+/* Coloring state: slim the header so it doesn't steal canvas height — the
+   canvas is king. Identity stays, just compact. */
+.app:not(.app-hero) .site-header { padding: 4px 0 2px; }
+.app:not(.app-hero) .logo        { font-size: clamp(1.5rem, 4.5vw, 2.2rem); }
+.app:not(.app-hero) .logo-mascot { height: clamp(1.5rem, 4.5vw, 2.2rem); }
 
 .logo-lockup {
   display: inline-flex;
@@ -437,7 +449,7 @@
 .mobile-menu-btn:hover { background: var(--purple); color: #fff; }
 
 @media (max-width: 767px) {
-  .site-header { position: relative; }
+  .site-header { position: sticky; top: 0; }
   .mobile-menu-btn { display: flex; }
   /* Push lang-picker (🌙 + EN) clear of the 40px hamburger at left:12px */
   .lang-picker { padding-left: 56px; }
