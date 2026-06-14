@@ -215,6 +215,9 @@ function checkCompletion() {
 window.onTurnstileSuccess = (token) => {
   state.turnstileToken = token;
   document.body.classList.remove('ts-verifying'); // challenge solved → drop overlay
+  // …and tuck the solved widget box away so it doesn't linger centred over the
+  // app (Cloudflare leaves its success state rendered). Cleared on next Draw.
+  document.body.classList.add('ts-solved');
 };
 window.onTurnstileExpired = () => { state.turnstileToken = null; };
 window.onTurnstileError   = () => {

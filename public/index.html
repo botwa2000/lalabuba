@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=195" />
-  <link rel="stylesheet" href="/css/header.css?v=195" />
-  <link rel="stylesheet" href="/css/hero.css?v=195" />
-  <link rel="stylesheet" href="/css/generator.css?v=195" />
-  <link rel="stylesheet" href="/css/layout.css?v=195" />
-  <link rel="stylesheet" href="/css/workspace.css?v=195" />
-  <link rel="stylesheet" href="/css/palette.css?v=195" />
-  <link rel="stylesheet" href="/css/modals.css?v=195" />
-  <link rel="stylesheet" href="/css/footer.css?v=195" />
-  <link rel="stylesheet" href="/css/print.css?v=195" />
-  <link rel="stylesheet" href="/css/cookies.css?v=195" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=195" />
-  <script src="/js/cookies.js?v=195"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=196" />
+  <link rel="stylesheet" href="/css/header.css?v=196" />
+  <link rel="stylesheet" href="/css/hero.css?v=196" />
+  <link rel="stylesheet" href="/css/generator.css?v=196" />
+  <link rel="stylesheet" href="/css/layout.css?v=196" />
+  <link rel="stylesheet" href="/css/workspace.css?v=196" />
+  <link rel="stylesheet" href="/css/palette.css?v=196" />
+  <link rel="stylesheet" href="/css/modals.css?v=196" />
+  <link rel="stylesheet" href="/css/footer.css?v=196" />
+  <link rel="stylesheet" href="/css/print.css?v=196" />
+  <link rel="stylesheet" href="/css/cookies.css?v=196" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=196" />
+  <script src="/js/cookies.js?v=196"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -635,6 +635,13 @@
       box-shadow: 0 12px 48px rgba(0,0,0,.28);
       border-radius: 12px;
     }
+    /* Once the challenge is SOLVED, Cloudflare leaves its "success" box rendered
+       in the (non-empty) container. Because the widget is permanently fixed-
+       centred, that solved box used to linger over the app — "I checked in but
+       the popup didn't disappear". We have the token by now, so tuck the widget
+       off-screen (still rendered, so Cloudflare keeps working — not display:none).
+       Cleared on the next Draw (getTurnstileToken) / reset. */
+    body.ts-solved #turnstile-widget { left: -9999px !important; }
     /* Dimmed backdrop shown only while we're waiting for a human to verify */
     body.ts-verifying::before {
       content: '';
@@ -691,7 +698,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=195"></script>
+  <script type="module" src="/js/main.js?v=196"></script>
 </body>
 </html>
 
