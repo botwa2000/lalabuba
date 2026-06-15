@@ -26,6 +26,7 @@ import '../../features/gallery/gallery_screen.dart';
 import '../../shared/services/storage_service.dart';
 import '../../shared/widgets/lala_color_swatch.dart';
 import '../../shared/widgets/lala_loading_overlay.dart';
+import '../../shared/widgets/lala_showcase.dart';
 import 'canvas_models.dart';
 import 'canvas_painter.dart';
 import 'completion_celebration.dart';
@@ -743,8 +744,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   Widget _buildCanvasArea(BuildContext context, CanvasState canvas) {
     final cs = Theme.of(context).colorScheme;
     final l10n = ref.read(l10nProvider);
-    return Showcase(
-      key: _scCanvas,
+    return LalaShowcase(
+      showcaseKey: _scCanvas,
       title: l10n.t('tipCanvasTitle'),
       description: l10n.t('tipCanvasBody'),
       child: Container(
@@ -1012,8 +1013,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               onTap: canvas.isReady ? () => _printArtwork(canvas) : null,
             ),
             const SizedBox(width: 8),
-            Showcase(
-              key: _scSave,
+            LalaShowcase(
+              showcaseKey: _scSave,
               title: l10n.t('tipSaveTitle'),
               description: l10n.t('tipSaveBody'),
               child: _ActionBtn(
@@ -1059,8 +1060,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           // keeps a readable natural width and the set flows onto a second line
           // when the localized labels don't all fit — instead of squeezing the
           // text until it wraps vertically inside each button.
-          Showcase(
-            key: _scModes,
+          LalaShowcase(
+            showcaseKey: _scModes,
             title: l10n.t('tipModesTitle'),
             description: l10n.t('tipModesBody'),
             child: Padding(
@@ -1149,8 +1150,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             ),
           ),
           // Row 3: Color section — swatches (guided) or HSV picker (free)
-          Showcase(
-            key: _scColors,
+          LalaShowcase(
+            showcaseKey: _scColors,
             title: l10n.t('tipColorsTitle'),
             description: l10n.t('tipColorsBody'),
             child: canvas.isFreeMode
@@ -1187,8 +1188,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       child: Column(
         children: [
           // Mode buttons
-          Showcase(
-            key: _scModes,
+          LalaShowcase(
+            showcaseKey: _scModes,
             title: l10n.t('tipModesTitle'),
             description: l10n.t('tipModesBody'),
             child: Padding(
@@ -1297,8 +1298,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           Divider(height: 1, thickness: 0.5, color: cs.outlineVariant),
           // Color section
           if (canvas.isFreeMode)
-            Showcase(
-              key: _scColors,
+            LalaShowcase(
+              showcaseKey: _scColors,
               title: l10n.t('tipColorsTitle'),
               description: l10n.t('tipColorsBody'),
               child: Padding(
@@ -1318,8 +1319,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             )
           else
             Expanded(
-              child: Showcase(
-                key: _scColors,
+              child: LalaShowcase(
+                showcaseKey: _scColors,
                 title: l10n.t('tipColorsTitle'),
                 description: l10n.t('tipColorsBody'),
                 child: SingleChildScrollView(

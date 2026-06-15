@@ -18,6 +18,7 @@ import '../../shared/widgets/lala_chip.dart';
 import '../../shared/widgets/lala_text_field.dart';
 import '../../shared/widgets/lala_empty_hint.dart';
 import '../../shared/widgets/lala_bottom_sheet.dart';
+import '../../shared/widgets/lala_showcase.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -270,8 +271,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: Showcase(
-                      key: _scPrompt,
+                    child: LalaShowcase(
+                      showcaseKey: _scPrompt,
                       title: l10n.t('tipPromptTitle'),
                       description: l10n.t('tipPromptBody'),
                       targetBorderRadius: BorderRadius.circular(14),
@@ -858,8 +859,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Showcase(
-                    key: _scPrompt,
+                  child: LalaShowcase(
+                    showcaseKey: _scPrompt,
                     title: l10n.t('tipPromptTitle'),
                     description: l10n.t('tipPromptBody'),
                     targetBorderRadius: BorderRadius.circular(14),
@@ -907,8 +908,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildDrawButton(BuildContext context, L10n l10n,
       {double height = 52, double fontSize = 18}) {
     final cs = Theme.of(context).colorScheme;
-    return Showcase(
-      key: _scDraw,
+    return LalaShowcase(
+      showcaseKey: _scDraw,
       title: l10n.t('tipDrawTitle'),
       description: l10n.t('tipDrawBody'),
       targetBorderRadius: BorderRadius.circular(14),
