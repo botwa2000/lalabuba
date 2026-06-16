@@ -35,6 +35,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // but the API call uses the English prompt for consistent generation quality).
   String? _englishSubjectOverride;
   bool _programmaticFill = false;
+  // Where the current subject came from — propagated to the canvas so completion
+  // can credit the "own idea" (custom) and "daily word" stickers.
+  String _subjectSource = 'custom';
 
   // Coach-mark tutorial: highlight the prompt + Draw button on first launch and
   // when replayed via "How to play". Default seen=true so nothing flashes before
@@ -56,10 +59,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
     _textCtrl.addListener(() {
       if (_programmaticFill) return;
-      // User typed manually — clear the card-tap override
+      // User typed manually — clear the card-tap override; the subject is now
+      // the child's own idea.
       if (_englishSubjectOverride != null) {
         setState(() => _englishSubjectOverride = null);
       }
+      _subjectSource = 'custom';
       final has = _textCtrl.text.trim().isNotEmpty;
       if (has != _canDraw) setState(() => _canDraw = has);
       ref.read(homeProvider.notifier).setSubject(_textCtrl.text.trim());
@@ -85,13 +90,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       extra: CanvasScreenArgs(
         subject: apiSubject,
         displayLabel: displayLabel,
+        source: _subjectSource,
       ),
     );
   }
 
-  void _fillSubject(String text, {String? englishOverride}) {
+  void _fillSubject(String text,
+      {String? englishOverride, String source = 'custom'}) {
     _programmaticFill = true;
     _englishSubjectOverride = englishOverride;
+    _subjectSource = source;
     _textCtrl.text = text;
     _textCtrl.selection = TextSelection.collapsed(offset: text.length);
     _programmaticFill = false;
@@ -715,7 +723,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         HapticFeedback.lightImpact();
         // Show the localized word in the input; send the English word to the API
         // (same display-vs-prompt split the suggestion cards use).
-        _fillSubject(label, englishOverride: daily.word);
+        _fillSubject(label, englishOverride: daily.word, source: 'daily');
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -795,6 +803,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 _fillSubject(
                   card.label(locale),
                   englishOverride: card.englishPrompt,
+                  source: 'card',
                 );
               },
             );
@@ -884,6 +893,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       _fillSubject(
                         card.label(_currentLocale),
                         englishOverride: card.englishPrompt,
+                        source: 'surprise',
                       );
                     }
                   },

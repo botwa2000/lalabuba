@@ -36,11 +36,15 @@ class CanvasScreenArgs {
   final String subject;
   final String displayLabel;
   final int? seed; // null = generate new
+  // Where the subject came from: 'custom' (typed), 'card', 'daily', 'surprise'.
+  // Drives the "own idea" and "daily word" stickers on completion.
+  final String source;
 
   const CanvasScreenArgs({
     required this.subject,
     required this.displayLabel,
     this.seed,
+    this.source = 'custom',
   });
 }
 
@@ -1094,8 +1098,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                 _ActionBtn(
                   label: l10n.t('pencilBtn'),
                   active: mode == DrawMode.pencil,
-                  onTap: () => ref.read(canvasProvider.notifier).setMode(
-                      mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
+                  onTap: () => _onPencilTap(mode),
                 ),
                 _ActionBtn(
                   label: l10n.t('eraserBtn'),
@@ -1234,8 +1237,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                       child: _SidebarBtn(
                         label: l10n.t('pencilBtn'),
                         active: mode == DrawMode.pencil,
-                        onTap: () => ref.read(canvasProvider.notifier).setMode(
-                            mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil),
+                        onTap: () => _onPencilTap(mode),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -1544,6 +1546,40 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     );
   }
 
+  // ─── Sticker side-effects ────────────────────────────────────────────────────
+
+  // Toggle the freehand pen; credit the "draw pen" sticker the first time it's
+  // activated (recordDrawPenUse is a cheap no-op once already counted).
+  void _onPencilTap(DrawMode mode) {
+    final activating = mode != DrawMode.pencil;
+    ref
+        .read(canvasProvider.notifier)
+        .setMode(mode == DrawMode.pencil ? DrawMode.tap : DrawMode.pencil);
+    if (activating) {
+      ref.read(progressProvider.notifier).recordDrawPenUse().then(_toastBadges);
+    }
+  }
+
+  // Brief, kid-friendly toast when a non-completion event unlocks a sticker
+  // (share/save/challenge/draw-pen). Completion stickers are shown by the big
+  // celebration instead, so this only fires for the mid-session events.
+  void _toastBadges(List<StickerBadge> badges) {
+    if (badges.isEmpty || !mounted) return;
+    final l10n = ref.read(l10nProvider);
+    final b = badges.first;
+    final cap = '${b.id[0].toUpperCase()}${b.id.substring(1)}';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          l10n.t('stickerEarnedToast',
+              {'emoji': b.emoji, 'name': l10n.t('badge${cap}Title')}),
+          style: GoogleFonts.nunito(fontWeight: FontWeight.w700),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   // ─── Completion celebration ─────────────────────────────────────────────────
 
   Future<void> _onColoringComplete(CanvasState canvas) async {
@@ -1572,6 +1608,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       newBadges = await ref.read(progressProvider.notifier).recordCompletion(
             subject: _subject,
             difficulty: settings?.difficulty,
+            palette: settings?.palette,
+            colorCount: settings?.colorCount,
+            isCustom: widget.args.source == 'custom',
+            isDaily: widget.args.source == 'daily',
           );
     } catch (_) {}
     final progress =
@@ -1617,6 +1657,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       await Gal.putImageBytes(bytes,
           album: 'Lalabuba',
           name: 'lalabuba_${DateTime.now().millisecondsSinceEpoch}');
+      // Credit the saving stickers (saver / collector / curator).
+      unawaited(
+          ref.read(progressProvider.notifier).recordSave().then(_toastBadges));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1646,6 +1689,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         files: [file],
         text: l10n.t('shareImageText', {'subject': widget.args.displayLabel}),
       ));
+      // Credit the sharing stickers (sharer / superSharer).
+      unawaited(
+          ref.read(progressProvider.notifier).recordShare().then(_toastBadges));
     } catch (_) {}
   }
 
@@ -1739,6 +1785,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                           text: '$text\n$challengeUrl',
                           subject: 'Lalabuba Challenge 🏆',
                         ));
+                        // Credit the "challenger" sticker.
+                        unawaited(ref
+                            .read(progressProvider.notifier)
+                            .recordChallengeCreated()
+                            .then(_toastBadges));
                       } catch (_) {}
                     },
                     icon: const Icon(Icons.share_rounded, size: 18),
