@@ -595,6 +595,80 @@ Uint8List buildCompositeRgba(CompositeParams params) {
     out[i * 4 + 3] = orig[i * 4 + 3];
   }
 
+  // ── Reclaim enclosed light gaps the bounded bleed left white ──
+  // The morphological closing in detectRegions swallows thin light features (a
+  // pointed beak tip, a tail stripe, the gap between toes) into the -2 band, so
+  // they never become a region. The bounded seam bleed above only reaches
+  // maxBleed px in from a coloured edge, so a swallowed wedge DEEPER than that
+  // keeps an unfilled white core — a white spot with no black line around it
+  // ("white spots without a divider — see beak").
+  //
+  // Recover them WITHOUT re-creating the Voronoi-midline bug (the reason the
+  // bleed is bounded in the first place: an unbounded flood lets two DIFFERENT
+  // colours meet in open white). Flood each connected blob of still-white light
+  // -2 pixels and collect the distinct fill colours touching its border. Fill
+  // the blob ONLY when the border is unambiguous — a single colour. Two or more
+  // bordering colours means a genuine divider zone, so leave it untouched and no
+  // false midline can ever form. An enclosed gap inside one coloured shape (the
+  // beak) borders exactly that one colour, so it fills correctly.
+  final gapSeen = Uint8List(n);
+  final gapQ = Int32List(n);
+  for (var s = 0; s < n; s++) {
+    if (gapSeen[s] == 1) continue;
+    gapSeen[s] = 1;
+    if (p2r[s] != -2 || luma[s] < outlineLuma || claimColor[s] != 0) continue;
+
+    // BFS the blob; gapQ[0..gTail) holds its pixels (reset per blob).
+    var gHead = 0, gTail = 0;
+    gapQ[gTail++] = s;
+    var borderColor = 0;
+    var ambiguous = false;
+    while (gHead < gTail) {
+      final i = gapQ[gHead++];
+      final x = i % w;
+      for (final nb in [if (x > 0) i - 1, if (x < w - 1) i + 1, i - w, i + w]) {
+        if (nb < 0 || nb >= n) continue;
+        // Colour source: a filled region pixel, or a bled (claimed) -2 pixel.
+        var c = 0;
+        final ri = p2r[nb];
+        if (ri >= 0) {
+          final cc = colors[ri];
+          if (cc != null) c = cc;
+        }
+        if (c == 0 && claimColor[nb] != 0) c = claimColor[nb];
+        if (c != 0) {
+          if (borderColor == 0) {
+            borderColor = c;
+          } else if (borderColor != c) {
+            ambiguous = true;
+          }
+          continue; // a colour source is a wall, never a blob member
+        }
+        if (gapSeen[nb] == 0) {
+          gapSeen[nb] = 1;
+          // Extend only through more unclaimed light -2 pixels.
+          if (p2r[nb] == -2 && luma[nb] >= outlineLuma && claimColor[nb] == 0) {
+            gapQ[gTail++] = nb;
+          }
+        }
+      }
+    }
+
+    if (!ambiguous && borderColor != 0) {
+      final fr = (borderColor >> 16) & 0xFF;
+      final fg = (borderColor >> 8) & 0xFF;
+      final fb = borderColor & 0xFF;
+      for (var k = 0; k < gTail; k++) {
+        final i = gapQ[k];
+        final factor = luma[i] / 255.0;
+        out[i * 4] = (fr * factor).round().clamp(0, 255);
+        out[i * 4 + 1] = (fg * factor).round().clamp(0, 255);
+        out[i * 4 + 2] = (fb * factor).round().clamp(0, 255);
+        out[i * 4 + 3] = 255;
+      }
+    }
+  }
+
   return out;
 }
 
