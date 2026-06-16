@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../progress/progress_service.dart';
@@ -32,6 +33,8 @@ class RewardsScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
           _DailyMissionCard(progress: progress, l10n: l10n),
+          const SizedBox(height: 16),
+          _MascotCard(l10n: l10n),
           const SizedBox(height: 20),
           _CrayonPacksSection(progress: progress, l10n: l10n),
           const SizedBox(height: 20),
@@ -142,6 +145,66 @@ class _DailyMissionCard extends ConsumerWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Mascot entry card ───────────────────────────────────────────────────────
+
+class _MascotCard extends StatelessWidget {
+  final L10n l10n;
+  const _MascotCard({required this.l10n});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        context.pushNamed('mascot');
+      },
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFD9F0FF), Color(0xFFEAF7E9)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          children: [
+            const Text('🐧', style: TextStyle(fontSize: 44)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    l10n.t('mascotCardTitle'),
+                    style: GoogleFonts.fredoka(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF103024)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    l10n.t('mascotCardSubtitle'),
+                    style: GoogleFonts.nunito(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF3A6B57)),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF3A6B57)),
+          ],
+        ),
       ),
     );
   }

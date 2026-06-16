@@ -278,5 +278,11 @@
   "crayonLockedHint": "🔒 Color {count} to unlock",
   "crayonInUse": "In use",
   "crayonUse": "Use",
-  "crayonUnlockedToast": "🎨 New crayons unlocked: {name}!"
+  "crayonUnlockedToast": "🎨 New crayons unlocked: {name}!",
+  "mascotTitle": "🐧 My Penguin",
+  "mascotCardTitle": "Decorate your penguin!",
+  "mascotCardSubtitle": "Dress up Lalabuba with your stickers",
+  "mascotHint": "Tap a sticker to add it · drag to move",
+  "mascotTrayEmpty": "Earn stickers to decorate your penguin!",
+  "mascotClear": "Clear"
 }
