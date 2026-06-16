@@ -19,6 +19,7 @@ import '../../shared/widgets/lala_text_field.dart';
 import '../../shared/widgets/lala_empty_hint.dart';
 import '../../shared/widgets/lala_bottom_sheet.dart';
 import '../../shared/widgets/lala_showcase.dart';
+import '../rewards/daily_mission.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -116,6 +117,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final homeAsync = ref.watch(homeProvider);
     final settingsAsync = ref.watch(settingsProvider);
     final sub = ref.watch(subscriptionProvider).valueOrNull;
+    // Assign today's mission and snapshot its baseline at app start, so a
+    // mission like "color a picture" still counts a picture finished before the
+    // child opens the Rewards screen.
+    ref.watch(missionProvider);
 
     // Choose the layout by actual available SIZE, not orientation alone:
     //  • Tablet (shortest side ≥ 600dp) → roomy centered hero in BOTH

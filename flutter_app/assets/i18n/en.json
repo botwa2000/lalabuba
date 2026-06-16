@@ -256,5 +256,16 @@
   "stickerEarnedLabel": "Earned! 🎉",
   "stickerLockedLabel": "🔒 Keep playing to unlock!",
   "stickerCloseBtn": "Got it!",
-  "rewardsEmptyHint": "Color, share and explore to fill your album with stickers! 🌟"
+  "rewardsEmptyHint": "Color, share and explore to fill your album with stickers! 🌟",
+  "missionTitle": "🎯 Today's Mission",
+  "missionDoneBadge": "Done! 🎉",
+  "missionProgress": "{done}/{total}",
+  "missionColorAnyText": "Color a picture today",
+  "missionColorTwoText": "Color 2 pictures today",
+  "missionHardText": "Finish a tricky (Hard) picture",
+  "missionMaxColorsText": "Color using the Max colors",
+  "missionOwnIdeaText": "Color your very own idea",
+  "missionShareText": "Share one of your pictures",
+  "missionSaveText": "Save a picture to your gallery",
+  "missionDailyText": "Color today's daily word"
 }

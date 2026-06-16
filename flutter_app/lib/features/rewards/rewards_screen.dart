@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../progress/progress_service.dart';
+import 'daily_mission.dart';
 
 /// The Rewards home — the child's collection hub. Holds the sticker album
 /// (grouped collections), and is the destination of the pulsing 🏆 icon on the
@@ -28,7 +29,114 @@ class RewardsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
+          _DailyMissionCard(progress: progress, l10n: l10n),
+          const SizedBox(height: 20),
           _StickerAlbum(progress: progress, l10n: l10n),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Daily mission ───────────────────────────────────────────────────────────
+
+class _DailyMissionCard extends ConsumerWidget {
+  final Progress progress;
+  final L10n l10n;
+  const _DailyMissionCard({required this.progress, required this.l10n});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final missionAsync = ref.watch(missionProvider);
+    final mission = missionAsync.valueOrNull;
+    if (mission == null) return const SizedBox.shrink();
+
+    final cap = '${mission.def.id[0].toUpperCase()}${mission.def.id.substring(1)}';
+    final done = mission.isDone(progress);
+    final count = mission.progressCount(progress);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: done
+              ? const [Color(0xFFD4FC79), Color(0xFF96E6A1)]
+              : [cs.primaryContainer, cs.secondaryContainer],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: cs.primary.withValues(alpha: 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.75),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+                child: Text(mission.def.emoji,
+                    style: const TextStyle(fontSize: 28))),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.t('missionTitle'),
+                  style: GoogleFonts.fredoka(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1F4D3A)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  l10n.t('mission${cap}Text'),
+                  style: GoogleFonts.nunito(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF103024)),
+                ),
+                if (mission.def.amount > 1 && !done) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    l10n.t('missionProgress',
+                        {'done': '$count', 'total': '${mission.def.amount}'}),
+                    style: GoogleFonts.nunito(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1F4D3A)),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (done)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: Text(
+                l10n.t('missionDoneBadge'),
+                style: GoogleFonts.fredoka(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1F8A4C)),
+              ),
+            ),
         ],
       ),
     );
