@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -131,7 +133,12 @@ class GalleryScreen extends ConsumerWidget {
                 final b = kBadges[i];
                 final has = earned.contains(b.id);
                 final cap = '${b.id[0].toUpperCase()}${b.id.substring(1)}';
-                return Container(
+                return GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    context.pushNamed('rewards');
+                  },
+                  child: Container(
                   width: 74,
                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                   decoration: BoxDecoration(
@@ -166,6 +173,7 @@ class GalleryScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  ),
                   ),
                 );
               },

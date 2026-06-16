@@ -243,5 +243,18 @@
   "badgeChallengerTitle": "Challenger",
   "badgeChallengerDesc": "Made a coloring challenge!",
   "badgeDailyStarTitle": "Daily Star",
-  "badgeDailyStarDesc": "Colored the daily word!"
+  "badgeDailyStarDesc": "Colored the daily word!",
+  "rewardsTitle": "🏆 Rewards",
+  "rewardsBtn": "🏆 Rewards",
+  "rewardsStickersHeader": "Sticker Album",
+  "groupMilestonesTitle": "Milestones",
+  "groupStreaksTitle": "Day Streaks",
+  "groupExplorerTitle": "Explorer",
+  "groupCreativityTitle": "Creativity",
+  "groupSharingTitle": "Sharing & Saving",
+  "stickerCount": "{earned}/{total}",
+  "stickerEarnedLabel": "Earned! 🎉",
+  "stickerLockedLabel": "🔒 Keep playing to unlock!",
+  "stickerCloseBtn": "Got it!",
+  "rewardsEmptyHint": "Color, share and explore to fill your album with stickers! 🌟"
 }

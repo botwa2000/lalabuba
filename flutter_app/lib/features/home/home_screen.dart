@@ -366,39 +366,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           );
         }),
-        // Rewards discoverability (parity with web): for a brand-new child
-        // (0 completions) the streak pill + count badge are both empty, so the
-        // Journal would be invisible. Surface a tiny "🏆 Earn stickers!" teaser
-        // that opens the gallery; once they finish their first picture the
-        // count badge below takes over and the teaser disappears.
+        // Pulsing 🏆 Rewards entry — always present so the sticker album,
+        // missions, crayon packs and mascot are one tap away (this is the fix
+        // for "tapping a sticker did nothing — I had to open the gallery"). It
+        // gently pulses to invite kids, and shows the earned-sticker count once
+        // any are unlocked.
         Builder(builder: (_) {
-          final p = ref.watch(progressProvider).valueOrNull;
-          final done = p?.totalCompleted ?? 0;
-          if (done > 0) return const SizedBox.shrink();
-          return Center(
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                context.pushNamed('gallery');
-              },
-              child: Container(
-                margin: const EdgeInsets.only(right: 2),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                      colors: [Color(0xFFFFE0B2), Color(0xFFFFD166)]),
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: Text(
-                  l10n.t('rewardsTeaser'),
-                  style: GoogleFonts.fredoka(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF7A4F00)),
-                ),
-              ),
-            ),
+          final p = ref.watch(progressProvider).valueOrNull ?? const Progress();
+          final earnedCount =
+              kBadges.where((b) => p.badges.contains(b.id)).length;
+          return _PulsingRewardsIcon(
+            count: earnedCount,
+            tooltip: l10n.t('rewardsBtn'),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              context.pushNamed('rewards');
+            },
           );
         }),
         // Journal/Gallery icon with a masterpiece-count badge (parity with web):
@@ -1360,6 +1343,94 @@ class _SheetActionTile extends StatelessWidget {
               Icon(Icons.chevron_right_rounded,
                   size: 20, color: cs.onSurface.withValues(alpha: 0.4)),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Pulsing rewards entry icon ──────────────────────────────────────────────
+
+class _PulsingRewardsIcon extends StatefulWidget {
+  final int count;
+  final String tooltip;
+  final VoidCallback onTap;
+  const _PulsingRewardsIcon({
+    required this.count,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  State<_PulsingRewardsIcon> createState() => _PulsingRewardsIconState();
+}
+
+class _PulsingRewardsIconState extends State<_PulsingRewardsIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 950))
+      ..repeat(reverse: true);
+    _scale = Tween(begin: 1.0, end: 1.14)
+        .animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Tooltip(
+          message: widget.tooltip,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ScaleTransition(
+                  scale: _scale,
+                  child: const Text('🏆', style: TextStyle(fontSize: 22)),
+                ),
+                if (widget.count > 0)
+                  Positioned(
+                    right: -6,
+                    top: -6,
+                    child: Container(
+                      constraints:
+                          const BoxConstraints(minWidth: 16, minHeight: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(color: cs.surface, width: 1.5),
+                      ),
+                      child: Center(
+                        child: Text(
+                          widget.count > 99 ? '99+' : '${widget.count}',
+                          style: GoogleFonts.fredoka(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: cs.onPrimary,
+                              height: 1.1),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
