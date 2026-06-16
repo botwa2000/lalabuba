@@ -30,6 +30,7 @@ import '../../shared/widgets/lala_showcase.dart';
 import 'canvas_models.dart';
 import 'canvas_painter.dart';
 import 'completion_celebration.dart';
+import '../rewards/crayon_packs.dart';
 
 // Args passed when navigating to CanvasScreen
 class CanvasScreenArgs {
@@ -1633,6 +1634,23 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       },
       onShare: () => _shareArtwork(ref.read(canvasProvider)),
     );
+
+    // If this picture pushed the child over a crayon-pack threshold, tell them
+    // (after the celebration closes so it isn't hidden behind the dialog).
+    final unlockedPacks = packsUnlockedAt(progress.totalCompleted);
+    if (unlockedPacks.isNotEmpty && mounted) {
+      final pk = unlockedPacks.first;
+      final cap = '${pk.id[0].toUpperCase()}${pk.id.substring(1)}';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.t('crayonUnlockedToast', {'name': l10n.t('pack${cap}Name')}),
+            style: GoogleFonts.nunito(fontWeight: FontWeight.w700),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   // ─── Save / Share ─────────────────────────────────────────────────────────────
@@ -1827,47 +1845,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
   // ─── Palette ──────────────────────────────────────────────────────────────────
 
-  List<Color> _getPaletteColors(String palette, int count) {
-    // Each palette is ordered so that ANY prefix (the user picks 6/12/18/24) is
-    // maximally distinct: the first 12 walk the full hue wheel (red→orange→
-    // yellow→lime→green→teal→cyan→blue→indigo→purple→pink→brown/neutral) with no
-    // two near-identical shades, then 13–24 add a second tier + neutrals. This
-    // replaces the old lists where slots 7–12 repeated the hues of 1–6 and the
-    // nature set was eight near-identical greens in a row.
-    const classic = [
-      Color(0xFFE53935), Color(0xFFFB8C00), Color(0xFFFDD835), Color(0xFFC0CA33),
-      Color(0xFF43A047), Color(0xFF00897B), Color(0xFF00ACC1), Color(0xFF1E88E5),
-      Color(0xFF3949AB), Color(0xFF8E24AA), Color(0xFFD81B60), Color(0xFF6D4C41),
-      Color(0xFFB71C1C), Color(0xFFFFB300), Color(0xFF7CB342), Color(0xFF00695C),
-      Color(0xFF4FC3F7), Color(0xFF5E35B1), Color(0xFFF06292), Color(0xFFA1887F),
-      Color(0xFF212121), Color(0xFF757575), Color(0xFFBDBDBD), Color(0xFF0D47A1),
-    ];
-    const pastel = [
-      Color(0xFFFFADAD), Color(0xFFFFD6A5), Color(0xFFFDFFB6), Color(0xFFD0F4A0),
-      Color(0xFFB9FBC0), Color(0xFFA0F0E0), Color(0xFFA0E7E5), Color(0xFFA8D0FF),
-      Color(0xFFBDB2FF), Color(0xFFD4B8FF), Color(0xFFFFC6FF), Color(0xFFE7D3B3),
-      Color(0xFFFFB5A7), Color(0xFFFCD5CE), Color(0xFFFAE588), Color(0xFFC7E9B0),
-      Color(0xFFB5EAD7), Color(0xFFBDE0FE), Color(0xFFCAB8FF), Color(0xFFE0C3FC),
-      Color(0xFFFFD1DC), Color(0xFFEAD9C4), Color(0xFFE2E2E2), Color(0xFFC9CCD3),
-    ];
-    const nature = [
-      Color(0xFF5BA82F), Color(0xFF1B5E20), Color(0xFF2A9D8F), Color(0xFF5BC0EB),
-      Color(0xFF1D6FA3), Color(0xFFE07A5F), Color(0xFFBC4B2F), Color(0xFFE9C46A),
-      Color(0xFFD4A373), Color(0xFF7F5539), Color(0xFF6C757D), Color(0xFFF4A261),
-      Color(0xFF8FB339), Color(0xFFA7C957), Color(0xFF40916C), Color(0xFF14532D),
-      Color(0xFF277DA1), Color(0xFF9D4EDD), Color(0xFFE5989B), Color(0xFF6B4226),
-      Color(0xFF495057), Color(0xFF2B2D42), Color(0xFFADB5BD), Color(0xFFF2E8CF),
-    ];
-
-    final src = palette == 'pastel'
-        ? pastel
-        : palette == 'nature'
-            ? nature
-            : classic;
-    final effectiveCount =
-        count == 99 ? src.length : count.clamp(1, src.length);
-    return src.take(effectiveCount).toList();
-  }
+  // Palette colours now live in the shared crayon-pack catalogue so the canvas,
+  // the settings cycle and the Rewards "Crayon Packs" section all agree.
+  List<Color> _getPaletteColors(String palette, int count) =>
+      colorsFor(palette, count);
 }
 
 // ─── Helper widgets ───────────────────────────────────────────────────────────

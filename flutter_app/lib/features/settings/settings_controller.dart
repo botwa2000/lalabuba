@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/services/storage_service.dart';
+import '../rewards/crayon_packs.dart';
 
 class SettingsState {
   final String difficulty; // easy | medium | hard | extreme
@@ -29,7 +30,9 @@ class SettingsState {
 
 class SettingsNotifier extends AsyncNotifier<SettingsState> {
   static const _difficulties = ['easy', 'medium', 'hard', 'extreme'];
-  static const _palettes = ['classic', 'pastel', 'nature'];
+  // All known palettes (crayon packs), in catalogue order. cyclePalette only
+  // offers the ones currently unlocked, passed in as `allowed`.
+  static final _palettes = kPaletteOrder;
   static const _colorCounts = [6, 12, 18, 24, 99];
 
   @override

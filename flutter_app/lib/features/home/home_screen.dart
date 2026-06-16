@@ -20,6 +20,7 @@ import '../../shared/widgets/lala_empty_hint.dart';
 import '../../shared/widgets/lala_bottom_sheet.dart';
 import '../../shared/widgets/lala_showcase.dart';
 import '../rewards/daily_mission.dart';
+import '../rewards/crayon_packs.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -634,12 +635,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _SettingRow(
           icon: '🖍️',
           label: l10n.t('paletteLabel'),
-          value: _palLabelShort(settings?.palette ?? 'classic'),
+          value: _palLabelShort(settings?.palette ?? 'classic', l10n),
           onTap: () {
             HapticFeedback.selectionClick();
-            // All 3 palettes — free users can try them all
+            // Cycle only the crayon packs the child has unlocked.
+            final p = ref.read(progressProvider).valueOrNull ?? const Progress();
             ref.read(settingsProvider.notifier)
-                .cyclePalette(['classic', 'pastel', 'nature']);
+                .cyclePalette(unlockedPaletteIds(p));
           },
         ),
         const SizedBox(height: 4),
@@ -972,11 +974,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const ['easy', 'medium', 'hard', 'extreme']),
           ),
           LalaChip(
-            label: _palLabel(settings?.palette ?? 'classic'),
-            // Always cycle all 3 palettes — gating handled at generation time
-            onTap: () => ref
-                .read(settingsProvider.notifier)
-                .cyclePalette(['classic', 'pastel', 'nature']),
+            label: _palLabel(settings?.palette ?? 'classic', l10n),
+            // Cycle only the crayon packs the child has unlocked.
+            onTap: () {
+              final p =
+                  ref.read(progressProvider).valueOrNull ?? const Progress();
+              ref
+                  .read(settingsProvider.notifier)
+                  .cyclePalette(unlockedPaletteIds(p));
+            },
           ),
           LalaChip(
             label: _cntLabel(settings?.colorCount ?? 12),
@@ -1056,23 +1062,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  String _palLabel(String p) {
-    switch (p) {
-      case 'classic': return '🖍️ Classic';
-      case 'pastel':  return '🌸 Pastel';
-      case 'nature':  return '🌿 Nature';
-      default:        return p;
-    }
-  }
+  String _packNameKey(String p) =>
+      'pack${p[0].toUpperCase()}${p.substring(1)}Name';
 
-  String _palLabelShort(String p) {
-    switch (p) {
-      case 'classic': return 'Classic';
-      case 'pastel':  return 'Pastel';
-      case 'nature':  return 'Nature';
-      default:        return p;
-    }
-  }
+  String _palLabel(String p, L10n l10n) =>
+      '${packById(p).emoji} ${l10n.t(_packNameKey(p))}';
+
+  String _palLabelShort(String p, L10n l10n) => l10n.t(_packNameKey(p));
 
   String _cntLabel(int cnt) =>
       '🎨 ${cnt == 99 ? 'Max' : cnt.toString()}';

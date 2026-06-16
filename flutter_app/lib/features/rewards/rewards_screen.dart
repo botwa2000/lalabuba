@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../progress/progress_service.dart';
+import '../settings/settings_controller.dart';
 import 'daily_mission.dart';
+import 'crayon_packs.dart';
 
 /// The Rewards home — the child's collection hub. Holds the sticker album
 /// (grouped collections), and is the destination of the pulsing 🏆 icon on the
@@ -30,6 +32,8 @@ class RewardsScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
           _DailyMissionCard(progress: progress, l10n: l10n),
+          const SizedBox(height: 20),
+          _CrayonPacksSection(progress: progress, l10n: l10n),
           const SizedBox(height: 20),
           _StickerAlbum(progress: progress, l10n: l10n),
         ],
@@ -138,6 +142,172 @@ class _DailyMissionCard extends ConsumerWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Crayon packs (unlockable palettes) ──────────────────────────────────────
+
+class _CrayonPacksSection extends ConsumerWidget {
+  final Progress progress;
+  final L10n l10n;
+  const _CrayonPacksSection({required this.progress, required this.l10n});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current =
+        ref.watch(settingsProvider).valueOrNull?.palette ?? 'classic';
+    final unlocked = kCrayonPacks.where((p) => isPackUnlocked(progress, p.id)).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                l10n.t('crayonPacksHeader'),
+                style: GoogleFonts.fredoka(
+                    fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+            ),
+            _CountPill(
+                earned: unlocked, total: kCrayonPacks.length, l10n: l10n),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final pack in kCrayonPacks)
+              _CrayonPackTile(
+                pack: pack,
+                unlocked: isPackUnlocked(progress, pack.id),
+                inUse: current == pack.id,
+                remaining: pack.unlockAt - progress.totalCompleted,
+                l10n: l10n,
+                onUse: () {
+                  HapticFeedback.lightImpact();
+                  ref.read(settingsProvider.notifier).setPalette(pack.id);
+                },
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _CrayonPackTile extends StatelessWidget {
+  final CrayonPack pack;
+  final bool unlocked;
+  final bool inUse;
+  final int remaining;
+  final L10n l10n;
+  final VoidCallback onUse;
+
+  const _CrayonPackTile({
+    required this.pack,
+    required this.unlocked,
+    required this.inUse,
+    required this.remaining,
+    required this.l10n,
+    required this.onUse,
+  });
+
+  String get _cap => '${pack.id[0].toUpperCase()}${pack.id.substring(1)}';
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final preview = pack.colors.take(6).toList();
+    return GestureDetector(
+      onTap: unlocked ? onUse : null,
+      child: Container(
+        width: 158,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: inUse
+                ? cs.primary
+                : (unlocked
+                    ? cs.outlineVariant
+                    : cs.outlineVariant.withValues(alpha: 0.5)),
+            width: inUse ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Text(pack.emoji, style: const TextStyle(fontSize: 18)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    l10n.t('pack${_cap}Name'),
+                    style: GoogleFonts.fredoka(
+                        fontSize: 14, fontWeight: FontWeight.w700),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Colour preview dots
+            Opacity(
+              opacity: unlocked ? 1 : 0.4,
+              child: Row(
+                children: [
+                  for (final c in preview)
+                    Container(
+                      width: 18,
+                      height: 18,
+                      margin: const EdgeInsets.only(right: 4),
+                      decoration: BoxDecoration(
+                        color: c,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: Colors.black.withValues(alpha: 0.08)),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            if (!unlocked)
+              Text(
+                l10n.t('crayonLockedHint',
+                    {'count': '${remaining < 1 ? 1 : remaining}'}),
+                style: GoogleFonts.nunito(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: cs.onSurface.withValues(alpha: 0.55)),
+              )
+            else
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: inUse ? cs.primary : cs.primaryContainer,
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Text(
+                  l10n.t(inUse ? 'crayonInUse' : 'crayonUse'),
+                  style: GoogleFonts.nunito(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: inUse ? cs.onPrimary : cs.onPrimaryContainer,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

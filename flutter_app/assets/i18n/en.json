@@ -267,5 +267,16 @@
   "missionOwnIdeaText": "Color your very own idea",
   "missionShareText": "Share one of your pictures",
   "missionSaveText": "Save a picture to your gallery",
-  "missionDailyText": "Color today's daily word"
+  "missionDailyText": "Color today's daily word",
+  "crayonPacksHeader": "Crayon Packs",
+  "packClassicName": "Classic",
+  "packPastelName": "Pastel",
+  "packNatureName": "Nature",
+  "packNeonName": "Neon",
+  "packCandyName": "Candy",
+  "packGalaxyName": "Galaxy",
+  "crayonLockedHint": "🔒 Color {count} to unlock",
+  "crayonInUse": "In use",
+  "crayonUse": "Use",
+  "crayonUnlockedToast": "🎨 New crayons unlocked: {name}!"
 }
