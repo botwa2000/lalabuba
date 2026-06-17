@@ -215,6 +215,17 @@
 }
 .top-action-btn:hover { border-color: var(--purple); transform: translateY(-2px); }
 
+/* Gentle always-on pulse on the Rewards/Journal entry so the collection always
+   feels alive and inviting (requested: "slightly animated/pulsating" rewards
+   icon). Subtle scale only; paused on hover so it doesn't fight the lift. */
+#journal-btn { animation: journalPulse 2.6s ease-in-out infinite; }
+#journal-btn:hover { animation: none; }
+@keyframes journalPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.07); }
+}
+@media (prefers-reduced-motion: reduce) { #journal-btn { animation: none; } }
+
 /* "New sticker waiting" dot */
 .journal-dot {
   position: absolute;

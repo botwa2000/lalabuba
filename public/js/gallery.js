@@ -90,51 +90,296 @@ export async function deleteArtwork(id) {
 // ── Gallery modal UI ─────────────────────────────────────────────────────────
 
 import { t } from './i18n.js';
-import { BADGES, getProgress } from './progress.js';
+import { BADGES, GROUPS, badgesIn, getProgress } from './progress.js';
+import { CRAYON_PACKS, PALETTES, isPackUnlocked, packById } from './data.js';
+import { getDailyMission, missionProgressCount, missionIsDone } from './daily-mission.js';
+import { getMascotDecor, toggleMascotSticker, setMascotPos, clearMascot } from './mascot.js';
 
-// Render the masterpiece-count line + the earned/locked sticker shelf.
+const cap = (id) => `${id.charAt(0).toUpperCase()}${id.slice(1)}`;
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// ── Group display metadata (emoji + i18n key), parity with Flutter ──
+const GROUP_META = {
+  milestones: { emoji: '🏆', key: 'groupMilestonesTitle' },
+  streaks:    { emoji: '🔥', key: 'groupStreaksTitle' },
+  explorer:   { emoji: '🧭', key: 'groupExplorerTitle' },
+  creativity: { emoji: '🎨', key: 'groupCreativityTitle' },
+  sharing:    { emoji: '📤', key: 'groupSharingTitle' },
+};
+
+// Render the masterpiece line, daily mission, mascot card, crayon packs and the
+// grouped sticker album. Mirrors the Flutter Rewards screen.
 function renderJournalProgress() {
   let p;
   try { p = getProgress(); } catch { p = null; }
+  const total = p ? (p.totalCompleted || 0) : 0;
+  const earned = new Set(p ? p.badges : []);
 
   const statsEl = document.getElementById('journal-stats');
   if (statsEl) {
-    statsEl.textContent = p ? t('journalStats', p.totalCompleted || 0, p.streak || 0) : '';
+    statsEl.textContent = p ? t('journalStats', total, p.streak || 0) : '';
   }
 
-  const shelf = document.getElementById('sticker-shelf');
-  if (shelf) {
-    const earned = new Set(p ? p.badges : []);
-    shelf.innerHTML = BADGES.map((b) => {
-      const has = earned.has(b.id);
-      const cap = `${b.id.charAt(0).toUpperCase()}${b.id.slice(1)}`;
-      const title = t(`badge${cap}Title`);
-      const desc  = has ? t(`badge${cap}Desc`) : t('journalLocked');
-      return `<div class="sticker-chip ${has ? 'earned' : 'locked'}" title="${title} — ${desc}">
-        <span class="sticker-chip-emoji">${has ? b.emoji : '🔒'}</span>
-        <span class="sticker-chip-name">${title}</span>
-      </div>`;
-    }).join('');
-  }
+  renderDailyMission(p);
+  renderMascotCard(earned);
+  renderCrayonPacks(total);
+  renderStickerAlbum(p, earned);
 
-  // "Next sticker" hint — keeps the reward loop legible by showing the closest
-  // masterpiece-count milestone still to earn. Drives the come-back-and-finish-
-  // one-more behaviour (DESIGN_SPEC retention loop).
+  // "Next sticker" hint — closest masterpiece-count milestone still to earn.
   const nextEl = document.getElementById('journal-next');
   if (nextEl) {
     const milestones = [
       { n: 1, emoji: '🌟' }, { n: 5, emoji: '🖐️' }, { n: 10, emoji: '🔟' },
-      { n: 25, emoji: '🎨' }, { n: 50, emoji: '🏆' },
+      { n: 25, emoji: '🎨' }, { n: 50, emoji: '🏆' }, { n: 100, emoji: '💯' },
     ];
-    const tc = p ? (p.totalCompleted || 0) : 0;
-    const next = milestones.find((m) => m.n > tc);
+    const next = milestones.find((m) => m.n > total);
     if (next) {
-      nextEl.textContent = t('journalNext', next.n - tc, next.emoji);
+      nextEl.textContent = t('journalNext', next.n - total, next.emoji);
       nextEl.hidden = false;
     } else {
       nextEl.hidden = true;
     }
   }
+}
+
+// ── Daily mission card ──────────────────────────────────────────────────────
+function renderDailyMission(p) {
+  const card = document.getElementById('daily-mission-card');
+  if (!card) return;
+  let m;
+  try { m = getDailyMission(); } catch { m = null; }
+  if (!m || !p) { card.hidden = true; return; }
+  const done = missionIsDone(m, p);
+  const count = missionProgressCount(m, p);
+  const showProgress = m.def.amount > 1 && !done;
+  card.classList.toggle('done', done);
+  card.innerHTML = `
+    <div class="dm-emoji">${m.def.emoji}</div>
+    <div class="dm-body">
+      <div class="dm-title">${esc(t('missionTitle'))}</div>
+      <div class="dm-text">${esc(t(`mission${cap(m.def.id)}Text`))}</div>
+      ${showProgress ? `<div class="dm-progress">${esc(t('missionProgress', count, m.def.amount))}</div>` : ''}
+    </div>
+    ${done ? `<div class="dm-badge">${esc(t('missionDoneBadge'))}</div>` : ''}
+  `;
+  card.hidden = false;
+}
+
+// ── Mascot entry card ───────────────────────────────────────────────────────
+function renderMascotCard(earned) {
+  const card = document.getElementById('mascot-card');
+  if (!card) return;
+  card.innerHTML = `
+    <span class="mc-emoji">🐧</span>
+    <span class="mc-body">
+      <span class="mc-title">${esc(t('mascotCardTitle'))}</span>
+      <span class="mc-sub">${esc(t('mascotCardSubtitle'))}</span>
+    </span>
+    <span class="mc-chev">›</span>
+  `;
+  card.hidden = false;
+  card.onclick = () => openMascotModal();
+}
+
+// ── Crayon packs section ────────────────────────────────────────────────────
+function renderCrayonPacks(total) {
+  const wrap = document.getElementById('crayon-packs');
+  if (!wrap) return;
+  const current = (document.getElementById('palette-select') || {}).value || 'classic';
+  const unlockedCount = CRAYON_PACKS.filter((pk) => isPackUnlocked(total, pk.id)).length;
+
+  const tiles = CRAYON_PACKS.map((pk) => {
+    const unlocked = isPackUnlocked(total, pk.id);
+    const inUse = current === pk.id;
+    const remaining = Math.max(1, pk.unlockAt - total);
+    const preview = (PALETTES[pk.id] || []).slice(0, 6)
+      .map((c) => `<span class="cp-dot" style="background:${c.color}"></span>`).join('');
+    const footer = unlocked
+      ? `<span class="cp-use ${inUse ? 'in-use' : ''}">${esc(t(inUse ? 'crayonInUse' : 'crayonUse'))}</span>`
+      : `<span class="cp-locked">${esc(t('crayonLockedHint', remaining))}</span>`;
+    return `<div class="crayon-pack-tile ${unlocked ? '' : 'locked'} ${inUse ? 'in-use' : ''}" data-pack="${pk.id}" data-unlocked="${unlocked ? '1' : '0'}">
+      <div class="cp-head"><span class="cp-emoji">${pk.emoji}</span><span class="cp-name">${esc(t(`pack${cap(pk.id)}Name`))}</span></div>
+      <div class="cp-dots">${preview}</div>
+      <div class="cp-foot">${footer}</div>
+    </div>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div class="rewards-section-head">
+      <span class="rsh-title">${esc(t('crayonPacksHeader'))}</span>
+      <span class="rsh-count">${esc(t('stickerCount', unlockedCount, CRAYON_PACKS.length))}</span>
+    </div>
+    <div class="crayon-pack-grid">${tiles}</div>
+  `;
+  wrap.querySelectorAll('.crayon-pack-tile[data-unlocked="1"]').forEach((tile) => {
+    tile.addEventListener('click', () => {
+      const sel = document.getElementById('palette-select');
+      if (sel) { sel.value = tile.dataset.pack; sel.dispatchEvent(new Event('change')); }
+      renderCrayonPacks(total); // refresh in-use highlight
+    });
+  });
+}
+
+// ── Grouped sticker album ───────────────────────────────────────────────────
+function renderStickerAlbum(p, earned) {
+  const shelf = document.getElementById('sticker-shelf');
+  if (!shelf) return;
+  const totalEarned = BADGES.filter((b) => earned.has(b.id)).length;
+
+  let html = `
+    <div class="rewards-section-head">
+      <span class="rsh-title">${esc(t('rewardsStickersHeader'))}</span>
+      <span class="rsh-count">${esc(t('stickerCount', totalEarned, BADGES.length))}</span>
+    </div>`;
+  if (totalEarned === 0) {
+    html += `<p class="album-empty-hint">${esc(t('rewardsEmptyHint'))}</p>`;
+  }
+
+  for (const group of GROUPS) {
+    const meta = GROUP_META[group] || { emoji: '⭐', key: 'rewardsStickersHeader' };
+    const list = badgesIn(group);
+    const got = list.filter((b) => earned.has(b.id)).length;
+    const tiles = list.map((b) => {
+      const has = earned.has(b.id);
+      return `<button class="sticker-tile ${has ? 'earned' : 'locked'}" type="button" data-badge="${b.id}" data-earned="${has ? '1' : '0'}">
+        <span class="st-art">${has ? b.emoji : '🔒'}</span>
+        <span class="st-name">${esc(t(`badge${cap(b.id)}Title`))}</span>
+      </button>`;
+    }).join('');
+    html += `
+      <div class="album-group">
+        <div class="album-group-head">
+          <span class="agh-emoji">${meta.emoji}</span>
+          <span class="agh-title">${esc(t(meta.key))}</span>
+          <span class="agh-count">${esc(t('stickerCount', got, list.length))}</span>
+        </div>
+        <div class="album-group-grid">${tiles}</div>
+      </div>`;
+  }
+  shelf.innerHTML = html;
+  shelf.querySelectorAll('.sticker-tile').forEach((tile) => {
+    tile.addEventListener('click', () => {
+      openStickerDetail(tile.dataset.badge, tile.dataset.earned === '1');
+    });
+  });
+}
+
+// ── Sticker detail popup ────────────────────────────────────────────────────
+function openStickerDetail(badgeId, earned) {
+  const el = document.getElementById('sticker-detail');
+  if (!el) return;
+  const b = BADGES.find((x) => x.id === badgeId);
+  if (!b) return;
+  el.innerHTML = `
+    <div class="sd-backdrop"></div>
+    <div class="sd-card" role="document">
+      <div class="sd-art ${earned ? 'earned' : 'locked'}">${earned ? b.emoji : '🔒'}</div>
+      <h4 class="sd-title">${esc(t(`badge${cap(b.id)}Title`))}</h4>
+      <p class="sd-desc">${esc(t(`badge${cap(b.id)}Desc`))}</p>
+      <span class="sd-status ${earned ? 'earned' : 'locked'}">${esc(t(earned ? 'stickerEarnedLabel' : 'stickerLockedLabel'))}</span>
+      <button class="sd-close" type="button">${esc(t('stickerCloseBtn'))}</button>
+    </div>`;
+  el.classList.remove('hidden');
+  el.setAttribute('aria-hidden', 'false');
+  const close = () => { el.classList.add('hidden'); el.setAttribute('aria-hidden', 'true'); };
+  el.querySelector('.sd-close').addEventListener('click', close);
+  el.querySelector('.sd-backdrop').addEventListener('click', close);
+}
+
+// ── Mascot decorate view ────────────────────────────────────────────────────
+function openMascotModal() {
+  const el = document.getElementById('mascot-modal');
+  if (!el) return;
+  let earnedBadges = [];
+  try { earnedBadges = BADGES.filter((b) => new Set(getProgress().badges).has(b.id)); } catch {}
+  const emojiOf = Object.fromEntries(BADGES.map((b) => [b.id, b.emoji]));
+
+  function render() {
+    const decor = getMascotDecor();
+    const placed = Object.entries(decor)
+      .map(([id, pos]) => `<span class="mascot-sticker" data-id="${id}" style="left:${pos[0] * 100}%;top:${pos[1] * 100}%">${emojiOf[id] || '⭐'}</span>`)
+      .join('');
+    const hasPlaced = Object.keys(decor).length > 0;
+    const tray = earnedBadges.length
+      ? earnedBadges.map((b) => {
+          const on = Object.prototype.hasOwnProperty.call(decor, b.id);
+          return `<button class="mascot-tray-item ${on ? 'on' : ''}" type="button" data-id="${b.id}">${b.emoji}</button>`;
+        }).join('')
+      : `<p class="mascot-tray-empty">${esc(t('mascotTrayEmpty'))}</p>`;
+
+    el.innerHTML = `
+      <div class="mascot-modal-card">
+        <div class="mascot-modal-head">
+          <h3>${esc(t('mascotTitle'))}</h3>
+          <div class="mascot-head-actions">
+            ${hasPlaced ? `<button class="mascot-clear" type="button">${esc(t('mascotClear'))}</button>` : ''}
+            <button class="mascot-close" type="button" aria-label="Close">✕</button>
+          </div>
+        </div>
+        <div class="mascot-stage" id="mascot-stage">
+          <span class="mascot-penguin">🐧</span>
+          ${placed}
+          ${(!hasPlaced && earnedBadges.length) ? `<span class="mascot-hint">${esc(t('mascotHint'))}</span>` : ''}
+        </div>
+        <div class="mascot-tray">${tray}</div>
+      </div>`;
+
+    el.querySelector('.mascot-close').addEventListener('click', closeMascot);
+    const clearBtn = el.querySelector('.mascot-clear');
+    if (clearBtn) clearBtn.addEventListener('click', () => { clearMascot(); render(); });
+    el.querySelectorAll('.mascot-tray-item').forEach((b) => {
+      b.addEventListener('click', () => { toggleMascotSticker(b.dataset.id); render(); });
+    });
+    wireDrag();
+  }
+
+  function wireDrag() {
+    const stage = el.querySelector('#mascot-stage');
+    if (!stage) return;
+    el.querySelectorAll('.mascot-sticker').forEach((st) => {
+      let dragging = false;
+      const onMove = (e) => {
+        if (!dragging) return;
+        e.preventDefault();
+        const pt = e.touches ? e.touches[0] : e;
+        const r = stage.getBoundingClientRect();
+        const nx = (pt.clientX - r.left) / r.width;
+        const ny = (pt.clientY - r.top) / r.height;
+        st.style.left = Math.min(96, Math.max(4, nx * 100)) + '%';
+        st.style.top = Math.min(96, Math.max(4, ny * 100)) + '%';
+      };
+      const onUp = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        const pt = (e.changedTouches ? e.changedTouches[0] : e);
+        const r = stage.getBoundingClientRect();
+        setMascotPos(st.dataset.id, (pt.clientX - r.left) / r.width, (pt.clientY - r.top) / r.height);
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onUp);
+      };
+      const onDown = (e) => {
+        dragging = true;
+        e.preventDefault();
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onUp);
+      };
+      st.addEventListener('mousedown', onDown);
+      st.addEventListener('touchstart', onDown, { passive: false });
+    });
+  }
+
+  function closeMascot() {
+    el.classList.add('hidden');
+    el.setAttribute('aria-hidden', 'true');
+  }
+
+  render();
+  el.classList.remove('hidden');
+  el.setAttribute('aria-hidden', 'false');
 }
 
 export async function openGalleryModal(onContinue) {

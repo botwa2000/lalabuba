@@ -77,7 +77,119 @@ export const PALETTES = {
     { label: "Dew",     color: "#74c69d" },
     { label: "Twig",    color: "#a07850" },
   ],
+  // ── Unlockable crayon packs (parity with Flutter crayon_packs.dart) ──
+  // Gated by totalCompleted: neon@5, candy@15, galaxy@30. See CRAYON_PACKS below.
+  neon: [
+    { label: "Laser", color: "#ff1744" },
+    { label: "Flame", color: "#ff9100" },
+    { label: "Volt", color: "#ffea00" },
+    { label: "Slime", color: "#c6ff00" },
+    { label: "Glow", color: "#00e676" },
+    { label: "Aqua", color: "#00e5ff" },
+    { label: "Electric", color: "#2979ff" },
+    { label: "Plasma", color: "#651fff" },
+    { label: "Magenta", color: "#d500f9" },
+    { label: "Hot Pink", color: "#ff00a8" },
+    { label: "Punch", color: "#ff4081" },
+    { label: "Mint Glow", color: "#1de9b6" },
+    { label: "Crimson", color: "#ff5252" },
+    { label: "Tangerine", color: "#ffab40" },
+    { label: "Lightning", color: "#eeff41" },
+    { label: "Lime", color: "#76ff03" },
+    { label: "Spring", color: "#69f0ae" },
+    { label: "Ice", color: "#18ffff" },
+    { label: "Cobalt", color: "#448aff" },
+    { label: "Violet", color: "#7c4dff" },
+    { label: "Orchid", color: "#e040fb" },
+    { label: "Bubblegum", color: "#ff80ab" },
+    { label: "Teal", color: "#64ffda" },
+    { label: "Apple", color: "#b2ff59" },
+  ],
+  candy: [
+    { label: "Bubblegum", color: "#ff5c8a" },
+    { label: "Taffy", color: "#ff8fb1" },
+    { label: "Cotton", color: "#ffc2d1" },
+    { label: "Fairy", color: "#ffb5e8" },
+    { label: "Lilac", color: "#d8b4fe" },
+    { label: "Grape", color: "#b28dff" },
+    { label: "Iris", color: "#8e7cff" },
+    { label: "Sky Candy", color: "#6ec6ff" },
+    { label: "Frost", color: "#7af5ff" },
+    { label: "Spearmint", color: "#8cffda" },
+    { label: "Sour Apple", color: "#c2f784" },
+    { label: "Lemon Drop", color: "#fff59d" },
+    { label: "Punch", color: "#ff7aa2" },
+    { label: "Rose", color: "#ffa6c9" },
+    { label: "Blush", color: "#ffd0e0" },
+    { label: "Wisteria", color: "#e9b8ff" },
+    { label: "Lavender", color: "#caa6ff" },
+    { label: "Periwinkle", color: "#9f8cff" },
+    { label: "Cornflower", color: "#7fb0ff" },
+    { label: "Mist", color: "#9ce8ff" },
+    { label: "Mint", color: "#a8ffe6" },
+    { label: "Pear", color: "#d4fb9b" },
+    { label: "Honey", color: "#ffe082" },
+    { label: "Peach", color: "#ffb07c" },
+  ],
+  galaxy: [
+    { label: "Midnight", color: "#1a237e" },
+    { label: "Indigo", color: "#311b92" },
+    { label: "Nebula", color: "#4a148c" },
+    { label: "Cosmic", color: "#6a1b9a" },
+    { label: "Deep Blue", color: "#283593" },
+    { label: "Royal", color: "#1565c0" },
+    { label: "Ocean", color: "#0277bd" },
+    { label: "Teal Sea", color: "#00838f" },
+    { label: "Amethyst", color: "#7e57c2" },
+    { label: "Orchid", color: "#ab47bc" },
+    { label: "Periwinkle", color: "#5c6bc0" },
+    { label: "Star Gold", color: "#ffd54f" },
+    { label: "Comet", color: "#ff8a65" },
+    { label: "Pulsar", color: "#ec407a" },
+    { label: "Aqua", color: "#26c6da" },
+    { label: "Asteroid", color: "#9ccc65" },
+    { label: "Starlight", color: "#ffffff" },
+    { label: "Moon", color: "#b39ddb" },
+    { label: "Glacier", color: "#80deea" },
+    { label: "Rose Star", color: "#f48fb1" },
+    { label: "Mauve", color: "#ce93d8" },
+    { label: "Sky", color: "#90caf9" },
+    { label: "Sand", color: "#ffe0b2" },
+    { label: "Void", color: "#0d1b4c" },
+  ],
 };
+
+// ── Crayon-pack metadata (unlock gating) ───────────────────────────────────
+// id → { emoji, unlockAt } where unlockAt is the totalCompleted threshold
+// (0 = always available). Parity with Flutter kCrayonPacks. Order here is the
+// catalogue/cycle order used by the settings palette cycle and Rewards screen.
+export const CRAYON_PACKS = [
+  { id: 'classic', emoji: '🖍️', unlockAt: 0 },
+  { id: 'pastel',  emoji: '🌸', unlockAt: 0 },
+  { id: 'nature',  emoji: '🌿', unlockAt: 0 },
+  { id: 'neon',    emoji: '⚡', unlockAt: 5 },
+  { id: 'candy',   emoji: '🍭', unlockAt: 15 },
+  { id: 'galaxy',  emoji: '🌌', unlockAt: 30 },
+];
+
+export function packById(id) {
+  return CRAYON_PACKS.find((p) => p.id === id) || CRAYON_PACKS[0];
+}
+
+export function isPackUnlocked(totalCompleted, id) {
+  return (totalCompleted || 0) >= packById(id).unlockAt;
+}
+
+// Pack ids the child can currently choose, in catalogue order.
+export function unlockedPaletteIds(totalCompleted) {
+  return CRAYON_PACKS.filter((p) => isPackUnlocked(totalCompleted, p.id)).map((p) => p.id);
+}
+
+// Packs whose threshold is EXACTLY met by this completion (so the caller can
+// celebrate the just-unlocked pack). Mirrors Flutter packsUnlockedAt().
+export function packsUnlockedAt(totalCompleted) {
+  return CRAYON_PACKS.filter((p) => p.unlockAt > 0 && p.unlockAt === totalCompleted);
+}
 
 export const DIFFICULTY = {
   easy:    { minArea: 2000 },

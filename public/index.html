@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=196" />
-  <link rel="stylesheet" href="/css/header.css?v=196" />
-  <link rel="stylesheet" href="/css/hero.css?v=196" />
-  <link rel="stylesheet" href="/css/generator.css?v=196" />
-  <link rel="stylesheet" href="/css/layout.css?v=196" />
-  <link rel="stylesheet" href="/css/workspace.css?v=196" />
-  <link rel="stylesheet" href="/css/palette.css?v=196" />
-  <link rel="stylesheet" href="/css/modals.css?v=196" />
-  <link rel="stylesheet" href="/css/footer.css?v=196" />
-  <link rel="stylesheet" href="/css/print.css?v=196" />
-  <link rel="stylesheet" href="/css/cookies.css?v=196" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=196" />
-  <script src="/js/cookies.js?v=196"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=197" />
+  <link rel="stylesheet" href="/css/header.css?v=197" />
+  <link rel="stylesheet" href="/css/hero.css?v=197" />
+  <link rel="stylesheet" href="/css/generator.css?v=197" />
+  <link rel="stylesheet" href="/css/layout.css?v=197" />
+  <link rel="stylesheet" href="/css/workspace.css?v=197" />
+  <link rel="stylesheet" href="/css/palette.css?v=197" />
+  <link rel="stylesheet" href="/css/modals.css?v=197" />
+  <link rel="stylesheet" href="/css/footer.css?v=197" />
+  <link rel="stylesheet" href="/css/print.css?v=197" />
+  <link rel="stylesheet" href="/css/cookies.css?v=197" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=197" />
+  <script src="/js/cookies.js?v=197"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -319,6 +319,10 @@
             <option value="classic" data-i18n="paletteClassic">🖍️ Classic crayons</option>
             <option value="pastel" data-i18n="palettePastel">🌸 Soft pastels</option>
             <option value="nature" data-i18n="paletteNature">🌿 Nature</option>
+            <!-- Unlockable crayon packs (selectable from the Rewards/Journal screen). -->
+            <option value="neon" data-i18n="packNeonName">⚡ Neon</option>
+            <option value="candy" data-i18n="packCandyName">🍭 Candy</option>
+            <option value="galaxy" data-i18n="packGalaxyName">🌌 Galaxy</option>
           </select>
           <select id="provider-select" class="sr-only debug-item" aria-hidden="true">
             <option value="backend" selected data-i18n="srcBackend">🖥️ Backend</option>
@@ -571,12 +575,24 @@
         <button id="close-gallery-modal" class="gallery-close" aria-label="Close">✕</button>
       </div>
       <p id="journal-stats" class="journal-stats"></p>
-      <!-- Sticker / badge shelf — earned in colour, locked greyed -->
+      <!-- Daily mission card (rendered by gallery.js) -->
+      <div id="daily-mission-card" class="daily-mission-card" hidden></div>
+      <!-- Decorate-your-penguin entry card -->
+      <button id="mascot-card" class="mascot-card" type="button" hidden></button>
+      <!-- Crayon packs (unlockable palettes) -->
+      <div id="crayon-packs" class="crayon-packs"></div>
+      <!-- Grouped sticker album — earned in colour, locked greyed -->
       <div id="sticker-shelf" class="sticker-shelf" aria-label="Stickers"></div>
       <p id="journal-next" class="journal-next" hidden></p>
       <div id="gallery-grid" class="gallery-grid"></div>
     </div>
   </div>
+
+  <!-- Sticker detail popup (rendered/opened by gallery.js) -->
+  <div id="sticker-detail" class="sticker-detail hidden" aria-hidden="true" role="dialog"></div>
+
+  <!-- Mascot decorate view -->
+  <div id="mascot-modal" class="mascot-modal hidden" aria-hidden="true" role="dialog"></div>
 
   <!-- Gallery lightbox -->
   <div id="gallery-lightbox" class="gallery-lightbox hidden" aria-hidden="true">
@@ -698,7 +714,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=196"></script>
+  <script type="module" src="/js/main.js?v=197"></script>
 </body>
 </html>
 

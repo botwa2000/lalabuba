@@ -1,8 +1,9 @@
 import { state, DEBUG } from './state.js';
 import { PALETTES, EXAMPLE_SUGGESTIONS, randomCardSubject, getDailyChallenge, getTranslatedDailyWord, getSemanticPaletteOrder } from './data.js';
 import { sanitizeSubject, isSafeSubject } from './data.js';
+import { CRAYON_PACKS, packById, isPackUnlocked, unlockedPaletteIds, packsUnlockedAt } from './data.js';
 import { saveArtwork, initGalleryHandlers, openGalleryModal } from './gallery.js';
-import { recordCompletion, getProgress } from './progress.js';
+import { recordCompletion, recordShare, recordSave, recordChallengeCreated, getProgress } from './progress.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
 import {
   form, subjectInput, showNumbersInput, difficultySelect, providerSelect,
@@ -44,6 +45,18 @@ function clearJournalDirty() {
   try { localStorage.removeItem(JOURNAL_DIRTY_KEY); } catch {}
   const dot = document.getElementById('journal-dot');
   if (dot) dot.hidden = true;
+}
+
+// Kid-friendly toast for freshly-earned stickers from a record* event. Shows the
+// first new sticker (the most significant) via setStatus, lights the Journal
+// "new" dot, and keeps the masterpiece count badge in sync.
+function cap(id) { return id.charAt(0).toUpperCase() + id.slice(1); }
+function toastNewBadges(newBadges) {
+  if (!newBadges || !newBadges.length) return;
+  const b = newBadges[0];
+  try { setStatus(t('stickerEarnedToast', b.emoji, t(`badge${cap(b.id)}Title`))); } catch {}
+  markJournalDirty();
+  refreshJournalCount();
 }
 
 function refreshDaysColoredPill() {
@@ -110,9 +123,27 @@ function checkCompletion() {
   const firstTime = !state.completionRecorded;
   if (firstTime) {
     try {
-      const r = recordCompletion({ subject: subjectText, difficulty: difficultySelect.value });
+      const r = recordCompletion({
+        // English subject drives locale-stable theme (Explorer) classification;
+        // fall back to the displayed text if no English original was captured.
+        subject: state.lastEnglishSubject || subjectText,
+        difficulty: difficultySelect.value,
+        palette: paletteSelect.value,
+        colorCount: state.colorCount,
+        isCustom: !!state.lastSubjectIsCustom,
+        isDaily: !!state.lastSubjectIsDaily,
+      });
       progress = r.progress;
       newBadges = r.newBadges;
+      // Crayon-pack unlocks: a completion that crosses a pack threshold reveals a
+      // new palette — celebrate it (separate from sticker reveal so both show).
+      try {
+        const unlocked = packsUnlockedAt(progress.totalCompleted);
+        if (unlocked.length) {
+          const pk = unlocked[0];
+          setStatus(t('crayonUnlockedToast', t(`pack${cap(pk.id)}Name`)));
+        }
+      } catch {}
     } catch {}
     state.completionRecorded = true;
   } else {
@@ -258,12 +289,25 @@ let _pendingSeedOverride = null;
 // When a card / daily-word / surprise sets this, the English original is used
 // directly for the AI prompt (skips server translation). Cleared on manual input.
 let _pendingEnglishSubject = null;
+// Set true by either daily-word button so a finished daily-word picture credits
+// the Daily Star sticker / mission. Cleared on manual input (see input handler).
+let _pendingIsDaily = false;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const pendingEnglish = _pendingEnglishSubject;
   _pendingEnglishSubject = null;
+  // Capture how the subject was chosen so completion can credit the right
+  // stickers. A predefined card/daily/surprise sets pendingEnglish → not the
+  // child's own typed idea (isCustom = false). When the child types their own
+  // word, pendingEnglish is null → isCustom = true. isDaily is set only by the
+  // daily-word buttons. The English subject (predefined original, else the typed
+  // text) drives locale-stable theme classification in recordCompletion.
+  state.lastSubjectIsCustom = !pendingEnglish;
+  state.lastSubjectIsDaily = _pendingIsDaily;
+  state.lastEnglishSubject = pendingEnglish || subjectInput.value.trim();
+  _pendingIsDaily = false;
   // Pre-defined: use English original. Custom: use raw input (server will translate).
   const subject = pendingEnglish ?? sanitizeSubject(subjectInput.value);
   if (!subject) {
@@ -554,6 +598,9 @@ downloadButton.addEventListener("click", () => {
   link.href = tempCanvas.toDataURL("image/png");
   link.download = `${subjectInput.value.trim().replace(/\s+/g, "-").toLowerCase() || "coloring-page"}.png`;
   link.click();
+
+  // Explicit Save → credit the Keeper / Collector / Gallery Star stickers.
+  try { toastNewBadges(recordSave().newBadges); } catch {}
 });
 
 // ─── Share artwork button ─────────────────────────────────────────────────────
@@ -572,6 +619,11 @@ if (shareArtworkBtn) {
     const subject  = subjectInput.value.trim().replace(/\s+/g, '-').toLowerCase() || 'coloring-page';
     const filename = `${subject}.png`;
 
+    // Credit the Sharing / Super Sharer stickers once the artwork actually leaves
+    // (a successful Web Share OR the desktop download fallback). A user-cancelled
+    // share (AbortError) does NOT count.
+    const creditShare = () => { try { toastNewBadges(recordShare().newBadges); } catch {} };
+
     // Try Web Share API (mobile)
     if (navigator.share && navigator.canShare) {
       try {
@@ -579,11 +631,12 @@ if (shareArtworkBtn) {
         const file = new File([blob], filename, { type: 'image/png' });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: 'Lalabuba — my coloring', text: '🎨 Look what I colored!' });
+          creditShare();
           return;
         }
       } catch (err) {
         if (err.name !== 'AbortError') { /* fall through to download */ }
-        else return;
+        else return; // user cancelled — no credit
       }
     }
 
@@ -592,6 +645,7 @@ if (shareArtworkBtn) {
     link.href     = tmp.toDataURL('image/png');
     link.download = filename;
     link.click();
+    creditShare();
   });
 }
 
@@ -928,6 +982,7 @@ newDrawingBtn?.addEventListener('click', (e) => {
   subjectInput.value = '';
   _pendingSeedOverride = null;
   _pendingEnglishSubject = null;
+  _pendingIsDaily = false;
   configPanel?.scrollTo({ top: 0, behavior: 'smooth' });
   subjectInput.focus();
 });
@@ -959,7 +1014,7 @@ const DIFF_CYCLE    = ['easy', 'medium', 'hard', 'extreme'];
 const COUNT_CYCLE   = [6, 12, 18, 24, 'max'];
 const PALETTE_CYCLE = ['classic', 'pastel', 'nature'];
 const DIFF_EMOJI    = { easy: '🌟', medium: '🌟🌟', hard: '🌟🌟🌟', extreme: '🔥' };
-const PALETTE_EMOJI = { classic: '🖍️', pastel: '🌸', nature: '🌿' };
+const PALETTE_EMOJI = { classic: '🖍️', pastel: '🌸', nature: '🌿', neon: '⚡', candy: '🍭', galaxy: '🌌' };
 
 const chipDiff    = document.getElementById('chip-diff');
 const chipCount   = document.getElementById('chip-count');
@@ -983,11 +1038,17 @@ function updateCountChip() {
 function updatePaletteChip() {
   if (!chipPalette) return;
   const paletteI18nKeys = { classic: 'paletteClassic', pastel: 'palettePastel', nature: 'paletteNature' };
-  const key = paletteI18nKeys[paletteSelect.value] || 'paletteClassic';
-  const raw = t(key);
-  const parts = raw.split(' ');
-  const label = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
-  chipPalette.textContent = (PALETTE_EMOJI[paletteSelect.value] || '🖍️') + ' ' + label;
+  const v = paletteSelect.value;
+  let label;
+  if (paletteI18nKeys[v]) {
+    const raw = t(paletteI18nKeys[v]);
+    const parts = raw.split(' ');
+    label = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
+  } else {
+    // Unlockable packs use the plain pack<Name>Name strings (no leading emoji).
+    label = t(`pack${v.charAt(0).toUpperCase()}${v.slice(1)}Name`);
+  }
+  chipPalette.textContent = (PALETTE_EMOJI[v] || '🖍️') + ' ' + label;
   chipPalette.title = t('palette') + ': ' + label;
 }
 function updateNumbersChip() {
@@ -1019,8 +1080,15 @@ if (chipCount) chipCount.addEventListener('click', () => {
 });
 
 if (chipPalette) chipPalette.addEventListener('click', () => {
-  const cur = PALETTE_CYCLE.indexOf(paletteSelect.value);
-  paletteSelect.value = PALETTE_CYCLE[(cur + 1) % PALETTE_CYCLE.length];
+  // Cycle only through packs the child has unlocked (classic/pastel/nature are
+  // always available; neon/candy/galaxy appear once their threshold is met).
+  let cycle = PALETTE_CYCLE;
+  try {
+    const ids = unlockedPaletteIds(getProgress().totalCompleted);
+    if (ids.length) cycle = ids;
+  } catch {}
+  const cur = cycle.indexOf(paletteSelect.value);
+  paletteSelect.value = cycle[(cur + 1) % cycle.length];
   paletteSelect.dispatchEvent(new Event('change'));
   updatePaletteChip();
   updateCountChip(); // palette affects max count
@@ -1189,6 +1257,8 @@ const challengeShareBtn = document.getElementById('challenge-share-btn');
 if (challengeShareBtn) {
   challengeShareBtn.addEventListener('click', () => {
     document.getElementById('share-button').click();
+    // Creating/sharing a challenge → credit the Challenger sticker.
+    try { toastNewBadges(recordChallengeCreated().newBadges); } catch {}
   });
 }
 
@@ -1200,7 +1270,7 @@ const dailyInfoBtn   = document.getElementById('daily-word-info-btn');
 const dailyInfoPopup = document.getElementById('daily-info-popup');
 const { word: dailyWord, seed: dailySeed } = getDailyChallenge();
 // Clear seed override when user manually changes the input
-subjectInput.addEventListener('input', () => { _pendingSeedOverride = null; _pendingEnglishSubject = null; });
+subjectInput.addEventListener('input', () => { _pendingSeedOverride = null; _pendingEnglishSubject = null; _pendingIsDaily = false; });
 
 if (dailyWordRow && dailyWordBtn && dailyWordValue) {
   dailyWordValue.textContent = getTranslatedDailyWord(dailyWord, getCurrentLang());
@@ -1209,6 +1279,7 @@ if (dailyWordRow && dailyWordBtn && dailyWordValue) {
     subjectInput.value = getTranslatedDailyWord(dailyWord, getCurrentLang());
     _pendingEnglishSubject = dailyWord; // use English original for the AI prompt
     _pendingSeedOverride = dailySeed;
+    _pendingIsDaily = true; // finishing this credits the Daily Star sticker/mission
     subjectInput.focus();
     pulseDraw(); // A1: guide user to click Draw instead of auto-submitting
   });
@@ -1223,6 +1294,7 @@ if (heroDailyProxy && heroDailyText) {
   heroDailyProxy.addEventListener('click', () => {
     subjectInput.value = getTranslatedDailyWord(dailyWord, getCurrentLang());
     _pendingEnglishSubject = dailyWord;
+    _pendingIsDaily = true; // finishing this credits the Daily Star sticker/mission
     subjectInput.focus();
     pulseDraw();
   });

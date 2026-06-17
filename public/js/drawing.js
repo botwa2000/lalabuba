@@ -3,6 +3,7 @@ import { drawCanvas, drawCtx, pencilBtn, clearPencilBtn, previewCanvas } from '.
 import { activePalette } from './ui.js';
 import { setStatus } from './ui.js';
 import { t } from './i18n.js';
+import { recordDrawPenUse } from './progress.js';
 
 export function getActivePencilColor() {
   if (state.selectedPaletteIndex === -1) return state.customColor;
@@ -75,7 +76,20 @@ export function initDrawingTool() {
     state.pencilMode = !state.pencilMode;
     pencilBtn.classList.toggle('active', state.pencilMode);
     updateDrawCanvasMode();
-    if (state.pencilMode) setStatus(t('pencilMode'));
+    if (state.pencilMode) {
+      setStatus(t('pencilMode'));
+      // Turning the freehand draw pen ON credits the Free Drawer sticker (first
+      // use only — recordDrawPenUse is idempotent). Toast any freshly-earned one.
+      try {
+        const { newBadges } = recordDrawPenUse();
+        if (newBadges && newBadges.length) {
+          const b = newBadges[0];
+          const cap = b.id.charAt(0).toUpperCase() + b.id.slice(1);
+          setStatus(t('stickerEarnedToast', b.emoji, t(`badge${cap}Title`)));
+          try { localStorage.setItem('lalabuba-journal-dirty', '1'); } catch {}
+        }
+      } catch {}
+    }
   });
 
   clearPencilBtn.addEventListener('click', () => {
