@@ -225,7 +225,12 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final canvas = ref.read(canvasProvider);
     final hasProgress =
         canvas.regionColors.isNotEmpty || canvas.strokes.isNotEmpty;
-    if (!hasProgress) return true;
+    // A finished guided picture is auto-saved to the Journal the instant it
+    // completes (_onColoringComplete), so leaving loses nothing — going back is
+    // a valid "I'm done!" action, not a discard. Only warn about UNFINISHED work.
+    // If the child later undoes a region, isComplete flips back to false and the
+    // guard re-arms automatically.
+    if (!hasProgress || canvas.isComplete) return true;
 
     final result = await showDialog<bool>(
       context: context,
