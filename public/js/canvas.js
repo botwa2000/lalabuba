@@ -6,6 +6,7 @@ import {
   previewStage, showNumbersInput, printButton, downloadButton, pencilBtn, clearPencilBtn,
 } from './dom.js';
 import { resetZoom } from './zoom.js';
+import { bounce, sparkleBurst, sparkleAt, playComplete } from './fx.js';
 
 // Module-level palette context, set by setPaletteContext() from ui.js
 let _palette = [];
@@ -309,6 +310,75 @@ export function redrawCanvas() {
   if (showNumbersInput.checked) {
     overlayNumbers();
   }
+}
+
+// ─── Completion animation ────────────────────────────────────────────────────
+// Plays a short "comes to life" beat the instant the last region is filled: the
+// colored picture reveals itself over the line art in a few quick waves, then the
+// canvas gives a happy bounce with sparkles + a chime. Returns a Promise that
+// resolves once the beat is done, so main.js can then slide in the celebration
+// card. PURE PRESENTATION — it reads state.paintedImageData/regionPixels and
+// repaints the visible canvas; it never mutates fill state, so an undo afterwards
+// is unaffected. Degrades to an instant finish when data or motion is unavailable.
+function burstCompletionSparkles() {
+  try {
+    const regions = state.numberRegions;
+    const rect = previewCanvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    if (!regions || !regions.length) { sparkleAt(previewCanvas, 14); return; }
+    const sx = rect.width / previewCanvas.width;
+    const sy = rect.height / previewCanvas.height;
+    regions.slice(0, 6).forEach((r) =>
+      sparkleBurst(rect.left + r.x * sx, rect.top + r.y * sy, 6));
+  } catch { /* ignore */ }
+}
+
+export function animateCompletion() {
+  return new Promise((resolve) => {
+    const painted = state.paintedImageData;
+    const base = state.baseImageData;
+    let reduce = false;
+    try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { /* ignore */ }
+
+    const finish = () => {
+      try { context.putImageData(painted, 0, 0); } catch { /* ignore */ }
+      if (showNumbersInput.checked) { try { overlayNumbers(); } catch { /* ignore */ } }
+      bounce(previewCanvas);
+      burstCompletionSparkles();
+      try { playComplete(); } catch { /* ignore */ }
+      setTimeout(resolve, reduce ? 0 : 420);
+    };
+
+    if (!painted || !base || !state.regionPixels || reduce) { finish(); return; }
+    const ids = [...state.regionPixels.keys()];
+    if (!ids.length) { finish(); return; }
+
+    // Working buffer starts as the line art, then reveals painted regions in waves.
+    const work = new ImageData(new Uint8ClampedArray(base.data), base.width, base.height);
+    const wd = work.data, pd = painted.data;
+    const WAVES = Math.min(8, Math.max(3, Math.ceil(ids.length / 3)));
+    const perWave = Math.ceil(ids.length / WAVES);
+    try { context.putImageData(work, 0, 0); } catch { /* ignore */ }
+
+    let wave = 0;
+    const step = () => {
+      const start = wave * perWave;
+      const end = Math.min(ids.length, start + perWave);
+      for (let k = start; k < end; k++) {
+        const px = state.regionPixels.get(ids[k]);
+        if (!px) continue;
+        for (let j = 0; j < px.length; j++) {
+          const o = px[j] * 4;
+          wd[o] = pd[o]; wd[o + 1] = pd[o + 1]; wd[o + 2] = pd[o + 2]; wd[o + 3] = pd[o + 3];
+        }
+      }
+      try { context.putImageData(work, 0, 0); } catch { /* ignore */ }
+      wave++;
+      if (wave < WAVES) setTimeout(step, 95);
+      else finish();
+    };
+    setTimeout(step, 60);
+  });
 }
 
 // ─── Pre-segmentation ────────────────────────────────────────────────────────

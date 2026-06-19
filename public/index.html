@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=197" />
-  <link rel="stylesheet" href="/css/header.css?v=197" />
-  <link rel="stylesheet" href="/css/hero.css?v=197" />
-  <link rel="stylesheet" href="/css/generator.css?v=197" />
-  <link rel="stylesheet" href="/css/layout.css?v=197" />
-  <link rel="stylesheet" href="/css/workspace.css?v=197" />
-  <link rel="stylesheet" href="/css/palette.css?v=197" />
-  <link rel="stylesheet" href="/css/modals.css?v=197" />
-  <link rel="stylesheet" href="/css/footer.css?v=197" />
-  <link rel="stylesheet" href="/css/print.css?v=197" />
-  <link rel="stylesheet" href="/css/cookies.css?v=197" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=197" />
-  <script src="/js/cookies.js?v=197"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=198" />
+  <link rel="stylesheet" href="/css/header.css?v=198" />
+  <link rel="stylesheet" href="/css/hero.css?v=198" />
+  <link rel="stylesheet" href="/css/generator.css?v=198" />
+  <link rel="stylesheet" href="/css/layout.css?v=198" />
+  <link rel="stylesheet" href="/css/workspace.css?v=198" />
+  <link rel="stylesheet" href="/css/palette.css?v=198" />
+  <link rel="stylesheet" href="/css/modals.css?v=198" />
+  <link rel="stylesheet" href="/css/footer.css?v=198" />
+  <link rel="stylesheet" href="/css/print.css?v=198" />
+  <link rel="stylesheet" href="/css/cookies.css?v=198" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=198" />
+  <script src="/js/cookies.js?v=198"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -268,6 +268,8 @@
 
           <div class="hero-quick-row" id="hero-quick-row">
             <button id="surprise-button" type="button" class="hero-quick-pill surprise-btn" aria-label="Surprise me" data-i18n="surpriseMeLong">💡 Surprise me</button>
+            <button id="voice-btn" type="button" class="hero-quick-pill voice-btn" aria-label="Say it" hidden>🎤 <span data-i18n="voiceBtnLabel">Say it</span></button>
+            <button id="week-scene-pill" type="button" class="hero-quick-pill week-scene-pill" hidden></button>
             <button type="button" class="hero-quick-pill hero-daily-proxy" id="hero-daily-proxy" hidden>🌟 <span data-i18n="todayWord">Today</span>: <span id="hero-daily-text"></span></button>
           </div>
 
@@ -287,6 +289,8 @@
             <button type="button" class="setting-chip" id="chip-count">🎨 12</button>
             <button type="button" class="setting-chip" id="chip-palette">🖍️</button>
             <button type="button" class="setting-chip setting-chip--on" id="chip-numbers">🔢 ●</button>
+            <button type="button" class="setting-chip setting-chip--on" id="chip-sound" aria-label="Sound">🔊</button>
+            <button type="button" class="setting-chip" id="chip-narrate" aria-label="Read aloud">🗣️</button>
             <button type="button" id="gallery-btn" class="setting-chip" data-i18n="galleryBtn" aria-label="Gallery">🖼️ Gallery</button>
           </div>
 
@@ -584,6 +588,7 @@
       <!-- Grouped sticker album — earned in colour, locked greyed -->
       <div id="sticker-shelf" class="sticker-shelf" aria-label="Stickers"></div>
       <p id="journal-next" class="journal-next" hidden></p>
+      <button id="print-book-btn" class="print-book-btn" type="button" data-i18n="printBookBtn" hidden>📖 Print book</button>
       <div id="gallery-grid" class="gallery-grid"></div>
     </div>
   </div>
@@ -714,7 +719,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=197"></script>
+  <script type="module" src="/js/main.js?v=198"></script>
 </body>
 </html>
 

@@ -93,7 +93,13 @@ import { t } from './i18n.js';
 import { BADGES, GROUPS, badgesIn, getProgress } from './progress.js';
 import { CRAYON_PACKS, PALETTES, isPackUnlocked, packById } from './data.js';
 import { getDailyMission, missionProgressCount, missionIsDone } from './daily-mission.js';
-import { getMascotDecor, toggleMascotSticker, setMascotPos, clearMascot } from './mascot.js';
+import {
+  SCENES, scenesUnlocked, isSceneUnlocked, sceneById,
+  decosForScene, unlockedDecosForScene, placedIn,
+  placeDeco, moveDeco, removeDeco, clearScene, decoById,
+  artStickers, placeArt, artById,
+} from './scenes.js';
+import { pop, playPlace, playRemove } from './fx.js';
 
 const cap = (id) => `${id.charAt(0).toUpperCase()}${id.slice(1)}`;
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -121,7 +127,7 @@ function renderJournalProgress() {
   }
 
   renderDailyMission(p);
-  renderMascotCard(earned);
+  renderScenesCard(total);
   renderCrayonPacks(total);
   renderStickerAlbum(p, earned);
 
@@ -165,20 +171,21 @@ function renderDailyMission(p) {
   card.hidden = false;
 }
 
-// ── Mascot entry card ───────────────────────────────────────────────────────
-function renderMascotCard(earned) {
-  const card = document.getElementById('mascot-card');
+// ── Scenes entry card ───────────────────────────────────────────────────────
+function renderScenesCard(total) {
+  const card = document.getElementById('mascot-card'); // reuses the same slot/id
   if (!card) return;
+  const open = scenesUnlocked(total).length;
   card.innerHTML = `
-    <span class="mc-emoji">🐧</span>
+    <span class="mc-emoji">🏞️</span>
     <span class="mc-body">
-      <span class="mc-title">${esc(t('mascotCardTitle'))}</span>
-      <span class="mc-sub">${esc(t('mascotCardSubtitle'))}</span>
+      <span class="mc-title">${esc(t('scenesCardTitle'))}</span>
+      <span class="mc-sub">${esc(t('scenesCardSubtitle', open, SCENES.length))}</span>
     </span>
     <span class="mc-chev">›</span>
   `;
   card.hidden = false;
-  card.onclick = () => openMascotModal();
+  card.onclick = () => openScenesModal();
 }
 
 // ── Crayon packs section ────────────────────────────────────────────────────
@@ -286,81 +293,140 @@ function openStickerDetail(badgeId, earned) {
   el.querySelector('.sd-backdrop').addEventListener('click', close);
 }
 
-// ── Mascot decorate view ────────────────────────────────────────────────────
-function openMascotModal() {
+// ── Sticker Scenes editor ────────────────────────────────────────────────────
+// Pick a scene, then fill its big backdrop with decorations you've unlocked by
+// coloring. Decorations are reusable (tap the tray to drop one, drag to move,
+// long-press / double-tap to remove). Reuses #mascot-modal as the host element.
+function openScenesModal() {
   const el = document.getElementById('mascot-modal');
   if (!el) return;
-  let earnedBadges = [];
-  try { earnedBadges = BADGES.filter((b) => new Set(getProgress().badges).has(b.id)); } catch {}
-  const emojiOf = Object.fromEntries(BADGES.map((b) => [b.id, b.emoji]));
+  let total = 0;
+  try { total = getProgress().totalCompleted || 0; } catch {}
+  // Default to the first unlocked scene that already has placements, else the first.
+  let current = (scenesUnlocked(total)[0] || SCENES[0]).id;
+  for (const s of scenesUnlocked(total)) { if (placedIn(s.id).length) { current = s.id; break; } }
 
   function render() {
-    const decor = getMascotDecor();
-    const placed = Object.entries(decor)
-      .map(([id, pos]) => `<span class="mascot-sticker" data-id="${id}" style="left:${pos[0] * 100}%;top:${pos[1] * 100}%">${emojiOf[id] || '⭐'}</span>`)
-      .join('');
-    const hasPlaced = Object.keys(decor).length > 0;
-    const tray = earnedBadges.length
-      ? earnedBadges.map((b) => {
-          const on = Object.prototype.hasOwnProperty.call(decor, b.id);
-          return `<button class="mascot-tray-item ${on ? 'on' : ''}" type="button" data-id="${b.id}">${b.emoji}</button>`;
-        }).join('')
-      : `<p class="mascot-tray-empty">${esc(t('mascotTrayEmpty'))}</p>`;
+    const scene = sceneById(current);
+    const placed = placedIn(current);
+    const trayDecos = unlockedDecosForScene(current);
+    const arts = artStickers();
+    const allInScene = decosForScene(current).length;
+    const hasItems = trayDecos.length || arts.length;
+
+    const tabs = SCENES.map((s) => {
+      const unlocked = isSceneUnlocked(total, s.id);
+      const need = Math.max(1, s.unlockAt - total);
+      return `<button class="scene-tab ${s.id === current ? 'active' : ''} ${unlocked ? '' : 'locked'}"
+        type="button" data-scene="${s.id}" ${unlocked ? '' : 'disabled'}
+        title="${unlocked ? esc(t(`scene${cap(s.id)}Name`)) : esc(t('sceneLockedHint', need))}">
+        <span class="scene-tab-emoji">${unlocked ? s.emoji : '🔒'}</span>
+        <span class="scene-tab-name">${unlocked ? esc(t(`scene${cap(s.id)}Name`)) : esc(t('sceneLockedShort', need))}</span>
+      </button>`;
+    }).join('');
+
+    const stickers = placed.map((it, i) => {
+      if (it.a) {
+        const a = artById(it.a);
+        if (!a) return ''; // pruned art sticker → skip silently
+        return `<span class="scene-sticker scene-sticker--art" data-index="${i}" style="left:${it.x * 100}%;top:${it.y * 100}%"><img src="${a.thumb}" alt="${esc(t('artStickerAlt'))}" draggable="false"></span>`;
+      }
+      const d = decoById(it.d);
+      return `<span class="scene-sticker" data-index="${i}" style="left:${it.x * 100}%;top:${it.y * 100}%">${d ? d.emoji : '⭐'}</span>`;
+    }).join('');
+
+    // Tray: the child's own art first (placeable in ANY scene), then this scene's
+    // unlocked emoji decorations.
+    const artTray = arts.length
+      ? `<div class="scene-tray-head">${esc(t('sceneTrayMyArt'))}</div>
+         <div class="scene-tray scene-tray--art">${arts.map((a) =>
+            `<button class="scene-tray-item scene-tray-item--art" type="button" data-art="${a.id}"><img src="${a.thumb}" alt="${esc(t('artStickerAlt'))}" draggable="false"></button>`).join('')}</div>`
+      : '';
+    const decoTray = `<div class="scene-tray-head">${esc(t('sceneTrayHead', trayDecos.length, allInScene))}</div>
+         <div class="scene-tray">${trayDecos.length
+            ? trayDecos.map((d) => `<button class="scene-tray-item" type="button" data-deco="${d.id}">${d.emoji}</button>`).join('')
+            : `<p class="scene-tray-empty">${esc(t('sceneTrayEmpty'))}</p>`}</div>`;
 
     el.innerHTML = `
-      <div class="mascot-modal-card">
-        <div class="mascot-modal-head">
-          <h3>${esc(t('mascotTitle'))}</h3>
-          <div class="mascot-head-actions">
-            ${hasPlaced ? `<button class="mascot-clear" type="button">${esc(t('mascotClear'))}</button>` : ''}
-            <button class="mascot-close" type="button" aria-label="Close">✕</button>
+      <div class="scenes-modal-card">
+        <div class="scenes-modal-head">
+          <h3>${esc(t('scenesTitle'))}</h3>
+          <div class="scenes-head-actions">
+            ${placed.length ? `<button class="scene-clear" type="button">${esc(t('sceneClear'))}</button>` : ''}
+            <button class="scenes-close" type="button" aria-label="Close">✕</button>
           </div>
         </div>
-        <div class="mascot-stage" id="mascot-stage">
-          <span class="mascot-penguin">🐧</span>
-          ${placed}
-          ${(!hasPlaced && earnedBadges.length) ? `<span class="mascot-hint">${esc(t('mascotHint'))}</span>` : ''}
+        <div class="scene-tabs">${tabs}</div>
+        <div class="scene-stage" id="scene-stage" style="background:linear-gradient(180deg, ${scene.bg[0]}, ${scene.bg[1]})">
+          ${stickers}
+          ${(!placed.length && hasItems) ? `<span class="scene-hint">${esc(t('sceneHint'))}</span>` : ''}
+          ${(!hasItems) ? `<span class="scene-hint">${esc(t('sceneEarnHint'))}</span>` : ''}
         </div>
-        <div class="mascot-tray">${tray}</div>
+        <div class="scene-tray-wrap">
+          ${artTray}
+          ${decoTray}
+        </div>
       </div>`;
 
-    el.querySelector('.mascot-close').addEventListener('click', closeMascot);
-    const clearBtn = el.querySelector('.mascot-clear');
-    if (clearBtn) clearBtn.addEventListener('click', () => { clearMascot(); render(); });
-    el.querySelectorAll('.mascot-tray-item').forEach((b) => {
-      b.addEventListener('click', () => { toggleMascotSticker(b.dataset.id); render(); });
+    el.querySelector('.scenes-close').addEventListener('click', close);
+    const clearBtn = el.querySelector('.scene-clear');
+    if (clearBtn) clearBtn.addEventListener('click', () => { clearScene(current); render(); });
+    el.querySelectorAll('.scene-tab:not(.locked)').forEach((b) => {
+      b.addEventListener('click', () => { current = b.dataset.scene; render(); });
+    });
+    el.querySelectorAll('.scene-tray-item[data-deco]').forEach((b) => {
+      b.addEventListener('click', () => { placeDeco(current, b.dataset.deco); render(); popLast(); });
+    });
+    el.querySelectorAll('.scene-tray-item[data-art]').forEach((b) => {
+      b.addEventListener('click', () => { placeArt(current, b.dataset.art); render(); popLast(); });
     });
     wireDrag();
   }
 
+  // After a placement re-renders the stage, pop the just-added sticker (it's the
+  // last one) and play the soft placement cue.
+  function popLast() {
+    const all = el.querySelectorAll('.scene-sticker');
+    const last = all[all.length - 1];
+    if (last) pop(last);
+    try { playPlace(); } catch { /* ignore */ }
+  }
+
+  // Drag to move; double-tap / double-click removes the sticker.
   function wireDrag() {
-    const stage = el.querySelector('#mascot-stage');
+    const stage = el.querySelector('#scene-stage');
     if (!stage) return;
-    el.querySelectorAll('.mascot-sticker').forEach((st) => {
-      let dragging = false;
+    el.querySelectorAll('.scene-sticker').forEach((st) => {
+      const index = Number(st.dataset.index);
+      let dragging = false, moved = false, lastTap = 0;
       const onMove = (e) => {
         if (!dragging) return;
         e.preventDefault();
+        moved = true;
         const pt = e.touches ? e.touches[0] : e;
         const r = stage.getBoundingClientRect();
-        const nx = (pt.clientX - r.left) / r.width;
-        const ny = (pt.clientY - r.top) / r.height;
-        st.style.left = Math.min(96, Math.max(4, nx * 100)) + '%';
-        st.style.top = Math.min(96, Math.max(4, ny * 100)) + '%';
+        st.style.left = Math.min(96, Math.max(4, ((pt.clientX - r.left) / r.width) * 100)) + '%';
+        st.style.top = Math.min(96, Math.max(4, ((pt.clientY - r.top) / r.height) * 100)) + '%';
       };
       const onUp = (e) => {
         if (!dragging) return;
         dragging = false;
-        const pt = (e.changedTouches ? e.changedTouches[0] : e);
-        const r = stage.getBoundingClientRect();
-        setMascotPos(st.dataset.id, (pt.clientX - r.left) / r.width, (pt.clientY - r.top) / r.height);
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
         document.removeEventListener('touchmove', onMove);
         document.removeEventListener('touchend', onUp);
+        const now = Date.now();
+        if (!moved) {
+          if (now - lastTap < 320) { removeDeco(current, index); try { playRemove(); } catch {} render(); return; } // double-tap → remove
+          lastTap = now;
+          return;
+        }
+        const pt = (e.changedTouches ? e.changedTouches[0] : e);
+        const r = stage.getBoundingClientRect();
+        moveDeco(current, index, (pt.clientX - r.left) / r.width, (pt.clientY - r.top) / r.height);
       };
       const onDown = (e) => {
-        dragging = true;
+        dragging = true; moved = false;
         e.preventDefault();
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
@@ -372,7 +438,7 @@ function openMascotModal() {
     });
   }
 
-  function closeMascot() {
+  function close() {
     el.classList.add('hidden');
     el.setAttribute('aria-hidden', 'true');
   }
@@ -394,6 +460,8 @@ export async function openGalleryModal(onContinue) {
   grid.innerHTML = '<p class="gallery-loading">…</p>';
 
   const items = await listArtworks();
+  const printBookBtn = document.getElementById('print-book-btn');
+  if (printBookBtn) printBookBtn.hidden = !items.length;
   if (!items.length) {
     grid.innerHTML = `<p class="gallery-empty">${t('galleryEmpty')}</p>`;
     return;
@@ -431,6 +499,35 @@ export async function openGalleryModal(onContinue) {
   }
 }
 
+// Build a printable "coloring book" from every saved page and open the browser
+// print dialog (the user can Save as PDF). No PDF library — just a print window.
+async function buildPrintBook() {
+  let items = [];
+  try { items = await listArtworks(); } catch { items = []; }
+  if (!items.length) { try { alert(t('printBookEmpty')); } catch {} return; }
+  const w = window.open('', '_blank');
+  if (!w) return; // popup blocked
+  const title = t('printBookTitle');
+  const pages = items.map((it) =>
+    `<figure class="pb-page"><img src="${it.jpeg}" alt="${esc(it.subject || '')}"><figcaption>${esc(it.subject || '')}</figcaption></figure>`
+  ).join('');
+  const html =
+    '<!doctype html><html><head><meta charset="utf-8"><title>' + esc(title) + '</title>' +
+    '<style>' +
+    '@page { margin: 12mm; }' +
+    'body { font-family: system-ui, -apple-system, sans-serif; margin: 0; color: #222; }' +
+    'h1 { text-align: center; font-size: 30px; margin: 16px 0 24px; }' +
+    '.pb-page { page-break-inside: avoid; break-inside: avoid; text-align: center; margin: 0 0 16mm; }' +
+    '.pb-page img { max-width: 100%; max-height: 225mm; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.12); }' +
+    'figcaption { font-size: 18px; font-weight: 700; margin-top: 8px; text-transform: capitalize; }' +
+    '</style></head><body><h1>🎨 ' + esc(title) + '</h1>' + pages +
+    '<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},350);};<\/script>' +
+    '</body></html>';
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
 function openLightbox(src, alt) {
   const lb = document.getElementById('gallery-lightbox');
   if (!lb) return;
@@ -449,6 +546,9 @@ export function initGalleryHandlers(onContinue) {
     const modal = document.getElementById('gallery-modal');
     if (modal) { modal.classList.add('hidden'); modal.setAttribute('aria-hidden', 'true'); }
   });
+
+  const printBookBtn = document.getElementById('print-book-btn');
+  if (printBookBtn) printBookBtn.addEventListener('click', () => buildPrintBook());
 
   const lb = document.getElementById('gallery-lightbox');
   if (lb) lb.addEventListener('click', () => {

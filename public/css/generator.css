@@ -500,6 +500,18 @@
   border-color: var(--orange);
   color: var(--orange);
 }
+/* Voice input "listening" state — pulsing red so it's obvious it's recording. */
+.voice-btn.listening {
+  border-color: #ff4757;
+  color: #ff4757;
+  background: rgba(255,71,87,.08);
+  animation: voicePulse 1s ease-in-out infinite;
+}
+@keyframes voicePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,71,87,.45); }
+  50%      { box-shadow: 0 0 0 7px rgba(255,71,87,0); }
+}
+@media (prefers-reduced-motion: reduce) { .voice-btn.listening { animation: none; } }
 
 /* Settings chips: hidden on landing, visible after generation */
 .app.app-hero .settings-chips { display: none; }

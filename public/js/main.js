@@ -4,6 +4,10 @@ import { sanitizeSubject, isSafeSubject } from './data.js';
 import { CRAYON_PACKS, packById, isPackUnlocked, unlockedPaletteIds, packsUnlockedAt } from './data.js';
 import { saveArtwork, initGalleryHandlers, openGalleryModal } from './gallery.js';
 import { recordCompletion, recordShare, recordSave, recordChallengeCreated, getProgress } from './progress.js';
+import { awardForCompletion, addArtSticker, weekScene, SCENE_SUBJECTS } from './scenes.js';
+import { isSoundOn, toggleSound, playComplete, bounce, sparkleBurst } from './fx.js';
+import { isNarrateOn, toggleNarrate, narrateSupported, speak } from './narrate.js';
+import { animateCompletion } from './canvas.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
 import {
   form, subjectInput, showNumbersInput, difficultySelect, providerSelect,
@@ -144,6 +148,18 @@ function checkCompletion() {
           setStatus(t('crayonUnlockedToast', t(`pack${cap(pk.id)}Name`)));
         }
       } catch {}
+      // Sticker Scenes: theme-matched decoration drip + scene unlocks.
+      try {
+        const { newDecos, newScenes } = awardForCompletion(
+          state.lastEnglishSubject || subjectText, progress.totalCompleted);
+        if (newScenes && newScenes.length) {
+          setStatus(t('sceneUnlockedToast', t(`scene${cap(newScenes[0].id)}Name`)));
+          markJournalDirty();
+        } else if (newDecos && newDecos.length) {
+          setStatus(t('decoUnlockedToast', newDecos[0].emoji, newDecos.length));
+          markJournalDirty();
+        }
+      } catch {}
     } catch {}
     state.completionRecorded = true;
   } else {
@@ -175,8 +191,16 @@ function checkCompletion() {
   refreshDaysColoredPill();
   refreshJournalCount(); // keep the masterpiece count on the Journal icon in sync
 
-  document.getElementById("celebration").classList.remove("hidden");
-  document.getElementById("celebration").setAttribute("aria-hidden", "false");
+  // Play the "comes to life" beat on the finished canvas, THEN slide in the
+  // celebration card (animateCompletion resolves after the reveal + bounce +
+  // sparkles + chime). Falls back to showing the card immediately on any error.
+  const _showCeleb = () => {
+    const c = document.getElementById("celebration");
+    c.classList.remove("hidden");
+    c.setAttribute("aria-hidden", "false");
+    speak(t('narratePraise')); // read-aloud praise (no-op unless narration is on)
+  };
+  try { animateCompletion().then(_showCeleb, _showCeleb); } catch { _showCeleb(); }
 
   if (!firstTime) return; // already saved this session — don't duplicate the artwork
 
@@ -193,6 +217,24 @@ function checkCompletion() {
     fillC.width = previewCanvas.width; fillC.height = previewCanvas.height;
     fillC.getContext('2d').putImageData(state.paintedImageData, 0, 0);
     fillDataUrl = fillC.toDataURL('image/png');
+
+    // Capture the finished page as a small reusable "art sticker" for Sticker
+    // Scenes — the child's own picture becomes something they can place. Keep it
+    // tiny (120px) so the data URL stays a few KB in localStorage.
+    try {
+      const thumbC = document.createElement('canvas');
+      thumbC.width = 120; thumbC.height = 120;
+      const tctx = thumbC.getContext('2d');
+      tctx.fillStyle = '#fff';
+      tctx.fillRect(0, 0, 120, 120);
+      tctx.drawImage(fillC, 0, 0, 120, 120);
+      addArtSticker({
+        subject: state.lastEnglishSubject || subjectInput.value.trim() || '',
+        thumb: thumbC.toDataURL('image/png'),
+        ts: Date.now(),
+      });
+      markJournalDirty();
+    } catch { /* ignore capture failures */ }
   }
   saveArtwork({
     subject: subjectInput.value.trim() || '?',
@@ -572,6 +614,7 @@ previewCanvas.addEventListener("click", (event) => {
   } else {
     setStatus(t('filled', label));
   }
+  speak(label); // read-aloud (no-op unless narration is on) — names the color filled
   checkCompletion();
   const hint = document.getElementById('coloring-hint');
   if (hint) hint.hidden = true;
@@ -789,6 +832,7 @@ document.querySelectorAll('.lang-option').forEach(btn => {
     const hdt = document.getElementById('hero-daily-text');
     if (hdt) hdt.textContent = getTranslatedDailyWord(dailyWord, lang);
     updateDiffChip(); updatePaletteChip(); updateNumbersChip(); // refresh translated chip titles
+    refreshWeekScenePill(); // re-translate the scene-of-the-week pill
     syncCanvasNumbersBtn(); // re-sync after applyTranslations() resets data-i18n buttons
     langDropdown.hidden = true;
     langToggle.setAttribute('aria-expanded', 'false');
@@ -1020,6 +1064,8 @@ const chipDiff    = document.getElementById('chip-diff');
 const chipCount   = document.getElementById('chip-count');
 const chipPalette = document.getElementById('chip-palette');
 const chipNumbers = document.getElementById('chip-numbers');
+const chipSound   = document.getElementById('chip-sound');
+const chipNarrate = document.getElementById('chip-narrate');
 
 function updateDiffChip() {
   if (!chipDiff) return;
@@ -1057,9 +1103,37 @@ function updateNumbersChip() {
   chipNumbers.textContent = '🔢 ' + t('numbersChip');
   chipNumbers.classList.toggle('setting-chip--on', on);
 }
-function updateAllChips() {
-  updateDiffChip(); updateCountChip(); updatePaletteChip(); updateNumbersChip();
+function updateSoundChip() {
+  if (!chipSound) return;
+  const on = isSoundOn();
+  chipSound.textContent = on ? '🔊' : '🔇';
+  chipSound.classList.toggle('setting-chip--on', on);
+  chipSound.title = t(on ? 'soundOnChip' : 'soundOffChip');
 }
+function updateNarrateChip() {
+  if (!chipNarrate) return;
+  // Hide the chip entirely where speech synthesis isn't available.
+  if (!narrateSupported()) { chipNarrate.hidden = true; return; }
+  const on = isNarrateOn();
+  chipNarrate.textContent = on ? '🗣️' : '🤫';
+  chipNarrate.classList.toggle('setting-chip--on', on);
+  chipNarrate.title = t(on ? 'narrateOnChip' : 'narrateOffChip');
+}
+function updateAllChips() {
+  updateDiffChip(); updateCountChip(); updatePaletteChip(); updateNumbersChip(); updateSoundChip(); updateNarrateChip();
+}
+
+if (chipSound) chipSound.addEventListener('click', () => {
+  toggleSound();
+  updateSoundChip();
+});
+
+if (chipNarrate) chipNarrate.addEventListener('click', () => {
+  const on = toggleNarrate();
+  updateNarrateChip();
+  // Confirm with a spoken sample the moment it's switched on.
+  if (on) speak(t('narratePraise'));
+});
 
 if (chipDiff) chipDiff.addEventListener('click', () => {
   const cur = DIFF_CYCLE.indexOf(difficultySelect.value);
@@ -1242,6 +1316,76 @@ document.getElementById('surprise-button').addEventListener('click', () => {
   subjectInput.focus();
   pulseDraw();
 });
+
+// ─── Voice prompt input (🎤) — lets a pre-reader say the subject ─────────────
+(function initVoiceInput() {
+  const btn = document.getElementById('voice-btn');
+  if (!btn) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return; // unsupported → leave the button hidden
+  btn.hidden = false;
+  const VOICE_LANG = {
+    en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', nl: 'nl-NL',
+    pl: 'pl-PL', pt: 'pt-PT', ru: 'ru-RU', tr: 'tr-TR', zh: 'zh-CN', hi: 'hi-IN',
+  };
+  const label = btn.querySelector('span');
+  const setLabel = (key) => { if (label) label.textContent = t(key); };
+  let rec = null, listening = false;
+  const reset = () => { listening = false; btn.classList.remove('listening'); setLabel('voiceBtnLabel'); };
+
+  btn.addEventListener('click', () => {
+    if (listening) { try { rec && rec.stop(); } catch {} return; }
+    try {
+      rec = new SR();
+      rec.lang = VOICE_LANG[getCurrentLang()] || 'en-US';
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.onresult = (e) => {
+        const text = ((e.results[0] && e.results[0][0] && e.results[0][0].transcript) || '').trim();
+        if (text) {
+          subjectInput.value = text.slice(0, 80);
+          // The spoken word is in the user's language → treat as a custom subject.
+          subjectInput.dispatchEvent(new Event('input', { bubbles: true }));
+          subjectInput.focus();
+          pulseDraw();
+        }
+      };
+      rec.onerror = () => { listening = false; btn.classList.remove('listening'); setLabel('voiceError'); setTimeout(() => setLabel('voiceBtnLabel'), 1600); };
+      rec.onend = () => { if (listening) reset(); };
+      listening = true;
+      btn.classList.add('listening');
+      setLabel('voiceListening');
+      rec.start();
+    } catch { reset(); }
+  });
+})();
+
+// ─── Scene of the week pill ───────────────────────────────────────────────────
+const _weekScenePill = document.getElementById('week-scene-pill');
+function refreshWeekScenePill() {
+  if (!_weekScenePill) return;
+  try {
+    const wk = weekScene();
+    const name = t(`scene${wk.id.charAt(0).toUpperCase()}${wk.id.slice(1)}Name`);
+    _weekScenePill.textContent = t('weekScenePill', name);
+    _weekScenePill.dataset.scene = wk.id;
+    _weekScenePill.hidden = false;
+  } catch { _weekScenePill.hidden = true; }
+}
+if (_weekScenePill) {
+  _weekScenePill.addEventListener('click', () => {
+    const id = _weekScenePill.dataset.scene;
+    const list = (SCENE_SUBJECTS && SCENE_SUBJECTS[id]) || [];
+    if (!list.length) return;
+    const subject = list[Math.floor(Math.random() * list.length)];
+    subjectInput.value = subject;
+    _pendingEnglishSubject = subject; // SCENE_SUBJECTS are English → keep theme stable
+    subjectInput.dispatchEvent(new Event('input', { bubbles: true }));
+    subjectInput.focus();
+    pulseDraw();
+  });
+  refreshWeekScenePill();
+}
 
 // ─── Coloring hint dismiss ────────────────────────────────────────────────────
 const dismissHintBtn = document.getElementById('dismiss-hint');
