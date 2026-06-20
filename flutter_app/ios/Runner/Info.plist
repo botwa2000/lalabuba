@@ -45,6 +45,10 @@
 	<string>Lalabuba saves your finished coloring pages to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Lalabuba needs photo library access to save your finished coloring pages.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Lalabuba uses the microphone so you can say what you want to color instead of typing.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Lalabuba turns what you say into a coloring page idea using speech recognition.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

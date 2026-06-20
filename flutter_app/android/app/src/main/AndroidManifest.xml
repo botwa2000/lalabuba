@@ -4,6 +4,9 @@
          (no permission needed); older devices need write access. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29"/>
+    <!-- Voice prompt input (speech_to_text) — captures audio for on-device /
+         system speech recognition. Requested at runtime on first mic use. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
         android:label="Lalabuba"
         android:name="${applicationName}"
@@ -50,6 +53,12 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Android 11+ package visibility: lets speech_to_text discover the
+             system speech-recognition service. Without this, initialize()
+             reports recognition unavailable on API 30+. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService"/>
         </intent>
     </queries>
 </manifest>

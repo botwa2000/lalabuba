@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../progress/progress_service.dart';
+import 'print_book.dart';
 
 final galleryImagesProvider = FutureProvider<List<File>>((ref) async {
   final dir = await getApplicationDocumentsDirectory();
@@ -35,6 +36,34 @@ class GalleryScreen extends ConsumerWidget {
           style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
         ),
         actions: [
+          // 📖 Export the Journal as a printable coloring book (PDF → system
+          // print / save sheet). Parity with the web print-book button.
+          IconButton(
+            icon: const Icon(Icons.menu_book_rounded),
+            tooltip: l10n.t('printBookBtn'),
+            onPressed: () async {
+              final files = imagesAsync.valueOrNull ?? const <File>[];
+              if (files.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.t('printBookEmpty'))),
+                );
+                return;
+              }
+              HapticFeedback.lightImpact();
+              try {
+                await printColoringBook(
+                  title: l10n.t('printBookTitle'),
+                  files: files,
+                );
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.t('printBookEmpty'))),
+                  );
+                }
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () => ref.invalidate(galleryImagesProvider),

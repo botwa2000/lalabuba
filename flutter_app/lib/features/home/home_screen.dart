@@ -21,6 +21,8 @@ import '../../shared/widgets/lala_bottom_sheet.dart';
 import '../../shared/widgets/lala_showcase.dart';
 import '../rewards/daily_mission.dart';
 import '../rewards/crayon_packs.dart';
+import '../rewards/scenes.dart';
+import 'voice_input_button.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -266,6 +268,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         : const SizedBox.shrink(),
                   ) ??
                   const SizedBox.shrink(),
+              const SizedBox(height: 12),
+              Center(child: _buildWeekScenePill(context, cs, l10n)),
               const SizedBox(height: 22),
               _buildPickDivider(context, l10n),
               const SizedBox(height: 18),
@@ -299,6 +303,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
+                  VoiceInputButton(
+                    l10n: l10n,
+                    locale: _currentLocale,
+                    onResult: (text) => _fillSubject(text, source: 'voice'),
+                  ),
+                  const SizedBox(width: 8),
                   _buildSurprisePill(
                     context,
                     l10n,
@@ -485,6 +495,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           : const SizedBox.shrink(),
                     ) ??
                     const SizedBox.shrink(),
+                const SizedBox(height: 10),
+                Align(
+                    alignment: Alignment.centerLeft,
+                    child: _buildWeekScenePill(context, cs, l10n)),
                 const SizedBox(height: 14),
                 _buildPickDivider(context, l10n),
                 const SizedBox(height: 12),
@@ -704,6 +718,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // Scene-of-the-week pill (parity with web). Tapping fills a themed subject
+  // drawn from the week's scene, nudging the child to color toward the scene's
+  // bonus. The week's scene rotates via weekScene(); the subject rotates by
+  // clock so repeated taps offer variety.
+  Widget _buildWeekScenePill(BuildContext context, ColorScheme cs, L10n l10n) {
+    final scene = weekScene();
+    final subjects = kSceneSubjects[scene.id] ?? const <String>[];
+    if (subjects.isEmpty) return const SizedBox.shrink();
+    final sceneName =
+        l10n.t('scene${scene.id[0].toUpperCase()}${scene.id.substring(1)}Name');
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        final ms = DateTime.now().millisecondsSinceEpoch;
+        final english = subjects[ms % subjects.length];
+        // Send the English subject to the API; show it in the field as-is (these
+        // are simple nouns the child recognizes; full localization of the scene
+        // subject pool is out of scope — the daily word already covers that).
+        _fillSubject(english, englishOverride: english, source: 'scene');
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [cs.tertiaryContainer, cs.secondaryContainer],
+          ),
+          borderRadius: BorderRadius.circular(50),
+          boxShadow: [
+            BoxShadow(
+              color: cs.tertiary.withValues(alpha: 0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(scene.emoji, style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                l10n.t('weekScenePill', {'name': sceneName}),
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.nunito(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  color: cs.onSecondaryContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildDailyPill(BuildContext context, ColorScheme cs, L10n l10n,
       HomeState home, String locale) {
     final daily = home.dailyChallenge!;
@@ -872,6 +943,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
+                VoiceInputButton(
+                  l10n: l10n,
+                  locale: _currentLocale,
+                  // Spoken words are sent verbatim as the subject; the API takes
+                  // the recognized phrase as both display + prompt.
+                  onResult: (text) => _fillSubject(text, source: 'voice'),
+                ),
+                const SizedBox(width: 6),
                 _buildSurprisePill(
                   context,
                   l10n,

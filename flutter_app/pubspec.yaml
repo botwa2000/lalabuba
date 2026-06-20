@@ -46,6 +46,15 @@ dependencies:
   gal: ^2.3.2
   showcaseview: ^5.0.2
 
+  # Richness features (parity with web fx/narrate/voice/print-book):
+  #  • flutter_tts   — narrate color/number labels + completion praise
+  #  • speech_to_text — voice prompt input (🎤 on the home screen)
+  #  • printing/pdf  — export the Journal as a printable coloring book
+  flutter_tts: ^4.2.3
+  speech_to_text: ^7.3.0
+  printing: ^5.14.2
+  pdf: ^3.11.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

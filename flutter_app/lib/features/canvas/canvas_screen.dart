@@ -29,8 +29,10 @@ import '../../shared/widgets/lala_loading_overlay.dart';
 import '../../shared/widgets/lala_showcase.dart';
 import 'canvas_models.dart';
 import 'canvas_painter.dart';
+import 'narration_service.dart';
 import 'completion_celebration.dart';
 import '../rewards/crayon_packs.dart';
+import '../rewards/scenes.dart';
 
 // Args passed when navigating to CanvasScreen
 class CanvasScreenArgs {
@@ -657,6 +659,26 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         ),
       ),
       actions: [
+        // Read-aloud toggle: speaks the number the child colors + praise on
+        // finish. Off by default; the icon reflects state. Turning it on speaks
+        // the praise line immediately so the child hears the voice is working.
+        Builder(builder: (_) {
+          final on = ref.watch(narrationProvider).valueOrNull ?? false;
+          return IconButton(
+            icon: Text(on ? '🔊' : '🔈', style: const TextStyle(fontSize: 19)),
+            tooltip: l10n.t(on ? 'narrateOnChip' : 'narrateOffChip'),
+            onPressed: () async {
+              await ref.read(narrationProvider.notifier).toggle();
+              if (ref.read(narrationProvider).valueOrNull ?? false) {
+                final locale =
+                    ref.read(localeProvider).valueOrNull?.locale ?? 'en';
+                ref
+                    .read(narrationProvider.notifier)
+                    .speak(l10n.t('narratePraise'), locale);
+              }
+            },
+          );
+        }),
         IconButton(
           icon: const Text('🎲', style: TextStyle(fontSize: 20)),
           tooltip: l10n.t('regenBtn'),
@@ -881,7 +903,18 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     if (regionId != null) {
       HapticFeedback.lightImpact();
       ref.read(canvasProvider.notifier).fillRegion(regionId);
+      _narrateRegion(regionId);
     }
+  }
+
+  // Read-aloud the number the child just tapped (color-by-number reinforcement).
+  // No-op unless narration is enabled. Spoken only on discrete taps, never on
+  // drag-paint, so dragging across regions doesn't queue a backlog of numbers.
+  void _narrateRegion(int regionId) {
+    final pi = ref.read(canvasProvider).detection?.regionPaletteIndex[regionId];
+    if (pi == null) return; // numberless / free-fill region — nothing to read
+    final locale = ref.read(localeProvider).valueOrNull?.locale ?? 'en';
+    ref.read(narrationProvider.notifier).speak('${pi + 1}', locale);
   }
 
   void _onPanUpdate(Offset pos, Size size) {
@@ -1592,6 +1625,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final l10n = ref.read(l10nProvider);
     final settings = ref.read(settingsProvider).valueOrNull;
 
+    // Read-aloud praise the moment the picture is finished (no-op unless the
+    // child has narration on). Parity with the web speak(narratePraise) call.
+    final locale = ref.read(localeProvider).valueOrNull?.locale ?? 'en';
+    ref.read(narrationProvider.notifier).speak(l10n.t('narratePraise'), locale);
+
     // 1. Persist the finished artwork to the in-app Journal. We write to the app
     //    documents dir (silent, no permission prompt) — this is the dir the
     //    gallery grid reads. Mirrors the web app's auto-save-on-complete.
@@ -1622,6 +1660,25 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     } catch (_) {}
     final progress =
         ref.read(progressProvider).valueOrNull ?? const Progress();
+
+    // 2b. Sticker Scenes: capture this finished page as a reusable "My Art"
+    //     sticker, then run the theme-matched decoration drip + scene unlocks
+    //     (parity with web scenes.js). Done before the celebration so the new
+    //     items exist by the time the child opens their scenes.
+    AwardResult? sceneAward;
+    try {
+      final notifier = ref.read(scenesProvider.notifier);
+      final thumb = await _captureArtThumb();
+      if (thumb != null) {
+        await notifier.addArtSticker(
+          subject: _subject,
+          thumbBytes: thumb,
+          ts: DateTime.now().millisecondsSinceEpoch,
+        );
+      }
+      sceneAward =
+          await notifier.awardForCompletion(_subject, progress.totalCompleted);
+    } catch (_) {}
 
     if (!mounted) return;
 
@@ -1655,6 +1712,66 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           duration: const Duration(seconds: 3),
         ),
       );
+    }
+
+    // New Sticker-Scenes unlocks (a freshly opened scene, or new decorations).
+    if (mounted && sceneAward != null) {
+      String? msg;
+      if (sceneAward.newScenes.isNotEmpty) {
+        final s = sceneAward.newScenes.first;
+        final name =
+            l10n.t('scene${s.id[0].toUpperCase()}${s.id.substring(1)}Name');
+        msg = l10n.t('sceneUnlockedToast', {'name': name});
+      } else if (sceneAward.newDecos.isNotEmpty) {
+        msg = l10n.t('decoUnlockedToast', {
+          'emoji': sceneAward.newDecos.first.emoji,
+          'n': '${sceneAward.newDecos.length}',
+        });
+      }
+      if (msg != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg,
+                style: GoogleFonts.nunito(fontWeight: FontWeight.w700)),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  // A small (~160px) thumbnail of the finished page for use as a Sticker-Scenes
+  // "My Art" sticker. Capped at 24 by ScenesNotifier, so we never store full-res
+  // copies; downscaling here keeps each on-disk thumbnail to a few KB.
+  Future<Uint8List?> _captureArtThumb() async {
+    try {
+      final boundary = _canvasKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+      final full = await boundary.toImage(pixelRatio: 1.0);
+      const target = 160.0;
+      final longest =
+          (full.width > full.height ? full.width : full.height).toDouble();
+      final scale = longest > 0 ? target / longest : 1.0;
+      final w = (full.width * scale).round().clamp(1, 400);
+      final h = (full.height * scale).round().clamp(1, 400);
+      final recorder = ui.PictureRecorder();
+      final c = Canvas(recorder);
+      c.drawImageRect(
+        full,
+        Rect.fromLTWH(0, 0, full.width.toDouble(), full.height.toDouble()),
+        Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()),
+        Paint()..filterQuality = FilterQuality.medium,
+      );
+      final picture = recorder.endRecording();
+      final small = await picture.toImage(w, h);
+      full.dispose();
+      picture.dispose();
+      final bd = await small.toByteData(format: ui.ImageByteFormat.png);
+      small.dispose();
+      return bd?.buffer.asUint8List();
+    } catch (_) {
+      return null;
     }
   }
 

@@ -16,6 +16,9 @@ class StorageService {
   // Tutorial / onboarding "seen" flags (coach-marks auto-run once each).
   static const kTutorialHome = 'tutorial_home_seen';
   static const kTutorialCanvas = 'tutorial_canvas_seen';
+  // Read-aloud narration (color numbers + praise) — OFF by default, parity with
+  // the web `lalabuba-narrate-v1` flag.
+  static const kNarrate = 'narrate_on';
 
   static Future<String?> read(String key) => _storage.read(key: key);
   static Future<void> write(String key, String value) =>

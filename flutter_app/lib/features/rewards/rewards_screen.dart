@@ -8,6 +8,7 @@ import '../progress/progress_service.dart';
 import '../settings/settings_controller.dart';
 import 'daily_mission.dart';
 import 'crayon_packs.dart';
+import 'scenes.dart';
 
 /// The Rewards home — the child's collection hub. Holds the sticker album
 /// (grouped collections), and is the destination of the pulsing 🏆 icon on the
@@ -34,7 +35,7 @@ class RewardsScreen extends ConsumerWidget {
         children: [
           _DailyMissionCard(progress: progress, l10n: l10n),
           const SizedBox(height: 16),
-          _MascotCard(l10n: l10n),
+          _ScenesCard(l10n: l10n, totalCompleted: progress.totalCompleted),
           const SizedBox(height: 20),
           _CrayonPacksSection(progress: progress, l10n: l10n),
           const SizedBox(height: 20),
@@ -150,19 +151,22 @@ class _DailyMissionCard extends ConsumerWidget {
   }
 }
 
-// ─── Mascot entry card ───────────────────────────────────────────────────────
+// ─── Scenes entry card ───────────────────────────────────────────────────────
 
-class _MascotCard extends StatelessWidget {
+class _ScenesCard extends StatelessWidget {
   final L10n l10n;
-  const _MascotCard({required this.l10n});
+  final int totalCompleted;
+  const _ScenesCard({required this.l10n, required this.totalCompleted});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final open = kScenes.where((s) => totalCompleted >= s.unlockAt).length;
+    final total = kScenes.length;
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        context.pushNamed('mascot');
+        context.pushNamed('scenes');
       },
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -177,7 +181,7 @@ class _MascotCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Text('🐧', style: TextStyle(fontSize: 44)),
+            const Text('🏞️', style: TextStyle(fontSize: 44)),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -185,7 +189,7 @@ class _MascotCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    l10n.t('mascotCardTitle'),
+                    l10n.t('scenesCardTitle'),
                     style: GoogleFonts.fredoka(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -193,7 +197,8 @@ class _MascotCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    l10n.t('mascotCardSubtitle'),
+                    l10n.t('scenesCardSubtitle',
+                        {'open': '$open', 'total': '$total'}),
                     style: GoogleFonts.nunito(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
