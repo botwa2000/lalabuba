@@ -7,6 +7,7 @@ import {
 } from './dom.js';
 import { resetZoom } from './zoom.js';
 import { bounce, sparkleBurst, sparkleAt, playComplete } from './fx.js';
+import { fillRegionCore } from './fill-core.js';
 
 // Module-level palette context, set by setPaletteContext() from ui.js
 let _palette = [];
@@ -507,102 +508,34 @@ export function precomputeRegions() {
   state.regionMap = label;
 }
 
-// Paint every pixel in regionId with fillColor, then redraw.
-// After filling the region, bleed 2 pixels outward into the anti-aliased
-// edge zone (pixels that are gray but not truly black) so there is no white
-// fringe between the fill colour and the black outline.
-// Returns { success: true, record } where record is a Uint8Array encoding
-// every touched pixel's previous RGBA so it can be undone.
+// Paint every pixel in regionId with fillColor, then redraw. Delegates the pure
+// pixel work to fillRegionCore (fill-core.js) — DOM-free and unit-tested — which:
+//   1. fills the region's own pixels,
+//   2. bleeds 2 px outward into the anti-aliased edge so no white fringe is left
+//      against the black outline, and
+//   3. reclaims enclosed bright pockets (a beak tip, a toe gap) the closing
+//      swallowed into the outline band — but ONLY when the single real region
+//      bordering the pocket is this one, so it never paints a fake border across
+//      an open gap between two different regions.
+// Returns { success: true, record } where record encodes every touched pixel's
+// previous RGBA so it can be undone.
 export function fillRegion(regionId, fillColor) {
-  const pixels = state.regionPixels.get(regionId);
-  if (!pixels) return { success: false };
+  if (!state.regionPixels?.get(regionId)) return { success: false };
 
-  const paint = state.paintedImageData.data;
-  const base  = state.baseImageData.data;   // brightness source — unaffected by fills
-  const { r, g, b } = fillColor;
   const { width, height } = previewCanvas;
-  const n = width * height;
-
-  // Track which pixels have been painted in this call to avoid double-work.
-  const painted = new Uint8Array(n);
-  // Record touched pixels for undo: [idx_lo, idx_hi, prevR, prevG, prevB, prevA, ...]
-  // idx stored as two Uint16 bytes (little-endian) — max pixel index 1024*1024 = 1M < 2^20, fits in 3 bytes
-  // Simpler: store as Float32 index + 4 bytes RGBA in a growing array, then compact.
-  const undoEntries = []; // each entry: [pixelIndex, prevR, prevG, prevB, prevA]
-
-  function paintPixel(idx) {
-    if (painted[idx]) return;
-    const o = idx * 4;
-    undoEntries.push(idx, paint[o], paint[o+1], paint[o+2], paint[o+3]);
-    paint[o] = r; paint[o+1] = g; paint[o+2] = b; paint[o+3] = 255;
-    painted[idx] = 1;
-  }
-
-  for (const idx of pixels) paintPixel(idx);
-
-  // 2-pass dilation into adjacent non-black pixels.
-  const MIN_BR = 50;
-  let frontier = pixels;
-  for (let pass = 0; pass < 2; pass++) {
-    const next = [];
-    for (const idx of frontier) {
-      const x = idx % width, y = (idx / width) | 0;
-      const tryBleed = (ni) => {
-        if (painted[ni]) return;
-        const o = ni*4; const br=(base[o]+base[o+1]+base[o+2])/3;
-        if (br > MIN_BR) { paintPixel(ni); next.push(ni); }
-      };
-      if (x > 0)          tryBleed(idx - 1);
-      if (x < width - 1)  tryBleed(idx + 1);
-      if (y > 0)          tryBleed(idx - width);
-      if (y < height - 1) tryBleed(idx + width);
-    }
-    frontier = next;
-  }
-
-  // Orphan fill: flood through bright label=-1 pockets that are enclosed within
-  // this region. These are tiny connected components (< 30 px) that were merged into
-  // the barrier map during precomputeRegions and appear as white specks inside a
-  // filled area. Stops at true black pixels (br <= MIN_BR) and at pixels that belong
-  // to a different positive-label region, so the flood cannot cross outlines into the
-  // outer background or adjacent colourable regions.
-  if (state.regionMap) {
-    const absorbable = (ni) => {
-      const lbl = state.regionMap[ni];
-      if (lbl < 1) return true;
-      const rpx = state.regionPixels?.get(lbl);
-      return rpx && rpx.length < 500 && !state.regionColorMap?.has(lbl);
-    };
-    const tryOrphan = (ni) => {
-      if (painted[ni] || !absorbable(ni)) return null;
-      const o = ni*4;
-      if ((base[o]+base[o+1]+base[o+2])/3 > MIN_BR) { paintPixel(ni); return ni; }
-      return null;
-    };
-    const orphanQ = [];
-    for (const list of [pixels, frontier]) for (const idx of list) {
-      const x = idx % width, y = (idx / width) | 0;
-      if (x > 0)          { const ni=tryOrphan(idx-1);     if(ni!=null) orphanQ.push(ni); }
-      if (x < width - 1)  { const ni=tryOrphan(idx+1);     if(ni!=null) orphanQ.push(ni); }
-      if (y > 0)          { const ni=tryOrphan(idx-width);  if(ni!=null) orphanQ.push(ni); }
-      if (y < height - 1) { const ni=tryOrphan(idx+width);  if(ni!=null) orphanQ.push(ni); }
-    }
-    let qi = 0;
-    while (qi < orphanQ.length) {
-      const idx = orphanQ[qi++];
-      const x = idx % width, y = (idx / width) | 0;
-      if (x > 0)          { const ni=tryOrphan(idx-1);     if(ni!=null) orphanQ.push(ni); }
-      if (x < width - 1)  { const ni=tryOrphan(idx+1);     if(ni!=null) orphanQ.push(ni); }
-      if (y > 0)          { const ni=tryOrphan(idx-width);  if(ni!=null) orphanQ.push(ni); }
-      if (y < height - 1) { const ni=tryOrphan(idx+width);  if(ni!=null) orphanQ.push(ni); }
-    }
-  }
+  const { undoEntries } = fillRegionCore({
+    paint: state.paintedImageData.data,
+    base: state.baseImageData.data,   // brightness source — unaffected by fills
+    regionMap: state.regionMap,
+    regionPixels: state.regionPixels,
+    regionColorMap: state.regionColorMap,
+    width, height,
+    regionId,
+    fillColor,
+    minBr: 50,
+  });
 
   redrawCanvas();
-  // Pack undo record: [pixelIndex(4B LE), r, g, b, a] per touched pixel
-  const record = new Uint8Array(undoEntries.length);
-  for (let i = 0; i < undoEntries.length; i++) record[i] = undoEntries[i] & 0xff;
-  // Store pixel indices as 4-byte groups (entries are [idx, r, g, b, a] groups of 5)
   return { success: true, record: packUndoRecord(undoEntries) };
 }
 
