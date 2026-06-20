@@ -7,7 +7,11 @@ import {
 } from './dom.js';
 import { resetZoom } from './zoom.js';
 import { bounce, sparkleBurst, sparkleAt, playComplete } from './fx.js';
-import { fillRegionCore } from './fill-core.js';
+// Versioned query: dodges a Cloudflare negative-cache of the bare path that can
+// occur when /js/fill-core.js is requested before its first deploy. Bump with
+// the asset version. (.js is served no-store, so the query only affects the CDN
+// cache key, never freshness.)
+import { fillRegionCore } from './fill-core.js?v=200';
 
 // Module-level palette context, set by setPaletteContext() from ui.js
 let _palette = [];
