@@ -1367,7 +1367,10 @@ function refreshWeekScenePill() {
   try {
     const wk = weekScene();
     const name = t(`scene${wk.id.charAt(0).toUpperCase()}${wk.id.slice(1)}Name`);
-    _weekScenePill.textContent = t('weekScenePill', name);
+    // Lead with the SCENE's own emoji (🐧, 🌊, 🚀…) — not the ⭐ the daily-word
+    // pill uses — so the two adjacent pills read as clearly different actions
+    // (a themed-idea picker vs the word of the day).
+    _weekScenePill.textContent = `${wk.emoji} ${t('weekScenePill', name)}`;
     _weekScenePill.dataset.scene = wk.id;
     _weekScenePill.hidden = false;
   } catch { _weekScenePill.hidden = true; }

@@ -108,8 +108,22 @@
   .cookie-banner-inner {
     flex-direction: column;
     align-items: flex-start;
+    /* Once the inner flips to a column, justify-content:space-between (set on the
+       base rule) would push the text and actions to opposite ends of any extra
+       height — combined with the text's flex-basis below, that ballooned the
+       banner to half the screen. Pin to the top and let it size to content. */
+    justify-content: flex-start;
     gap: 12px;
     padding: 14px 16px;
+  }
+
+  .cookie-text {
+    /* In the base (row) rule this is `flex: 1 1 220px` so the text fills the row
+       width. In a COLUMN the main axis is vertical, so that 220px basis + grow
+       forced the paragraph ≥220px TALL — the cause of the oversized banner.
+       Reset to content height. */
+    flex: 0 0 auto;
+    width: 100%;
   }
 
   .cookie-actions {
