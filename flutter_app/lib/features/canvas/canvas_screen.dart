@@ -898,11 +898,18 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   }
 
   void _onTap(Offset pos, Size size) {
-    final regionId =
-        ref.read(canvasProvider.notifier).regionAtOffset(pos, size);
+    final notifier = ref.read(canvasProvider.notifier);
+    // The eraser (transparent active colour) must clear WHATEVER is under the
+    // finger — both region fills and freehand pencil/doodle strokes. Region
+    // erase happens via fillRegion below; stroke erase is handled here. Without
+    // this, the eraser only removed fills and left doodles behind (reported bug).
+    if (ref.read(canvasProvider).activeColor == Colors.transparent) {
+      notifier.eraseStrokesAt(pos);
+    }
+    final regionId = notifier.regionAtOffset(pos, size);
     if (regionId != null) {
       HapticFeedback.lightImpact();
-      ref.read(canvasProvider.notifier).fillRegion(regionId);
+      notifier.fillRegion(regionId);
       _narrateRegion(regionId);
     }
   }
@@ -918,10 +925,14 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   }
 
   void _onPanUpdate(Offset pos, Size size) {
-    final regionId =
-        ref.read(canvasProvider.notifier).regionAtOffset(pos, size);
+    final notifier = ref.read(canvasProvider.notifier);
+    // Dragging the eraser rubs out strokes along the path as well as fills.
+    if (ref.read(canvasProvider).activeColor == Colors.transparent) {
+      notifier.eraseStrokesAt(pos);
+    }
+    final regionId = notifier.regionAtOffset(pos, size);
     if (regionId != null) {
-      ref.read(canvasProvider.notifier).fillRegion(regionId);
+      notifier.fillRegion(regionId);
     }
   }
 

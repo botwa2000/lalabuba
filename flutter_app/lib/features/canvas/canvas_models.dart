@@ -56,6 +56,7 @@ class RegionDetectionResult {
   final int backgroundRegionId;         // id of the outer background region
   final Map<int, int> regionColorMap;       // regionId → ARGB32 int (pre-assigned palette)
   final Map<int, int> regionPaletteIndex;   // regionId → 0-based palette index (for number display)
+  final Uint8List? lineMask;            // length = width*height; 1 = visible line-art pixel
 
   const RegionDetectionResult({
     required this.pixelToRegion,
@@ -65,6 +66,7 @@ class RegionDetectionResult {
     this.backgroundRegionId = 0,
     this.regionColorMap = const {},
     this.regionPaletteIndex = const {},
+    this.lineMask,
   });
 }
 
@@ -92,6 +94,7 @@ class CompositeParams {
   final Map<int, int> regionColors; // region id → ARGB int
   final int width;
   final int height;
+  final Uint8List? lineMask; // 1 = visible line-art pixel, drawn on top of fills
 
   const CompositeParams({
     required this.originalRgba,
@@ -99,14 +102,45 @@ class CompositeParams {
     required this.regionColors,
     required this.width,
     required this.height,
+    this.lineMask,
   });
 }
 
-class CanvasAction {
-  final int regionId;
-  final Color? previousColor; // null = was unfilled
+/// What an undo entry reverses. Coloring mixes three edit kinds — region fills,
+/// freehand strokes added, and freehand strokes erased — and a single undo stack
+/// must reverse whichever came last. (Previously the stack only knew about region
+/// fills, so pencil strokes couldn't be undone and the eraser left them behind.)
+enum CanvasOp { fill, addStroke, eraseStrokes }
 
-  const CanvasAction({required this.regionId, required this.previousColor});
+class CanvasAction {
+  final CanvasOp op;
+
+  // fill
+  final int regionId;
+  final Color? previousColor; // null = region was unfilled before
+
+  // addStroke: the single stroke appended (undo pops it).
+  // eraseStrokes: the strokes removed, paired with [strokeIndices] (their
+  // original positions, ascending) so undo reinserts them exactly where they were.
+  final List<Stroke> strokes;
+  final List<int> strokeIndices;
+
+  const CanvasAction.fill({required this.regionId, required this.previousColor})
+      : op = CanvasOp.fill,
+        strokes = const [],
+        strokeIndices = const [];
+
+  const CanvasAction.addStroke()
+      : op = CanvasOp.addStroke,
+        regionId = -1,
+        previousColor = null,
+        strokes = const [],
+        strokeIndices = const [];
+
+  const CanvasAction.eraseStrokes(this.strokes, this.strokeIndices)
+      : op = CanvasOp.eraseStrokes,
+        regionId = -1,
+        previousColor = null;
 }
 
 class CanvasState {

@@ -3,58 +3,43 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lalabuba/features/canvas/canvas_models.dart';
 import 'package:lalabuba/features/canvas/flood_fill.dart';
 
-// Covers the seam-bleed behaviour of buildCompositeRgba. The morphological
-// closing absorbs a thin ring of genuinely-white interior into the -2 outline
-// class; the bleed refills that ring so no white halo shows along a fill edge.
-// The bleed is DISTANCE-BOUNDED (maxBleed px): it closes the seam but must never
-// paint across an open white area, otherwise two regions separated by a faint or
-// broken grey line flood toward each other and meet at an arbitrary midline with
-// no black divider (the "border is a random line in the middle of white" bug).
+// Covers buildCompositeRgba under the WATERSHED model:
+//   • every pixel belongs to a region (no unowned outline band), so adjacent
+//     fills meet with NO white seam — the structural fix for "colours not clean";
+//   • fills are flat (one solid colour per region), so source shading can't show
+//     through as blotchy/partial colouring;
+//   • the thin line art is overlaid on top from lineMask, so dividers stay crisp
+//     over the colour without being left as gaps.
 void main() {
-  group('buildCompositeRgba multi-pass bleed', () {
-    const w = 20;
-    const h = 3;
-    const red = 0xFFFF0000;
+  const red = 0xFFFF0000;
+  const blue = 0xFF0000FF;
 
-    late Uint8List orig;
-    late Int32List p2r;
-
-    void setPixel(int i, int r, int g, int b) {
-      orig[i * 4] = r;
-      orig[i * 4 + 1] = g;
-      orig[i * 4 + 2] = b;
-      orig[i * 4 + 3] = 255;
+  Uint8List solid(int w, int h, int v) {
+    final b = Uint8List(w * h * 4);
+    for (var i = 0; i < w * h; i++) {
+      b[i * 4] = v;
+      b[i * 4 + 1] = v;
+      b[i * 4 + 2] = v;
+      b[i * 4 + 3] = 255;
     }
+    return b;
+  }
 
-    setUp(() {
-      orig = Uint8List(w * h * 4);
-      p2r = Int32List(w * h);
-      // Default: dark -2 everywhere (blocks any vertical bleed → isolates row y=1).
-      for (var i = 0; i < w * h; i++) {
-        p2r[i] = -2;
-        setPixel(i, 0, 0, 0);
+  group('flat fills', () {
+    test('a grey-shaded region renders as one solid colour', () {
+      const w = 12, h = 1;
+      final orig = Uint8List(w * h * 4);
+      final p2r = Int32List(w * h);
+      // One region (id 0) across the row, each pixel a DIFFERENT grey (luma
+      // 120→230) to simulate source shading inside the region.
+      for (var x = 0; x < w; x++) {
+        final v = 120 + x * 10;
+        orig[x * 4] = v;
+        orig[x * 4 + 1] = v;
+        orig[x * 4 + 2] = v;
+        orig[x * 4 + 3] = 255;
+        p2r[x] = 0;
       }
-      // Row y=1: filled region | 8-px white -2 band | dark core | white -2 band.
-      const y = 1;
-      int idx(int x) => y * w + x;
-      // x 0..1  → filled region 0 (white interior)
-      for (var x = 0; x <= 1; x++) {
-        p2r[idx(x)] = 0;
-        setPixel(idx(x), 255, 255, 255);
-      }
-      // x 2..9  → white band wrongly classed as outline by the closing
-      for (var x = 2; x <= 9; x++) {
-        setPixel(idx(x), 255, 255, 255); // p2r stays -2
-      }
-      // x 10    → genuine dark outline core
-      setPixel(idx(10), 0, 0, 0); // p2r stays -2, luma 0
-      // x 11..19 → white band on the FAR side, no filled neighbour reachable
-      for (var x = 11; x <= 19; x++) {
-        setPixel(idx(x), 255, 255, 255); // p2r stays -2
-      }
-    });
-
-    test('fills the entire white band up to the closing radius', () {
       final out = buildCompositeRgba(CompositeParams(
         originalRgba: orig,
         pixelToRegion: p2r,
@@ -62,80 +47,49 @@ void main() {
         width: w,
         height: h,
       ));
-
-      int r(int x) => out[(1 * w + x) * 4];
-      int g(int x) => out[(1 * w + x) * 4 + 1];
-      int b(int x) => out[(1 * w + x) * 4 + 2];
-
-      bool isRed(int x) => r(x) > 200 && g(x) < 50 && b(x) < 50;
-
-      // The whole 8-px white band adjacent to fill is now coloured — no white gap.
-      for (var x = 0; x <= 9; x++) {
-        expect(isRed(x), isTrue, reason: 'pixel x=$x should be filled red');
+      for (var x = 0; x < w; x++) {
+        expect(out[x * 4], 255, reason: 'pixel x=$x R must be solid 255');
+        expect(out[x * 4 + 1], 0, reason: 'pixel x=$x G must be 0');
+        expect(out[x * 4 + 2], 0, reason: 'pixel x=$x B must be 0');
       }
     });
 
-    test('the dark outline core stops colour crossing into the far side', () {
+    test('an uncoloured region keeps the original pixels', () {
+      const w = 4, h = 1;
+      final orig = solid(w, h, 200);
+      final p2r = Int32List(w * h); // all region 0, but 0 is NOT in regionColors
       final out = buildCompositeRgba(CompositeParams(
         originalRgba: orig,
         pixelToRegion: p2r,
-        regionColors: const {0: red},
+        regionColors: const {}, // nothing filled
         width: w,
         height: h,
       ));
-      int r(int x) => out[(1 * w + x) * 4];
-      int g(int x) => out[(1 * w + x) * 4 + 1];
-      int b(int x) => out[(1 * w + x) * 4 + 2];
-
-      // Core stays dark.
-      expect(r(10) < 30 && g(10) < 30 && b(10) < 30, isTrue,
-          reason: 'dark core must remain a barrier');
-      // Far-side band (unreachable without crossing the core) stays white.
-      for (var x = 11; x <= 19; x++) {
-        expect(r(x) > 250 && g(x) > 250 && b(x) > 250, isTrue,
-            reason: 'far-side pixel x=$x must NOT be bled into');
+      for (var x = 0; x < w; x++) {
+        expect(out[x * 4], 200, reason: 'unfilled pixel must keep original');
       }
     });
   });
 
-  // Regression guard for the "random midline in open white" bug. Two filled
-  // regions sit at opposite ends of a WIDE light band with NO dark divider
-  // between them. An unbounded flood would have each colour race to the middle
-  // and meet at an arbitrary midline (a coloured boundary with no black line).
-  // The bounded bleed must instead leave the open centre untouched: each colour
-  // reaches only ~maxBleed (12) px past its own edge.
-  group('buildCompositeRgba bounded bleed leaves open white uncoloured', () {
-    const w = 40;
-    const h = 3;
-    const red = 0xFFFF0000;
-    const blue = 0xFF0000FF;
-
-    test('neither colour crosses the open centre of a 38-px white band', () {
-      final orig = Uint8List(w * h * 4);
+  group('no seam between adjacent fills', () {
+    // Two regions tile the whole row with a one-pixel black line between them
+    // (the watershed step has already assigned every pixel, so there is no -2).
+    // The fills must be solid up to the divider with NO white pixel anywhere,
+    // and the divider pixel must read dark from the line overlay.
+    test('adjacent red/blue fills meet at the overlaid line, no white gap', () {
+      const w = 11, h = 1;
+      final orig = solid(w, h, 255);
       final p2r = Int32List(w * h);
-      void setPixel(int i, int r, int g, int b) {
-        orig[i * 4] = r;
-        orig[i * 4 + 1] = g;
-        orig[i * 4 + 2] = b;
-        orig[i * 4 + 3] = 255;
+      final lineMask = Uint8List(w * h);
+      const div = 5;
+      for (var x = 0; x < w; x++) {
+        p2r[x] = x < div ? 0 : 1; // left region 0, right region 1 (div ∈ region 1)
       }
-
-      // Dark -2 everywhere (isolates the middle row vertically).
-      for (var i = 0; i < w * h; i++) {
-        p2r[i] = -2;
-        setPixel(i, 0, 0, 0);
-      }
-      const y = 1;
-      int idx(int x) => y * w + x;
-      // x 0  → filled region 0 (red). x 39 → filled region 1 (blue).
-      p2r[idx(0)] = 0;
-      setPixel(idx(0), 255, 255, 255);
-      p2r[idx(39)] = 1;
-      setPixel(idx(39), 255, 255, 255);
-      // x 1..38 → one continuous open white band, NO dark divider anywhere.
-      for (var x = 1; x <= 38; x++) {
-        setPixel(idx(x), 255, 255, 255); // p2r stays -2
-      }
+      // The divider pixel is a black line drawn in the source.
+      orig[div * 4] = 0;
+      orig[div * 4 + 1] = 0;
+      orig[div * 4 + 2] = 0;
+      lineMask[div] = 1;
 
       final out = buildCompositeRgba(CompositeParams(
         originalRgba: orig,
@@ -143,23 +97,59 @@ void main() {
         regionColors: const {0: red, 1: blue},
         width: w,
         height: h,
+        lineMask: lineMask,
       ));
-      int r(int x) => out[(1 * w + x) * 4];
-      int g(int x) => out[(1 * w + x) * 4 + 1];
-      int b(int x) => out[(1 * w + x) * 4 + 2];
-      bool isRed(int x) => r(x) > 200 && g(x) < 50 && b(x) < 50;
-      bool isBlue(int x) => b(x) > 200 && r(x) < 50 && g(x) < 50;
-      bool isWhite(int x) => r(x) > 250 && g(x) > 250 && b(x) > 250;
 
-      // Red reaches at most 12 px from its edge (x1..12), blue at most 12 px
-      // from its edge (x27..38).
-      expect(isRed(12), isTrue, reason: 'red should fill its seam up to x=12');
-      expect(isBlue(27), isTrue, reason: 'blue should fill its seam up to x=27');
-      // The open centre (x13..26) stays white — no arbitrary midline.
-      for (var x = 13; x <= 26; x++) {
-        expect(isWhite(x), isTrue,
-            reason: 'open-white pixel x=$x must NOT be coloured');
+      bool isWhite(int x) =>
+          out[x * 4] > 250 && out[x * 4 + 1] > 250 && out[x * 4 + 2] > 250;
+      // No white anywhere — every pixel is owned and painted.
+      for (var x = 0; x < w; x++) {
+        expect(isWhite(x), isFalse, reason: 'pixel x=$x must not be white');
       }
+      // Left of divider = solid red, right = solid blue.
+      for (var x = 0; x < div; x++) {
+        expect(out[x * 4] == 255 && out[x * 4 + 2] == 0, isTrue,
+            reason: 'pixel x=$x must be solid red');
+      }
+      for (var x = div + 1; x < w; x++) {
+        expect(out[x * 4 + 2] == 255 && out[x * 4] == 0, isTrue,
+            reason: 'pixel x=$x must be solid blue');
+      }
+      // The divider reads dark (line overlay won over the fill).
+      expect(out[div * 4] < 60 && out[div * 4 + 1] < 60 && out[div * 4 + 2] < 60,
+          isTrue,
+          reason: 'the overlaid line pixel must stay a dark divider');
+    });
+  });
+
+  group('line overlay keeps fills flat', () {
+    // A non-line dark source pixel (interior shading, lineMask 0) must NOT darken
+    // the flat fill — only true line pixels (lineMask 1) get the overlay.
+    test('interior shading does not show through; only line pixels darken', () {
+      const w = 3, h = 1;
+      final orig = solid(w, h, 255);
+      // x0: a dark pixel that is NOT a line (shading). x1: white. x2: dark line.
+      orig[0] = 30; orig[1] = 30; orig[2] = 30;
+      orig[2 * 4] = 0; orig[2 * 4 + 1] = 0; orig[2 * 4 + 2] = 0;
+      final p2r = Int32List(w * h); // all region 0
+      final lineMask = Uint8List(w * h)..[2] = 1; // only x2 is a line
+
+      final out = buildCompositeRgba(CompositeParams(
+        originalRgba: orig,
+        pixelToRegion: p2r,
+        regionColors: const {0: red},
+        width: w,
+        height: h,
+        lineMask: lineMask,
+      ));
+
+      // x0 (shading, not a line) → solid red, shading ignored.
+      expect(out[0] == 255 && out[2] == 0, isTrue,
+          reason: 'non-line shading must be covered by the flat fill');
+      // x1 → solid red.
+      expect(out[1 * 4] == 255 && out[1 * 4 + 2] == 0, isTrue);
+      // x2 (line) → dark overlay.
+      expect(out[2 * 4] < 60, isTrue, reason: 'line pixel must darken');
     });
   });
 }

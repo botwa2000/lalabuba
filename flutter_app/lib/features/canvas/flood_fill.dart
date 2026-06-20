@@ -23,15 +23,81 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   final minArea = params.minArea;
   final palette = params.paletteArgb;
 
-  // ── 1. Build outline mask: brightness < 100 → outline (1), else fillable (0) ──
-  final outlineMask = Uint8List(w * h);
+  // ── 1. Build outline mask — a pixel is a WALL (outline) if it is either
+  // globally dark OR locally darker than its surroundings (an interior line). ──
+  //
+  // A single global threshold (br < 100) only catches near-black ink. AI line
+  // art constantly draws the INTERIOR divisions of a subject as faint grey lines
+  // (anti-aliased thin strokes average up to luma ~110-160). Those slip under
+  // br < 100, so the facets they divide MERGE into one region and the child
+  // can't colour them separately — the reported "tons of areas can't be tapped"
+  // / "no separators" bug.
+  //
+  // The fix is a LOCAL comparison: a line is darker than the light area around
+  // it. Crucially, we do NOT just raise the global threshold — that would turn a
+  // uniformly mid-grey SHADED fill into all-wall (every pixel < the raised
+  // threshold) and make whole regions uncolourable, i.e. strictly worse. With a
+  // relative test a flat shaded region has every pixel ≈ its local mean, so
+  // nothing trips it; only pixels that are genuinely darker than their neighbours
+  // (real lines/edges) become walls.
+  final bright = Uint8List(w * h);
   for (var i = 0; i < w * h; i++) {
-    final r = pixels[i * 4];
-    final g = pixels[i * 4 + 1];
-    final b = pixels[i * 4 + 2];
-    final br = (r + g + b) ~/ 3;
-    outlineMask[i] = br < 100 ? 1 : 0;
+    bright[i] = (pixels[i * 4] + pixels[i * 4 + 1] + pixels[i * 4 + 2]) ~/ 3;
   }
+  // Summed-area table for O(1) box-mean queries. Padded (w+1)×(h+1); row/col 0
+  // are zero. Max accumulated value is 255·w·h, which stays within a 64-bit Dart
+  // int (and even Int32) for pages up to ~2900px/side — the app caps generated
+  // pages at 1024px, so this never overflows.
+  final sw = w + 1;
+  final sat = Int64List(sw * (h + 1));
+  for (var y = 0; y < h; y++) {
+    var rowSum = 0;
+    for (var x = 0; x < w; x++) {
+      rowSum += bright[y * w + x];
+      sat[(y + 1) * sw + (x + 1)] = sat[y * sw + (x + 1)] + rowSum;
+    }
+  }
+  // Box radius scales with the image (≈ line spacing) and is clamped to a sane
+  // range so the local mean reflects the immediate neighbourhood, not the page.
+  final radRaw = (w < h ? w : h) ~/ 64;
+  final radius = radRaw < 4 ? 4 : (radRaw > 24 ? 24 : radRaw);
+  const localMargin = 22;   // how much darker than local mean still counts as a line
+  const adaptiveCeil = 150; // light pixels never become lines via the local test
+  final outlineMask = Uint8List(w * h);
+  for (var y = 0; y < h; y++) {
+    final y0 = y - radius < 0 ? 0 : y - radius;
+    final y1 = y + radius >= h ? h - 1 : y + radius;
+    for (var x = 0; x < w; x++) {
+      final i = y * w + x;
+      final br = bright[i];
+      if (br < 100) {
+        outlineMask[i] = 1; // globally dark → definitely a line
+        continue;
+      }
+      if (br < adaptiveCeil) {
+        final x0 = x - radius < 0 ? 0 : x - radius;
+        final x1 = x + radius >= w ? w - 1 : x + radius;
+        final area = (x1 - x0 + 1) * (y1 - y0 + 1);
+        final sum = sat[(y1 + 1) * sw + (x1 + 1)] -
+            sat[y0 * sw + (x1 + 1)] -
+            sat[(y1 + 1) * sw + x0] +
+            sat[y0 * sw + x0];
+        final mean = sum ~/ area;
+        if (br <= mean - localMargin) {
+          outlineMask[i] = 1; // locally darker than its surroundings → a line
+          continue;
+        }
+      }
+      outlineMask[i] = 0;
+    }
+  }
+
+  // Snapshot the THIN line mask now, before the closing below thickens it. This
+  // is the visible line art the composite re-draws on top of the flat fills
+  // (the watershed step fills the closed band, so without this overlay the lines
+  // would be painted over). It excludes the virtual frame (added in step 3) so
+  // image edges stay clean.
+  final lineMask = Uint8List.fromList(outlineMask);
 
   // ── 2. Morphological closing (6 dilate + 6 erode) using ping-pong buffers ──
   // This bridges genuine gaps in outlines and prevents open-area bleed.
@@ -420,6 +486,34 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     }
   }
 
+  // ── 8. WATERSHED: give every remaining outline-band (-2) pixel to its nearest
+  // region, so the final label map tiles the WHOLE image with no unowned band. ──
+  //
+  // This is the structural fix for the recurring "colours not clean" family:
+  // jagged white seams between adjacent fills, the uncolourable white band around
+  // a shape (the bear's mouth), and taps that do nothing when zoomed in. All three
+  // came from that wide -2 no-man's-land the morphological closing leaves between
+  // regions, which the old bleed/re-stamp heuristics could only partly paint.
+  // With every pixel owned, two fills meet exactly at the (overlaid) line — no
+  // seam — and every tap resolves to a real region. The visible lines are drawn
+  // back on top from [lineMask] in buildCompositeRgba, so filling the band never
+  // hides them. Multi-source BFS from all region pixels = each band pixel takes
+  // the label of the nearest region (ties by scan order → a clean midline split).
+  final waterQ = Int32List(w * h);
+  var wHead = 0, wTail = 0;
+  for (var i = 0; i < w * h; i++) {
+    if (pixelToRegion[i] >= 0) waterQ[wTail++] = i;
+  }
+  while (wHead < wTail) {
+    final i = waterQ[wHead++];
+    final id = pixelToRegion[i];
+    final x = i % w;
+    if (x > 0)     { final nb = i - 1; if (pixelToRegion[nb] == -2) { pixelToRegion[nb] = id; waterQ[wTail++] = nb; } }
+    if (x < w - 1) { final nb = i + 1; if (pixelToRegion[nb] == -2) { pixelToRegion[nb] = id; waterQ[wTail++] = nb; } }
+    if (i - w >= 0)      { final nb = i - w; if (pixelToRegion[nb] == -2) { pixelToRegion[nb] = id; waterQ[wTail++] = nb; } }
+    if (i + w < w * h)   { final nb = i + w; if (pixelToRegion[nb] == -2) { pixelToRegion[nb] = id; waterQ[wTail++] = nb; } }
+  }
+
   return RegionDetectionResult(
     pixelToRegion: pixelToRegion,
     regions: sortedRegions,
@@ -428,244 +522,75 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     backgroundRegionId: backgroundRegionId,
     regionColorMap: regionColorMap,
     regionPaletteIndex: regionPaletteIndex,
+    lineMask: lineMask,
   );
 }
 
-// ── 8. Composite image generation — unchanged from original ──
+// ── Composite image generation (watershed model) ──
+//
+// Two layers, in order:
+//   1. FLAT FILL — every pixel is painted its region's solid colour (or left as
+//      the original when the region is uncoloured / is the background). Because
+//      the watershed step gave every pixel to a region, adjacent fills meet with
+//      NO gap — this is what removes the jagged white seams between colours.
+//   2. LINE OVERLAY — the thin original line art ([lineMask]) is composited back
+//      on top, its opacity driven by how dark the source pixel is, so the black
+//      outlines stay crisp over the flat colour. Only genuine line pixels are
+//      overlaid, so interior grey SHADING (not a line) does not show through —
+//      keeping fills flat. If no lineMask is supplied (older callers/tests) the
+//      overlay is skipped and you get pure flat fills.
 Uint8List buildCompositeRgba(CompositeParams params) {
   final orig = params.originalRgba;
   final p2r = params.pixelToRegion;
   final colors = params.regionColors;
+  final lineMask = params.lineMask;
   final n = params.width * params.height;
+
+  // How the line overlay opacity ramps with source darkness: solid ink at/below
+  // [lineFloor], invisible at/above [lineCeil], linear between. Anti-aliases the
+  // line smoothly over the fill so edges look clean, not stair-stepped.
+  const lineFloor = 45.0;
+  const lineCeil = 205.0;
+  const lineSpan = lineCeil - lineFloor;
 
   final out = Uint8List(n * 4);
   for (var i = 0; i < n; i++) {
     final ri = p2r[i];
+    int br, bg, bb, ba;
     if (ri >= 0 && colors.containsKey(ri)) {
-      // Get original luma to preserve outline-like shading
+      final argb = colors[ri]!;
+      br = (argb >> 16) & 0xFF;
+      bg = (argb >> 8) & 0xFF;
+      bb = argb & 0xFF;
+      ba = 255;
+    } else {
+      br = orig[i * 4];
+      bg = orig[i * 4 + 1];
+      bb = orig[i * 4 + 2];
+      ba = orig[i * 4 + 3];
+    }
+
+    if (lineMask != null && lineMask[i] == 1) {
       final or_ = orig[i * 4];
       final og = orig[i * 4 + 1];
       final ob = orig[i * 4 + 2];
-      final luma = (0.299 * or_ + 0.587 * og + 0.114 * ob).round();
-
-      if (luma < 80) {
-        // Outline pixel — keep original dark color
-        out[i * 4] = or_;
-        out[i * 4 + 1] = og;
-        out[i * 4 + 2] = ob;
-        out[i * 4 + 3] = orig[i * 4 + 3];
-      } else {
-        // Fill pixel — use region color, slightly darkened by original luma
-        final argb = colors[ri]!;
-        final fr = (argb >> 16) & 0xFF;
-        final fg = (argb >> 8) & 0xFF;
-        final fb = argb & 0xFF;
-        // Multiply fill color by original luma factor (1.0 for white, less for gray)
-        final factor = luma / 255.0;
-        out[i * 4] = (fr * factor).round().clamp(0, 255);
-        out[i * 4 + 1] = (fg * factor).round().clamp(0, 255);
-        out[i * 4 + 2] = (fb * factor).round().clamp(0, 255);
-        out[i * 4 + 3] = 255;
+      final lu = 0.299 * or_ + 0.587 * og + 0.114 * ob;
+      var a = (lineCeil - lu) / lineSpan;
+      if (a < 0) {
+        a = 0;
+      } else if (a > 1) {
+        a = 1;
       }
+      final ia = 1 - a;
+      out[i * 4] = (br * ia + or_ * a).round().clamp(0, 255);
+      out[i * 4 + 1] = (bg * ia + og * a).round().clamp(0, 255);
+      out[i * 4 + 2] = (bb * ia + ob * a).round().clamp(0, 255);
+      out[i * 4 + 3] = 255;
     } else {
-      // Unfilled or background — copy original
-      out[i * 4] = orig[i * 4];
-      out[i * 4 + 1] = orig[i * 4 + 1];
-      out[i * 4 + 2] = orig[i * 4 + 2];
-      out[i * 4 + 3] = orig[i * 4 + 3];
-    }
-  }
-
-  // Seam bleed: flood each filled region's colour OUTWARD through the light
-  // "outline" (-2) band, but only a short, bounded distance (maxBleed px). This
-  // closes the thin white halo that morphological closing leaves between a fill
-  // and the black line WITHOUT painting arbitrary midlines across open white.
-  //
-  // Why bounded (this is the fix for the "border is a random line in the middle
-  // of a white area" bug): an UNBOUNDED flood travels through every connected
-  // light -2 pixel until it hits dark ink. Where two regions are separated by a
-  // faint/broken grey line, that one connected band spans the whole gap, so the
-  // two colours flood toward each other and meet at a Voronoi midline sitting in
-  // open white — a coloured boundary with no black divider. Capping each flood at
-  // maxBleed px confines colour to the immediate seam: it can only ever reach
-  // ~maxBleed px past a region edge, never across an open area. A region interior
-  // is labelled >= 0 (never -2), so a bounded bleed still cannot enter a
-  // neighbour's interior; at worst two colours meet inside a narrow junction
-  // pocket, which is invisible.
-  //
-  // maxBleed (12) ≈ 1.5× the closing radius (8): enough to refill the ring that
-  // closing rounded off at concave corners, not enough to cross an open gap.
-  // The dark-ink gate is raised to luma < 90 so faint grey lines act as walls
-  // too, further preventing one colour from creeping along a light divider.
-  final w = params.width;
-  final h = params.height;
-  const maxBleed = 12;
-
-  // Per-pixel original luma, reused by both the dark-core gate and the final
-  // shading factor (cheaper than recomputing inside the BFS).
-  final luma = Uint8List(n);
-  for (var i = 0; i < n; i++) {
-    luma[i] = (0.299 * orig[i * 4] +
-            0.587 * orig[i * 4 + 1] +
-            0.114 * orig[i * 4 + 2])
-        .round()
-        .clamp(0, 255);
-  }
-
-  // claimColor[i] = ARGB a -2 pixel inherits from the nearest filled region
-  //                 (0 = unclaimed). claimDist[i] = its BFS distance from a fill
-  //                 edge, used to enforce the maxBleed cap.
-  final claimColor = Int32List(n);
-  final claimDist = Uint8List(n);
-  final queue = Int32List(n);
-  var qHead = 0, qTail = 0;
-
-  // Seed: every light -2 pixel directly touching a filled region pixel (dist 1).
-  for (var y = 1; y < h - 1; y++) {
-    for (var x = 1; x < w - 1; x++) {
-      final i = y * w + x;
-      if (p2r[i] != -2 || luma[i] < 90) continue;
-      for (final nb in [i - 1, i + 1, i - w, i + w]) {
-        final ri = p2r[nb];
-        if (ri >= 0 && colors.containsKey(ri)) {
-          claimColor[i] = colors[ri]!;
-          claimDist[i] = 1;
-          queue[qTail++] = i;
-          break;
-        }
-      }
-    }
-  }
-
-  // Expand the frontier through light -2 pixels only, stopping at maxBleed px.
-  while (qHead < qTail) {
-    final i = queue[qHead++];
-    final d = claimDist[i];
-    if (d >= maxBleed) continue; // reached the cap — go no further
-    final argb = claimColor[i];
-    final x = i % w;
-    final neighbors = [
-      if (x > 0) i - 1,
-      if (x < w - 1) i + 1,
-      i - w,
-      i + w,
-    ];
-    for (final nb in neighbors) {
-      if (nb < 0 || nb >= n) continue;
-      if (p2r[nb] != -2 || claimColor[nb] != 0 || luma[nb] < 90) continue;
-      claimColor[nb] = argb;
-      claimDist[nb] = d + 1;
-      queue[qTail++] = nb;
-    }
-  }
-
-  // Paint every claimed pixel, darkened by its original luma so the colored edge
-  // fades naturally into the dark outline core.
-  for (var i = 0; i < n; i++) {
-    final argb = claimColor[i];
-    if (argb == 0) continue;
-    final fr = (argb >> 16) & 0xFF;
-    final fg = (argb >> 8) & 0xFF;
-    final fb = argb & 0xFF;
-    final factor = luma[i] / 255.0;
-    out[i * 4] = (fr * factor).round().clamp(0, 255);
-    out[i * 4 + 1] = (fg * factor).round().clamp(0, 255);
-    out[i * 4 + 2] = (fb * factor).round().clamp(0, 255);
-    out[i * 4 + 3] = 255;
-  }
-
-  // Final pass — RE-STAMP THE LINE ART ON TOP. The fill and bleed passes above
-  // can paint over the soft, anti-aliased (grey, luma 90-180) edges of an outline
-  // and even its core where the line is thin, leaving two filled regions touching
-  // with no visible black divider ("colours border each other without a dividing
-  // line"). Outlines live in the -2 ("outline band") layer; here we redraw every
-  // genuine line pixel (a -2 pixel whose ORIGINAL luma is below the outline
-  // threshold) back to its original colour, so the black/grey divider always wins
-  // over fills and bleed. Light -2 pixels (luma >= outlineLuma — the white halo
-  // that closing rounds off) are left as the bleed painted them, so the halo
-  // between a fill and the line still closes. This makes a missing divider
-  // structurally impossible regardless of bleed tuning.
-  const outlineLuma = 165;
-  for (var i = 0; i < n; i++) {
-    if (p2r[i] != -2) continue;
-    if (luma[i] >= outlineLuma) continue; // genuine light gap — keep bleed fill
-    out[i * 4] = orig[i * 4];
-    out[i * 4 + 1] = orig[i * 4 + 1];
-    out[i * 4 + 2] = orig[i * 4 + 2];
-    out[i * 4 + 3] = orig[i * 4 + 3];
-  }
-
-  // ── Reclaim enclosed light gaps the bounded bleed left white ──
-  // The morphological closing in detectRegions swallows thin light features (a
-  // pointed beak tip, a tail stripe, the gap between toes) into the -2 band, so
-  // they never become a region. The bounded seam bleed above only reaches
-  // maxBleed px in from a coloured edge, so a swallowed wedge DEEPER than that
-  // keeps an unfilled white core — a white spot with no black line around it
-  // ("white spots without a divider — see beak").
-  //
-  // Recover them WITHOUT re-creating the Voronoi-midline bug (the reason the
-  // bleed is bounded in the first place: an unbounded flood lets two DIFFERENT
-  // colours meet in open white). Flood each connected blob of still-white light
-  // -2 pixels and collect the distinct fill colours touching its border. Fill
-  // the blob ONLY when the border is unambiguous — a single colour. Two or more
-  // bordering colours means a genuine divider zone, so leave it untouched and no
-  // false midline can ever form. An enclosed gap inside one coloured shape (the
-  // beak) borders exactly that one colour, so it fills correctly.
-  final gapSeen = Uint8List(n);
-  final gapQ = Int32List(n);
-  for (var s = 0; s < n; s++) {
-    if (gapSeen[s] == 1) continue;
-    gapSeen[s] = 1;
-    if (p2r[s] != -2 || luma[s] < outlineLuma || claimColor[s] != 0) continue;
-
-    // BFS the blob; gapQ[0..gTail) holds its pixels (reset per blob).
-    var gHead = 0, gTail = 0;
-    gapQ[gTail++] = s;
-    var borderColor = 0;
-    var ambiguous = false;
-    while (gHead < gTail) {
-      final i = gapQ[gHead++];
-      final x = i % w;
-      for (final nb in [if (x > 0) i - 1, if (x < w - 1) i + 1, i - w, i + w]) {
-        if (nb < 0 || nb >= n) continue;
-        // Colour source: a filled region pixel, or a bled (claimed) -2 pixel.
-        var c = 0;
-        final ri = p2r[nb];
-        if (ri >= 0) {
-          final cc = colors[ri];
-          if (cc != null) c = cc;
-        }
-        if (c == 0 && claimColor[nb] != 0) c = claimColor[nb];
-        if (c != 0) {
-          if (borderColor == 0) {
-            borderColor = c;
-          } else if (borderColor != c) {
-            ambiguous = true;
-          }
-          continue; // a colour source is a wall, never a blob member
-        }
-        if (gapSeen[nb] == 0) {
-          gapSeen[nb] = 1;
-          // Extend only through more unclaimed light -2 pixels.
-          if (p2r[nb] == -2 && luma[nb] >= outlineLuma && claimColor[nb] == 0) {
-            gapQ[gTail++] = nb;
-          }
-        }
-      }
-    }
-
-    if (!ambiguous && borderColor != 0) {
-      final fr = (borderColor >> 16) & 0xFF;
-      final fg = (borderColor >> 8) & 0xFF;
-      final fb = borderColor & 0xFF;
-      for (var k = 0; k < gTail; k++) {
-        final i = gapQ[k];
-        final factor = luma[i] / 255.0;
-        out[i * 4] = (fr * factor).round().clamp(0, 255);
-        out[i * 4 + 1] = (fg * factor).round().clamp(0, 255);
-        out[i * 4 + 2] = (fb * factor).round().clamp(0, 255);
-        out[i * 4 + 3] = 255;
-      }
+      out[i * 4] = br;
+      out[i * 4 + 1] = bg;
+      out[i * 4 + 2] = bb;
+      out[i * 4 + 3] = ba;
     }
   }
 

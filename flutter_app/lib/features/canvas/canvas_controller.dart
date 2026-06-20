@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:isolate';
-import 'dart:typed_data';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'canvas_models.dart';
 import 'flood_fill.dart';
@@ -162,6 +163,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
       regionColors: colorsInt,
       width: s.detection!.width,
       height: s.detection!.height,
+      lineMask: s.detection!.lineMask,
     );
 
     final rgba = await Isolate.run(() => buildCompositeRgba(params));
@@ -297,28 +299,91 @@ class CanvasNotifier extends Notifier<CanvasState> {
       newColors[regionId] = s.activeColor;
     }
 
-    final action = CanvasAction(regionId: regionId, previousColor: prev);
-    final newUndo = [...s.undoStack, action];
-    if (newUndo.length > _maxUndo) newUndo.removeAt(0);
-    state = s.copyWith(regionColors: newColors, undoStack: newUndo);
+    final action =
+        CanvasAction.fill(regionId: regionId, previousColor: prev);
+    state = s.copyWith(
+        regionColors: newColors, undoStack: _pushUndo(s.undoStack, action));
     unawaited(_rebuildComposite());
+  }
+
+  /// Erase any freehand strokes passing within [radius] (canvas-local px) of
+  /// [p]. Pairs with region-erase so the eraser removes *whatever* is under the
+  /// finger — fills AND pencil/doodle marks — which is what users expect. A
+  /// single eraser gesture can clear several strokes; they're recorded together
+  /// so one undo brings them all back at their original stack positions.
+  void eraseStrokesAt(Offset p, {double radius = 18.0}) {
+    final s = state;
+    if (s.strokes.isEmpty) return;
+    final r2 = radius * radius;
+    final kept = <Stroke>[];
+    final removed = <Stroke>[];
+    final removedIdx = <int>[];
+    for (var i = 0; i < s.strokes.length; i++) {
+      final stroke = s.strokes[i];
+      if (_strokeHit(stroke, p, r2)) {
+        removed.add(stroke);
+        removedIdx.add(i);
+      } else {
+        kept.add(stroke);
+      }
+    }
+    if (removed.isEmpty) return;
+    HapticFeedback.selectionClick();
+    state = s.copyWith(
+      strokes: kept,
+      undoStack: _pushUndo(
+          s.undoStack, CanvasAction.eraseStrokes(removed, removedIdx)),
+    );
+  }
+
+  // True if any vertex of [stroke] (inflated by its own half-width) lies within
+  // the squared eraser radius of [p]. Cheap and accurate enough for fat strokes.
+  bool _strokeHit(Stroke stroke, Offset p, double r2) {
+    final pad = stroke.width / 2;
+    for (final pt in stroke.points) {
+      final dx = pt.dx - p.dx;
+      final dy = pt.dy - p.dy;
+      final hit = math.sqrt(dx * dx + dy * dy) - pad;
+      if (hit <= 0 || hit * hit <= r2) return true;
+    }
+    return false;
+  }
+
+  List<CanvasAction> _pushUndo(List<CanvasAction> stack, CanvasAction a) {
+    final next = [...stack, a];
+    if (next.length > _maxUndo) next.removeAt(0);
+    return next;
   }
 
   Future<void> undo() async {
     final s = state;
     if (s.undoStack.isEmpty) return;
     final action = s.undoStack.last;
-    final newColors = Map<int, Color>.from(s.regionColors);
-    if (action.previousColor == null) {
-      newColors.remove(action.regionId);
-    } else {
-      newColors[action.regionId] = action.previousColor!;
+    final remaining = s.undoStack.sublist(0, s.undoStack.length - 1);
+    switch (action.op) {
+      case CanvasOp.fill:
+        final newColors = Map<int, Color>.from(s.regionColors);
+        if (action.previousColor == null) {
+          newColors.remove(action.regionId);
+        } else {
+          newColors[action.regionId] = action.previousColor!;
+        }
+        state = s.copyWith(regionColors: newColors, undoStack: remaining);
+        unawaited(_rebuildComposite());
+      case CanvasOp.addStroke:
+        final strokes = List<Stroke>.from(s.strokes);
+        if (strokes.isNotEmpty) strokes.removeLast();
+        state = s.copyWith(strokes: strokes, undoStack: remaining);
+      case CanvasOp.eraseStrokes:
+        // Reinsert each removed stroke at its original index (ascending order
+        // keeps indices valid as we go).
+        final strokes = List<Stroke>.from(s.strokes);
+        for (var k = 0; k < action.strokes.length; k++) {
+          final idx = action.strokeIndices[k].clamp(0, strokes.length);
+          strokes.insert(idx, action.strokes[k]);
+        }
+        state = s.copyWith(strokes: strokes, undoStack: remaining);
     }
-    state = s.copyWith(
-      regionColors: newColors,
-      undoStack: s.undoStack.sublist(0, s.undoStack.length - 1),
-    );
-    unawaited(_rebuildComposite());
   }
 
   void setActiveColor(Color c) => state = state.copyWith(activeColor: c);
@@ -353,6 +418,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
     state = state.copyWith(
       strokes: [...state.strokes, cs],
       clearCurrentStroke: true,
+      undoStack: _pushUndo(state.undoStack, const CanvasAction.addStroke()),
     );
   }
 
