@@ -296,7 +296,7 @@
   "sceneUnlockedToast": "🏞️ Новая сцена открыта: {name}!",
   "decoUnlockedToast": "{emoji} +{n} новых наклеек для твоих сцен!",
   "sceneTrayMyArt": "Мои рисунки",
-  "weekScenePill": "🌟 На этой неделе: {name}!",
+  "weekScenePill": "Идеи: {name}",
   "narrateOnChip": "Озвучка: вкл",
   "narrateOffChip": "Озвучка: выкл",
   "narratePraise": "Молодец!",

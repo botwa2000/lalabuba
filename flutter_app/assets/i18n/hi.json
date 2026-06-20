@@ -296,7 +296,7 @@
   "sceneUnlockedToast": "🏞️ नया दृश्य खुला: {name}!",
   "decoUnlockedToast": "{emoji} तुम्हारे दृश्यों के लिए {n} नए स्टिकर!",
   "sceneTrayMyArt": "मेरी कलाकृति",
-  "weekScenePill": "🌟 इस हफ़्ते: {name}!",
+  "weekScenePill": "{name} आइडिया",
   "narrateOnChip": "पढ़कर सुनाना: चालू",
   "narrateOffChip": "पढ़कर सुनाना: बंद",
   "narratePraise": "शाबाश!",

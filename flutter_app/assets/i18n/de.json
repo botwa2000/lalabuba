@@ -296,7 +296,7 @@
   "sceneUnlockedToast": "🏞️ Neue Szene freigeschaltet: {name}!",
   "decoUnlockedToast": "{emoji} +{n} neue Sticker für deine Szenen!",
   "sceneTrayMyArt": "Meine Kunst",
-  "weekScenePill": "🌟 Diese Woche: {name}!",
+  "weekScenePill": "{name}-Ideen",
   "narrateOnChip": "Vorlesen: an",
   "narrateOffChip": "Vorlesen: aus",
   "narratePraise": "Gut gemacht!",

@@ -296,7 +296,7 @@
   "sceneUnlockedToast": "🏞️ Nieuwe scène vrijgespeeld: {name}!",
   "decoUnlockedToast": "{emoji} +{n} nieuwe stickers voor je scènes!",
   "sceneTrayMyArt": "Mijn tekeningen",
-  "weekScenePill": "🌟 Deze week: {name}!",
+  "weekScenePill": "{name}-ideeën",
   "narrateOnChip": "Voorlezen: aan",
   "narrateOffChip": "Voorlezen: uit",
   "narratePraise": "Goed gedaan!",

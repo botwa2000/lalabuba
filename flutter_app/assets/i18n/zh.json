@@ -296,7 +296,7 @@
   "sceneUnlockedToast": "🏞️ 解锁新场景：{name}！",
   "decoUnlockedToast": "{emoji} 为你的场景新增 {n} 个贴纸！",
   "sceneTrayMyArt": "我的作品",
-  "weekScenePill": "🌟 本周：{name}！",
+  "weekScenePill": "{name}灵感",
   "narrateOnChip": "朗读：开",
   "narrateOffChip": "朗读：关",
   "narratePraise": "太棒了！",

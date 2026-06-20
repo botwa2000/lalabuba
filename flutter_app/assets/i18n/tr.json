@@ -296,7 +296,7 @@
   "sceneUnlockedToast": "🏞️ Yeni sahne açıldı: {name}!",
   "decoUnlockedToast": "{emoji} Sahnelerin için +{n} yeni çıkartma!",
   "sceneTrayMyArt": "Çizimlerim",
-  "weekScenePill": "🌟 Bu hafta: {name}!",
+  "weekScenePill": "{name} fikirleri",
   "narrateOnChip": "Sesli okuma: açık",
   "narrateOffChip": "Sesli okuma: kapalı",
   "narratePraise": "Aferin!",
