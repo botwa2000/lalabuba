@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "libsodium-wrappers": "^0.8.4",
+    "playwright": "^1.61.0"
+  }
+}
