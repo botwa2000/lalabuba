@@ -13,6 +13,7 @@ import '../../core/l10n/l10n_service.dart';
 import '../../core/di/providers.dart';
 import '../../core/router/app_router.dart';
 import '../../shared/services/storage_service.dart';
+import '../../shared/services/subject_localizer.dart';
 import '../../shared/widgets/lala_card.dart';
 import '../../shared/widgets/lala_chip.dart';
 import '../../shared/widgets/lala_text_field.dart';
@@ -124,6 +125,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // mission like "color a picture" still counts a picture finished before the
     // child opens the Rewards screen.
     ref.watch(missionProvider);
+    // Warm the shared subject localizer so the scene-of-week pill can show the
+    // child's language the instant it's tapped (it loads once, then caches).
+    ref.watch(subjectLocalizerProvider);
 
     // Choose the layout by actual available SIZE, not orientation alone:
     //  • Tablet (shortest side ≥ 600dp) → roomy centered hero in BOTH
@@ -733,10 +737,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         HapticFeedback.lightImpact();
         final ms = DateTime.now().millisecondsSinceEpoch;
         final english = subjects[ms % subjects.length];
-        // Send the English subject to the API; show it in the field as-is (these
-        // are simple nouns the child recognizes; full localization of the scene
-        // subject pool is out of scope — the daily word already covers that).
-        _fillSubject(english, englishOverride: english, source: 'scene');
+        // Standard subject handling (see SubjectLocalizer): the API gets English,
+        // the prompt box shows the child's language. Falls back to English only if
+        // the localizer hasn't finished loading.
+        final display = ref
+                .read(subjectLocalizerProvider)
+                .valueOrNull
+                ?.localize(english, _currentLocale) ??
+            english;
+        _fillSubject(display, englishOverride: english, source: 'scene');
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

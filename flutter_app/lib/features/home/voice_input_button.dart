@@ -30,6 +30,13 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
   bool _available = false;
   bool _listening = false;
   bool _error = false;
+  // Latest recognized text (partial or final) for the current session, and a
+  // guard so it's delivered exactly once. Many Android recognizers end the
+  // session (via pauseFor) WITHOUT a finalResult event, so we must flush the
+  // last partial on session-end — otherwise a perfectly-heard word is dropped
+  // ("nothing was recognized").
+  String _lastWords = '';
+  bool _delivered = false;
 
   // App language code → speech_to_text localeId (underscore form). Best-effort:
   // if the device lacks the locale, listen() falls back to the system default.
@@ -40,13 +47,17 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
   };
 
   Future<void> _ensureInit() async {
-    if (_initTried) return;
+    if (_initTried && _available) return;
     _initTried = true;
     try {
       _available = await _speech.initialize(
+        debugLogging: true, // surfaces recognizer issues in `adb logcat`
         onStatus: (s) {
           if (!mounted) return;
+          // 'done' / 'notListening' = the recognizer closed the session. Flush
+          // whatever we heard (covers engines that never send a finalResult).
           if (s == 'done' || s == 'notListening') {
+            _deliver();
             setState(() => _listening = false);
           }
         },
@@ -56,23 +67,45 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
             _listening = false;
             _error = true;
           });
+          // Re-probe permission/availability on the next tap (handles the user
+          // granting the mic permission after the first failure).
+          _initTried = false;
         },
       );
     } catch (_) {
       _available = false;
     }
+    // A failed init (no recognizer yet / permission pending) should not lock the
+    // button out forever — allow a retry on the next tap.
+    if (!_available) _initTried = false;
     if (mounted) setState(() {});
+  }
+
+  // Deliver the recognized text exactly once per session.
+  void _deliver() {
+    if (_delivered) return;
+    _delivered = true;
+    final text = _lastWords.trim();
+    if (text.isNotEmpty) widget.onResult(text);
   }
 
   Future<void> _toggle() async {
     HapticFeedback.lightImpact();
     await _ensureInit();
-    if (!_available) return;
+    if (!_available) {
+      // Couldn't start recognition — give visible feedback instead of silently
+      // doing nothing, then let the child try again.
+      if (mounted) setState(() => _error = true);
+      return;
+    }
     if (_listening) {
       await _speech.stop();
+      _deliver();
       if (mounted) setState(() => _listening = false);
       return;
     }
+    _lastWords = '';
+    _delivered = false;
     setState(() {
       _error = false;
       _listening = true;
@@ -80,14 +113,17 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
     await _speech.listen(
       listenOptions: SpeechListenOptions(
         localeId: _localeId[widget.locale] ?? 'en_US',
-        listenFor: const Duration(seconds: 8),
+        listenFor: const Duration(seconds: 10),
         pauseFor: const Duration(seconds: 3),
+        partialResults: true, // accumulate words even before a final event
       ),
       onResult: (r) {
-        if (!r.finalResult) return;
         final text = r.recognizedWords.trim();
-        if (mounted) setState(() => _listening = false);
-        if (text.isNotEmpty) widget.onResult(text);
+        if (text.isNotEmpty) _lastWords = text;
+        if (r.finalResult) {
+          _deliver();
+          if (mounted) setState(() => _listening = false);
+        }
       },
     );
   }
@@ -100,10 +136,10 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
 
   @override
   Widget build(BuildContext context) {
-    // After a probe shows recognition is unavailable, render nothing — no dead
-    // affordance. Before the first probe we still show the mic (the probe runs
-    // on first tap), matching web's "try, then hide on failure".
-    if (_initTried && !_available) return const SizedBox.shrink();
+    // Always show the mic — it's the only voice affordance, and a child needs
+    // feedback (the error state) when recognition can't start rather than a
+    // button that silently vanishes after a tap. Availability is (re)probed on
+    // tap, so granting the permission later makes it work without a restart.
     final cs = Theme.of(context).colorScheme;
     final tooltip = _listening
         ? widget.l10n.t('voiceListening')
