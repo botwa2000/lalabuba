@@ -348,41 +348,92 @@ export function animateCompletion() {
     const finish = () => {
       try { context.putImageData(painted, 0, 0); } catch { /* ignore */ }
       if (showNumbersInput.checked) { try { overlayNumbers(); } catch { /* ignore */ } }
+      // Chime leads the bounce a beat so the sound feels like it *causes* the pop.
+      try { playComplete(); } catch { /* ignore */ }
       bounce(previewCanvas);
       burstCompletionSparkles();
-      try { playComplete(); } catch { /* ignore */ }
-      setTimeout(resolve, reduce ? 0 : 420);
+      setTimeout(resolve, reduce ? 0 : 480);
     };
 
     if (!painted || !base || !state.regionPixels || reduce) { finish(); return; }
     const ids = [...state.regionPixels.keys()];
     if (!ids.length) { finish(); return; }
 
-    // Working buffer starts as the line art, then reveals painted regions in waves.
-    const work = new ImageData(new Uint8ClampedArray(base.data), base.width, base.height);
-    const wd = work.data, pd = painted.data;
-    const WAVES = Math.min(8, Math.max(3, Math.ceil(ids.length / 3)));
-    const perWave = Math.ceil(ids.length / WAVES);
+    const W = base.width, H = base.height;
+    const cx = W / 2, cy = H / 2;
+    const maxD = Math.hypot(cx, cy) || 1;
+    const pd = painted.data, bd = base.data;
+
+    // Build the reveal list: ONLY the regions the child actually coloured (their
+    // pixels differ from the line art). This skips the white background + any
+    // un-filled gaps, so the bloom is all colour and costs nothing on empty areas.
+    // Order them center-outward so the colour blooms from the middle rather than
+    // popping in arbitrary map order (the old raw look). Centroid + painted-test
+    // share one sampled pass (≤48 pts/region) so it's cheap even on big art.
+    const items = [];
+    for (const id of ids) {
+      const px = state.regionPixels.get(id);
+      if (!px || !px.length) continue;
+      let sx = 0, sy = 0, c = 0, isPainted = false;
+      const stride = Math.max(1, Math.floor(px.length / 48));
+      for (let j = 0; j < px.length; j += stride) {
+        const p = px[j]; sx += p % W; sy += (p / W) | 0; c++;
+        const o = p * 4;
+        if (!isPainted && (pd[o] !== bd[o] || pd[o + 1] !== bd[o + 1] || pd[o + 2] !== bd[o + 2])) isPainted = true;
+      }
+      if (!isPainted) continue; // background / un-filled → nothing to reveal
+      const mx = c ? sx / c : cx, my = c ? sy / c : cy;
+      items.push({ px, d: Math.hypot(mx - cx, my - cy) / maxD, done: false, t0: 0 });
+    }
+    if (!items.length) { finish(); return; }
+    items.sort((a, b) => a.d - b.d);
+
+    // Each region fades from line-art to colour over FADE_MS; their start times are
+    // staggered across REVEAL_MS with an ease so the wave-front accelerates then
+    // eases out — a soft sweep instead of fixed-step pops.
+    const N = items.length;
+    const REVEAL_MS = 600, FADE_MS = 240;
+    const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    items.forEach((r, i) => { r.t0 = easeInOut(N === 1 ? 0 : i / (N - 1)) * REVEAL_MS; });
+
+    const work = new ImageData(new Uint8ClampedArray(base.data), W, H);
+    const wd = work.data; // pd (painted) + bd (base) already bound above
     try { context.putImageData(work, 0, 0); } catch { /* ignore */ }
 
-    let wave = 0;
-    const step = () => {
-      const start = wave * perWave;
-      const end = Math.min(ids.length, start + perWave);
-      for (let k = start; k < end; k++) {
-        const px = state.regionPixels.get(ids[k]);
-        if (!px) continue;
-        for (let j = 0; j < px.length; j++) {
-          const o = px[j] * 4;
-          wd[o] = pd[o]; wd[o + 1] = pd[o + 1]; wd[o + 2] = pd[o + 2]; wd[o + 3] = pd[o + 3];
+    let startTs = 0;
+    const frame = (ts) => {
+      if (!startTs) startTs = ts;
+      const el = ts - startTs;
+      let allDone = true;
+      for (let i = 0; i < N; i++) {
+        const r = items[i];
+        if (r.done) continue;
+        const a = (el - r.t0) / FADE_MS;
+        if (a <= 0) { allDone = false; continue; }      // not started yet
+        const px = r.px;
+        if (a >= 1) {                                    // fully revealed — copy once
+          for (let j = 0; j < px.length; j++) {
+            const o = px[j] * 4;
+            wd[o] = pd[o]; wd[o + 1] = pd[o + 1]; wd[o + 2] = pd[o + 2]; wd[o + 3] = pd[o + 3];
+          }
+          r.done = true;
+        } else {                                         // mid-fade — smoothstep blend
+          allDone = false;
+          const ea = a * a * (3 - 2 * a), inv = 1 - ea;
+          for (let j = 0; j < px.length; j++) {
+            const o = px[j] * 4;
+            wd[o]     = bd[o]     * inv + pd[o]     * ea;
+            wd[o + 1] = bd[o + 1] * inv + pd[o + 1] * ea;
+            wd[o + 2] = bd[o + 2] * inv + pd[o + 2] * ea;
+            wd[o + 3] = 255;
+          }
         }
       }
       try { context.putImageData(work, 0, 0); } catch { /* ignore */ }
-      wave++;
-      if (wave < WAVES) setTimeout(step, 95);
-      else finish();
+      if (allDone && el >= REVEAL_MS) { finish(); return; }
+      requestAnimationFrame(frame);
     };
-    setTimeout(step, 60);
+    requestAnimationFrame(frame);
   });
 }
 
