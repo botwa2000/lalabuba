@@ -12,7 +12,7 @@ class SettingsState {
     this.difficulty = 'medium',
     this.palette = 'classic',
     this.colorCount = 12,
-    this.showNumbers = true,
+    this.showNumbers = false,
   });
 
   SettingsState copyWith({
@@ -40,7 +40,7 @@ class SettingsNotifier extends AsyncNotifier<SettingsState> {
     final diff = await StorageService.read(StorageService.kDifficulty) ?? 'medium';
     final pal = await StorageService.read(StorageService.kPalette) ?? 'classic';
     final cnt = await StorageService.readInt(StorageService.kColorCount, 12);
-    final nums = await StorageService.readBool(StorageService.kShowNumbers, true);
+    final nums = await StorageService.readBool(StorageService.kShowNumbers, false);
     return SettingsState(
         difficulty: diff, palette: pal, colorCount: cnt, showNumbers: nums);
   }

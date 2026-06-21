@@ -67,12 +67,30 @@ void main() {
       expect(earned.contains('streak30'), false);
     });
 
-    test('toJson/fromJson round-trips', () {
+    test('byNumbers + freeColor predicates fire on their own counters', () {
+      Set<String> earned(Progress p) =>
+          kBadges.where((b) => b.test(p)).map((b) => b.id).toSet();
+
+      expect(earned(const Progress()).contains('byNumbers'), false);
+      expect(earned(const Progress()).contains('freeColor'), false);
+
+      final numbered = earned(const Progress(numbersCompleted: 1));
+      expect(numbered.contains('byNumbers'), true);
+      expect(numbered.contains('freeColor'), false);
+
+      final free = earned(const Progress(freeColorCompleted: 1));
+      expect(free.contains('freeColor'), true);
+      expect(free.contains('byNumbers'), false);
+    });
+
+    test('toJson/fromJson round-trips (incl. new mode counters)', () {
       const p = Progress(
         totalCompleted: 3,
         streak: 2,
         daysColored: 2,
         lastColoredDay: '2026-06-14',
+        numbersCompleted: 2,
+        freeColorCompleted: 1,
         subjects: {'cat': 2, 'dog': 1},
         badges: ['first'],
       );
@@ -82,6 +100,8 @@ void main() {
       expect(back.subjects['cat'], 2);
       expect(back.badges, ['first']);
       expect(back.uniqueSubjects, 2);
+      expect(back.numbersCompleted, 2);
+      expect(back.freeColorCompleted, 1);
     });
   });
 
@@ -142,6 +162,24 @@ void main() {
       await c.read(progressProvider.notifier).recordGeneration();
       await c.read(progressProvider.notifier).recordGeneration();
       expect(c.read(progressProvider).valueOrNull!.totalGenerated, 2);
+    });
+
+    test('withNumbers true awards byNumbers; false awards freeColor', () async {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      await c.read(progressProvider.future);
+      final n = c.read(progressProvider.notifier);
+
+      final b1 = await n.recordCompletion(subject: 'cat', withNumbers: true);
+      expect(b1.map((b) => b.id), contains('byNumbers'));
+      expect(b1.map((b) => b.id), isNot(contains('freeColor')));
+
+      final b2 = await n.recordCompletion(subject: 'dog', withNumbers: false);
+      expect(b2.map((b) => b.id), contains('freeColor'));
+
+      final p = c.read(progressProvider).valueOrNull!;
+      expect(p.numbersCompleted, 1);
+      expect(p.freeColorCompleted, 1);
     });
 
     test('same-day completions do not double-count the day or streak', () async {

@@ -143,7 +143,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final Widget body;
     if (isTablet) {
-      body = _buildTabletHero(context, l10n, homeAsync, settingsAsync, sub);
+      body = _buildTabletHero(
+          context, l10n, homeAsync, settingsAsync, sub, isLandscape);
     } else if (isLandscape) {
       body =
           _buildLandscapeLayout(context, l10n, homeAsync, settingsAsync, sub);
@@ -232,112 +233,148 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AsyncValue<HomeState> homeAsync,
     AsyncValue<SettingsState> settingsAsync,
     SubscriptionState? sub,
+    bool isLandscape,
   ) {
     final cs = Theme.of(context).colorScheme;
     final settings = settingsAsync.valueOrNull;
 
+    // The prompt + Draw + chips footer. In LANDSCAPE this is PINNED below the
+    // scroll area so the Draw button is always on screen — a wide tablet in
+    // landscape is short, and letting Draw sit at the end of one long scroll
+    // pushed it (and the settings chips) off the bottom ("Draw button not shown
+    // when I rotate"). In portrait there's plenty of height, so it stays inline.
+    Widget promptRow() => Row(
+          children: [
+            Expanded(
+              child: LalaShowcase(
+                showcaseKey: _scPrompt,
+                title: l10n.t('tipPromptTitle'),
+                description: l10n.t('tipPromptBody'),
+                targetBorderRadius: BorderRadius.circular(14),
+                child: LalaTextField(
+                  placeholder: l10n.t('placeholder'),
+                  controller: _textCtrl,
+                  focusNode: _focusNode,
+                  onSubmitted: _canDraw ? _onDraw : null,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            VoiceInputButton(
+              l10n: l10n,
+              locale: _currentLocale,
+              onResult: (text) => _fillSubject(text, source: 'voice'),
+            ),
+            const SizedBox(width: 8),
+            _buildSurprisePill(
+              context,
+              l10n,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                final card = ref.read(homeProvider.notifier).surpriseMe();
+                if (card != null) {
+                  _fillSubject(
+                    card.label(_currentLocale),
+                    englishOverride: card.englishPrompt,
+                  );
+                }
+              },
+            ),
+          ],
+        );
+
+    final footer = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        promptRow(),
+        const SizedBox(height: 14),
+        _buildDrawButton(context, l10n, height: 58, fontSize: 20),
+        const SizedBox(height: 14),
+        Center(child: _buildSettingsChips(context, cs, l10n, settings, sub)),
+      ],
+    );
+
+    final scrollContent = <Widget>[
+      Text(
+        l10n.t('heroHeading'),
+        textAlign: TextAlign.center,
+        style: GoogleFonts.fredoka(
+          fontSize: 32,
+          fontWeight: FontWeight.w700,
+          color: cs.onSurface,
+        ),
+      ),
+      const SizedBox(height: 6),
+      Text(
+        l10n.t('tagline'),
+        textAlign: TextAlign.center,
+        style: GoogleFonts.nunito(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: cs.onSurface.withValues(alpha: 0.55),
+        ),
+      ),
+      const SizedBox(height: 22),
+      homeAsync.whenOrNull(
+            data: (home) => home.dailyChallenge != null
+                ? Center(
+                    child: _buildDailyPill(
+                        context, cs, l10n, home, _currentLocale))
+                : const SizedBox.shrink(),
+          ) ??
+          const SizedBox.shrink(),
+      const SizedBox(height: 12),
+      Center(child: _buildWeekScenePill(context, cs, l10n)),
+      const SizedBox(height: 22),
+      _buildPickDivider(context, l10n),
+      const SizedBox(height: 18),
+      homeAsync.when(
+        loading: () => const SizedBox(
+            height: 240, child: Center(child: CircularProgressIndicator())),
+        error: (_, __) => const SizedBox.shrink(),
+        data: (home) => _buildCardGrid(
+          context, home, l10n, _currentLocale,
+          columns: 4,
+          cardScale: 1.25,
+        ),
+      ),
+    ];
+
+    // Portrait: one scroll with the footer inline. Landscape: scroll the hero +
+    // cards, pin the footer so Draw is always reachable.
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(32, 28, 32, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.t('heroHeading'),
-                textAlign: TextAlign.center,
-                style: GoogleFonts.fredoka(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                l10n.t('tagline'),
-                textAlign: TextAlign.center,
-                style: GoogleFonts.nunito(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface.withValues(alpha: 0.55),
-                ),
-              ),
-              const SizedBox(height: 22),
-              homeAsync.whenOrNull(
-                    data: (home) => home.dailyChallenge != null
-                        ? Center(
-                            child: _buildDailyPill(
-                                context, cs, l10n, home, _currentLocale))
-                        : const SizedBox.shrink(),
-                  ) ??
-                  const SizedBox.shrink(),
-              const SizedBox(height: 12),
-              Center(child: _buildWeekScenePill(context, cs, l10n)),
-              const SizedBox(height: 22),
-              _buildPickDivider(context, l10n),
-              const SizedBox(height: 18),
-              homeAsync.when(
-                loading: () => const SizedBox(
-                    height: 240,
-                    child: Center(child: CircularProgressIndicator())),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (home) => _buildCardGrid(
-                  context, home, l10n, _currentLocale,
-                  columns: 4,
-                  cardScale: 1.25,
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Prompt + surprise-me
-              Row(
+        child: isLandscape
+            ? Column(
                 children: [
                   Expanded(
-                    child: LalaShowcase(
-                      showcaseKey: _scPrompt,
-                      title: l10n.t('tipPromptTitle'),
-                      description: l10n.t('tipPromptBody'),
-                      targetBorderRadius: BorderRadius.circular(14),
-                      child: LalaTextField(
-                        placeholder: l10n.t('placeholder'),
-                        controller: _textCtrl,
-                        focusNode: _focusNode,
-                        onSubmitted: _canDraw ? _onDraw : null,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(32, 20, 32, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: scrollContent,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  VoiceInputButton(
-                    l10n: l10n,
-                    locale: _currentLocale,
-                    onResult: (text) => _fillSubject(text, source: 'voice'),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildSurprisePill(
-                    context,
-                    l10n,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      final card = ref.read(homeProvider.notifier).surpriseMe();
-                      if (card != null) {
-                        _fillSubject(
-                          card.label(_currentLocale),
-                          englishOverride: card.englishPrompt,
-                        );
-                      }
-                    },
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                        32, 4, 32, 12 + MediaQuery.paddingOf(context).bottom),
+                    child: footer,
                   ),
                 ],
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(32, 28, 32, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ...scrollContent,
+                    const SizedBox(height: 24),
+                    footer,
+                  ],
+                ),
               ),
-              const SizedBox(height: 14),
-              _buildDrawButton(context, l10n, height: 58, fontSize: 20),
-              const SizedBox(height: 18),
-              Center(
-                child: _buildSettingsChips(context, cs, l10n, settings, sub),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -674,12 +711,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(height: 4),
         _SettingRow(
-          icon: '🔢',
-          label: l10n.t('numbersLabel'),
+          icon: settings?.showNumbers == true ? '🔢' : '🎨',
+          label: l10n.t('colorModeLabel'),
           value: settings?.showNumbers == true
-              ? l10n.t('numbersOn')
-              : l10n.t('numbersOff'),
-          selected: settings?.showNumbers ?? true,
+              ? l10n.t('modeByNumber')
+              : l10n.t('modeFreeColor'),
+          selected: settings?.showNumbers ?? false,
           onTap: () {
             HapticFeedback.selectionClick();
             ref.read(settingsProvider.notifier).toggleNumbers();
@@ -1078,11 +1115,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 .read(settingsProvider.notifier)
                 .cycleColorCount([6, 12, 18, 24, 99]),
           ),
+          // Coloring-MODE switch (was a cryptic "Numbers ON/OFF"): name the mode
+          // it puts you in so its purpose is obvious — guided colour-by-number
+          // vs. free colouring.
           LalaChip(
             label: settings?.showNumbers == true
-                ? '🔢 ${l10n.t('numbersOn')}'
-                : '🔡 ${l10n.t('numbersOff')}',
-            selected: settings?.showNumbers ?? true,
+                ? '🔢 ${l10n.t('modeByNumber')}'
+                : '🎨 ${l10n.t('modeFreeColor')}',
+            selected: settings?.showNumbers ?? false,
             onTap: () =>
                 ref.read(settingsProvider.notifier).toggleNumbers(),
           ),

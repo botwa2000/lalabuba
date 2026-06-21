@@ -158,7 +158,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       await ref.read(canvasProvider.notifier).loadImage(
         result.imageBytes,
         minArea,
-        showNumbers: settings?.showNumbers ?? true,
+        showNumbers: settings?.showNumbers ?? false,
         palette: paletteColors,
       );
 
@@ -1667,6 +1667,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             colorCount: settings?.colorCount,
             isCustom: widget.args.source == 'custom',
             isDaily: widget.args.source == 'daily',
+            // "With numbers" = it was a colour-by-number page (numbers shown and
+            // not in free-colour mode); otherwise it counts as a free-colour page.
+            withNumbers: canvas.showNumbers && !canvas.isFreeMode,
           );
     } catch (_) {}
     final progress =
@@ -1831,6 +1834,19 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     }
   }
 
+  // iPad presents the share sheet as a POPOVER and requires an anchor rect —
+  // without sharePositionOrigin the sheet silently fails to appear (this is the
+  // "Share does nothing on iPad" bug). Anchor to this screen's render box.
+  Rect _shareOrigin() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      final size = MediaQuery.sizeOf(context);
+      return Rect.fromCenter(
+          center: Offset(size.width / 2, size.height / 2), width: 1, height: 1);
+    }
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
   Future<void> _shareArtwork(CanvasState canvas) async {
     try {
       final bytes = await _captureCanvas(canvas);
@@ -1842,6 +1858,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       await SharePlus.instance.share(ShareParams(
         files: [file],
         text: l10n.t('shareImageText', {'subject': widget.args.displayLabel}),
+        sharePositionOrigin: _shareOrigin(),
       ));
       // Credit the sharing stickers (sharer / superSharer).
       unawaited(
@@ -1859,6 +1876,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       await SharePlus.instance.share(ShareParams(
         files: [file],
         subject: 'Print — Lalabuba: ${widget.args.displayLabel}',
+        sharePositionOrigin: _shareOrigin(),
       ));
     } catch (_) {}
   }
@@ -1938,6 +1956,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                         await SharePlus.instance.share(ShareParams(
                           text: '$text\n$challengeUrl',
                           subject: 'Lalabuba Challenge 🏆',
+                          sharePositionOrigin: _shareOrigin(),
                         ));
                         // Credit the "challenger" sticker.
                         unawaited(ref

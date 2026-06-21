@@ -55,6 +55,8 @@ const kBadges = <StickerBadge>[
   StickerBadge('paletteMaster', '🎭', BadgeGroup.creativity, _paletteMaster),
   StickerBadge('inventor', '✍️', BadgeGroup.creativity, _inventor), // own idea
   StickerBadge('penArtist', '✏️', BadgeGroup.creativity, _penArtist), // draw pen
+  StickerBadge('byNumbers', '🔢', BadgeGroup.creativity, _byNumbers), // finished a colour-by-number page
+  StickerBadge('freeColor', '🖌️', BadgeGroup.creativity, _freeColor), // finished a free-colour page
 
   // ── Sharing & saving ──
   StickerBadge('saver', '💾', BadgeGroup.sharing, _saver),
@@ -94,6 +96,8 @@ bool _paletteMaster(Progress p) =>
     p.palettesUsed.toSet().containsAll(const {'classic', 'pastel', 'nature'});
 bool _inventor(Progress p) => p.freeTextCreations >= 1;
 bool _penArtist(Progress p) => p.drawPenUses >= 1;
+bool _byNumbers(Progress p) => p.numbersCompleted >= 1;
+bool _freeColor(Progress p) => p.freeColorCompleted >= 1;
 // Sharing
 bool _saver(Progress p) => p.saves >= 1;
 bool _collector(Progress p) => p.saves >= 5;
@@ -167,6 +171,8 @@ class Progress {
   final int hardCompleted; // Hard OR Extreme finished
   final int extremeCompleted; // Extreme only
   final int maxColorUses; // finished with the Max (99) colour count
+  final int numbersCompleted; // finished a colour-by-number page (numbers shown)
+  final int freeColorCompleted; // finished a free-colour page (no numbers)
   final int freeTextCreations; // finished a picture from a typed idea
   final int drawPenUses; // used the freehand draw pen
   final int shares; // artwork shared
@@ -188,6 +194,8 @@ class Progress {
     this.hardCompleted = 0,
     this.extremeCompleted = 0,
     this.maxColorUses = 0,
+    this.numbersCompleted = 0,
+    this.freeColorCompleted = 0,
     this.freeTextCreations = 0,
     this.drawPenUses = 0,
     this.shares = 0,
@@ -212,6 +220,8 @@ class Progress {
         'hardCompleted': hardCompleted,
         'extremeCompleted': extremeCompleted,
         'maxColorUses': maxColorUses,
+        'numbersCompleted': numbersCompleted,
+        'freeColorCompleted': freeColorCompleted,
         'freeTextCreations': freeTextCreations,
         'drawPenUses': drawPenUses,
         'shares': shares,
@@ -237,6 +247,8 @@ class Progress {
         hardCompleted: (j['hardCompleted'] ?? 0) as int,
         extremeCompleted: (j['extremeCompleted'] ?? 0) as int,
         maxColorUses: (j['maxColorUses'] ?? 0) as int,
+        numbersCompleted: (j['numbersCompleted'] ?? 0) as int,
+        freeColorCompleted: (j['freeColorCompleted'] ?? 0) as int,
         freeTextCreations: (j['freeTextCreations'] ?? 0) as int,
         drawPenUses: (j['drawPenUses'] ?? 0) as int,
         shares: (j['shares'] ?? 0) as int,
@@ -261,6 +273,8 @@ class Progress {
     int? hardCompleted,
     int? extremeCompleted,
     int? maxColorUses,
+    int? numbersCompleted,
+    int? freeColorCompleted,
     int? freeTextCreations,
     int? drawPenUses,
     int? shares,
@@ -282,6 +296,8 @@ class Progress {
         hardCompleted: hardCompleted ?? this.hardCompleted,
         extremeCompleted: extremeCompleted ?? this.extremeCompleted,
         maxColorUses: maxColorUses ?? this.maxColorUses,
+        numbersCompleted: numbersCompleted ?? this.numbersCompleted,
+        freeColorCompleted: freeColorCompleted ?? this.freeColorCompleted,
         freeTextCreations: freeTextCreations ?? this.freeTextCreations,
         drawPenUses: drawPenUses ?? this.drawPenUses,
         shares: shares ?? this.shares,
@@ -369,6 +385,7 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
     int? colorCount,
     bool isCustom = false, // child typed their own idea
     bool isDaily = false, // came from the daily word
+    bool withNumbers = true, // colour-by-number mode (vs free colour)
   }) async {
     var p = state.valueOrNull ?? await _load();
     final tk = _todayKey();
@@ -415,6 +432,10 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
       extremeCompleted: extreme,
       maxColorUses:
           colorCount == 99 ? p.maxColorUses + 1 : p.maxColorUses,
+      numbersCompleted:
+          withNumbers ? p.numbersCompleted + 1 : p.numbersCompleted,
+      freeColorCompleted:
+          withNumbers ? p.freeColorCompleted : p.freeColorCompleted + 1,
       freeTextCreations:
           isCustom ? p.freeTextCreations + 1 : p.freeTextCreations,
       dailyWordsCompleted:
