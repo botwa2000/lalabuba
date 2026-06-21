@@ -305,5 +305,6 @@
   "voiceError": "Anlayamadım — tekrar dene!",
   "printBookBtn": "📖 Kitap yazdır",
   "printBookTitle": "Boyama Kitabım",
-  "printBookEmpty": "Kitap yapmak için önce birkaç resim boya!"
+  "printBookEmpty": "Kitap yapmak için önce birkaç resim boya!",
+  "colorsMax": "Maks"
 }

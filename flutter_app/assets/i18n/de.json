@@ -305,5 +305,6 @@
   "voiceError": "Nicht verstanden — versuch es nochmal!",
   "printBookBtn": "📖 Buch drucken",
   "printBookTitle": "Mein Malbuch",
-  "printBookEmpty": "Male zuerst ein paar Bilder für ein Buch aus!"
+  "printBookEmpty": "Male zuerst ein paar Bilder für ein Buch aus!",
+  "colorsMax": "Max"
 }

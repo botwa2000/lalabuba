@@ -305,5 +305,6 @@
   "voiceError": "Niet verstaan — probeer opnieuw!",
   "printBookBtn": "📖 Boek printen",
   "printBookTitle": "Mijn kleurboek",
-  "printBookEmpty": "Kleur eerst wat plaatjes om een boek te maken!"
+  "printBookEmpty": "Kleur eerst wat plaatjes om een boek te maken!",
+  "colorsMax": "Max"
 }

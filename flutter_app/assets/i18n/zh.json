@@ -305,5 +305,6 @@
   "voiceError": "没听清——再试一次！",
   "printBookBtn": "📖 打印图册",
   "printBookTitle": "我的涂色书",
-  "printBookEmpty": "先涂几张图片来做一本书吧！"
+  "printBookEmpty": "先涂几张图片来做一本书吧！",
+  "colorsMax": "最多"
 }

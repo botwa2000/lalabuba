@@ -8,6 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'canvas_models.dart';
 import 'flood_fill.dart';
 
+/// Thrown when a region-detection run is abandoned because a newer image load
+/// superseded it — lets the awaiting frame unwind and free its buffers.
+class _DetectionSuperseded implements Exception {
+  const _DetectionSuperseded();
+}
+
 class CanvasNotifier extends Notifier<CanvasState> {
   static const _maxUndo = 20;
 
@@ -73,7 +79,15 @@ class CanvasNotifier extends Notifier<CanvasState> {
       paletteArgb: paletteArgb,
     );
 
-    final result = await _detectInIsolate(params, gen);
+    final RegionDetectionResult result;
+    try {
+      result = await _detectInIsolate(params, gen);
+    } on _DetectionSuperseded {
+      // A newer loadImage took over while this one was spawning/running. Return
+      // so this async frame (and its captured ~8 MB of image buffers) unwinds and
+      // is GC'd, instead of awaiting a future that never completes (a leak).
+      return;
+    }
 
     // FIX 2: a newer loadImage started while detection ran — drop this result
     // so the stale detection can't overwrite the newer image's state.
@@ -116,7 +130,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
     if (gen != _detectGen) {
       isolate.kill(priority: Isolate.immediate);
       recv.close();
-      return Completer<RegionDetectionResult>().future; // never completes; caller drops on gen mismatch
+      throw const _DetectionSuperseded(); // caller unwinds (no leaked future)
     }
     _detectIsolate = isolate;
     _detectPort = recv;

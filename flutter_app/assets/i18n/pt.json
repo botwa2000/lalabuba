@@ -305,5 +305,6 @@
   "voiceError": "Não entendi — tente de novo!",
   "printBookBtn": "📖 Imprimir livro",
   "printBookTitle": "Meu livro de colorir",
-  "printBookEmpty": "Pinte alguns desenhos primeiro para fazer um livro!"
+  "printBookEmpty": "Pinte alguns desenhos primeiro para fazer um livro!",
+  "colorsMax": "Máx"
 }

@@ -305,5 +305,6 @@
   "voiceError": "Nie zrozumiałem — spróbuj jeszcze raz!",
   "printBookBtn": "📖 Drukuj książkę",
   "printBookTitle": "Moja kolorowanka",
-  "printBookEmpty": "Najpierw pokoloruj kilka obrazków, aby zrobić książkę!"
+  "printBookEmpty": "Najpierw pokoloruj kilka obrazków, aby zrobić książkę!",
+  "colorsMax": "Maks"
 }

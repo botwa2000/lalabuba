@@ -638,7 +638,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _SettingRow(
           icon: '🌟',
           label: l10n.t('diffLabel'),
-          value: _diffLabelShort(settings?.difficulty ?? 'medium'),
+          value: _diffLabel(settings?.difficulty ?? 'medium', l10n),
           onTap: () {
             HapticFeedback.selectionClick();
             // All 4 difficulties are selectable for everyone (mirrors the web app
@@ -666,7 +666,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _SettingRow(
           icon: '🎨',
           label: l10n.t('colorsLabel'),
-          value: _cntLabelShort(settings?.colorCount ?? 12),
+          value: _cntLabelShort(settings?.colorCount ?? 12, l10n),
           onTap: () {
             HapticFeedback.selectionClick();
             ref.read(settingsProvider.notifier).cycleColorCount([6, 12, 18, 24, 99]);
@@ -1073,7 +1073,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             },
           ),
           LalaChip(
-            label: _cntLabel(settings?.colorCount ?? 12),
+            label: _cntLabel(settings?.colorCount ?? 12, l10n),
             onTap: () => ref
                 .read(settingsProvider.notifier)
                 .cycleColorCount([6, 12, 18, 24, 99]),
@@ -1140,16 +1140,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  String _diffLabelShort(String d) {
-    switch (d) {
-      case 'easy':    return 'Easy 🌟';
-      case 'medium':  return 'Medium 🌟🌟';
-      case 'hard':    return 'Hard 🌟🌟🌟';
-      case 'extreme': return 'Extreme 🔥';
-      default:        return d;
-    }
-  }
-
   String _packNameKey(String p) =>
       'pack${p[0].toUpperCase()}${p.substring(1)}Name';
 
@@ -1158,11 +1148,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   String _palLabelShort(String p, L10n l10n) => l10n.t(_packNameKey(p));
 
-  String _cntLabel(int cnt) =>
-      '🎨 ${cnt == 99 ? 'Max' : cnt.toString()}';
+  String _cntLabel(int cnt, L10n l10n) =>
+      '🎨 ${cnt == 99 ? l10n.t('colorsMax') : cnt.toString()}';
 
-  String _cntLabelShort(int cnt) =>
-      cnt == 99 ? 'Max' : cnt.toString();
+  String _cntLabelShort(int cnt, L10n l10n) =>
+      cnt == 99 ? l10n.t('colorsMax') : cnt.toString();
 }
 
 // ─── Consolidated settings sheet body ────────────────────────────────────────
