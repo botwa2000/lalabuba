@@ -21,9 +21,15 @@ services:
       - lalabuba_dev_BLOB_READ_WRITE_TOKEN
     deploy:
       replicas: 1
+      update_config:
+        order: stop-first   # avoids two tasks binding the published port 3021
+        failure_action: rollback
+        monitor: 60s
+        delay: 5s
+      rollback_config:
+        order: stop-first
       restart_policy:
         condition: any
-      # stop-first (default): avoids two tasks binding the published port 3021.
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
       interval: 30s

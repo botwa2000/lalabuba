@@ -63,7 +63,15 @@ function isRateLimited(ip) {
 // (local dev) skips the check.
 async function verifyTurnstile(token, ip) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true;          // not configured — skip (dev mode only)
+  if (!secret) {
+    // Dev-only escape hatch. In production a missing secret must NOT silently
+    // turn off bot protection — fail closed and log loudly.
+    if (process.env.APP_ENV === "prod" || process.env.NODE_ENV === "production") {
+      console.error("SECURITY: TURNSTILE_SECRET_KEY unset in production — blocking web request");
+      return false;
+    }
+    return true;
+  }
   if (!token) return false;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
@@ -110,12 +118,12 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Rate limiting. Prefer the IP headers Vercel sets itself (x-real-ip /
-  // x-vercel-forwarded-for) over the client-controllable x-forwarded-for,
-  // which a caller can spoof to dodge the per-IP limit.
-  const ip = (req.headers['x-real-ip']
-    || req.headers['x-vercel-forwarded-for']?.split(',')[0]
-    || req.headers['x-forwarded-for']?.split(',')[0]
+  // Client IP for rate limiting. Behind Cloudflare, `cf-connecting-ip` is set by
+  // Cloudflare and CANNOT be forged by the client (Cloudflare overwrites it).
+  // The old `x-real-ip`/`x-forwarded-for` headers are client-controllable on this
+  // Hetzner/Swarm stack (no trusted proxy overwrites them), so a caller could
+  // rotate them per request to dodge the per-IP limit — they are no longer trusted.
+  const ip = (req.headers['cf-connecting-ip']
     || req.socket?.remoteAddress
     || 'unknown').toString().trim();
   if (isRateLimited(ip)) {
@@ -173,6 +181,14 @@ module.exports = async (req, res) => {
     }
 
     const englishSubject = await translateToEnglish(subject);
+    // Re-run the kid-safety check on the TRANSLATED English too. The first check
+    // runs on the raw subject, but a banned concept written in a language/spelling
+    // the blocklist doesn't cover could pass and only become obvious once
+    // translated to English — this closes that bypass before it reaches the model.
+    if (!isSafeSubject(englishSubject)) {
+      res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
+      return;
+    }
     const prompt = buildPrompt(englishSubject, difficulty, size);
     const generated = await generateImage(prompt, width, height, seed, {
       provider: IMAGE_PROVIDER,
@@ -184,10 +200,14 @@ module.exports = async (req, res) => {
     let imageUrl = null;
     if (blobPut && process.env.BLOB_READ_WRITE_TOKEN) {
       try {
+        // addRandomSuffix:true → unguessable URL. With false, blobs lived at the
+        // predictable path coloring/<seed> and could be enumerated/guessed to pull
+        // other children's pages. The real URL is returned via X-Image-Url (used
+        // by sharing), so randomizing the path doesn't break anything.
         const blob = await blobPut(`coloring/${seed}`, generated.buffer, {
           access: "public",
           contentType: generated.contentType,
-          addRandomSuffix: false,
+          addRandomSuffix: true,
         });
         imageUrl = blob.url;
         cleanupOldBlobs(); // fire-and-forget

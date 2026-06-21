@@ -21,6 +21,13 @@ services:
       - lalabuba_prod_BLOB_READ_WRITE_TOKEN
     deploy:
       replicas: 1
+      update_config:
+        order: stop-first   # single replica on a published host port → no overlap
+        failure_action: rollback
+        monitor: 60s        # watch the new task's healthcheck before declaring success
+        delay: 5s
+      rollback_config:
+        order: stop-first
       restart_policy:
         condition: any
     healthcheck:

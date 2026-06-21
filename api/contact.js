@@ -75,11 +75,10 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Rate limiting. Prefer the IP headers Vercel sets itself over the
-  // client-controllable x-forwarded-for (which can be spoofed to dodge limits).
-  const ip = (req.headers['x-real-ip']
-    || req.headers['x-vercel-forwarded-for']?.split(',')[0]
-    || req.headers['x-forwarded-for']?.split(',')[0]
+  // Client IP for rate limiting. Behind Cloudflare, `cf-connecting-ip` is set by
+  // Cloudflare and cannot be forged; the old x-real-ip/x-forwarded-for headers are
+  // client-controllable on this stack and are no longer trusted (anti-spoof).
+  const ip = (req.headers['cf-connecting-ip']
     || req.socket?.remoteAddress
     || 'unknown').toString().trim();
   if (isRateLimited(ip)) {
@@ -153,7 +152,9 @@ module.exports = async (req, res) => {
       body: JSON.stringify({
         from: 'Lalabuba Contact <info@lalabuba.com>',
         to: ['info@lalabuba.com'],
-        subject: `Contact from ${name}`,
+        // Strip control chars / newlines from user input before it enters the
+        // Subject header (header-injection hygiene; cap length).
+        subject: `Contact from ${name.replace(/[\x00-\x1F\x7F]+/g, " ").slice(0, 80)}`,
         html: htmlBody,
       }),
     });

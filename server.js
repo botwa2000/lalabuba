@@ -115,6 +115,25 @@ function serveStaticFile(req, res, pathname) {
   });
 }
 
+// Returns the names of any SET critical secret whose VALUE is malformed
+// (stray whitespace, a literal "\n"/CR, or wrong fixed format). Only checks
+// secrets that are present, so an intentionally-unset secret in dev is fine.
+function malformedSecrets() {
+  const bad = [];
+  const hasJunk = (v) => v !== v.trim() || /[\r\n]/.test(v) || v.includes("\\n");
+  const checks = {
+    TURNSTILE_SECRET_KEY: (v) => /^0x[A-Za-z0-9_-]{20,}$/.test(v),
+    CF_ACCOUNT_ID: (v) => /^[0-9a-f]{32}$/.test(v),
+    HF_TOKEN: (v) => /^hf_[A-Za-z0-9]{20,}$/.test(v),
+  };
+  for (const [name, ok] of Object.entries(checks)) {
+    const v = process.env[name];
+    if (v == null || v === "") continue; // unset is allowed (dev)
+    if (hasJunk(v) || !ok(v)) bad.push(name);
+  }
+  return bad;
+}
+
 const server = http.createServer(async (req, res) => {
   enhanceRes(res);
   let parsedUrl;
@@ -123,7 +142,14 @@ const server = http.createServer(async (req, res) => {
   const p = parsedUrl.pathname;
 
   // Health check (used by the Docker/Swarm healthcheck + deploy script).
+  // Now also a READINESS check: it validates that critical secrets, when set,
+  // are well-formed. A corrupted TURNSTILE_SECRET_KEY / CF_ACCOUNT_ID (the
+  // migration "\n" bug) previously sailed through every health gate because this
+  // returned ok unconditionally — so a broken bot check reached production. A
+  // malformed secret now fails the health check, so the deploy/rollback catches it.
   if (p === "/api/health") {
+    const bad = malformedSecrets();
+    if (bad.length) return sendJson(res, 503, { status: "degraded", malformed: bad });
     return sendJson(res, 200, { status: "ok" });
   }
 
