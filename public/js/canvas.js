@@ -711,8 +711,16 @@ export async function fetchToDataUrl(url) {
 }
 
 export function drawBaseImage(image) {
-  previewCanvas.width  = image.naturalWidth  || image.width  || 1024;
-  previewCanvas.height = image.naturalHeight || image.height || 1024;
+  // Cap the canvas so the 3-byte packed undo pixel index (max 16.77M px) can
+  // never overflow on an unexpectedly large source. Generation is ≤1024², but a
+  // shared/external image could be bigger; 2048² = 4.2M px is safely under the
+  // ceiling and keeps full quality for our pages. Aspect ratio preserved.
+  const MAX_EDGE = 2048;
+  const srcW = image.naturalWidth  || image.width  || 1024;
+  const srcH = image.naturalHeight || image.height || 1024;
+  const scale = Math.min(1, MAX_EDGE / Math.max(srcW, srcH));
+  previewCanvas.width  = Math.max(1, Math.round(srcW * scale));
+  previewCanvas.height = Math.max(1, Math.round(srcH * scale));
   previewCanvas.hidden = false;
   previewStage.classList.remove("empty");
 

@@ -1,5 +1,5 @@
 import { state, DEBUG } from './state.js';
-import { PALETTES, EXAMPLE_SUGGESTIONS, randomCardSubject, getDailyChallenge, getTranslatedDailyWord, getSemanticPaletteOrder } from './data.js';
+import { PALETTES, EXAMPLE_SUGGESTIONS, randomCardSubject, getDailyChallenge, getTranslatedDailyWord, getTranslatedSubject, getSemanticPaletteOrder } from './data.js';
 import { sanitizeSubject, isSafeSubject } from './data.js';
 import { CRAYON_PACKS, packById, isPackUnlocked, unlockedPaletteIds, packsUnlockedAt } from './data.js';
 import { saveArtwork, initGalleryHandlers, openGalleryModal } from './gallery.js';
@@ -1381,9 +1381,12 @@ if (_weekScenePill) {
     const list = (SCENE_SUBJECTS && SCENE_SUBJECTS[id]) || [];
     if (!list.length) return;
     const subject = list[Math.floor(Math.random() * list.length)];
-    subjectInput.value = subject;
-    _pendingEnglishSubject = subject; // SCENE_SUBJECTS are English → keep theme stable
-    subjectInput.dispatchEvent(new Event('input', { bubbles: true }));
+    // Show the subject in the child's language (e.g. "Pinguin", not "penguin");
+    // the English original still drives the AI prompt + theme. Mirror the
+    // daily-word button: do NOT dispatch 'input' (that listener clears
+    // _pendingEnglishSubject), which previously leaked English to non-EN kids.
+    subjectInput.value = getTranslatedSubject(subject, getCurrentLang());
+    _pendingEnglishSubject = subject;
     subjectInput.focus();
     pulseDraw();
   });
