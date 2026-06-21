@@ -744,30 +744,8 @@ document.querySelectorAll('.diff-pill').forEach(btn => {
   });
 });
 
-// ─── Count pills ──────────────────────────────────────────────────────────────
-document.querySelectorAll('.count-pill[data-count]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    closeMaxPicker();
-    setColorCount(Number(btn.dataset.count));
-  });
-});
-const countMaxPill = document.querySelector('.count-max-pill');
-if (countMaxPill) {
-  countMaxPill.addEventListener('click', () => {
-    setColorCount(PALETTES[paletteSelect.value].length, true);
-    openMaxPicker();
-  });
-}
-
-// ─── Palette pills ────────────────────────────────────────────────────────────
-document.querySelectorAll('.palette-pill').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.palette-pill').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    paletteSelect.value = btn.dataset.palette;
-    paletteSelect.dispatchEvent(new Event('change'));
-  });
-});
+// (Removed dead .count-pill / .count-max-pill / .palette-pill listeners — those
+// elements no longer exist in index.html; settings are driven by the chips.)
 
 // ─── Regen button ─────────────────────────────────────────────────────────────
 const regenButton = document.getElementById('regen-button');
