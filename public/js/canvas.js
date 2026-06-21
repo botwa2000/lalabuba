@@ -11,7 +11,7 @@ import { bounce, sparkleBurst, sparkleAt, playComplete } from './fx.js';
 // occur when /js/fill-core.js is requested before its first deploy. Bump with
 // the asset version. (.js is served no-store, so the query only affects the CDN
 // cache key, never freshness.)
-import { fillRegionCore } from './fill-core.js?v=200';
+import { fillRegionCore, watershedAssign, buildRegionPixels } from './fill-core.js?v=210';
 
 // Module-level palette context, set by setPaletteContext() from ui.js
 let _palette = [];
@@ -468,6 +468,11 @@ export function precomputeRegions() {
     outlineMask[i] = br < BARRIER_BR ? 1 : 0;
   }
 
+  // Snapshot the THIN line mask now, before the morphological close thickens it.
+  // The watershed (below) fills the closed band, so these original line pixels are
+  // kept OUT of the painted region sets — that way a fill never hides the lines.
+  const lineMask = Uint8Array.from(outlineMask);
+
   // Morphological close (dilate N then erode N) on outlineMask.
   // This bridges genuine gaps in outlines (shoreline junctions, thin breaks)
   // WITHOUT permanently thickening the barrier, so thin regions like ripple
@@ -560,34 +565,39 @@ export function precomputeRegions() {
     }
   }
 
+  // ── Watershed ───────────────────────────────────────────────────────────────
+  // Assign every remaining outline-band (-1) pixel to its NEAREST region via
+  // multi-source BFS, so the label map tiles the whole image with no unowned
+  // band. This is the structural fix (ported from the Flutter engine) for the
+  // jagged white seams between fills, the uncolourable band around a shape, and
+  // taps that did nothing when zoomed — all of which came from that band. The
+  // thin line art (lineMask) is then kept out of the painted pixel sets so the
+  // black lines survive on top of the flat fills.
+  watershedAssign(label, width, height);
+  // Rebuild regionPixels from the final label, EXCLUDING line pixels (they remain
+  // the original black line art on the canvas, never painted over).
+  state.regionPixels = buildRegionPixels(
+    label, lineMask, [...state.regionPixels.keys()], width, height);
+
+  state.lineMask = lineMask;
   state.regionMap = label;
 }
 
 // Paint every pixel in regionId with fillColor, then redraw. Delegates the pure
-// pixel work to fillRegionCore (fill-core.js) — DOM-free and unit-tested — which:
-//   1. fills the region's own pixels,
-//   2. bleeds 2 px outward into the anti-aliased edge so no white fringe is left
-//      against the black outline, and
-//   3. reclaims enclosed bright pockets (a beak tip, a toe gap) the closing
-//      swallowed into the outline band — but ONLY when the single real region
-//      bordering the pocket is this one, so it never paints a fake border across
-//      an open gap between two different regions.
+// pixel work to fillRegionCore (fill-core.js) — DOM-free and unit-tested. Under
+// the watershed model every pixel of a region is already owned (the band is
+// assigned to the nearest region and line pixels are excluded), so the fill is a
+// flat solid paint of the region's pixels — no bleed, no gap-reclaim heuristics.
 // Returns { success: true, record } where record encodes every touched pixel's
 // previous RGBA so it can be undone.
 export function fillRegion(regionId, fillColor) {
   if (!state.regionPixels?.get(regionId)) return { success: false };
 
-  const { width, height } = previewCanvas;
   const { undoEntries } = fillRegionCore({
     paint: state.paintedImageData.data,
-    base: state.baseImageData.data,   // brightness source — unaffected by fills
-    regionMap: state.regionMap,
     regionPixels: state.regionPixels,
-    regionColorMap: state.regionColorMap,
-    width, height,
     regionId,
     fillColor,
-    minBr: 50,
   });
 
   redrawCanvas();
