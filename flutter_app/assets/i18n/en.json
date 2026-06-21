@@ -283,7 +283,7 @@
   "scenesCardSubtitle": "{open}/{total} scenes · fill them with stickers",
   "scenesTitle": "🏞️ My Scenes",
   "sceneClear": "Clear",
-  "sceneHint": "Tap a sticker below to add it · drag to move · double-tap to remove",
+  "sceneHint": "Tap a sticker below to add it · drag to move · pinch to resize · twist to rotate · double-tap to remove",
   "sceneEarnHint": "Color pictures to unlock decorations for this scene!",
   "sceneTrayEmpty": "Color a picture to unlock decorations!",
   "sceneTrayHead": "Stickers {n}/{total}",

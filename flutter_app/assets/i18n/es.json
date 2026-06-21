@@ -283,7 +283,7 @@
   "scenesCardSubtitle": "{open}/{total} escenas · llénalas de pegatinas",
   "scenesTitle": "🏞️ Mis escenas",
   "sceneClear": "Borrar",
-  "sceneHint": "Toca una pegatina abajo · arrastra para mover · doble toque para quitar",
+  "sceneHint": "Toca una pegatina abajo · arrastra para mover · pellizca para cambiar el tamaño · gira para rotar · doble toque para quitar",
   "sceneEarnHint": "¡Colorea dibujos para desbloquear decoraciones de esta escena!",
   "sceneTrayEmpty": "¡Colorea un dibujo para desbloquear decoraciones!",
   "sceneTrayHead": "Pegatinas {n}/{total}",

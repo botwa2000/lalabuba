@@ -283,7 +283,7 @@
   "scenesCardSubtitle": "{open}/{total} scènes · vul ze met stickers",
   "scenesTitle": "🏞️ Mijn scènes",
   "sceneClear": "Wissen",
-  "sceneHint": "Tik op een sticker hieronder · sleep om te verplaatsen · dubbeltik om te verwijderen",
+  "sceneHint": "Tik op een sticker hieronder · sleep om te verplaatsen · knijp om te vergroten · draai om te roteren · dubbeltik om te verwijderen",
   "sceneEarnHint": "Kleur plaatjes om versieringen voor deze scène vrij te spelen!",
   "sceneTrayEmpty": "Kleur een plaatje om versieringen vrij te spelen!",
   "sceneTrayHead": "Stickers {n}/{total}",

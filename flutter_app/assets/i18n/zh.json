@@ -283,7 +283,7 @@
   "scenesCardSubtitle": "{open}/{total} 个场景 · 用贴纸装饰它们",
   "scenesTitle": "🏞️ 我的场景",
   "sceneClear": "清除",
-  "sceneHint": "点击下方贴纸添加 · 拖动移动 · 双击移除",
+  "sceneHint": "点击下方贴纸添加 · 拖动移动 · 双指缩放调整大小 · 旋转手势转动 · 双击移除",
   "sceneEarnHint": "涂色图片来解锁这个场景的装饰！",
   "sceneTrayEmpty": "涂一张图片来解锁装饰！",
   "sceneTrayHead": "贴纸 {n}/{total}",

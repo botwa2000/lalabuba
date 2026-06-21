@@ -96,7 +96,8 @@ import { getDailyMission, missionProgressCount, missionIsDone } from './daily-mi
 import {
   SCENES, scenesUnlocked, isSceneUnlocked, sceneById,
   decosForScene, unlockedDecosForScene, placedIn,
-  placeDeco, moveDeco, removeDeco, clearScene, decoById,
+  placeDeco, removeDeco, transformDeco, clearScene, decoById,
+  STICKER_MIN_SCALE, STICKER_MAX_SCALE,
   artStickers, placeArt, artById,
 } from './scenes.js';
 import { pop, playPlace, playRemove } from './fx.js';
@@ -325,14 +326,21 @@ function openScenesModal() {
       </button>`;
     }).join('');
 
+    // transform combines centering + scale + rotation; inline style overrides the
+    // base CSS translate so pinch/twist render live.
+    const xform = (it) => {
+      const s = typeof it.s === 'number' ? it.s : 1;
+      const r = typeof it.r === 'number' ? it.r : 0;
+      return `translate(-50%,-50%) scale(${s}) rotate(${r}rad)`;
+    };
     const stickers = placed.map((it, i) => {
       if (it.a) {
         const a = artById(it.a);
         if (!a) return ''; // pruned art sticker → skip silently
-        return `<span class="scene-sticker scene-sticker--art" data-index="${i}" style="left:${it.x * 100}%;top:${it.y * 100}%"><img src="${a.thumb}" alt="${esc(t('artStickerAlt'))}" draggable="false"></span>`;
+        return `<span class="scene-sticker scene-sticker--art" data-index="${i}" style="left:${it.x * 100}%;top:${it.y * 100}%;transform:${xform(it)}"><img src="${a.thumb}" alt="${esc(t('artStickerAlt'))}" draggable="false"></span>`;
       }
       const d = decoById(it.d);
-      return `<span class="scene-sticker" data-index="${i}" style="left:${it.x * 100}%;top:${it.y * 100}%">${d ? d.emoji : '⭐'}</span>`;
+      return `<span class="scene-sticker" data-index="${i}" style="left:${it.x * 100}%;top:${it.y * 100}%;transform:${xform(it)}">${d ? d.emoji : '⭐'}</span>`;
     }).join('');
 
     // Tray: the child's own art first (placeable in ANY scene), then this scene's
@@ -392,49 +400,90 @@ function openScenesModal() {
     try { playPlace(); } catch { /* ignore */ }
   }
 
-  // Drag to move; double-tap / double-click removes the sticker.
+  // One finger drags; two fingers pinch-resize + twist-rotate (Pointer Events so
+  // mouse + multitouch share one path); double-tap removes. Parity with the
+  // Flutter scale gesture. `touch-action:none` on .scene-sticker keeps the
+  // browser from stealing the gesture for scroll/zoom.
   function wireDrag() {
     const stage = el.querySelector('#scene-stage');
     if (!stage) return;
+    const placedArr = placedIn(current);
     el.querySelectorAll('.scene-sticker').forEach((st) => {
       const index = Number(st.dataset.index);
-      let dragging = false, moved = false, lastTap = 0;
+      const it = placedArr[index] || {};
+      const pointers = new Map(); // pointerId → {x,y}
+      let moved = false, lastTap = 0;
+      // live transform, seeded from the stored placement
+      let curX = it.x ?? 0.5, curY = it.y ?? 0.5;
+      let curS = typeof it.s === 'number' ? it.s : 1;
+      let curR = typeof it.r === 'number' ? it.r : 0;
+      // two-finger gesture baselines
+      let baseDist = 1, baseAng = 0, baseS = 1, baseR = 0;
+      let baseMidX = 0, baseMidY = 0, baseCurX = 0.5, baseCurY = 0.5;
+      const clamp = (v) => Math.min(0.96, Math.max(0.04, v));
+      const pts = () => [...pointers.values()];
+
+      const applyLive = () => {
+        st.style.left = (curX * 100) + '%';
+        st.style.top = (curY * 100) + '%';
+        st.style.transform = `translate(-50%,-50%) scale(${curS}) rotate(${curR}rad)`;
+      };
+
+      const seed2 = () => {
+        const [p1, p2] = pts();
+        baseDist = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
+        baseAng = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+        baseS = curS; baseR = curR;
+        baseMidX = (p1.x + p2.x) / 2; baseMidY = (p1.y + p2.y) / 2;
+        baseCurX = curX; baseCurY = curY;
+      };
+
+      const onDown = (e) => {
+        try { st.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        e.preventDefault();
+        if (pointers.size === 2) seed2();
+      };
       const onMove = (e) => {
-        if (!dragging) return;
+        if (!pointers.has(e.pointerId)) return;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
         e.preventDefault();
         moved = true;
-        const pt = e.touches ? e.touches[0] : e;
         const r = stage.getBoundingClientRect();
-        st.style.left = Math.min(96, Math.max(4, ((pt.clientX - r.left) / r.width) * 100)) + '%';
-        st.style.top = Math.min(96, Math.max(4, ((pt.clientY - r.top) / r.height) * 100)) + '%';
+        if (pointers.size >= 2) {
+          const [p1, p2] = pts();
+          const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
+          const ang = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+          curS = Math.min(STICKER_MAX_SCALE, Math.max(STICKER_MIN_SCALE, baseS * (dist / baseDist)));
+          curR = baseR + (ang - baseAng);
+          const midX = (p1.x + p2.x) / 2, midY = (p1.y + p2.y) / 2;
+          curX = clamp(baseCurX + (midX - baseMidX) / r.width);
+          curY = clamp(baseCurY + (midY - baseMidY) / r.height);
+        } else {
+          const p = pointers.get(e.pointerId);
+          curX = clamp((p.x - r.left) / r.width);
+          curY = clamp((p.y - r.top) / r.height);
+        }
+        applyLive();
       };
       const onUp = (e) => {
-        if (!dragging) return;
-        dragging = false;
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        document.removeEventListener('touchmove', onMove);
-        document.removeEventListener('touchend', onUp);
+        if (!pointers.has(e.pointerId)) return;
+        pointers.delete(e.pointerId);
+        try { st.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+        if (pointers.size > 0) return; // wait for the last finger to lift
         const now = Date.now();
         if (!moved) {
-          if (now - lastTap < 320) { removeDeco(current, index); try { playRemove(); } catch {} render(); return; } // double-tap → remove
+          if (now - lastTap < 320) { removeDeco(current, index); try { playRemove(); } catch {} render(); return; }
           lastTap = now;
           return;
         }
-        const pt = (e.changedTouches ? e.changedTouches[0] : e);
-        const r = stage.getBoundingClientRect();
-        moveDeco(current, index, (pt.clientX - r.left) / r.width, (pt.clientY - r.top) / r.height);
+        transformDeco(current, index, { x: curX, y: curY, s: curS, r: curR });
+        moved = false;
       };
-      const onDown = (e) => {
-        dragging = true; moved = false;
-        e.preventDefault();
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-        document.addEventListener('touchmove', onMove, { passive: false });
-        document.addEventListener('touchend', onUp);
-      };
-      st.addEventListener('mousedown', onDown);
-      st.addEventListener('touchstart', onDown, { passive: false });
+      st.addEventListener('pointerdown', onDown);
+      st.addEventListener('pointermove', onMove);
+      st.addEventListener('pointerup', onUp);
+      st.addEventListener('pointercancel', onUp);
     });
   }
 

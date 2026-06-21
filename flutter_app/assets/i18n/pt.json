@@ -283,7 +283,7 @@
   "scenesCardSubtitle": "{open}/{total} cenas · preencha com adesivos",
   "scenesTitle": "🏞️ Minhas cenas",
   "sceneClear": "Limpar",
-  "sceneHint": "Toque num adesivo abaixo · arraste para mover · toque duas vezes para remover",
+  "sceneHint": "Toque num adesivo abaixo · arraste para mover · belisque para redimensionar · gire para rodar · toque duas vezes para remover",
   "sceneEarnHint": "Pinte desenhos para desbloquear decorações desta cena!",
   "sceneTrayEmpty": "Pinte um desenho para desbloquear decorações!",
   "sceneTrayHead": "Adesivos {n}/{total}",

@@ -283,7 +283,7 @@
   "scenesCardSubtitle": "{open}/{total} scen · wypełnij je naklejkami",
   "scenesTitle": "🏞️ Moje sceny",
   "sceneClear": "Wyczyść",
-  "sceneHint": "Dotknij naklejki poniżej · przeciągnij, aby przesunąć · dotknij dwa razy, aby usunąć",
+  "sceneHint": "Dotknij naklejki poniżej · przeciągnij, aby przesunąć · uszczypnij, aby zmienić rozmiar · obróć, aby obrócić · dotknij dwa razy, aby usunąć",
   "sceneEarnHint": "Koloruj obrazki, aby odblokować ozdoby do tej sceny!",
   "sceneTrayEmpty": "Pokoloruj obrazek, aby odblokować ozdoby!",
   "sceneTrayHead": "Naklejki {n}/{total}",

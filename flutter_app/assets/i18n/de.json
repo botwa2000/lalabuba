@@ -283,7 +283,7 @@
   "scenesCardSubtitle": "{open}/{total} Szenen · füll sie mit Stickern",
   "scenesTitle": "🏞️ Meine Szenen",
   "sceneClear": "Löschen",
-  "sceneHint": "Tippe unten auf einen Sticker · ziehen zum Verschieben · doppeltippen zum Entfernen",
+  "sceneHint": "Tippe unten auf einen Sticker · ziehen zum Verschieben · mit zwei Fingern Größe ändern · drehen zum Drehen · doppeltippen zum Entfernen",
   "sceneEarnHint": "Male Bilder aus, um Deko für diese Szene freizuschalten!",
   "sceneTrayEmpty": "Male ein Bild aus, um Deko freizuschalten!",
   "sceneTrayHead": "Sticker {n}/{total}",

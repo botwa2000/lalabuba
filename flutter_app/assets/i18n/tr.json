@@ -283,7 +283,7 @@
   "scenesCardSubtitle": "{open}/{total} sahne · onları çıkartmalarla doldur",
   "scenesTitle": "🏞️ Sahnelerim",
   "sceneClear": "Temizle",
-  "sceneHint": "Aşağıdan bir çıkartmaya dokun · taşımak için sürükle · kaldırmak için çift dokun",
+  "sceneHint": "Aşağıdan bir çıkartmaya dokun · taşımak için sürükle · boyutlandırmak için iki parmakla sıkıştır · döndürmek için çevir · kaldırmak için çift dokun",
   "sceneEarnHint": "Bu sahne için süsler açmak üzere resimleri boya!",
   "sceneTrayEmpty": "Süsleri açmak için bir resim boya!",
   "sceneTrayHead": "Çıkartmalar {n}/{total}",

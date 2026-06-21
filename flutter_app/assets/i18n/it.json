@@ -283,7 +283,7 @@
   "scenesCardSubtitle": "{open}/{total} scene · riempile di adesivi",
   "scenesTitle": "🏞️ Le mie scene",
   "sceneClear": "Cancella",
-  "sceneHint": "Tocca un adesivo qui sotto · trascina per spostare · doppio tocco per rimuovere",
+  "sceneHint": "Tocca un adesivo qui sotto · trascina per spostare · pizzica per ridimensionare · ruota per girare · doppio tocco per rimuovere",
   "sceneEarnHint": "Colora i disegni per sbloccare decorazioni per questa scena!",
   "sceneTrayEmpty": "Colora un disegno per sbloccare le decorazioni!",
   "sceneTrayHead": "Adesivi {n}/{total}",

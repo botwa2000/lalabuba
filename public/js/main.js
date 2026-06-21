@@ -218,16 +218,19 @@ function checkCompletion() {
     fillC.getContext('2d').putImageData(state.paintedImageData, 0, 0);
     fillDataUrl = fillC.toDataURL('image/png');
 
-    // Capture the finished page as a small reusable "art sticker" for Sticker
-    // Scenes — the child's own picture becomes something they can place. Keep it
-    // tiny (120px) so the data URL stays a few KB in localStorage.
+    // Capture the finished page as a reusable "art sticker" for Sticker Scenes —
+    // the child's own picture becomes something they can place, resize and rotate.
+    // 240px (was 120) so it stays crisp even at the max 3.5× scene scale; a
+    // flat-fill PNG this size is still only a few KB and we cap to 24.
     try {
+      const TH = 240;
       const thumbC = document.createElement('canvas');
-      thumbC.width = 120; thumbC.height = 120;
+      thumbC.width = TH; thumbC.height = TH;
       const tctx = thumbC.getContext('2d');
+      tctx.imageSmoothingQuality = 'high';
       tctx.fillStyle = '#fff';
-      tctx.fillRect(0, 0, 120, 120);
-      tctx.drawImage(fillC, 0, 0, 120, 120);
+      tctx.fillRect(0, 0, TH, TH);
+      tctx.drawImage(fillC, 0, 0, TH, TH);
       addArtSticker({
         subject: state.lastEnglishSubject || subjectInput.value.trim() || '',
         thumb: thumbC.toDataURL('image/png'),

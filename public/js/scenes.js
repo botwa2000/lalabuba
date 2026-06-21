@@ -209,12 +209,35 @@ export function placeArt(sceneId, artId) {
   persist(st);
   return arr;
 }
+// Sticker scale bounds — kept in lock-step with Flutter Placement.min/maxScale.
+export const STICKER_MIN_SCALE = 0.5;
+export const STICKER_MAX_SCALE = 3.5;
+
 export function moveDeco(sceneId, index, nx, ny) {
   const st = getScenesState();
   const arr = st.placed[sceneId];
   if (!Array.isArray(arr) || !arr[index]) return;
   arr[index].x = Math.min(0.96, Math.max(0.04, nx));
   arr[index].y = Math.min(0.96, Math.max(0.04, ny));
+  persist(st);
+}
+// Set position + scale + rotation together (pinch/twist). `s` is a size
+// multiplier (clamped), `r` is rotation in radians. Stored only when non-default
+// so legacy/simple placements stay compact. Mirrors Flutter setLocalTransform.
+export function transformDeco(sceneId, index, { x, y, s, r }) {
+  const st = getScenesState();
+  const arr = st.placed[sceneId];
+  if (!Array.isArray(arr) || !arr[index]) return;
+  const it = arr[index];
+  if (typeof x === 'number') it.x = Math.min(0.96, Math.max(0.04, x));
+  if (typeof y === 'number') it.y = Math.min(0.96, Math.max(0.04, y));
+  if (typeof s === 'number') {
+    const sc = Math.min(STICKER_MAX_SCALE, Math.max(STICKER_MIN_SCALE, s));
+    if (sc === 1) delete it.s; else it.s = sc;
+  }
+  if (typeof r === 'number') {
+    if (r === 0) delete it.r; else it.r = r;
+  }
   persist(st);
 }
 export function removeDeco(sceneId, index) {

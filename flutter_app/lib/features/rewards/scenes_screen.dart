@@ -74,10 +74,10 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
 
   Widget _buildTabs(L10n l10n, ColorScheme cs, int total) {
     return SizedBox(
-      height: 76,
+      height: 80,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         itemCount: kScenes.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
@@ -94,7 +94,7 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
                 : null,
             child: Container(
               width: 66,
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
               decoration: BoxDecoration(
                 color: active
                     ? cs.primaryContainer
@@ -109,18 +109,21 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
                 opacity: unlocked ? 1 : 0.55,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(unlocked ? s.emoji : '🔒',
                         style: const TextStyle(fontSize: 22)),
                     const SizedBox(height: 2),
-                    Text(
-                      unlocked
-                          ? _sceneName(l10n, s.id)
-                          : l10n.t('sceneLockedShort', {'n': '$need'}),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.nunito(
-                          fontSize: 10, fontWeight: FontWeight.w700),
+                    Flexible(
+                      child: Text(
+                        unlocked
+                            ? _sceneName(l10n, s.id)
+                            : l10n.t('sceneLockedShort', {'n': '$need'}),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.nunito(
+                            fontSize: 10, fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ],
                 ),
@@ -164,9 +167,10 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
                           : null,
                       stageW: w,
                       stageH: h,
-                      onMove: (nx, ny) => ref
+                      onTransform: (nx, ny, scale, rotation) => ref
                           .read(scenesProvider.notifier)
-                          .setLocal(_current, i, nx, ny),
+                          .setLocalTransform(_current, i,
+                              nx: nx, ny: ny, scale: scale, rotation: rotation),
                       onEnd: () => ref.read(scenesProvider.notifier).commit(),
                       onRemove: () {
                         HapticFeedback.lightImpact();
@@ -310,14 +314,17 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
       );
 }
 
-/// A placed decoration (emoji) or art sticker (image), draggable + double-tap
-/// to remove. Position is normalized 0..1 within the stage.
-class _PlacedItem extends StatelessWidget {
+/// A placed decoration (emoji) or art sticker (image). One-finger drag moves it;
+/// a two-finger pinch resizes and a twist rotates (all via a single scale
+/// recognizer so they compose); double-tap removes. Position is normalized
+/// 0..1 within the stage; scale/rotation come from the [Placement].
+class _PlacedItem extends StatefulWidget {
   final Placement placement;
   final ArtSticker? art;
   final double stageW;
   final double stageH;
-  final void Function(double nx, double ny) onMove;
+  final void Function(double nx, double ny, double scale, double rotation)
+      onTransform;
   final VoidCallback onEnd;
   final VoidCallback onRemove;
 
@@ -327,57 +334,97 @@ class _PlacedItem extends StatelessWidget {
     required this.art,
     required this.stageW,
     required this.stageH,
-    required this.onMove,
+    required this.onTransform,
     required this.onEnd,
     required this.onRemove,
   });
 
   @override
+  State<_PlacedItem> createState() => _PlacedItemState();
+}
+
+class _PlacedItemState extends State<_PlacedItem> {
+  // Baselines captured at gesture start so updates are relative to the start.
+  late double _startScale;
+  late double _startRotation;
+  late double _centerX; // running centre in stage pixels
+  late double _centerY;
+
+  void _onScaleStart(ScaleStartDetails d) {
+    _startScale = widget.placement.scale;
+    _startRotation = widget.placement.rotation;
+    _centerX = widget.placement.x * widget.stageW;
+    _centerY = widget.placement.y * widget.stageH;
+  }
+
+  void _onScaleUpdate(ScaleUpdateDetails d) {
+    // focalPointDelta is the move since the last update (works for 1 or 2
+    // fingers); scale/rotation are cumulative since the gesture start.
+    _centerX += d.focalPointDelta.dx;
+    _centerY += d.focalPointDelta.dy;
+    final nx = (_centerX / widget.stageW);
+    final ny = (_centerY / widget.stageH);
+    widget.onTransform(
+      nx,
+      ny,
+      _startScale * d.scale,
+      _startRotation + d.rotation,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isArt = placement.art != null;
-    final size = isArt ? 60.0 : 44.0;
-    final left = (placement.x * stageW) - size / 2;
-    final top = (placement.y * stageH) - size / 2;
+    final p = widget.placement;
+    final isArt = p.art != null;
+    final base = isArt ? 60.0 : 44.0;
+    final size = (base * p.scale).clamp(base * Placement.minScale, base * Placement.maxScale);
+    final left = (p.x * widget.stageW) - size / 2;
+    final top = (p.y * widget.stageH) - size / 2;
     return Positioned(
-      left: left.clamp(0.0, (stageW - size).clamp(0.0, stageW)),
-      top: top.clamp(0.0, (stageH - size).clamp(0.0, stageH)),
+      left: left.clamp(0.0, (widget.stageW - size).clamp(0.0, widget.stageW)),
+      top: top.clamp(0.0, (widget.stageH - size).clamp(0.0, widget.stageH)),
       child: GestureDetector(
-        onPanUpdate: (d) {
-          final nx = (left + size / 2 + d.delta.dx) / stageW;
-          final ny = (top + size / 2 + d.delta.dy) / stageH;
-          onMove(nx, ny);
-        },
-        onPanEnd: (_) => onEnd(),
-        onDoubleTap: onRemove,
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Center(
-            child: isArt && art != null
-                ? Container(
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white, width: 3),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 5,
-                            offset: const Offset(0, 2)),
-                      ],
+        onScaleStart: _onScaleStart,
+        onScaleUpdate: _onScaleUpdate,
+        onScaleEnd: (_) => widget.onEnd(),
+        onDoubleTap: widget.onRemove,
+        child: Transform.rotate(
+          angle: p.rotation,
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: Center(
+              child: isArt && widget.art != null
+                  ? Container(
+                      width: size,
+                      height: size,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 5,
+                              offset: const Offset(0, 2)),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(File(widget.art!.file),
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.medium,
+                            errorBuilder: (_, __, ___) =>
+                                const Center(child: Text('🎨'))),
+                      ),
+                    )
+                  : Text(
+                      isArt
+                          ? '🎨'
+                          : (decoById(p.deco ?? '')?.emoji ?? '⭐'),
+                      style: TextStyle(fontSize: size * 0.78),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.file(File(art!.file),
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              const Center(child: Text('🎨'))),
-                    ),
-                  )
-                : Text(isArt ? '🎨' : (decoById(placement.deco ?? '')?.emoji ?? '⭐'),
-                    style: const TextStyle(fontSize: 34)),
+            ),
           ),
         ),
       ),

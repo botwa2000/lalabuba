@@ -1760,12 +1760,15 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           as RenderRepaintBoundary?;
       if (boundary == null) return null;
       final full = await boundary.toImage(pixelRatio: 1.0);
-      const target = 160.0;
+      // 320px longest edge so the sticker stays crisp even at the max 3.5×
+      // scene scale (a 60px sticker → ~210px on screen); a flat-fill PNG this
+      // size is still only a few KB.
+      const target = 320.0;
       final longest =
           (full.width > full.height ? full.width : full.height).toDouble();
       final scale = longest > 0 ? target / longest : 1.0;
-      final w = (full.width * scale).round().clamp(1, 400);
-      final h = (full.height * scale).round().clamp(1, 400);
+      final w = (full.width * scale).round().clamp(1, 640);
+      final h = (full.height * scale).round().clamp(1, 640);
       final recorder = ui.PictureRecorder();
       final c = Canvas(recorder);
       c.drawImageRect(

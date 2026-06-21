@@ -283,7 +283,7 @@
   "scenesCardSubtitle": "{open}/{total} scènes · remplis-les d'autocollants",
   "scenesTitle": "🏞️ Mes scènes",
   "sceneClear": "Effacer",
-  "sceneHint": "Touche un autocollant en bas · glisse pour déplacer · double-touche pour retirer",
+  "sceneHint": "Touche un autocollant en bas · glisse pour déplacer · pince pour redimensionner · tourne pour pivoter · double-touche pour retirer",
   "sceneEarnHint": "Colorie des images pour débloquer des décorations pour cette scène !",
   "sceneTrayEmpty": "Colorie une image pour débloquer des décorations !",
   "sceneTrayHead": "Autocollants {n}/{total}",

@@ -174,25 +174,53 @@ class ArtSticker {
 }
 
 /// One placed item: an emoji decoration (deco != null) OR an art sticker
-/// (art != null), at normalized position (x, y).
+/// (art != null), at normalized position (x, y), with a [scale] multiplier
+/// (1.0 = base size) and [rotation] in radians. Pinch resizes, twist rotates.
 class Placement {
   final String? deco;
   final String? art;
   final double x;
   final double y;
-  const Placement({this.deco, this.art, required this.x, required this.y});
+  final double scale;
+  final double rotation;
+  static const double minScale = 0.5;
+  static const double maxScale = 3.5;
+  const Placement({
+    this.deco,
+    this.art,
+    required this.x,
+    required this.y,
+    this.scale = 1.0,
+    this.rotation = 0.0,
+  });
+
+  Placement copyWith({double? x, double? y, double? scale, double? rotation}) =>
+      Placement(
+        deco: deco,
+        art: art,
+        x: x ?? this.x,
+        y: y ?? this.y,
+        scale: scale ?? this.scale,
+        rotation: rotation ?? this.rotation,
+      );
 
   Map<String, dynamic> toJson() => {
         if (deco != null) 'd': deco,
         if (art != null) 'a': art,
         'x': x,
         'y': y,
+        if (scale != 1.0) 's': scale,
+        if (rotation != 0.0) 'r': rotation,
       };
   static Placement fromJson(Map<String, dynamic> j) => Placement(
         deco: j['d'] as String?,
         art: j['a'] as String?,
         x: (j['x'] as num?)?.toDouble() ?? 0.5,
         y: (j['y'] as num?)?.toDouble() ?? 0.5,
+        scale: ((j['s'] as num?)?.toDouble() ?? 1.0)
+            .clamp(minScale, maxScale)
+            .toDouble(),
+        rotation: (j['r'] as num?)?.toDouble() ?? 0.0,
       );
 }
 
@@ -324,18 +352,35 @@ class ScenesNotifier extends AsyncNotifier<ScenesState> {
     _persist(next);
   }
 
-  /// Live position update during a drag (no write).
+  /// Live position update during a drag (no write). Preserves scale/rotation.
   void setLocal(String sceneId, int index, double nx, double ny) {
     final s = _s;
     final arr = s.placed[sceneId];
     if (arr == null || index < 0 || index >= arr.length) return;
     final placed = _clonePlaced(s);
-    final old = placed[sceneId]![index];
-    placed[sceneId]![index] = Placement(
-      deco: old.deco,
-      art: old.art,
-      x: nx.clamp(0.04, 0.96),
-      y: ny.clamp(0.04, 0.96),
+    placed[sceneId]![index] = placed[sceneId]![index].copyWith(
+      x: nx.clamp(0.04, 0.96).toDouble(),
+      y: ny.clamp(0.04, 0.96).toDouble(),
+    );
+    state = AsyncData(s.copyWith(placed: placed));
+  }
+
+  /// Live transform update during a pinch/twist gesture (no write). Position,
+  /// scale and rotation move together; scale is clamped to the sane range.
+  void setLocalTransform(String sceneId, int index,
+      {required double nx,
+      required double ny,
+      required double scale,
+      required double rotation}) {
+    final s = _s;
+    final arr = s.placed[sceneId];
+    if (arr == null || index < 0 || index >= arr.length) return;
+    final placed = _clonePlaced(s);
+    placed[sceneId]![index] = placed[sceneId]![index].copyWith(
+      x: nx.clamp(0.04, 0.96).toDouble(),
+      y: ny.clamp(0.04, 0.96).toDouble(),
+      scale: scale.clamp(Placement.minScale, Placement.maxScale).toDouble(),
+      rotation: rotation,
     );
     state = AsyncData(s.copyWith(placed: placed));
   }

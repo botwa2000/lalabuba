@@ -134,6 +134,32 @@ Fix the bug, increment version again, commit, push, wait for deploy, re-run the 
 
 ---
 
+## Flutter QA — verify with REAL rendering (never defer to "your device")
+
+The Flutter app (`flutter_app/`) is the native twin of the web app and gets the
+same "prove it renders" discipline. Do NOT tell the user a Flutter UI/perf change
+"can only be checked on your device" — the dev box HAS the tooling. After any
+Flutter change, before reporting done:
+
+1. `cd flutter_app && flutter analyze` (must be clean) → `flutter test` (unit +
+   widget + golden). Add a widget/golden test that pumps the actual screen for
+   any rendering change (e.g. `test/scenes_screen_test.dart` asserts a placed
+   sticker really renders scaled + `Transform.rotate`d).
+2. Real device render via the local Android emulators — AVDs `Galaxy_S25_Ultra`
+   (phone) and `Lala_Tablet` (tablet): `flutter emulators --launch Lala_Tablet`,
+   install/run, drive via adb (`input tap/swipe`), `adb exec-out screencap -p >
+   f.png`, **Read** the PNG, then **DELETE** it (delete ALL test screenshots
+   after each cycle — applies to web Playwright shots too).
+3. iOS render is verified on Codemagic (no local Mac) — say so explicitly when an
+   iOS check is outstanding. Genuine hardware-perf sign-off (Firebase Test Lab /
+   physical device) is the only thing beyond local; flag only that.
+
+Full harness detail (coords, emulator-network-is-fine-despite-ping, free-fill
+enforcement-off) lives in the local memory `reference-flutter-testing.md` and
+`feedback-use-emulator-by-default.md`.
+
+---
+
 ## Deployment — Hetzner (migrated off Vercel)
 
 > Full migration plan: `MIGRATION.md`. Strategy detail: `IMPLEMENTATION_STRATEGY.md`.
