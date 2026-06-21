@@ -122,6 +122,60 @@ void main() {
     });
   });
 
+  // The incremental per-region painter used on every fill tap must produce a
+  // composite byte-identical to a full buildCompositeRgba — otherwise the
+  // perf optimization would drift from the reference rendering.
+  group('paintRegionInComposite matches buildCompositeRgba', () {
+    test('incremental fill of all regions equals a full rebuild', () {
+      const w = 11, h = 2, n = w * h;
+      final orig = solid(w, h, 255);
+      final p2r = Int32List(n);
+      final lineMask = Uint8List(n);
+      const div = 5;
+      for (var y = 0; y < h; y++) {
+        for (var x = 0; x < w; x++) {
+          final i = y * w + x;
+          p2r[i] = x < div ? 0 : 1;
+          if (x == div) {
+            p2r[i] = 1;
+            lineMask[i] = 1;
+            orig[i * 4] = 0; orig[i * 4 + 1] = 0; orig[i * 4 + 2] = 0;
+          }
+        }
+      }
+      const colors = {0: red, 1: blue};
+      final full = buildCompositeRgba(CompositeParams(
+        originalRgba: orig, pixelToRegion: p2r, regionColors: colors,
+        width: w, height: h, lineMask: lineMask));
+
+      final inc = Uint8List.fromList(orig);
+      paintRegionInComposite(out: inc, orig: orig, pixelToRegion: p2r, lineMask: lineMask, regionId: 0, argb: red);
+      paintRegionInComposite(out: inc, orig: orig, pixelToRegion: p2r, lineMask: lineMask, regionId: 1, argb: blue);
+
+      var diff = 0;
+      for (var i = 0; i < inc.length; i++) {
+        if (inc[i] != full[i]) diff++;
+      }
+      expect(diff, 0, reason: 'incremental composite must equal full rebuild');
+    });
+
+    test('reverting a region (argb null) restores the original pixels', () {
+      const w = 6, h = 1, n = w * h;
+      final orig = solid(w, h, 200);
+      final p2r = Int32List(n); // all region 0
+      final lineMask = Uint8List(n);
+      final buf = Uint8List.fromList(orig);
+      paintRegionInComposite(out: buf, orig: orig, pixelToRegion: p2r, lineMask: lineMask, regionId: 0, argb: red);
+      expect(buf[0] == 255 && buf[2] == 0, isTrue, reason: 'sanity: was painted red');
+      paintRegionInComposite(out: buf, orig: orig, pixelToRegion: p2r, lineMask: lineMask, regionId: 0, argb: null);
+      var diff = 0;
+      for (var i = 0; i < buf.length; i++) {
+        if (buf[i] != orig[i]) diff++;
+      }
+      expect(diff, 0, reason: 'revert (argb null) restores the original pixels');
+    });
+  });
+
   group('line overlay keeps fills flat', () {
     // A non-line dark source pixel (interior shading, lineMask 0) must NOT darken
     // the flat fill — only true line pixels (lineMask 1) get the overlay.

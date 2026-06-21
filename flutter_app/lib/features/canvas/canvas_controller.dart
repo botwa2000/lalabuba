@@ -17,11 +17,15 @@ class _DetectionSuperseded implements Exception {
 class CanvasNotifier extends Notifier<CanvasState> {
   static const _maxUndo = 20;
 
-  // FIX 1: monotonically increasing token for composite rebuilds. Each
-  // _rebuildComposite captures the value it bumped to; only the rebuild whose
-  // token still matches the latest is allowed to assign state. Rapid taps that
-  // finish out of order no longer let an older composite overwrite a newer one.
+  // FIX 1: monotonically increasing token for composite updates. Each update
+  // captures the value it bumped to; only the update whose token still matches
+  // the latest is allowed to assign state. Rapid taps that finish out of order
+  // no longer let an older composite overwrite a newer one.
   int _compositeGen = 0;
+
+  // Retained composite pixel buffer, mutated in place per fill (see
+  // _applyRegionComposite). Reset on every new image load.
+  Uint8List? _compositeBuf;
 
   // FIX 2: generation token + in-flight isolate handle for region detection.
   // A new loadImage bumps _detectGen, kills any previous in-flight detection
@@ -99,6 +103,10 @@ class CanvasNotifier extends Notifier<CanvasState> {
       colorMap[id] = Color(argb);
     });
 
+    // Seed the retained composite buffer with the original (line art, no fills);
+    // subsequent fills mutate it region-by-region (see _applyRegionComposite).
+    _compositeBuf = Uint8List.fromList(rgba);
+
     state = state.copyWith(
       detection: result,
       regionColors: {},
@@ -157,41 +165,33 @@ class CanvasNotifier extends Notifier<CanvasState> {
     return completer.future;
   }
 
-  Future<void> _rebuildComposite() async {
+  /// Incremental composite update for ONE region (a fill, erase, or undo of a
+  /// fill). Mutates the retained [_compositeBuf] in place and decodes it on the
+  /// main thread — no isolate spawn, no ~13 MB cross-isolate copy, and only the
+  /// changed region's pixels are touched. Result is byte-identical to a full
+  /// buildCompositeRgba (asserted by tests). [argb] null = region unfilled.
+  Future<void> _applyRegionComposite(int regionId, Color? color) async {
     final s = state;
-    if (s.originalRgba == null || s.detection == null) return;
+    final d = s.detection;
+    final orig = s.originalRgba;
+    if (d == null || orig == null) return;
+    final buf = _compositeBuf ??= Uint8List.fromList(orig);
 
-    // FIX 1: stamp this rebuild with the latest generation. If another rebuild
-    // is requested before our isolate returns, _compositeGen advances past ours
-    // and we discard our (now stale) result below.
     final gen = ++_compositeGen;
-
-    final colorsInt = <int, int>{};
-    s.regionColors.forEach((rid, color) {
-      colorsInt[rid] = color.toARGB32();
-    });
-
-    final params = CompositeParams(
-      originalRgba: s.originalRgba!,
-      pixelToRegion: s.detection!.pixelToRegion,
-      regionColors: colorsInt,
-      width: s.detection!.width,
-      height: s.detection!.height,
-      lineMask: s.detection!.lineMask,
+    paintRegionInComposite(
+      out: buf,
+      orig: orig,
+      pixelToRegion: d.pixelToRegion,
+      lineMask: d.lineMask,
+      regionId: regionId,
+      argb: color?.toARGB32(),
     );
 
-    final rgba = await Isolate.run(() => buildCompositeRgba(params));
-
-    // FIX 1: a newer rebuild was requested while we awaited — discard this
-    // result so the displayed composite always reflects the latest fills.
-    if (gen != _compositeGen) return;
-
-    final img = await _rgbaToImage(rgba, params.width, params.height);
-    // Re-check after the async image decode too, for the same reason.
-    if (gen != _compositeGen) return;
-    if (state.detection != null) {
-      state = state.copyWith(compositeImage: img, compositeRgba: rgba);
-    }
+    final img = await _rgbaToImage(buf, d.width, d.height);
+    // A newer update (or a new image load) superseded us — discard so the shown
+    // composite always reflects the latest state.
+    if (gen != _compositeGen || state.detection != d) return;
+    state = state.copyWith(compositeImage: img, compositeRgba: buf);
   }
 
   /// Samples the colour currently shown at canvas-space [pos] (eyedropper).
@@ -317,7 +317,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
         CanvasAction.fill(regionId: regionId, previousColor: prev);
     state = s.copyWith(
         regionColors: newColors, undoStack: _pushUndo(s.undoStack, action));
-    unawaited(_rebuildComposite());
+    unawaited(_applyRegionComposite(regionId, isErasing ? null : s.activeColor));
   }
 
   /// Erase any freehand strokes passing within [radius] (canvas-local px) of
@@ -383,7 +383,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
           newColors[action.regionId] = action.previousColor!;
         }
         state = s.copyWith(regionColors: newColors, undoStack: remaining);
-        unawaited(_rebuildComposite());
+        unawaited(_applyRegionComposite(action.regionId, action.previousColor));
       case CanvasOp.addStroke:
         final strokes = List<Stroke>.from(s.strokes);
         if (strokes.isNotEmpty) strokes.removeLast();
@@ -436,7 +436,10 @@ class CanvasNotifier extends Notifier<CanvasState> {
     );
   }
 
-  void reset() => state = const CanvasState();
+  void reset() {
+    _compositeBuf = null;
+    state = const CanvasState();
+  }
 }
 
 final canvasProvider =

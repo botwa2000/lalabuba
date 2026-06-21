@@ -597,6 +597,64 @@ Uint8List buildCompositeRgba(CompositeParams params) {
   return out;
 }
 
+/// In-place repaint of a SINGLE region into an existing composite buffer [out],
+/// matching buildCompositeRgba's per-pixel rules (flat fill + line overlay), or
+/// reverting the region to the original when [argb] is null (an erase/undo).
+///
+/// This is the incremental update used on every fill tap instead of rebuilding
+/// the whole composite in a fresh isolate (which copied ~13 MB and spawned an
+/// isolate per tap — heavy on the low-end Android devices kids use). Only the
+/// changed region's pixels are touched; the result is byte-identical to a full
+/// buildCompositeRgba for that region (asserted by tests).
+void paintRegionInComposite({
+  required Uint8List out,
+  required Uint8List orig,
+  required Int32List pixelToRegion,
+  required Uint8List? lineMask,
+  required int regionId,
+  required int? argb, // null = unfilled (revert to original)
+}) {
+  const lineFloor = 45.0;
+  const lineCeil = 205.0;
+  const lineSpan = lineCeil - lineFloor;
+  final n = pixelToRegion.length;
+  final fr = argb == null ? 0 : (argb >> 16) & 0xFF;
+  final fg = argb == null ? 0 : (argb >> 8) & 0xFF;
+  final fb = argb == null ? 0 : argb & 0xFF;
+  for (var i = 0; i < n; i++) {
+    if (pixelToRegion[i] != regionId) continue;
+    final o = i * 4;
+    int br, bg, bb, ba;
+    if (argb == null) {
+      br = orig[o]; bg = orig[o + 1]; bb = orig[o + 2]; ba = orig[o + 3];
+    } else {
+      br = fr; bg = fg; bb = fb; ba = 255;
+    }
+    if (lineMask != null && lineMask[i] == 1) {
+      final or_ = orig[o];
+      final og = orig[o + 1];
+      final ob = orig[o + 2];
+      final lu = 0.299 * or_ + 0.587 * og + 0.114 * ob;
+      var a = (lineCeil - lu) / lineSpan;
+      if (a < 0) {
+        a = 0;
+      } else if (a > 1) {
+        a = 1;
+      }
+      final ia = 1 - a;
+      out[o] = (br * ia + or_ * a).round().clamp(0, 255);
+      out[o + 1] = (bg * ia + og * a).round().clamp(0, 255);
+      out[o + 2] = (bb * ia + ob * a).round().clamp(0, 255);
+      out[o + 3] = 255;
+    } else {
+      out[o] = br;
+      out[o + 1] = bg;
+      out[o + 2] = bb;
+      out[o + 3] = ba;
+    }
+  }
+}
+
 // ── Private helper carrying per-region accumulation data ──
 class _RegionData {
   final int id;
