@@ -2,6 +2,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui' show Offset;
 import 'canvas_models.dart';
+import 'line_bridge.dart';
 import 'trapped_ball.dart';
 
 // Entry point for the region detection isolate
@@ -49,6 +50,15 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   // would be painted over). It excludes the virtual frame (added in step 3) so
   // image edges stay clean.
   final lineMask = Uint8List.fromList(outlineMask);
+
+  // ── 1b. Bridge genuine line BREAKS (Stage-2; line_bridge.dart) ──
+  // Join boundary-line tips that FACE each other across a short gap, sealing
+  // real breaks the hysteresis mask can't (it only closes faint AA pin-gaps).
+  // Applied AFTER the lineMask snapshot so a bridge is an INVISIBLE wall — the
+  // two regions separate cleanly with no fake ink drawn across the gap. The
+  // facing test means parallel groove tips are NOT joined, so this doesn't
+  // re-create the "can't colour" over-seal.
+  bridgeLineGaps(outlineMask, w, h);
 
   // ── 2. Sealed virtual frame ──
   // Mark the outermost row/col as wall so any region open at the image boundary

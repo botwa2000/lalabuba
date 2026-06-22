@@ -14,6 +14,7 @@ import { bounce, sparkleBurst, sparkleAt, playComplete } from './fx.js';
 import { fillRegionCore, watershedAssign, buildRegionPixels } from './fill-core.js?v=210';
 import { trappedBallSegment } from './trapped-ball.js?v=210';
 import { buildOutlineMask } from './outline-mask.js?v=210';
+import { bridgeLineGaps } from './line-bridge.js?v=210';
 
 // Module-level palette context, set by setPaletteContext() from ui.js
 let _palette = [];
@@ -466,6 +467,13 @@ export function precomputeRegions() {
   // the lines, so these original line pixels are kept OUT of the painted region
   // sets — that way a fill never hides the lines.
   const lineMask = Uint8Array.from(outlineMask);
+
+  // Bridge genuine line BREAKS (Stage-2; line-bridge.js): join boundary-line
+  // tips that FACE each other across a short gap, sealing real breaks the
+  // hysteresis mask can't. Applied AFTER the lineMask snapshot so a bridge is an
+  // INVISIBLE wall — regions separate cleanly with no fake ink. The facing test
+  // keeps parallel groove tips apart, so this doesn't over-seal.
+  bridgeLineGaps(outlineMask, width, height);
 
   // Virtual sealed frame: mark the outermost pixel row/col as barriers in the
   // mask trapped-ball sees. This closes any region "open" at the image boundary
