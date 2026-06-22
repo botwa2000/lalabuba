@@ -2,6 +2,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui' show Offset;
 import 'canvas_models.dart';
+import 'trapped_ball.dart';
 
 // Entry point for the region detection isolate
 void regionDetectIsolate(SendPort sendPort) {
@@ -99,148 +100,47 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   // image edges stay clean.
   final lineMask = Uint8List.fromList(outlineMask);
 
-  // ── 2. Morphological closing (6 dilate + 6 erode) using ping-pong buffers ──
-  // This bridges genuine gaps in outlines and prevents open-area bleed.
-  final bufA = Uint8List.fromList(outlineMask);
-  final bufB = Uint8List(w * h);
-
-  // Dilate 8 passes
-  Uint8List cur = bufA;
-  Uint8List nxt = bufB;
-  for (var pass = 0; pass < 8; pass++) {
-    nxt.setAll(0, cur); // copy cur → nxt
-    for (var y = 1; y < h - 1; y++) {
-      for (var x = 1; x < w - 1; x++) {
-        final i = y * w + x;
-        if (cur[i] == 0) {
-          if (cur[i - 1] == 1 ||
-              cur[i + 1] == 1 ||
-              cur[i - w] == 1 ||
-              cur[i + w] == 1) {
-            nxt[i] = 1;
-          }
-        }
-      }
-    }
-    // swap
-    final tmp = cur;
-    cur = nxt;
-    nxt = tmp;
-  }
-
-  // Erode 8 passes
-  for (var pass = 0; pass < 8; pass++) {
-    nxt.setAll(0, cur); // copy cur → nxt
-    for (var y = 1; y < h - 1; y++) {
-      for (var x = 1; x < w - 1; x++) {
-        final i = y * w + x;
-        if (cur[i] == 1) {
-          if (cur[i - 1] == 0 ||
-              cur[i + 1] == 0 ||
-              cur[i - w] == 0 ||
-              cur[i + w] == 0) {
-            nxt[i] = 0;
-          }
-        }
-      }
-    }
-    final tmp = cur;
-    cur = nxt;
-    nxt = tmp;
-  }
-
-  // cur now holds the morphologically closed outline mask
-  // Copy back into outlineMask
-  outlineMask.setAll(0, cur);
-
-  // ── 3. Virtual sealed frame: mark outermost row/col as outline ──
-  // This closes any regions that are open at the image boundary.
+  // ── 2. Sealed virtual frame ──
+  // Mark the outermost row/col as wall so any region open at the image boundary
+  // closes (done BEFORE segmentation so trapped-ball treats the edge as a wall).
   for (var x = 0; x < w; x++) {
-    outlineMask[x] = 1;           // top row
+    outlineMask[x] = 1; // top row
     outlineMask[(h - 1) * w + x] = 1; // bottom row
   }
   for (var y = 0; y < h; y++) {
-    outlineMask[y * w] = 1;       // left col
+    outlineMask[y * w] = 1; // left col
     outlineMask[y * w + (w - 1)] = 1; // right col
   }
 
-  // ── 4. BFS region detection ──
-  // pixelToRegion: -1 = unvisited, -2 = outline, regionId >= 0 (tentative).
-  // Unlike before we keep EVERY region (even sub-minArea ones) labelled with a
-  // tentative id; small regions are merged into their enclosing region in step
-  // 4b rather than discarded to -2. Discarding them left tiny white specks: a
-  // speck sits inside its own dark outline ring, and the composite bleed stops
-  // at that dark ring, so the speck interior could never be coloured.
-  final pixelToRegion = Int32List(w * h);
-  for (var i = 0; i < w * h; i++) {
-    pixelToRegion[i] = outlineMask[i] == 1 ? -2 : -1;
-  }
+  // ── 3. TRAPPED-BALL segmentation (replaces single-radius close + flat BFS) ──
+  // A single morphological-close radius cannot be both big enough to seal large
+  // gaps in the line art (else fills leak → "colours mixing") and small enough
+  // to keep thin regions open (else they're sealed → "can't colour this area").
+  // Multi-radius trapped-ball uses the largest ball that still fits per region:
+  // big balls seal big gaps without leaking, small balls preserve thin regions —
+  // fixing both symptoms at once. Every free pixel gets a region id; walls = -2.
+  // (See trapped_ball.dart; reproduced+verified in test/trapped_ball_test.dart.)
+  final pixelToRegion = trappedBallSegment(outlineMask, w, h);
 
-  // Use a pre-allocated Int32List as a BFS queue to avoid Dart List GC pressure
-  final bfsQueue = Int32List(w * h);
-
-  // Per-tentative-region accumulators (index = tentative id).
-  final tentCount = <int>[];
-  final tentSumX = <int>[];
-  final tentSumY = <int>[];
+  // ── 4. Tentative per-region accumulators (index = region id) ──
+  // Consumed UNCHANGED by the merge/sort/colour/watershed steps below, so the
+  // tested post-processing (small-region merge, free-fill promotion, sizing,
+  // numbering) is reused exactly.
   var nextId = 0;
-
-  for (var startIdx = 0; startIdx < w * h; startIdx++) {
-    if (pixelToRegion[startIdx] != -1) continue;
-
-    // BFS
-    var head = 0;
-    var tail = 0;
-    bfsQueue[tail++] = startIdx;
-    pixelToRegion[startIdx] = nextId; // tentative region id
-
-    var sumX = 0;
-    var sumY = 0;
-    var count = 0;
-
-    while (head < tail) {
-      final idx = bfsQueue[head++];
-      final x = idx % w;
-      final y = idx ~/ w;
-      sumX += x;
-      sumY += y;
-      count++;
-
-      // 4-connected neighbors
-      if (x > 0) {
-        final n = idx - 1;
-        if (pixelToRegion[n] == -1) {
-          pixelToRegion[n] = nextId;
-          bfsQueue[tail++] = n;
-        }
-      }
-      if (x < w - 1) {
-        final n = idx + 1;
-        if (pixelToRegion[n] == -1) {
-          pixelToRegion[n] = nextId;
-          bfsQueue[tail++] = n;
-        }
-      }
-      if (y > 0) {
-        final n = idx - w;
-        if (pixelToRegion[n] == -1) {
-          pixelToRegion[n] = nextId;
-          bfsQueue[tail++] = n;
-        }
-      }
-      if (y < h - 1) {
-        final n = idx + w;
-        if (pixelToRegion[n] == -1) {
-          pixelToRegion[n] = nextId;
-          bfsQueue[tail++] = n;
-        }
-      }
+  for (var i = 0; i < w * h; i++) {
+    final r = pixelToRegion[i];
+    if (r >= 0 && r + 1 > nextId) nextId = r + 1;
+  }
+  final tentCount = List<int>.filled(nextId, 0);
+  final tentSumX = List<int>.filled(nextId, 0);
+  final tentSumY = List<int>.filled(nextId, 0);
+  for (var i = 0; i < w * h; i++) {
+    final r = pixelToRegion[i];
+    if (r >= 0) {
+      tentCount[r]++;
+      tentSumX[r] += i % w;
+      tentSumY[r] += i ~/ w;
     }
-
-    tentCount.add(count);
-    tentSumX.add(sumX);
-    tentSumY.add(sumY);
-    nextId++;
   }
 
   // Identify the outer background tentative region (corner sample, just inside

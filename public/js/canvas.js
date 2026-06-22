@@ -12,6 +12,7 @@ import { bounce, sparkleBurst, sparkleAt, playComplete } from './fx.js';
 // the asset version. (.js is served no-store, so the query only affects the CDN
 // cache key, never freshness.)
 import { fillRegionCore, watershedAssign, buildRegionPixels } from './fill-core.js?v=210';
+import { trappedBallSegment } from './trapped-ball.js?v=210';
 
 // Module-level palette context, set by setPaletteContext() from ui.js
 let _palette = [];
@@ -468,83 +469,47 @@ export function precomputeRegions() {
     outlineMask[i] = br < BARRIER_BR ? 1 : 0;
   }
 
-  // Snapshot the THIN line mask now, before the morphological close thickens it.
-  // The watershed (below) fills the closed band, so these original line pixels are
-  // kept OUT of the painted region sets — that way a fill never hides the lines.
+  // Snapshot the THIN line mask now. The watershed (below) fills the band around
+  // the lines, so these original line pixels are kept OUT of the painted region
+  // sets — that way a fill never hides the lines.
   const lineMask = Uint8Array.from(outlineMask);
 
-  // Morphological close (dilate N then erode N) on outlineMask.
-  // This bridges genuine gaps in outlines (shoreline junctions, thin breaks)
-  // WITHOUT permanently thickening the barrier, so thin regions like ripple
-  // rings or narrow foreground areas are not consumed.
-  // Extreme/hard use a larger radius to seal the finer gaps in intricate patterns.
-  const CLOSE_R = difficulty === 'extreme' ? 10 : isHardPlus ? 8 : 6;
-  for (let pass = 0; pass < CLOSE_R; pass++) {
-    const next = new Uint8Array(outlineMask);
-    for (let y = 1; y < height - 1; y++) {
-      for (let x = 1; x < width - 1; x++) {
-        const i = y * width + x;
-        if (!outlineMask[i] && (outlineMask[i-1]||outlineMask[i+1]||outlineMask[i-width]||outlineMask[i+width]))
-          next[i] = 1;
-      }
-    }
-    outlineMask = next;
-  }
-  for (let pass = 0; pass < CLOSE_R; pass++) {
-    const next = new Uint8Array(outlineMask);
-    for (let y = 1; y < height - 1; y++) {
-      for (let x = 1; x < width - 1; x++) {
-        const i = y * width + x;
-        if (outlineMask[i] && (!outlineMask[i-1]||!outlineMask[i+1]||!outlineMask[i-width]||!outlineMask[i+width]))
-          next[i] = 0;
-      }
-    }
-    outlineMask = next;
-  }
+  // Virtual sealed frame: mark the outermost pixel row/col as barriers in the
+  // mask trapped-ball sees. This closes any region "open" at the image boundary
+  // (a lake with no bottom outline, a sky open at the top) so it becomes an
+  // enclosed fillable region rather than merging with the outer background.
+  for (let x = 0; x < width;  x++) { outlineMask[x] = 1; outlineMask[(height-1)*width+x] = 1; }
+  for (let y = 0; y < height; y++) { outlineMask[y*width] = 1; outlineMask[y*width+width-1] = 1; }
 
-  // Build label array: -1 for all outline pixels.
+  // ── Trapped-ball segmentation ────────────────────────────────────────────
+  // Replaces the old single fixed-radius morphological close (dilate-N/erode-N)
+  // + flat CCA. One radius can't both seal big gaps (else fills leak → "colours
+  // mixing") AND keep thin regions open (else they seal shut → "can't colour");
+  // trapped-ball rolls balls of decreasing radius so each region uses the
+  // largest ball that still fits, fixing both at once. seg: -2 = wall, 0.. = id.
+  const seg = trappedBallSegment(outlineMask, width, height);
+
+  // Convert to the web label convention (>0 = region, -1 = wall/band) and build
+  // region buffers. Tiny regions (<30px) are demoted to band (-1) and absorbed
+  // by the nearest surviving region in the watershed below — parity with the
+  // old "tiny specks → outline" rule, so a stray sliver never becomes a region.
   const label = new Int32Array(n);
+  const segBuf = new Map();          // segId → pixel[]
   for (let i = 0; i < n; i++) {
-    if (outlineMask[i]) label[i] = -1;
-  }
-
-  // Virtual sealed frame: mark the outermost pixel row/col as barriers.
-  // This closes any region that is "open" at the image boundary (e.g. a
-  // lake with no bottom outline, a sky open at the top) so the CCA treats
-  // it as an enclosed fillable region rather than outer background.
-  for (let x = 0; x < width;  x++) { label[x] = -1; label[(height-1)*width+x] = -1; }
-  for (let y = 0; y < height; y++) { label[y*width] = -1; label[y*width+width-1] = -1; }
-
-  // Connected-component labelling for all unvisited (non-barrier) pixels.
-  state.regionPixels = new Map();
-  let nextId = 1;
-  const queue = new Int32Array(n);
-  let head = 0, tail = 0;
-
-  for (let start = 0; start < n; start++) {
-    if (label[start] !== 0) continue;
-
-    label[start] = nextId;
-    head = 0; tail = 0;
-    queue[tail++] = start;
-    const buf = [];
-
-    while (head < tail) {
-      const i = queue[head++];
-      buf.push(i);
-      const x = i % width, y = (i / width) | 0;
-      if (x > 0         && label[i-1]     === 0) { label[i-1]=nextId;     queue[tail++]=i-1; }
-      if (x < width - 1 && label[i+1]     === 0) { label[i+1]=nextId;     queue[tail++]=i+1; }
-      if (y > 0         && label[i-width] === 0) { label[i-width]=nextId; queue[tail++]=i-width; }
-      if (y < height - 1&& label[i+width] === 0) { label[i+width]=nextId; queue[tail++]=i+width; }
-    }
-
-    if (buf.length >= 30) {
-      state.regionPixels.set(nextId, buf);
-      nextId++;
+    const s = seg[i];
+    if (s >= 0) {
+      label[i] = s + 1;
+      let arr = segBuf.get(s + 1);
+      if (!arr) { arr = []; segBuf.set(s + 1, arr); }
+      arr.push(i);
     } else {
-      for (const p of buf) label[p] = -1;  // tiny specks → treat as outline
+      label[i] = -1;                 // wall/line
     }
+  }
+  state.regionPixels = new Map();
+  for (const [id, buf] of segBuf) {
+    if (buf.length >= 30) state.regionPixels.set(id, buf);
+    else for (const p of buf) label[p] = -1;   // tiny region → band, reabsorbed
   }
 
   // Background = the region at the top-left inner corner (1,1) — almost
