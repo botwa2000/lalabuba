@@ -385,8 +385,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          const Text('🎨', style: TextStyle(fontSize: 22)),
-          const SizedBox(width: 6),
+          // Brand mascot logo (same artwork as the app icon). Restored to the
+          // header after an earlier version showed only a 🎨 emoji.
+          Image.asset('assets/icon/logo.png', height: 28, filterQuality: FilterQuality.medium),
+          const SizedBox(width: 8),
           Text(
             'Lalabuba',
             style: GoogleFonts.fredoka(

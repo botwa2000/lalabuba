@@ -13,6 +13,7 @@ import { bounce, sparkleBurst, sparkleAt, playComplete } from './fx.js';
 // cache key, never freshness.)
 import { fillRegionCore, watershedAssign, buildRegionPixels } from './fill-core.js?v=210';
 import { trappedBallSegment } from './trapped-ball.js?v=210';
+import { buildOutlineMask } from './outline-mask.js?v=210';
 
 // Module-level palette context, set by setPaletteContext() from ui.js
 let _palette = [];
@@ -454,20 +455,12 @@ export function precomputeRegions() {
   const { width, height } = previewCanvas;
   const n = width * height;
   const src = state.baseImageData.data;
-  const difficulty = document.getElementById('difficulty-select')?.value || 'medium';
-  const isHardPlus = difficulty === 'hard' || difficulty === 'extreme';
 
-  // Barrier threshold: higher for hard/extreme to also catch anti-aliased gray
-  // edges that bridge what should be separate regions in intricate patterns.
-  const BARRIER_BR = isHardPlus ? 130 : 100;
-
-  // Build outline mask: used as the CCA barrier.
-  let outlineMask = new Uint8Array(n);
-  for (let i = 0; i < n; i++) {
-    const o = i * 4;
-    const br = (src[o] + src[o + 1] + src[o + 2]) / 3;
-    outlineMask[i] = br < BARRIER_BR ? 1 : 0;
-  }
+  // Build outline mask via adaptive + HYSTERESIS thresholding (outline-mask.js).
+  // Replaces the old global br<BARRIER_BR cut, which missed faint interior lines
+  // and left anti-aliased pin-gaps a fill bled through. Hysteresis seals those
+  // gaps (weak pixels joined to a strong line) without promoting flat shading.
+  let outlineMask = buildOutlineMask(src, width, height);
 
   // Snapshot the THIN line mask now. The watershed (below) fills the band around
   // the lines, so these original line pixels are kept OUT of the painted region

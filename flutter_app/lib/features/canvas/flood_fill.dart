@@ -41,57 +41,7 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   // relative test a flat shaded region has every pixel ≈ its local mean, so
   // nothing trips it; only pixels that are genuinely darker than their neighbours
   // (real lines/edges) become walls.
-  final bright = Uint8List(w * h);
-  for (var i = 0; i < w * h; i++) {
-    bright[i] = (pixels[i * 4] + pixels[i * 4 + 1] + pixels[i * 4 + 2]) ~/ 3;
-  }
-  // Summed-area table for O(1) box-mean queries. Padded (w+1)×(h+1); row/col 0
-  // are zero. Max accumulated value is 255·w·h, which stays within a 64-bit Dart
-  // int (and even Int32) for pages up to ~2900px/side — the app caps generated
-  // pages at 1024px, so this never overflows.
-  final sw = w + 1;
-  final sat = Int64List(sw * (h + 1));
-  for (var y = 0; y < h; y++) {
-    var rowSum = 0;
-    for (var x = 0; x < w; x++) {
-      rowSum += bright[y * w + x];
-      sat[(y + 1) * sw + (x + 1)] = sat[y * sw + (x + 1)] + rowSum;
-    }
-  }
-  // Box radius scales with the image (≈ line spacing) and is clamped to a sane
-  // range so the local mean reflects the immediate neighbourhood, not the page.
-  final radRaw = (w < h ? w : h) ~/ 64;
-  final radius = radRaw < 4 ? 4 : (radRaw > 24 ? 24 : radRaw);
-  const localMargin = 22;   // how much darker than local mean still counts as a line
-  const adaptiveCeil = 150; // light pixels never become lines via the local test
-  final outlineMask = Uint8List(w * h);
-  for (var y = 0; y < h; y++) {
-    final y0 = y - radius < 0 ? 0 : y - radius;
-    final y1 = y + radius >= h ? h - 1 : y + radius;
-    for (var x = 0; x < w; x++) {
-      final i = y * w + x;
-      final br = bright[i];
-      if (br < 100) {
-        outlineMask[i] = 1; // globally dark → definitely a line
-        continue;
-      }
-      if (br < adaptiveCeil) {
-        final x0 = x - radius < 0 ? 0 : x - radius;
-        final x1 = x + radius >= w ? w - 1 : x + radius;
-        final area = (x1 - x0 + 1) * (y1 - y0 + 1);
-        final sum = sat[(y1 + 1) * sw + (x1 + 1)] -
-            sat[y0 * sw + (x1 + 1)] -
-            sat[(y1 + 1) * sw + x0] +
-            sat[y0 * sw + x0];
-        final mean = sum ~/ area;
-        if (br <= mean - localMargin) {
-          outlineMask[i] = 1; // locally darker than its surroundings → a line
-          continue;
-        }
-      }
-      outlineMask[i] = 0;
-    }
-  }
+  final outlineMask = buildOutlineMask(pixels, w, h);
 
   // Snapshot the THIN line mask now, before the closing below thickens it. This
   // is the visible line art the composite re-draws on top of the flat fills
@@ -553,6 +503,118 @@ void paintRegionInComposite({
       out[o + 3] = ba;
     }
   }
+}
+
+/// Build the WALL/outline mask from an RGBA image (1 = wall/line, 0 = free).
+///
+/// A pixel is a wall if it is globally dark OR locally darker than its
+/// surroundings (an interior line). A single global threshold misses the faint
+/// grey interior lines AI line art draws; a raised global threshold instead
+/// turns flat mid-grey SHADING into all-wall. The local (adaptive) test caught
+/// the visible lines, but a line's faint ANTI-ALIASED pixels still slipped
+/// through in spots, leaving 1-px pin-gaps that a fill bled through (the
+/// "colours bleeding across areas" reports — e.g. red leaking between a whale's
+/// throat grooves / tail flukes, where the gap is as wide as the thin groove so
+/// trapped-ball can't seal it without eating the groove).
+///
+/// HYSTERESIS fixes that at the source: classify each pixel as strong (2),
+/// weak (1) or free (0), then promote a weak pixel to wall ONLY if it is
+/// 8-connected to a strong line through weak/strong pixels. This seals the faint
+/// gaps inside a thin line (their pixels are weakly dark AND adjacent to the
+/// strong line) WITHOUT promoting flat shading — an isolated weak speck in a
+/// shaded region has no strong line to join, so it stays colourable.
+Uint8List buildOutlineMask(Uint8List pixels, int w, int h) {
+  final n = w * h;
+  final bright = Uint8List(n);
+  for (var i = 0; i < n; i++) {
+    bright[i] = (pixels[i * 4] + pixels[i * 4 + 1] + pixels[i * 4 + 2]) ~/ 3;
+  }
+  // Summed-area table for O(1) box-mean queries. Padded (w+1)×(h+1); row/col 0
+  // are zero. Max accumulated value is 255·w·h, within a 64-bit int for pages up
+  // to ~2900px/side — the app caps generated pages at 1024px, so no overflow.
+  final sw = w + 1;
+  final sat = Int64List(sw * (h + 1));
+  for (var y = 0; y < h; y++) {
+    var rowSum = 0;
+    for (var x = 0; x < w; x++) {
+      rowSum += bright[y * w + x];
+      sat[(y + 1) * sw + (x + 1)] = sat[y * sw + (x + 1)] + rowSum;
+    }
+  }
+  // Box radius scales with the image (≈ line spacing), clamped so the local mean
+  // reflects the immediate neighbourhood, not the page.
+  final radRaw = (w < h ? w : h) ~/ 64;
+  final radius = radRaw < 4 ? 4 : (radRaw > 24 ? 24 : radRaw);
+  const localMargin = 22;   // strong: this much darker than local mean → definite line
+  const adaptiveCeil = 150; // strong local test ignores pixels at/above this
+  const weakMargin = 8;     // weak: even this little darker than local mean is a candidate
+  const weakCeil = 205;     // weak test ignores near-white pixels
+
+  // Classify: 2 = strong wall, 1 = weak candidate, 0 = free.
+  final cls = Uint8List(n);
+  for (var y = 0; y < h; y++) {
+    final y0 = y - radius < 0 ? 0 : y - radius;
+    final y1 = y + radius >= h ? h - 1 : y + radius;
+    for (var x = 0; x < w; x++) {
+      final i = y * w + x;
+      final br = bright[i];
+      if (br < 100) {
+        cls[i] = 2; // globally dark → definite line
+        continue;
+      }
+      if (br >= weakCeil) {
+        cls[i] = 0; // near-white → never a line
+        continue;
+      }
+      final x0 = x - radius < 0 ? 0 : x - radius;
+      final x1 = x + radius >= w ? w - 1 : x + radius;
+      final area = (x1 - x0 + 1) * (y1 - y0 + 1);
+      final sum = sat[(y1 + 1) * sw + (x1 + 1)] -
+          sat[y0 * sw + (x1 + 1)] -
+          sat[(y1 + 1) * sw + x0] +
+          sat[y0 * sw + x0];
+      final mean = sum ~/ area;
+      if (br < adaptiveCeil && br <= mean - localMargin) {
+        cls[i] = 2; // strong: clearly darker than its surroundings
+      } else if (br <= mean - weakMargin) {
+        cls[i] = 1; // weak: slightly darker — kept only if joined to a strong line
+      } else {
+        cls[i] = 0;
+      }
+    }
+  }
+
+  // Hysteresis flood: every strong pixel is a wall + a BFS seed; weak pixels are
+  // promoted to wall when reached through 8-connectivity.
+  final outlineMask = Uint8List(n);
+  final q = Int32List(n);
+  var head = 0, tail = 0;
+  for (var i = 0; i < n; i++) {
+    if (cls[i] == 2) {
+      outlineMask[i] = 1;
+      q[tail++] = i;
+    }
+  }
+  while (head < tail) {
+    final i = q[head++];
+    final x = i % w;
+    final y = i ~/ w;
+    for (var dy = -1; dy <= 1; dy++) {
+      final ny = y + dy;
+      if (ny < 0 || ny >= h) continue;
+      for (var dx = -1; dx <= 1; dx++) {
+        if (dx == 0 && dy == 0) continue;
+        final nx = x + dx;
+        if (nx < 0 || nx >= w) continue;
+        final nb = ny * w + nx;
+        if (cls[nb] == 1 && outlineMask[nb] == 0) {
+          outlineMask[nb] = 1;
+          q[tail++] = nb;
+        }
+      }
+    }
+  }
+  return outlineMask;
 }
 
 // ── Private helper carrying per-region accumulation data ──
