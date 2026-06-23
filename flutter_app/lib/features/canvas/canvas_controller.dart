@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'canvas_models.dart';
 import 'flood_fill.dart';
+import 'stroke_mask.dart';
 
 /// Thrown when a region-detection run is abandoned because a newer image load
 /// superseded it — lets the awaiting frame unwind and free its buffers.
@@ -36,6 +37,11 @@ class CanvasNotifier extends Notifier<CanvasState> {
   // A freehand area counts as "coloured" once this fraction of its interior is
   // covered. Low + forgiving: children colour unevenly, leaving white gaps.
   static const double _coverThreshold = 0.45;
+
+  // Masked "stay-in-the-lines" freehand: the region the current pencil stroke
+  // began in (assist clamp) and whether the clamp is active this stroke.
+  int _strokeStartRegion = -1;
+  bool _strokeAssist = false;
 
   // FIX 2: generation token + in-flight isolate handle for region detection.
   // A new loadImage bumps _detectGen, kills any previous in-flight detection
@@ -427,20 +433,63 @@ class CanvasNotifier extends Notifier<CanvasState> {
   void exitFreeMode() =>
       state = state.copyWith(isFreeMode: false, showNumbers: true);
 
-  void beginStroke(Offset p) {
+  // Masked "stay-in-the-lines" freehand. Pencil points that land on a black line
+  // — or, in [assist] mode (Easy/Medium), that leave the shape the stroke began
+  // in — are dropped; leaving a paintable area seals the current segment and a
+  // new one begins when the finger re-enters one. Keeps a child's pencilling
+  // inside the lines without changing the natural feel of drawing. The decision
+  // is the pure stroke_mask.freehandKeepsPaint (unit-tested).
+  void beginStroke(Offset p, {Size? canvasSize, bool assist = false}) {
+    if (canvasSize != null) _lastCanvasSize = canvasSize;
+    _strokeAssist = assist;
+    final s = _sampleStroke(p);
+    _strokeStartRegion = s?.region ?? -1;
+    if (s != null &&
+        !freehandKeepsPaint(
+            onLine: s.onLine,
+            region: s.region,
+            startRegion: _strokeStartRegion,
+            assist: _strokeAssist)) {
+      state = state.copyWith(clearCurrentStroke: true);
+      return;
+    }
     state = state.copyWith(
         currentStroke: Stroke(points: [p], color: state.activeColor));
   }
 
   void continueStroke(Offset p) {
+    final s = _sampleStroke(p);
+    final ok = s == null ||
+        freehandKeepsPaint(
+            onLine: s.onLine,
+            region: s.region,
+            startRegion: _strokeStartRegion,
+            assist: _strokeAssist);
     final cs = state.currentStroke;
-    if (cs == null) return;
-    state = state.copyWith(currentStroke: cs.copyWithPoint(p));
+    if (cs == null) {
+      // Paused on a line / outside the shape — resume a fresh segment on re-entry.
+      if (ok) {
+        state = state.copyWith(
+            currentStroke: Stroke(points: [p], color: state.activeColor));
+      }
+      return;
+    }
+    if (ok) {
+      state = state.copyWith(currentStroke: cs.copyWithPoint(p));
+    } else {
+      _commitStroke(); // left the paintable area → seal this segment
+    }
   }
 
   void endStroke([Size? canvasSize]) {
+    if (canvasSize != null) _lastCanvasSize = canvasSize;
+    _commitStroke();
+  }
+
+  void _commitStroke() {
     final cs = state.currentStroke;
-    if (cs == null || cs.points.length < 2) {
+    if (cs == null) return;
+    if (cs.points.length < 2) {
       state = state.copyWith(clearCurrentStroke: true);
       return;
     }
@@ -449,8 +498,29 @@ class CanvasNotifier extends Notifier<CanvasState> {
       clearCurrentStroke: true,
       undoStack: _pushUndo(state.undoStack, const CanvasAction.addStroke()),
     );
-    if (canvasSize != null) _lastCanvasSize = canvasSize;
     _recomputeCoverage();
+  }
+
+  // Sample the region + whether [p] (canvas space) is on a black line, mapping
+  // through the painter's letterbox rect. Null when we can't resolve a pixel
+  // (no detection / size yet, or the point is in the letterbox margin).
+  ({int region, bool onLine})? _sampleStroke(Offset p) {
+    final d = state.detection;
+    final size = _lastCanvasSize;
+    if (d == null || size == null) return null;
+    final rect = fitImageRect(
+        d.width.toDouble(), d.height.toDouble(), size.width, size.height);
+    if (!rect.contains(p)) return null;
+    final x = (((p.dx - rect.left) / rect.width) * d.width)
+        .round()
+        .clamp(0, d.width - 1);
+    final y = (((p.dy - rect.top) / rect.height) * d.height)
+        .round()
+        .clamp(0, d.height - 1);
+    final idx = y * d.width + x;
+    final lm = d.lineMask;
+    final onLine = lm != null && idx < lm.length && lm[idx] == 1;
+    return (region: d.pixelToRegion[idx], onLine: onLine);
   }
 
   /// Recompute which meaningful areas freehand strokes have covered enough to

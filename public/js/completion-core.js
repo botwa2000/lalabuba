@@ -44,3 +44,22 @@ export const COVER_THRESHOLD = 0.45;
 export function isCovered(coveredPixels, totalPixels, threshold = COVER_THRESHOLD) {
   return totalPixels > 0 && coveredPixels / totalPixels >= threshold;
 }
+
+// ── Masked "stay-in-the-lines" freehand ──────────────────────────────────────
+// Pure decision for whether a freehand (pencil/paint) pixel is KEPT or wiped:
+// - never paint over a black line (onLine) — keeps the line art crisp;
+// - in assist mode (Easy/Medium) also wipe paint that left the shape the stroke
+//   started in (region != startRegion) — "stay inside this area".
+// `onLine` true = the pixel is a wall/line. startRegion < 0 (stroke began on a
+// line) disables the region clamp so the child is never trapped.
+export function freehandKeepsPaint(onLine, region, startRegion, assist) {
+  if (onLine) return false;
+  if (assist && startRegion >= 0 && region !== startRegion) return false;
+  return true;
+}
+
+// Assist (stay-in-shape) is on for the gentler levels; off for Hard/Extreme,
+// where older kids may want to cross between adjacent areas (lines still block).
+export function maskAssistFor(diff) {
+  return diff === 'easy' || diff === 'medium';
+}

@@ -28,6 +28,7 @@ import '../../shared/widgets/lala_color_swatch.dart';
 import '../../shared/widgets/lala_loading_overlay.dart';
 import '../../shared/widgets/lala_showcase.dart';
 import 'canvas_models.dart';
+import 'stroke_mask.dart';
 import 'canvas_painter.dart';
 import 'narration_service.dart';
 import 'completion_celebration.dart';
@@ -845,8 +846,12 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         onPanStart: canvas.mode == DrawMode.paint
             ? (d) => _onPanUpdate(d.localPosition, size)
             : canvas.mode == DrawMode.pencil
-                ? (d) =>
-                    ref.read(canvasProvider.notifier).beginStroke(d.localPosition)
+                ? (d) => ref.read(canvasProvider.notifier).beginStroke(
+                      d.localPosition,
+                      canvasSize: size,
+                      assist: maskAssistFor(
+                          ref.read(settingsProvider).valueOrNull?.difficulty),
+                    )
                 : canvas.mode == DrawMode.eyedropper
                     ? (d) => _onEyedropperSample(d.localPosition, size)
                     : null,

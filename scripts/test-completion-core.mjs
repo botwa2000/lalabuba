@@ -2,6 +2,7 @@
 // Flutter free_completion_test.dart). Run: node scripts/test-completion-core.mjs
 import {
   numberedCapFor, pickMeaningfulTargets, freeComplete, isCovered, COVER_THRESHOLD,
+  freehandKeepsPaint, maskAssistFor,
 } from '../public/js/completion-core.js';
 
 let pass = 0, fail = 0;
@@ -39,6 +40,16 @@ eq('threshold is forgiving 0.45', COVER_THRESHOLD, 0.45);
 ok('45% covered counts', isCovered(45, 100));
 ok('44% covered does not', !isCovered(44, 100));
 ok('empty region never covered', !isCovered(0, 0));
+
+// ── masked "stay-in-the-lines" freehand ──
+ok('never paint on a line (free)', !freehandKeepsPaint(true, 5, 5, false));
+ok('never paint on a line (assist)', !freehandKeepsPaint(true, 5, 5, true));
+ok('free mode: any non-line area paints', freehandKeepsPaint(false, 9, 5, false));
+ok('assist: same shape stays', freehandKeepsPaint(false, 5, 5, true));
+ok('assist: crossed into neighbour wiped', !freehandKeepsPaint(false, 6, 5, true));
+ok('assist disabled when begun on a line (start<0)', freehandKeepsPaint(false, 6, -1, true));
+ok('assist on for easy/medium', maskAssistFor('easy') && maskAssistFor('medium'));
+ok('assist off for hard/extreme', !maskAssistFor('hard') && !maskAssistFor('extreme'));
 
 if (fail) { console.error(`\nFAILED ${fail} (passed ${pass})`); process.exit(1); }
 console.log(`completion-core: all ${pass} checks passed`);
