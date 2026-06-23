@@ -114,9 +114,14 @@ function refreshJournalCount() {
 // threshold / selection math lives in completion-core.js (unit-tested).
 function meaningfulTargets() {
   if (!state.regionPixels || state.regionPixels.size === 0) return [];
+  // Cache per image: this runs on every fill, and sorting all regions (thousands
+  // on Extreme) each time would be wasteful. Invalidated on new image / difficulty
+  // change (state.numberTargets = null).
+  if (state.numberTargets) return state.numberTargets;
   const cap = numberedCapFor(difficultySelect.value);
   const entries = [...state.regionPixels.entries()].map(([id, px]) => [id, px.length]);
-  return pickMeaningfulTargets(entries, cap, state.backgroundRegionId);
+  state.numberTargets = pickMeaningfulTargets(entries, cap, state.backgroundRegionId);
+  return state.numberTargets;
 }
 
 // Which target areas count as coloured in free mode: tap/paint fills, PLUS areas
@@ -126,6 +131,10 @@ function meaningfulTargets() {
 function freeColouredRegions(targets) {
   const covered = new Set();
   for (const id of targets) if (state.completedRegions.has(id)) covered.add(id);
+  // Only read back the freehand layer if the brush was actually used. Tap-only
+  // colouring (the common case) never touches getImageData — this is what keeps
+  // checkCompletion cheap on every fill and avoids the page freezing.
+  if (!state.hasFreehand) return covered;
   try {
     const dctx = drawCanvas.getContext('2d');
     const dw = drawCanvas.width, dh = drawCanvas.height;
@@ -151,6 +160,7 @@ function freeColouredRegions(targets) {
 // Any freehand marks at all (sampled) — gates the manual finish button so it
 // can't claim a reward on a page the child only lightly doodled-then-cleared.
 function hasPencilMarks() {
+  if (!state.hasFreehand) return false;
   try {
     const dctx = drawCanvas.getContext('2d');
     const dw = drawCanvas.width, dh = drawCanvas.height;
@@ -522,6 +532,7 @@ difficultySelect.addEventListener("change", () => {
   }
   renderLegend();
   updateDiffChip();
+  state.numberTargets = null; // cap changed → recompute free-mode targets
 
   if (state.currentImage && showNumbersInput.checked) {
     renderGeneratedImage(state.currentImage).catch((error) => {

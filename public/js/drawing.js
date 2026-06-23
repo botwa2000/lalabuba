@@ -80,6 +80,7 @@ function _maskStroke() {
 
 function pencilStart(e) {
   state.pencilDrawing = true;
+  state.hasFreehand = true; // gate: draw-layer reads only happen once freehand is used
   const { x, y } = getPencilPos(e);
   const size = getBrushSize();
   // Record where the stroke began so masking can keep it in that shape.
@@ -160,6 +161,7 @@ export function initDrawingTool() {
 
   clearPencilBtn.addEventListener('click', () => {
     drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    state.hasFreehand = false; // layer wiped — no freehand to scan
   });
 
   drawCanvas.addEventListener('mousedown', (e) => { if (isDrawingActive()) pencilStart(e); });

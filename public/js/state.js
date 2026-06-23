@@ -26,4 +26,6 @@ export const state = {
   colorMode: 'tap',     // 'tap' | 'paint'
   paletteOverride: null, // when set, activePalette() uses this instead of PALETTES[selected]
   isFreeMode: false,    // one-way unlock: no enforcement, any color any area
+  hasFreehand: false,   // any pencil/paint stroke drawn this image — gates costly draw-layer reads
+  numberTargets: null,  // cached meaningful-area ids for free-mode completion (per image)
 };

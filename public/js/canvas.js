@@ -745,6 +745,8 @@ export function drawBaseImage(image) {
   state.regionPixels = null;
   state.regionColorMap = null;
   state.numberRegions = null; // cached badge regions — recompute for the new image
+  state.numberTargets = null; // cached free-mode completion targets — recompute too
+  state.hasFreehand = false;  // fresh draw layer for the new image
   state.backgroundRegionId = 0;
   state.eraseMode = false;
   state.completedRegions = new Set();

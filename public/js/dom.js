@@ -19,4 +19,7 @@ export const debugPanel = document.getElementById("debug-panel");
 // present (or before they exist), calling getContext on null would throw at
 // import time and break the whole bundle. Degrade to null instead.
 export const context = previewCanvas?.getContext("2d", { willReadFrequently: true }) ?? null;
-export const drawCtx = drawCanvas?.getContext("2d") ?? null;
+// willReadFrequently: the freehand layer is read back (getImageData) for
+// stay-in-the-lines masking + coverage completion; without this hint repeated
+// readbacks force slow GPU→CPU copies and can freeze the page ("Page Unresponsive").
+export const drawCtx = drawCanvas?.getContext("2d", { willReadFrequently: true }) ?? null;
