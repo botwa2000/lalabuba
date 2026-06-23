@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=208" />
-  <link rel="stylesheet" href="/css/header.css?v=208" />
-  <link rel="stylesheet" href="/css/hero.css?v=208" />
-  <link rel="stylesheet" href="/css/generator.css?v=208" />
-  <link rel="stylesheet" href="/css/layout.css?v=208" />
-  <link rel="stylesheet" href="/css/workspace.css?v=208" />
-  <link rel="stylesheet" href="/css/palette.css?v=208" />
-  <link rel="stylesheet" href="/css/modals.css?v=208" />
-  <link rel="stylesheet" href="/css/footer.css?v=208" />
-  <link rel="stylesheet" href="/css/print.css?v=208" />
-  <link rel="stylesheet" href="/css/cookies.css?v=208" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=208" />
-  <script src="/js/cookies.js?v=208"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=209" />
+  <link rel="stylesheet" href="/css/header.css?v=209" />
+  <link rel="stylesheet" href="/css/hero.css?v=209" />
+  <link rel="stylesheet" href="/css/generator.css?v=209" />
+  <link rel="stylesheet" href="/css/layout.css?v=209" />
+  <link rel="stylesheet" href="/css/workspace.css?v=209" />
+  <link rel="stylesheet" href="/css/palette.css?v=209" />
+  <link rel="stylesheet" href="/css/modals.css?v=209" />
+  <link rel="stylesheet" href="/css/footer.css?v=209" />
+  <link rel="stylesheet" href="/css/print.css?v=209" />
+  <link rel="stylesheet" href="/css/cookies.css?v=209" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=209" />
+  <script src="/js/cookies.js?v=209"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -366,6 +366,13 @@
               <button id="undo-button" type="button" disabled class="action-btn" data-i18n="undoBtn">↩ Undo</button>
             </div>
             <div class="action-sep" aria-hidden="true"></div>
+            <!-- Free-colour finish: claim the reward whenever the child feels done.
+                 Shown only in free-colour mode (numbers off); guided pages finish
+                 automatically when every number is placed. -->
+            <div class="action-group action-group--primary">
+              <button id="finish-coloring-btn" type="button" class="action-btn action-btn--finish" data-i18n="finishBtn" hidden>✓ I'm finished!</button>
+            </div>
+            <div class="action-sep action-sep--finish" aria-hidden="true" hidden></div>
             <!-- Group 2: Color mode (numbers ↔ free paint) -->
             <div class="action-group">
               <button id="canvas-numbers-btn" type="button" disabled class="action-btn action-btn--toggle action-btn--on" data-i18n="numbersBtn">🔢 Numbers</button>
@@ -719,7 +726,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=208"></script>
+  <script type="module" src="/js/main.js?v=209"></script>
 </body>
 </html>
 

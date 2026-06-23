@@ -151,6 +151,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       );
 
       final minArea = _minAreaFor(settings?.difficulty ?? 'medium');
+      final maxNumbered = _maxNumberedFor(settings?.difficulty ?? 'medium');
       final paletteColors = _getPaletteColors(
         settings?.palette ?? 'classic',
         settings?.colorCount ?? 12,
@@ -160,6 +161,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         minArea,
         showNumbers: settings?.showNumbers ?? false,
         palette: paletteColors,
+        maxNumbered: maxNumbered,
       );
 
       await ref.read(subscriptionProvider.notifier).recordGeneration();
@@ -198,6 +200,21 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       case 'hard':    return 400;
       case 'extreme': return 150;
       default:        return 800;
+    }
+  }
+
+  /// Difficulty-scaled cap on how many areas get a number badge. This is ALSO
+  /// the set of "meaningful areas" a child must colour to finish (in free mode,
+  /// ~90% of these — see CanvasState.isComplete), so it directly tunes how
+  /// reachable the reward is per level. Mirrors the recommended ranges:
+  /// Easy ~6-10 · Medium ~12-20 · Hard ~24-36 · Extreme ~48-64.
+  int _maxNumberedFor(String difficulty) {
+    switch (difficulty) {
+      case 'easy':    return 10;
+      case 'medium':  return 18;
+      case 'hard':    return 30;
+      case 'extreme': return 48;
+      default:        return 18;
     }
   }
 
@@ -845,7 +862,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         onPanEnd: canvas.mode == DrawMode.eyedropper
             ? (_) => _commitEyedropper()
             : canvas.mode != DrawMode.tap
-                ? (_) => ref.read(canvasProvider.notifier).endStroke()
+                ? (_) => ref.read(canvasProvider.notifier).endStroke(size)
                 : null,
         child: RepaintBoundary(
           key: _canvasKey,
@@ -1054,6 +1071,21 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           children: [
+            // Manual "I'm finished!" — always available in free-colour mode so a
+            // child can claim their reward whenever they feel done (the most
+            // reliable + most motivating "done" signal for uneven/pencil work).
+            // Hidden in guided colour-by-number, where finishing is the strict
+            // all-numbers-placed event.
+            if (canvas.isReady && (canvas.isFreeMode || !canvas.showNumbers)) ...[
+              _FinishBtn(
+                label: l10n.t('finishBtn'),
+                enabled: canvas.hasMeaningfulProgress && !_celebrationShown,
+                onTap: () => _onFinishPressed(canvas),
+              ),
+              const SizedBox(width: 16),
+              Container(width: 1, height: 28, color: cs.outlineVariant),
+              const SizedBox(width: 16),
+            ],
             _ActionBtn(label: l10n.t('zoomIn'), onTap: () => _zoomBy(1.4)),
             const SizedBox(width: 8),
             _ActionBtn(label: l10n.t('zoomOut'), onTap: () => _zoomBy(1 / 1.4)),
@@ -1632,6 +1664,18 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
   // ─── Completion celebration ─────────────────────────────────────────────────
 
+  /// Manual finish (free-colour mode): the child taps "I'm finished!" to claim
+  /// their reward whenever they feel done — the same celebration + sticker as an
+  /// auto-detected completion. Guards against firing twice or on an empty page.
+  void _onFinishPressed(CanvasState canvas) {
+    if (_celebrationShown || !canvas.hasMeaningfulProgress) return;
+    _celebrationShown = true;
+    HapticFeedback.mediumImpact();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _onColoringComplete(ref.read(canvasProvider));
+    });
+  }
+
   Future<void> _onColoringComplete(CanvasState canvas) async {
     final l10n = ref.read(l10nProvider);
     final settings = ref.read(settingsProvider).valueOrNull;
@@ -2043,6 +2087,51 @@ class _ActionBtn extends StatelessWidget {
                   : active
                       ? cs.onPrimaryContainer
                       : cs.onSurface,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Prominent, celebratory "I'm finished!" button (free-colour mode). Greyed when
+// the page is still untouched so it can't claim a reward on an empty canvas.
+class _FinishBtn extends StatelessWidget {
+  final String label;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  const _FinishBtn(
+      {required this.label, required this.enabled, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          gradient: enabled
+              ? const LinearGradient(
+                  colors: [Color(0xFF2EC76A), Color(0xFF12A150)])
+              : null,
+          color: enabled ? null : cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            style: GoogleFonts.fredoka(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: enabled
+                  ? Colors.white
+                  : cs.onSurface.withValues(alpha: 0.3),
             ),
           ),
         ),

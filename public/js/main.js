@@ -22,7 +22,8 @@ import {
   openMaxPicker, closeMaxPicker, flashPaletteSwatch,
 } from './ui.js';
 import { generatePage, requestGeneratedImage } from './generate.js';
-import { initDrawingTool, setPaintEndCallback, updateDrawCanvasMode } from './drawing.js';
+import { initDrawingTool, setPaintEndCallback, setStrokeEndCallback, updateDrawCanvasMode } from './drawing.js';
+import { numberedCapFor, pickMeaningfulTargets, freeComplete, isCovered } from './completion-core.js';
 import { initShareHandlers, loadFromShare } from './share.js';
 import { initZoom, getCanvasCoords, isPanMode } from './zoom.js';
 import { initOnboarding } from './onboarding.js';
@@ -106,10 +107,97 @@ function refreshJournalCount() {
   if (jbtn) jbtn.classList.toggle('attention', n === 0);
 }
 
-function checkCompletion() {
-  if (state.celebrationShown || !showNumbersInput.checked || !state.regionColorMap || state.regionColorMap.size === 0) return;
-  if (![...state.regionColorMap.keys()].every((id) => state.completedRegions.has(id))) return;
+// The meaningful areas of the picture = the largest K regions (excluding the
+// outer background, K = difficulty-scaled numberedCapFor). Computed from the
+// per-pixel region sets that precompute builds in BOTH modes, so free-colour
+// pages have a target set even though they never draw number badges. The cap /
+// threshold / selection math lives in completion-core.js (unit-tested).
+function meaningfulTargets() {
+  if (!state.regionPixels || state.regionPixels.size === 0) return [];
+  const cap = numberedCapFor(difficultySelect.value);
+  const entries = [...state.regionPixels.entries()].map(([id, px]) => [id, px.length]);
+  return pickMeaningfulTargets(entries, cap, state.backgroundRegionId);
+}
 
+// Which target areas count as coloured in free mode: tap/paint fills, PLUS areas
+// the child covered enough by freehand (pencil) on the draw layer. Coverage is
+// measured forgivingly (≥45% of the area's pixels) because children colour
+// unevenly, leaving white gaps — that should still count as "done".
+function freeColouredRegions(targets) {
+  const covered = new Set();
+  for (const id of targets) if (state.completedRegions.has(id)) covered.add(id);
+  try {
+    const dctx = drawCanvas.getContext('2d');
+    const dw = drawCanvas.width, dh = drawCanvas.height;
+    if (dw && dh) {
+      const data = dctx.getImageData(0, 0, dw, dh).data;
+      for (const id of targets) {
+        if (covered.has(id)) continue;
+        const px = state.regionPixels.get(id);
+        if (!px || !px.length) continue;
+        const step = Math.max(1, Math.floor(px.length / 400));
+        let cov = 0, cnt = 0;
+        for (let i = 0; i < px.length; i += step) {
+          if (data[px[i] * 4 + 3] > 20) cov++;
+          cnt++;
+        }
+        if (isCovered(cov, cnt)) covered.add(id);
+      }
+    }
+  } catch { /* getImageData can throw on a tainted canvas; ignore */ }
+  return covered;
+}
+
+// Any freehand marks at all (sampled) — gates the manual finish button so it
+// can't claim a reward on a page the child only lightly doodled-then-cleared.
+function hasPencilMarks() {
+  try {
+    const dctx = drawCanvas.getContext('2d');
+    const dw = drawCanvas.width, dh = drawCanvas.height;
+    if (!dw || !dh) return false;
+    const data = dctx.getImageData(0, 0, dw, dh).data;
+    for (let i = 3; i < data.length; i += 4 * 13) { if (data[i] > 20) return true; }
+    return false;
+  } catch { return false; }
+}
+
+function checkCompletion() {
+  if (state.celebrationShown) return;
+
+  const numbersOn = showNumbersInput.checked && !state.isFreeMode;
+  if (numbersOn) {
+    // Guided colour-by-number: strict — every numbered area in its assigned colour.
+    if (!state.regionColorMap || state.regionColorMap.size === 0) return;
+    if (![...state.regionColorMap.keys()].every((id) => state.completedRegions.has(id))) return;
+  } else {
+    // Free-colour: forgiving, self-scaling ~90% of the meaningful areas coloured
+    // with ANY colour (tap/paint fill OR enough pencil coverage). This is the
+    // logical finish + reward a numberless page used to lack entirely.
+    const targets = meaningfulTargets();
+    if (!targets.length) return;
+    const covered = freeColouredRegions(targets);
+    const done = targets.filter((id) => covered.has(id)).length;
+    if (!freeComplete(targets.length, done)) return;
+  }
+
+  celebrate();
+}
+
+// Manual finish (free-colour mode): the child taps "I'm finished!" to claim their
+// reward whenever they feel done — the most reliable + motivating "done" signal
+// for uneven/pencil colouring. Bypasses the ~90% auto-threshold (the child is the
+// judge) but still requires that SOMETHING was coloured.
+function finishColoringManually() {
+  if (state.celebrationShown) return;
+  const targets = meaningfulTargets();
+  const covered = targets.length ? freeColouredRegions(targets) : new Set();
+  const hasProgress =
+    state.completedRegions.size > 0 || covered.size > 0 || hasPencilMarks();
+  if (!hasProgress) { setStatus(t('finishNeedsColor')); return; }
+  celebrate();
+}
+
+function celebrate() {
   state.celebrationShown = true;
   const subjectText = subjectInput.value.trim() || '?';
   const elapsed = state.coloringStartTime ? Date.now() - state.coloringStartTime : 0;
@@ -381,6 +469,7 @@ form.addEventListener("submit", async (event) => {
     // filled a different colour than the one shown selected (e.g. red→blue).
     renderLegend();
     await generatePage(subject, seedOverride, !!pendingEnglish);
+    updateFinishBtnVisibility();
   } catch (error) {
     setStatus(error.message || "Something went wrong.", true);
   } finally {
@@ -395,6 +484,7 @@ form.addEventListener("submit", async (event) => {
 // ─── Show numbers checkbox ───────────────────────────────────────────────────
 showNumbersInput.addEventListener("change", () => {
   redrawCanvas(); // just re-overlays/removes number badges — never resets fills
+  updateFinishBtnVisibility();
 });
 
 // ─── Palette select ──────────────────────────────────────────────────────────
@@ -762,6 +852,7 @@ regenButton.addEventListener('click', async () => {
     state.paletteOverride = getSemanticPaletteOrder(subject, paletteSelect.value, PALETTES[paletteSelect.value]);
     renderLegend(); // keep swatches/badges/fill in one consistent order (see submit handler)
     await generatePage(subject);
+    updateFinishBtnVisibility();
   } catch (error) {
     setStatus(error.message || 'Something went wrong.', true);
   } finally {
@@ -922,6 +1013,9 @@ function checkPaintCoverage() {
 }
 
 setPaintEndCallback(checkPaintCoverage);
+// Pencil/freehand strokes also re-check free-mode coverage completion so a child
+// who colours by hand (unevenly) still earns the auto-celebration.
+setStrokeEndCallback(() => { try { checkCompletion(); } catch {} });
 
 // ─── Zoom ─────────────────────────────────────────────────────────────────────
 const canvasFrame = document.querySelector('.canvas-frame');
@@ -1208,6 +1302,20 @@ if (goFreeBtn) {
       _activateFreeMode();
     }
   });
+}
+
+// ─── Manual "I'm finished!" (free-colour mode) ───────────────────────────────
+const finishColoringBtn = document.getElementById('finish-coloring-btn');
+const finishColoringSep = document.querySelector('.action-sep--finish');
+if (finishColoringBtn) {
+  finishColoringBtn.addEventListener('click', () => finishColoringManually());
+}
+// Shown only once a picture is loaded AND numbers are off (free-colour mode);
+// guided colour-by-number pages finish automatically when every number is placed.
+function updateFinishBtnVisibility() {
+  const show = !!state.currentImage && !showNumbersInput.checked;
+  if (finishColoringBtn) finishColoringBtn.hidden = !show;
+  if (finishColoringSep) finishColoringSep.hidden = !show;
 }
 
 function _showGoFreeDialog() {

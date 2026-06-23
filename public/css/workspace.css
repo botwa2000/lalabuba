@@ -99,6 +99,19 @@
 .action-btn--free.action-btn--active { background: linear-gradient(120deg, #7c4dff, #448aff); border-color: transparent; color: #fff !important; }
 .action-btn--free.action-btn--active:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(124,77,255,.4); }
 
+/* "I'm finished!" — solid green, celebratory; the child's claim-your-reward CTA
+   in free-colour mode. Filled (not outline) so it reads as the happy end action. */
+.action-btn--finish {
+  background: linear-gradient(120deg, #2ec76a, #12a150);
+  border-color: transparent;
+  color: #fff !important;
+  font-weight: 800;
+}
+.action-btn--finish:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(18,161,80,.4);
+}
+
 /* New drawing — green accent, signals "start fresh" */
 .action-btn--new { color: #2e7d32; border-color: rgba(46,125,50,.35); }
 .action-btn--new:hover:not(:disabled) { border-color: #2e7d32 !important; color: #2e7d32 !important; background: rgba(46,125,50,.08); transform: translateY(-1px); }

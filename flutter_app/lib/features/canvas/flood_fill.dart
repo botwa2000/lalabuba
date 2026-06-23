@@ -329,7 +329,7 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   // the painter's badges and the fill enforcement in exact agreement — before,
   // every region was enforced but only the first 40 showed a number, so regions
   // 41+ silently rejected every colour and were impossible to fill.
-  const maxNumbered = 48;
+  final maxNumbered = params.maxNumbered;
   final regionColorMap = <int, int>{};
   final regionPaletteIndex = <int, int>{};
   if (palette.isNotEmpty) {

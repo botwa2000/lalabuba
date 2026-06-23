@@ -57,12 +57,18 @@ function pencilMove(e) {
 let paintEndCallback = null;
 export function setPaintEndCallback(cb) { paintEndCallback = cb; }
 
+// Fired after ANY freehand stroke ends (pencil or paint), so free-mode coverage
+// completion can re-check whether enough areas are now coloured.
+let strokeEndCallback = null;
+export function setStrokeEndCallback(cb) { strokeEndCallback = cb; }
+
 function pencilEnd() {
   if (!state.pencilDrawing) return;
   state.pencilDrawing = false;
   if (state.colorMode === 'paint' && paintEndCallback) {
     paintEndCallback();
   }
+  if (strokeEndCallback) strokeEndCallback();
 }
 
 export function updateDrawCanvasMode() {

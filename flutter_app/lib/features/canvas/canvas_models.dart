@@ -76,6 +76,7 @@ class RegionDetectParams {
   final int width;
   final int height;
   final int minArea;
+  final int maxNumbered; // difficulty-scaled cap on how many areas get a number
   final List<int> paletteArgb; // ARGB32 values of the palette colors
 
   const RegionDetectParams({
@@ -83,6 +84,7 @@ class RegionDetectParams {
     required this.width,
     required this.height,
     required this.minArea,
+    this.maxNumbered = 48,
     this.paletteArgb = const [],
   });
 }
@@ -160,6 +162,7 @@ class CanvasState {
   final Map<int, Color> regionColorMap; // pre-assigned colors for guided mode
   final Color? hintColor;              // transient: pulses correct swatch on wrong tap
   final bool isFreeMode;               // one-way unlock: no enforcement, free color picker
+  final Set<int> coveredRegions;       // free mode: target areas sufficiently covered by freehand strokes
 
   const CanvasState({
     this.baseImage,
@@ -178,25 +181,61 @@ class CanvasState {
     this.regionColorMap = const {},
     this.hintColor,
     this.isFreeMode = false,
+    this.coveredRegions = const {},
   });
 
   bool get hasImage => baseImage != null;
   bool get isReady => hasImage && detection != null && !isProcessing;
 
-  /// True when every guided (numbered) region has been filled with its assigned
-  /// colour — the trigger for the completion celebration. Mirrors the web app's
-  /// checkCompletion (all regionColorMap keys completed). Only meaningful in
-  /// guided mode (regionColorMap is empty in free mode → never "complete").
-  bool get isComplete {
-    if (regionColorMap.isEmpty) return false;
-    for (final entry in regionColorMap.entries) {
-      final filled = regionColors[entry.key];
-      if (filled == null || filled.toARGB32() != entry.value.toARGB32()) {
-        return false;
-      }
+  /// The "meaningful areas" a child is expected to colour = the would-be-numbered
+  /// regions (regionColorMap keys). Identical set in guided and free mode; only
+  /// what counts as "coloured" differs (see [_targetColoured]).
+  bool _targetColoured(int id) {
+    final filled = regionColors[id];
+    if (isFreeMode) {
+      // Free-colour: ANY colour counts — by a tap-fill OR by enough freehand
+      // (pencil/paint) coverage. Children colour unevenly; coverage is measured
+      // forgivingly upstream so a half-scribbled area still counts.
+      return filled != null || coveredRegions.contains(id);
     }
-    return true;
+    // Guided colour-by-number: must be the exact assigned colour.
+    final assigned = regionColorMap[id];
+    return filled != null &&
+        assigned != null &&
+        filled.toARGB32() == assigned.toARGB32();
   }
+
+  /// How many meaningful areas are coloured so far.
+  int get colouredTargetCount {
+    var n = 0;
+    for (final id in regionColorMap.keys) {
+      if (_targetColoured(id)) n++;
+    }
+    return n;
+  }
+
+  /// True when the picture should celebrate.
+  ///
+  /// Guided mode: every numbered area in its exact colour (strict — that's the
+  /// point of colour-by-number).
+  ///
+  /// Free mode: a forgiving, self-scaling ~90% of the meaningful areas coloured
+  /// with any colour. With few big areas (Easy) 90% rounds up to "all of them"
+  /// and finishing all is achievable; on dense pages it tolerates the slivers a
+  /// child inevitably leaves uncoloured. The manual "I'm finished" button
+  /// ([hasMeaningfulProgress]) is the always-available alternative.
+  bool get isComplete {
+    final total = regionColorMap.length;
+    if (total == 0) return false;
+    final done = colouredTargetCount;
+    if (isFreeMode) return done >= (total * 0.9).ceil();
+    return done == total;
+  }
+
+  /// Has the child coloured anything meaningful yet? Gates the manual
+  /// "I'm finished" button so it can't claim a reward on an untouched page.
+  bool get hasMeaningfulProgress =>
+      regionColors.isNotEmpty || coveredRegions.isNotEmpty;
 
   CanvasState copyWith({
     ui.Image? baseImage,
@@ -217,6 +256,7 @@ class CanvasState {
     Color? hintColor,
     bool clearHintColor = false,
     bool? isFreeMode,
+    Set<int>? coveredRegions,
   }) => CanvasState(
         baseImage: baseImage ?? this.baseImage,
         compositeImage: compositeImage ?? this.compositeImage,
@@ -234,5 +274,6 @@ class CanvasState {
         regionColorMap: regionColorMap ?? this.regionColorMap,
         hintColor: clearHintColor ? null : (hintColor ?? this.hintColor),
         isFreeMode: isFreeMode ?? this.isFreeMode,
+        coveredRegions: coveredRegions ?? this.coveredRegions,
       );
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,6 +28,15 @@ class CanvasNotifier extends Notifier<CanvasState> {
   // _applyRegionComposite). Reset on every new image load.
   Uint8List? _compositeBuf;
 
+  // Last canvas (widget) size seen on a stroke end — lets us map freehand
+  // strokes (stored in canvas space) into image space to measure per-area
+  // coverage for free-mode completion. Null until the first stroke ends.
+  Size? _lastCanvasSize;
+
+  // A freehand area counts as "coloured" once this fraction of its interior is
+  // covered. Low + forgiving: children colour unevenly, leaving white gaps.
+  static const double _coverThreshold = 0.45;
+
   // FIX 2: generation token + in-flight isolate handle for region detection.
   // A new loadImage bumps _detectGen, kills any previous in-flight detection
   // isolate, and ignores late messages stamped with a stale generation, so an
@@ -41,6 +51,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
   Future<void> loadImage(Uint8List imageBytes, int minArea, {
     bool showNumbers = true,
     List<Color> palette = const [],
+    int maxNumbered = 48,
   }) async {
     // FIX 2: starting a new load invalidates any earlier in-flight detection.
     // Bump the generation and tear down a previous detection isolate so its
@@ -80,6 +91,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
       width: img.width,
       height: img.height,
       minArea: minArea,
+      maxNumbered: maxNumbered,
       paletteArgb: paletteArgb,
     );
 
@@ -348,6 +360,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
       undoStack: _pushUndo(
           s.undoStack, CanvasAction.eraseStrokes(removed, removedIdx)),
     );
+    _recomputeCoverage();
   }
 
   // True if any vertex of [stroke] (inflated by its own half-width) lies within
@@ -388,6 +401,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
         final strokes = List<Stroke>.from(s.strokes);
         if (strokes.isNotEmpty) strokes.removeLast();
         state = s.copyWith(strokes: strokes, undoStack: remaining);
+        _recomputeCoverage();
       case CanvasOp.eraseStrokes:
         // Reinsert each removed stroke at its original index (ascending order
         // keeps indices valid as we go).
@@ -397,6 +411,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
           strokes.insert(idx, action.strokes[k]);
         }
         state = s.copyWith(strokes: strokes, undoStack: remaining);
+        _recomputeCoverage();
     }
   }
 
@@ -423,7 +438,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
     state = state.copyWith(currentStroke: cs.copyWithPoint(p));
   }
 
-  void endStroke() {
+  void endStroke([Size? canvasSize]) {
     final cs = state.currentStroke;
     if (cs == null || cs.points.length < 2) {
       state = state.copyWith(clearCurrentStroke: true);
@@ -434,10 +449,67 @@ class CanvasNotifier extends Notifier<CanvasState> {
       clearCurrentStroke: true,
       undoStack: _pushUndo(state.undoStack, const CanvasAction.addStroke()),
     );
+    if (canvasSize != null) _lastCanvasSize = canvasSize;
+    _recomputeCoverage();
+  }
+
+  /// Recompute which meaningful areas freehand strokes have covered enough to
+  /// count toward free-mode completion. Strokes are stored in canvas (widget)
+  /// space; we map them through the painter's letterbox rect into image space
+  /// and tally covered interior pixels per region. Bounded by image size via the
+  /// [seen] dedupe, so it is cheap to run on every stroke end / undo / erase.
+  /// No-op until a canvas size is known and (cheaply) only matters in free mode.
+  void _recomputeCoverage() {
+    final d = state.detection;
+    final size = _lastCanvasSize;
+    if (d == null || size == null) return;
+    final w = d.width, h = d.height;
+    final rect = fitImageRect(
+        d.width.toDouble(), d.height.toDouble(), size.width, size.height);
+    if (rect.width <= 0 || rect.height <= 0) return;
+    final sx = w / rect.width, sy = h / rect.height;
+    final p2r = d.pixelToRegion;
+    final coverCount = <int, int>{};
+    final seen = Uint8List(w * h);
+    for (final stroke in state.strokes) {
+      final ri = ((stroke.width / 2) * ((sx + sy) / 2)).ceil().clamp(1, 40);
+      final ri2 = ri * ri;
+      for (final pt in stroke.points) {
+        final ix = ((pt.dx - rect.left) * sx).round();
+        final iy = ((pt.dy - rect.top) * sy).round();
+        for (var dy = -ri; dy <= ri; dy++) {
+          final yy = iy + dy;
+          if (yy < 0 || yy >= h) continue;
+          for (var dx = -ri; dx <= ri; dx++) {
+            if (dx * dx + dy * dy > ri2) continue;
+            final xx = ix + dx;
+            if (xx < 0 || xx >= w) continue;
+            final idx = yy * w + xx;
+            if (seen[idx] == 1) continue;
+            seen[idx] = 1;
+            final reg = p2r[idx];
+            if (reg >= 0 && reg != d.backgroundRegionId) {
+              coverCount[reg] = (coverCount[reg] ?? 0) + 1;
+            }
+          }
+        }
+      }
+    }
+    final covered = <int>{};
+    for (final region in d.regions) {
+      final c = coverCount[region.id] ?? 0;
+      if (region.pixelCount > 0 && c / region.pixelCount >= _coverThreshold) {
+        covered.add(region.id);
+      }
+    }
+    if (!setEquals(covered, state.coveredRegions)) {
+      state = state.copyWith(coveredRegions: covered);
+    }
   }
 
   void reset() {
     _compositeBuf = null;
+    _lastCanvasSize = null;
     state = const CanvasState();
   }
 }
