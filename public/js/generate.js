@@ -160,17 +160,17 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
                      window.location.protocol === 'capacitor:' ||
                      window.location.protocol === 'ionic:';
     const apiBase = isNative ? 'https://lalabuba.com' : '';
-    // 60-second hard timeout — prevents an infinite hang if the network is
-    // blocked (e.g. Google Play test environment) while still being generous
-    // enough not to kill a slow-but-working cold generation. With the fast/free
-    // tiers degraded, a novel subject falls through to paid Novita: ~6s warm but
-    // ~17s on a cold-start, plus a Pollinations cache-miss fall-through and the
-    // image transfer. 45s was clipping those legitimate gens into a false
-    // "timed out" failure; 60s covers the measured worst case with headroom.
-    // (Flutter/native already allows 90s; this brings web closer.) AbortController
-    // is supported on all Android WebViews we target (minSdk 24 / Chrome 56+).
+    // 75-second hard timeout — prevents an infinite hang if the network is
+    // blocked (e.g. Google Play test environment) while being generous enough
+    // not to kill a slow-but-working FREE generation. A novel subject is served
+    // by Pollinations' free queue in ~45s (cache hits ~1-2s); the server gives
+    // Pollinations up to 50s, so the client must wait longer than that or it
+    // would clip the free result and (worse) trigger a paid fallback. 45s was
+    // too short and caused false "timed out" failures. (Flutter/native allows
+    // 90s.) AbortController is supported on all Android WebViews (minSdk 24 /
+    // Chrome 56+).
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    const timeoutId = setTimeout(() => controller.abort(), 75000);
     let response;
     try {
       response = await fetch(`${apiBase}/api/generate-image`, {
