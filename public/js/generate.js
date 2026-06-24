@@ -160,11 +160,17 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
                      window.location.protocol === 'capacitor:' ||
                      window.location.protocol === 'ionic:';
     const apiBase = isNative ? 'https://lalabuba.com' : '';
-    // 45-second hard timeout — prevents infinite hang if network is blocked
-    // (e.g. Google Play test environment). AbortController is supported on all
-    // Android WebViews we target (minSdk 24 / Chrome 56+).
+    // 60-second hard timeout — prevents an infinite hang if the network is
+    // blocked (e.g. Google Play test environment) while still being generous
+    // enough not to kill a slow-but-working cold generation. With the fast/free
+    // tiers degraded, a novel subject falls through to paid Novita: ~6s warm but
+    // ~17s on a cold-start, plus a Pollinations cache-miss fall-through and the
+    // image transfer. 45s was clipping those legitimate gens into a false
+    // "timed out" failure; 60s covers the measured worst case with headroom.
+    // (Flutter/native already allows 90s; this brings web closer.) AbortController
+    // is supported on all Android WebViews we target (minSdk 24 / Chrome 56+).
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
     let response;
     try {
       response = await fetch(`${apiBase}/api/generate-image`, {
