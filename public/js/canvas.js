@@ -11,10 +11,71 @@ import { bounce, sparkleBurst, sparkleAt, playComplete } from './fx.js';
 // occur when /js/fill-core.js is requested before its first deploy. Bump with
 // the asset version. (.js is served no-store, so the query only affects the CDN
 // cache key, never freshness.)
-import { fillRegionCore, watershedAssign, buildRegionPixels } from './fill-core.js?v=210';
-import { trappedBallSegment } from './trapped-ball.js?v=210';
-import { buildOutlineMask } from './outline-mask.js?v=210';
-import { bridgeLineGaps } from './line-bridge.js?v=210';
+import { fillRegionCore, watershedAssign, buildRegionPixels } from './fill-core.js?v=214';
+import { buildOutlineMask } from './outline-mask.js?v=214';
+import { bridgeLineGaps }   from './line-bridge.js?v=214';
+import { trappedBallSegment } from './trapped-ball.js?v=214';
+
+// ─── Off-thread segmentation worker ─────────────────────────────────────────
+// precomputeRegions() can block the main thread for 200ms–10s on complex images
+// (hard/extreme mandala-style line art). All segmentation runs here instead so
+// the image appears immediately and coloring enables once the worker finishes.
+
+let _worker = null;
+let _segGeneration = 0;   // incremented on each new render; stale results discarded
+
+function _getWorker() {
+  if (_worker) return _worker;
+  try {
+    // ES module workers: supported on Chrome 80+, Firefox 114+, Safari 15+,
+    // iOS 15+, Android Chromium (Capacitor target).
+    _worker = new Worker(new URL('./region-worker.js?v=214', import.meta.url), { type: 'module' });
+  } catch { _worker = null; }
+  return _worker;
+}
+
+// Post image pixels to the worker; resolve with the raw result message data.
+// Caller passes `gen` so it can detect whether a newer render superseded this one.
+function _postToWorker(imageDataBuffer, width, height, gen) {
+  return new Promise((resolve, reject) => {
+    const worker = _getWorker();
+    if (!worker) { reject(new Error('no-worker')); return; }
+
+    const onMsg = ({ data }) => {
+      if (data.gen !== gen) return; // stale — a newer render already started
+      cleanup();
+      resolve(data);
+    };
+    const onErr = (e) => {
+      cleanup();
+      _worker = null; // force recreation on next attempt
+      reject(e);
+    };
+    const cleanup = () => {
+      worker.removeEventListener('message', onMsg);
+      worker.removeEventListener('error', onErr);
+    };
+
+    worker.addEventListener('message', onMsg);
+    worker.addEventListener('error', onErr);
+
+    // Slice (copy) the pixel buffer so state.baseImageData.data.buffer is not
+    // detached — the main thread still needs it for drawing/coloring.
+    const pixelsCopy = imageDataBuffer.slice(0);
+    worker.postMessage({ pixels: pixelsCopy, width, height, gen }, [pixelsCopy]);
+  });
+}
+
+// Apply the worker result to state (all typed arrays were transferred zero-copy).
+function _applyWorkerResult(result) {
+  const { regionMap, lineMask, backgroundRegionId, regionIds, regionPixelBuffers } = result;
+  state.regionMap = new Int32Array(regionMap);
+  state.lineMask  = new Uint8Array(lineMask);
+  state.backgroundRegionId = backgroundRegionId;
+  const rp = new Map();
+  regionIds.forEach((id, i) => rp.set(id, new Int32Array(regionPixelBuffers[i])));
+  state.regionPixels = rp;
+}
 
 // Module-level palette context, set by setPaletteContext() from ui.js
 let _palette = [];
@@ -154,7 +215,10 @@ export function nearestPaletteIndex(r, g, b, palette) {
 export function overlayNumbers() {
   const palette = _palette;
   const colorCount = _colorCount;
-  if (!state.baseImageData) return;
+  // Both baseImageData AND regionMap must be ready (regionMap arrives from the
+  // worker asynchronously). Returning early here prevents overlayNumbers from
+  // caching a broken empty regionColorMap before the worker result is applied.
+  if (!state.baseImageData || !state.regionMap) return;
   // The region set (centroids + areas) is derived from the BASE image, so it is
   // identical on every redraw — recomputing buildWalkableMask + findRegions (a
   // full connected-component pass over ~1M pixels) on every single fill was the
@@ -440,62 +504,25 @@ export function animateCompletion() {
   });
 }
 
-// ─── Pre-segmentation ────────────────────────────────────────────────────────
-// Runs once per image load. Builds a per-pixel region map so a click looks up
-// and paints pre-identified pixels — fill can never leak across regions.
-//
-// Strategy:
-//   outlineMask (br < 100) — CCA barrier; dark + anti-aliased edge pixels.
-//   Virtual frame          — 1-px sealed border added to the label array so
-//                            areas open at the image edge (lake, sky, ground)
-//                            become enclosed regions instead of merging with
-//                            the outer background via border-seeding.
-//   Background detection   — largest CCA region (always the outer white space).
-
+// ─── Synchronous fallback segmentation ────────────────────────────────────────
+// Used when the Web Worker is unavailable (rare: certain security policies, very
+// old WebViews). Identical algorithm to region-worker.js; runs on the main thread.
 export function precomputeRegions() {
   const { width, height } = previewCanvas;
   const n = width * height;
   const src = state.baseImageData.data;
 
-  // Build outline mask via adaptive + HYSTERESIS thresholding (outline-mask.js).
-  // Replaces the old global br<BARRIER_BR cut, which missed faint interior lines
-  // and left anti-aliased pin-gaps a fill bled through. Hysteresis seals those
-  // gaps (weak pixels joined to a strong line) without promoting flat shading.
   let outlineMask = buildOutlineMask(src, width, height);
-
-  // Snapshot the THIN line mask now. The watershed (below) fills the band around
-  // the lines, so these original line pixels are kept OUT of the painted region
-  // sets — that way a fill never hides the lines.
-  const lineMask = Uint8Array.from(outlineMask);
-
-  // Bridge genuine line BREAKS (Stage-2; line-bridge.js): join boundary-line
-  // tips that FACE each other across a short gap, sealing real breaks the
-  // hysteresis mask can't. Applied AFTER the lineMask snapshot so a bridge is an
-  // INVISIBLE wall — regions separate cleanly with no fake ink. The facing test
-  // keeps parallel groove tips apart, so this doesn't over-seal.
+  const lineMask  = Uint8Array.from(outlineMask);
   bridgeLineGaps(outlineMask, width, height);
 
-  // Virtual sealed frame: mark the outermost pixel row/col as barriers in the
-  // mask trapped-ball sees. This closes any region "open" at the image boundary
-  // (a lake with no bottom outline, a sky open at the top) so it becomes an
-  // enclosed fillable region rather than merging with the outer background.
   for (let x = 0; x < width;  x++) { outlineMask[x] = 1; outlineMask[(height-1)*width+x] = 1; }
   for (let y = 0; y < height; y++) { outlineMask[y*width] = 1; outlineMask[y*width+width-1] = 1; }
 
-  // ── Trapped-ball segmentation ────────────────────────────────────────────
-  // Replaces the old single fixed-radius morphological close (dilate-N/erode-N)
-  // + flat CCA. One radius can't both seal big gaps (else fills leak → "colours
-  // mixing") AND keep thin regions open (else they seal shut → "can't colour");
-  // trapped-ball rolls balls of decreasing radius so each region uses the
-  // largest ball that still fits, fixing both at once. seg: -2 = wall, 0.. = id.
   const seg = trappedBallSegment(outlineMask, width, height);
 
-  // Convert to the web label convention (>0 = region, -1 = wall/band) and build
-  // region buffers. Tiny regions (<30px) are demoted to band (-1) and absorbed
-  // by the nearest surviving region in the watershed below — parity with the
-  // old "tiny specks → outline" rule, so a stray sliver never becomes a region.
   const label = new Int32Array(n);
-  const segBuf = new Map();          // segId → pixel[]
+  const segBuf = new Map();
   for (let i = 0; i < n; i++) {
     const s = seg[i];
     if (s >= 0) {
@@ -504,18 +531,15 @@ export function precomputeRegions() {
       if (!arr) { arr = []; segBuf.set(s + 1, arr); }
       arr.push(i);
     } else {
-      label[i] = -1;                 // wall/line
+      label[i] = -1;
     }
   }
   state.regionPixels = new Map();
   for (const [id, buf] of segBuf) {
     if (buf.length >= 30) state.regionPixels.set(id, buf);
-    else for (const p of buf) label[p] = -1;   // tiny region → band, reabsorbed
+    else for (const p of buf) label[p] = -1;
   }
 
-  // Background = the region at the top-left inner corner (1,1) — almost
-  // always the outer white space surrounding the drawing.  Fall back to the
-  // largest region if the corner is dark (drawing fills the corner).
   state.backgroundRegionId = 0;
   outer:
   for (let dy = 1; dy <= 4; dy++) {
@@ -531,20 +555,8 @@ export function precomputeRegions() {
     }
   }
 
-  // ── Watershed ───────────────────────────────────────────────────────────────
-  // Assign every remaining outline-band (-1) pixel to its NEAREST region via
-  // multi-source BFS, so the label map tiles the whole image with no unowned
-  // band. This is the structural fix (ported from the Flutter engine) for the
-  // jagged white seams between fills, the uncolourable band around a shape, and
-  // taps that did nothing when zoomed — all of which came from that band. The
-  // thin line art (lineMask) is then kept out of the painted pixel sets so the
-  // black lines survive on top of the flat fills.
   watershedAssign(label, width, height);
-  // Rebuild regionPixels from the final label, EXCLUDING line pixels (they remain
-  // the original black line art on the canvas, never painted over).
-  state.regionPixels = buildRegionPixels(
-    label, lineMask, [...state.regionPixels.keys()], width, height);
-
+  state.regionPixels = buildRegionPixels(label, lineMask, [...state.regionPixels.keys()], width, height);
   state.lineMask = lineMask;
   state.regionMap = label;
 }
@@ -754,7 +766,9 @@ export function drawBaseImage(image) {
   state.completionRecorded = false; // new image → this coloring may be recorded once
   state.coloringStartTime = null;
   state.undoStack = [];
-  if (state.baseImageData) precomputeRegions();
+  state.isSegmenting = false; // worker path sets this; reset on new image
+  // Segmentation is now triggered asynchronously from renderGeneratedImage() after
+  // drawBaseImage() returns, so the image appears immediately with no main-thread hang.
 }
 
 export async function renderGeneratedImage(imageBase64) {
@@ -784,8 +798,8 @@ export async function renderGeneratedImage(imageBase64) {
     image = await imageFromBase64(imageBase64);
   }
   state.currentImage = imageBase64;
-  drawBaseImage(image);
-  redrawCanvas();
+  drawBaseImage(image);  // synchronous: draws image + resets all segmentation state
+  redrawCanvas();        // show image immediately (no numbers yet — regionMap is null)
 
   printButton.disabled = false;
   downloadButton.disabled = false;
@@ -804,4 +818,33 @@ export async function renderGeneratedImage(imageBase64) {
   }
   const goFree = document.getElementById('go-free-btn');
   if (goFree) { goFree.disabled = false; goFree.classList.remove('action-btn--active'); goFree.textContent = t('goFreeBtn'); }
+
+  // ── Async segmentation ─────────────────────────────────────────────────────
+  // Start segmentation in the background worker AFTER the image is shown so the
+  // user never waits on the main thread. Increment the generation counter so stale
+  // results from a superseded render (e.g. difficulty change mid-flight) are
+  // discarded and never overwrite the current image's segmentation state.
+  if (!state.baseImageData) return;
+  _segGeneration++;
+  const gen = _segGeneration;
+  state.isSegmenting = true;
+
+  const { width, height } = previewCanvas;
+  const pixelBuffer = state.baseImageData.data.buffer;
+
+  _postToWorker(pixelBuffer, width, height, gen)
+    .then(result => {
+      if (gen !== _segGeneration) return; // superseded — discard
+      _applyWorkerResult(result);
+    })
+    .catch(() => {
+      // Fallback: synchronous segmentation (blocks briefly but works everywhere)
+      if (gen !== _segGeneration) return;
+      try { precomputeRegions(); } catch { /* ignore */ }
+    })
+    .finally(() => {
+      if (gen !== _segGeneration) return;
+      state.isSegmenting = false;
+      redrawCanvas(); // now regionMap is set → overlayNumbers() shows badges
+    });
 }

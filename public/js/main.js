@@ -610,7 +610,10 @@ function eraseRegionById(regionId) {
 // Pointer-based erase: fires immediately (no 300ms touch delay) and supports drag-to-erase.
 let _eraseDown = false;
 previewCanvas.addEventListener('pointerdown', (e) => {
-  if (!state.eraseMode || isPanMode() || state.colorMode === 'paint' || !state.regionMap) return;
+  if (!state.eraseMode || isPanMode() || state.colorMode === 'paint' || !state.regionMap) {
+    if (state.isSegmenting && state.eraseMode) setStatus(t('segmenting'));
+    return;
+  }
   e.preventDefault();
   _eraseDown = true;
   _erasedThisStroke = new Set();
@@ -629,7 +632,10 @@ previewCanvas.addEventListener('pointercancel', () => { _eraseDown = false; });
 previewCanvas.addEventListener("click", (event) => {
   if (isPanMode()) return; // pan mode active — drag is for moving, not coloring
   if (state.colorMode === 'paint') return; // paint mode uses draw-canvas, not click-fill
-  if (!state.regionMap) return;
+  if (!state.regionMap) {
+    if (state.isSegmenting) setStatus(t('segmenting'));
+    return;
+  }
   if (state.eraseMode) return; // handled by pointerdown above
 
   const { x: canvasX, y: canvasY } = getCanvasCoords(event);

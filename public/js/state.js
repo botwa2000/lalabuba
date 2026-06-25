@@ -28,4 +28,5 @@ export const state = {
   isFreeMode: false,    // one-way unlock: no enforcement, any color any area
   hasFreehand: false,   // any pencil/paint stroke drawn this image — gates costly draw-layer reads
   numberTargets: null,  // cached meaningful-area ids for free-mode completion (per image)
+  isSegmenting: false,  // true while the region-worker is computing; taps show "preparing" status
 };
