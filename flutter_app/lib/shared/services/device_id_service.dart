@@ -6,10 +6,20 @@ class DeviceIdService {
 
   static Future<String> getDeviceId() async {
     if (_cachedId != null) return _cachedId!;
-    var id = await StorageService.read(StorageService.kDeviceId);
+    // FlutterSecureStorage accesses the Android Keystore which can hang on
+    // emulators (Keystore init is slow/broken in SLIRP). Time out after 2s
+    // and fall back to a session UUID so generation is never blocked.
+    String? id;
+    try {
+      id = await StorageService.read(StorageService.kDeviceId)
+          .timeout(const Duration(seconds: 2));
+    } catch (_) {
+      // Keystore timeout or error — use in-memory fallback for this session.
+    }
     if (id == null) {
       id = _generateUuid();
-      await StorageService.write(StorageService.kDeviceId, id);
+      // Best-effort persist; ignore if Keystore is still unavailable.
+      StorageService.write(StorageService.kDeviceId, id).ignore();
     }
     _cachedId = id;
     return id;
