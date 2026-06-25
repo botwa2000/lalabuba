@@ -133,6 +133,9 @@ module.exports = async (req, res) => {
 
   try {
     const body = req.body || {};
+    const clientOrigin = req.headers.origin || '(native)';
+    const clientIp    = req.headers['cf-connecting-ip'] || req.socket?.remoteAddress || 'unknown';
+    console.log(`[generate] ${clientIp} origin=${clientOrigin} subject=${JSON.stringify(body.subject)} diff=${body.difficulty}`);
 
     // Native vs. web classification.
     //

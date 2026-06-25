@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
@@ -34,10 +35,6 @@ class GenerateService {
     final effectiveSeed = seed ?? _newSeed();
     const width = 768;
     const height = 768;
-    // Wall-clock guard: Dio receiveTimeout only fires after the first byte
-    // arrives, so a server that hangs before sending headers can block forever.
-    // This Future.timeout wraps the ENTIRE request including server wait time.
-    const totalTimeout = Duration(seconds: 120);
 
     final req = GenerationRequest(
       subject: subject,
@@ -48,10 +45,21 @@ class GenerateService {
       deviceId: deviceId,
     );
 
+    // CancelToken-based timeout: Future.timeout / receiveTimeout can't cancel
+    // the underlying TCP socket on Android (SLIRP NAT keeps the connection
+    // alive silently). A CancelToken sends an abort to Dio's HTTP layer, which
+    // actually cancels the platform socket and lets the Future resolve.
+    final cancel = CancelToken();
+    final timer = Timer(
+      const Duration(seconds: 90),
+      () => cancel.cancel('Generation timeout — server did not respond within 90 s'),
+    );
+
     try {
       final response = await _dio.post(
         '/api/generate-image',
         data: req.toJson(),
+        cancelToken: cancel,
         options: Options(
           headers: {
             'Content-Type': 'application/json',
@@ -59,10 +67,7 @@ class GenerateService {
             if (_appApiKey.isNotEmpty) 'X-App-Key': _appApiKey,
           },
         ),
-      ).timeout(totalTimeout, onTimeout: () => throw DioException(
-        requestOptions: RequestOptions(path: '/api/generate-image'),
-        type: DioExceptionType.receiveTimeout,
-      ));
+      );
 
       final bytes = response.data as Uint8List;
       final returnedSeed =
@@ -77,7 +82,12 @@ class GenerateService {
         blobUrl: blobUrl,
       );
     } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        throw 'Drawing took too long — please try again';
+      }
       throw _mapError(e);
+    } finally {
+      timer.cancel();
     }
   }
 
