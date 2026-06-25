@@ -32,8 +32,12 @@ class GenerateService {
   }) async {
     final deviceId = await DeviceIdService.getDeviceId();
     final effectiveSeed = seed ?? _newSeed();
-    final width = 768;
-    final height = 768;
+    const width = 768;
+    const height = 768;
+    // Wall-clock guard: Dio receiveTimeout only fires after the first byte
+    // arrives, so a server that hangs before sending headers can block forever.
+    // This Future.timeout wraps the ENTIRE request including server wait time.
+    const totalTimeout = Duration(seconds: 120);
 
     final req = GenerationRequest(
       subject: subject,
@@ -55,7 +59,10 @@ class GenerateService {
             if (_appApiKey.isNotEmpty) 'X-App-Key': _appApiKey,
           },
         ),
-      );
+      ).timeout(totalTimeout, onTimeout: () => throw DioException(
+        requestOptions: RequestOptions(path: '/api/generate-image'),
+        type: DioExceptionType.receiveTimeout,
+      ));
 
       final bytes = response.data as Uint8List;
       final returnedSeed =
