@@ -668,6 +668,12 @@
     order: 5;
     flex: 1 1 100%;
   }
+  /* Row 4: settings chips (count, palette, numbers, etc.) */
+  .app.app-hero .config-panel .settings-chips {
+    order: 6;
+    flex: 1 1 100%;
+    justify-content: center;
+  }
 }
 
 /* Difficulty: the four pills (with their star labels) don't fit one row on a
