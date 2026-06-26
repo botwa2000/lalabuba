@@ -22,7 +22,7 @@ import {
   openMaxPicker, closeMaxPicker, flashPaletteSwatch,
 } from './ui.js';
 import { generatePage, requestGeneratedImage } from './generate.js';
-import { initDrawingTool, setPaintEndCallback, setStrokeEndCallback, updateDrawCanvasMode } from './drawing.js';
+import { initDrawingTool, setPaintEndCallback, setStrokeEndCallback, updateDrawCanvasMode, creditDrawPenSticker } from './drawing.js';
 import { numberedCapFor, pickMeaningfulTargets, freeComplete, isCovered } from './completion-core.js';
 import { initShareHandlers, loadFromShare } from './share.js';
 import { initZoom, getCanvasCoords, isPanMode } from './zoom.js';
@@ -610,7 +610,7 @@ function eraseRegionById(regionId) {
 // Pointer-based erase: fires immediately (no 300ms touch delay) and supports drag-to-erase.
 let _eraseDown = false;
 previewCanvas.addEventListener('pointerdown', (e) => {
-  if (!state.eraseMode || isPanMode() || state.colorMode === 'paint' || !state.regionMap) {
+  if (!state.eraseMode || isPanMode() || state.colorMode !== 'tap' || !state.regionMap) {
     if (state.isSegmenting && state.eraseMode) setStatus(t('segmenting'));
     return;
   }
@@ -631,7 +631,7 @@ previewCanvas.addEventListener('pointercancel', () => { _eraseDown = false; });
 
 previewCanvas.addEventListener("click", (event) => {
   if (isPanMode()) return;
-  if (state.colorMode === 'paint') return;
+  if (state.colorMode !== 'tap') return;
   if (state.eraseMode) return;
   if (!state.paintedImageData) return; // no image yet
 
@@ -961,20 +961,44 @@ if (settingsToggle && settingsMenu) {
 // ─── Drawing tool ─────────────────────────────────────────────────────────────
 initDrawingTool();
 
-// ─── Paint mode toggle ────────────────────────────────────────────────────────
-const modeTapBtn   = document.getElementById('mode-tap-btn');
-const modePaintBtn = document.getElementById('mode-paint-btn');
+// ─── Coloring mode toggle (tap / pencil / brush) ──────────────────────────────
+const modeTapBtn    = document.getElementById('mode-tap-btn');
+const modePencilBtn = document.getElementById('mode-pencil-btn');
+const modeBrushBtn  = document.getElementById('mode-brush-btn');
+const drawToolsGroup = document.getElementById('draw-tools-group');
 
 function setColorMode(mode) {
   state.colorMode = mode;
-  if (modeTapBtn)   modeTapBtn.classList.toggle('active', mode === 'tap');
-  if (modePaintBtn) modePaintBtn.classList.toggle('active', mode === 'paint');
+  if (modeTapBtn)    modeTapBtn.classList.toggle('active',    mode === 'tap');
+  if (modePencilBtn) modePencilBtn.classList.toggle('active', mode === 'pencil');
+  if (modeBrushBtn)  modeBrushBtn.classList.toggle('active',  mode === 'brush');
+  if (drawToolsGroup) drawToolsGroup.style.display = (mode === 'pencil' || mode === 'brush') ? '' : 'none';
   updateDrawCanvasMode();
-  if (mode === 'paint') setStatus(t('paintMode'));
+  if (mode === 'pencil') {
+    setStatus(t('pencilMode'));
+    const badges = creditDrawPenSticker();
+    if (badges.length) {
+      const b = badges[0];
+      const cap = b.id.charAt(0).toUpperCase() + b.id.slice(1);
+      setStatus(t('stickerEarnedToast', b.emoji, t(`badge${cap}Title`)));
+      try { localStorage.setItem('lalabuba-journal-dirty', '1'); } catch {}
+    }
+  }
+  if (mode === 'brush') {
+    setStatus(t('brushMode'));
+    const badges = creditDrawPenSticker();
+    if (badges.length) {
+      const b = badges[0];
+      const cap = b.id.charAt(0).toUpperCase() + b.id.slice(1);
+      setStatus(t('stickerEarnedToast', b.emoji, t(`badge${cap}Title`)));
+      try { localStorage.setItem('lalabuba-journal-dirty', '1'); } catch {}
+    }
+  }
 }
 
-if (modeTapBtn)   modeTapBtn.addEventListener('click',   () => setColorMode('tap'));
-if (modePaintBtn) modePaintBtn.addEventListener('click', () => setColorMode('paint'));
+if (modeTapBtn)    modeTapBtn.addEventListener('click',    () => setColorMode('tap'));
+if (modePencilBtn) modePencilBtn.addEventListener('click', () => setColorMode('pencil'));
+if (modeBrushBtn)  modeBrushBtn.addEventListener('click',  () => setColorMode('brush'));
 
 // ─── Paint coverage check ────────────────────────────────────────────────────
 function checkPaintCoverage() {

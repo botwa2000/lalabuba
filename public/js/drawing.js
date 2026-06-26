@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { drawCanvas, drawCtx, pencilBtn, clearPencilBtn, previewCanvas } from './dom.js';
+import { drawCanvas, drawCtx, clearPencilBtn, previewCanvas } from './dom.js';
 import { activePalette } from './ui.js';
 import { setStatus } from './ui.js';
 import { t } from './i18n.js';
@@ -21,11 +21,11 @@ function getPencilPos(e) {
 }
 
 function getBrushSize() {
-  return state.colorMode === 'paint' ? 22 : 5;
+  return state.colorMode === 'brush' ? 22 : 5;
 }
 
 function isDrawingActive() {
-  return state.pencilMode || state.colorMode === 'paint';
+  return state.colorMode === 'pencil' || state.colorMode === 'brush';
 }
 
 // ── Masked "stay-in-the-lines" freehand ──────────────────────────────────────
@@ -117,7 +117,7 @@ function pencilMove(e) {
 let paintEndCallback = null;
 export function setPaintEndCallback(cb) { paintEndCallback = cb; }
 
-// Fired after ANY freehand stroke ends (pencil or paint), so free-mode coverage
+// Fired after ANY freehand stroke ends (pencil or brush), so free-mode coverage
 // completion can re-check whether enough areas are now coloured.
 let strokeEndCallback = null;
 export function setStrokeEndCallback(cb) { strokeEndCallback = cb; }
@@ -126,7 +126,7 @@ function pencilEnd() {
   if (!state.pencilDrawing) return;
   state.pencilDrawing = false;
   _maskStroke(); // wipe paint on lines / outside the shape before anything reads it
-  if (state.colorMode === 'paint' && paintEndCallback) {
+  if (state.colorMode === 'brush' && paintEndCallback) {
     paintEndCallback();
   }
   if (strokeEndCallback) strokeEndCallback();
@@ -139,26 +139,6 @@ export function updateDrawCanvasMode() {
 }
 
 export function initDrawingTool() {
-  pencilBtn.addEventListener('click', () => {
-    state.pencilMode = !state.pencilMode;
-    pencilBtn.classList.toggle('active', state.pencilMode);
-    updateDrawCanvasMode();
-    if (state.pencilMode) {
-      setStatus(t('pencilMode'));
-      // Turning the freehand draw pen ON credits the Free Drawer sticker (first
-      // use only — recordDrawPenUse is idempotent). Toast any freshly-earned one.
-      try {
-        const { newBadges } = recordDrawPenUse();
-        if (newBadges && newBadges.length) {
-          const b = newBadges[0];
-          const cap = b.id.charAt(0).toUpperCase() + b.id.slice(1);
-          setStatus(t('stickerEarnedToast', b.emoji, t(`badge${cap}Title`)));
-          try { localStorage.setItem('lalabuba-journal-dirty', '1'); } catch {}
-        }
-      } catch {}
-    }
-  });
-
   clearPencilBtn.addEventListener('click', () => {
     drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
     state.hasFreehand = false; // layer wiped — no freehand to scan
@@ -171,4 +151,16 @@ export function initDrawingTool() {
   drawCanvas.addEventListener('touchstart', (e) => { if (isDrawingActive()) { e.preventDefault(); pencilStart(e); } }, { passive: false });
   drawCanvas.addEventListener('touchmove',  (e) => { if (isDrawingActive()) { e.preventDefault(); pencilMove(e); } }, { passive: false });
   drawCanvas.addEventListener('touchend',   pencilEnd);
+}
+
+// Credit the Free Drawer sticker on first pencil/brush use. Called from main.js
+// when the user activates a freehand mode so the sticker is awarded regardless
+// of which tool they pick.
+export function creditDrawPenSticker() {
+  try {
+    const { newBadges } = recordDrawPenUse();
+    return newBadges ?? [];
+  } catch {
+    return [];
+  }
 }

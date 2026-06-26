@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=216" />
-  <link rel="stylesheet" href="/css/header.css?v=216" />
-  <link rel="stylesheet" href="/css/hero.css?v=216" />
-  <link rel="stylesheet" href="/css/generator.css?v=216" />
-  <link rel="stylesheet" href="/css/layout.css?v=216" />
-  <link rel="stylesheet" href="/css/workspace.css?v=216" />
-  <link rel="stylesheet" href="/css/palette.css?v=216" />
-  <link rel="stylesheet" href="/css/modals.css?v=216" />
-  <link rel="stylesheet" href="/css/footer.css?v=216" />
-  <link rel="stylesheet" href="/css/print.css?v=216" />
-  <link rel="stylesheet" href="/css/cookies.css?v=216" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=216" />
-  <script src="/js/cookies.js?v=216"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=217" />
+  <link rel="stylesheet" href="/css/header.css?v=217" />
+  <link rel="stylesheet" href="/css/hero.css?v=217" />
+  <link rel="stylesheet" href="/css/generator.css?v=217" />
+  <link rel="stylesheet" href="/css/layout.css?v=217" />
+  <link rel="stylesheet" href="/css/workspace.css?v=217" />
+  <link rel="stylesheet" href="/css/palette.css?v=217" />
+  <link rel="stylesheet" href="/css/modals.css?v=217" />
+  <link rel="stylesheet" href="/css/footer.css?v=217" />
+  <link rel="stylesheet" href="/css/print.css?v=217" />
+  <link rel="stylesheet" href="/css/cookies.css?v=217" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=217" />
+  <script src="/js/cookies.js?v=217"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -379,15 +379,15 @@
               <button id="go-free-btn"        type="button" disabled class="action-btn action-btn--free" data-i18n="goFreeBtn">🎨 Free!</button>
             </div>
             <div class="action-sep" aria-hidden="true"></div>
-            <!-- Group 3: Fill mode toggle (tap-to-fill vs manual paint) -->
+            <!-- Group 3: Coloring tool (tap-to-fill / pencil / brush) -->
             <div class="action-group color-mode-group" role="group" aria-label="Coloring mode">
-              <button id="mode-tap-btn"   type="button" disabled class="mode-btn active" data-i18n="tapModeBtn">🎯 Tap</button>
-              <button id="mode-paint-btn" type="button" disabled class="mode-btn"        data-i18n="paintModeBtn">🖌️ Paint</button>
+              <button id="mode-tap-btn"    type="button" disabled class="mode-btn active" data-i18n="tapModeBtn">🎯 Tap</button>
+              <button id="mode-pencil-btn" type="button" disabled class="mode-btn"        data-i18n="pencilModeBtn">✏️ Pencil</button>
+              <button id="mode-brush-btn"  type="button" disabled class="mode-btn"        data-i18n="brushModeBtn">🖌️ Brush</button>
             </div>
             <div class="action-sep" aria-hidden="true"></div>
-            <!-- Group 4: Drawing/annotation tools -->
-            <div class="action-group">
-              <button id="pencil-button"       type="button" disabled class="action-btn" data-i18n="pencilBtn">✏️ Draw</button>
+            <!-- Group 4: Drawing utils — visible only in pencil / brush mode -->
+            <div class="action-group" id="draw-tools-group" style="display:none">
               <button id="clear-pencil-button" type="button" disabled class="action-btn" data-i18n="clearPencilBtn">🗑️ Clear</button>
             </div>
             <!-- Spacer: fills remaining row-1 space on desktop -->
@@ -726,7 +726,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=216"></script>
+  <script type="module" src="/js/main.js?v=217"></script>
 </body>
 </html>
 

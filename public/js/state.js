@@ -17,13 +17,12 @@ export const state = {
   coloringStartTime: null,
   selectedPaletteIndex: 0,
   selectedSize: 'xxl',
-  pencilMode: false,
   pencilDrawing: false,
   customColor: '#e91e63',
   turnstileToken: null,
   turnstileWidgetId: null,
   undoStack: [],        // [{regionId, record: Uint8Array, completedBefore: boolean}]
-  colorMode: 'tap',     // 'tap' | 'paint'
+  colorMode: 'tap',     // 'tap' | 'pencil' | 'brush'
   paletteOverride: null, // when set, activePalette() uses this instead of PALETTES[selected]
   isFreeMode: false,    // one-way unlock: no enforcement, any color any area
   hasFreehand: false,   // any pencil/paint stroke drawn this image — gates costly draw-layer reads

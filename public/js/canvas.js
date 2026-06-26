@@ -3,7 +3,7 @@ import { DIFFICULTY } from './data.js';
 import { t } from './i18n.js';
 import {
   previewCanvas, drawCanvas, context, drawCtx,
-  previewStage, showNumbersInput, printButton, downloadButton, pencilBtn, clearPencilBtn,
+  previewStage, showNumbersInput, printButton, downloadButton, clearPencilBtn,
 } from './dom.js';
 import { resetZoom } from './zoom.js';
 import { bounce, sparkleBurst, sparkleAt, playComplete } from './fx.js';
@@ -768,21 +768,20 @@ export function drawBaseImage(image) {
   drawCanvas.hidden = false;
   drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
 
-  // Exit pencil/paint mode on new image.
-  state.pencilMode = false;
+  // Reset to tap mode on new image.
   state.colorMode = 'tap';
-  pencilBtn.classList.remove('active');
   drawCanvas.classList.remove('pencil-active');
   previewCanvas.style.pointerEvents = '';
   document.getElementById('mode-tap-btn')?.classList.add('active');
-  document.getElementById('mode-paint-btn')?.classList.remove('active');
+  document.getElementById('mode-pencil-btn')?.classList.remove('active');
+  document.getElementById('mode-brush-btn')?.classList.remove('active');
+  const drawToolsGroup = document.getElementById('draw-tools-group');
+  if (drawToolsGroup) drawToolsGroup.style.display = 'none';
 
-  pencilBtn.disabled = false;
   clearPencilBtn.disabled = false;
-  const modeTapBtn = document.getElementById('mode-tap-btn');
-  const modePaintBtn = document.getElementById('mode-paint-btn');
-  if (modeTapBtn) modeTapBtn.disabled = false;
-  if (modePaintBtn) modePaintBtn.disabled = false;
+  document.getElementById('mode-tap-btn')    && (document.getElementById('mode-tap-btn').disabled    = false);
+  document.getElementById('mode-pencil-btn') && (document.getElementById('mode-pencil-btn').disabled = false);
+  document.getElementById('mode-brush-btn')  && (document.getElementById('mode-brush-btn').disabled  = false);
 
   context.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
   context.fillStyle = "#ffffff";
