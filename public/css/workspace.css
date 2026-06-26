@@ -82,6 +82,7 @@
   background: var(--card);
   color: var(--muted);
   cursor: pointer;
+  touch-action: manipulation;
   transition: all .2s;
 }
 .action-btn:hover:not(:disabled) { border-color: var(--orange); color: var(--orange); transform: translateY(-1px); }

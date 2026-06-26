@@ -149,6 +149,7 @@
   background: var(--card);
   color: var(--muted);
   cursor: pointer;
+  touch-action: manipulation;
   transition: background 0.15s, color 0.15s;
   white-space: nowrap;
 }

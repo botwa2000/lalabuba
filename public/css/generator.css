@@ -136,6 +136,7 @@
   background: var(--card);
   color: var(--muted);
   cursor: pointer;
+  touch-action: manipulation;
   transition: all .2s;
 }
 .diff-pill:hover           { border-color: var(--blue); color: var(--blue); transform: translateY(-1px); }
@@ -385,6 +386,7 @@
   background: var(--card);
   color: var(--muted);
   cursor: pointer;
+  touch-action: manipulation;
   white-space: nowrap;
   transition: all .18s;
   flex-shrink: 0;
@@ -513,8 +515,20 @@
 }
 @media (prefers-reduced-motion: reduce) { .voice-btn.listening { animation: none; } }
 
-/* Settings chips: hidden on landing, visible after generation */
-.app.app-hero .settings-chips { display: none; }
+/* Settings chips: visible in both hero and coloring state.
+   In hero, show as a horizontal pill row (override config-panel column layout).
+   chip-diff is hidden in hero (the diff-pill row handles difficulty). */
+.app.app-hero .settings-chips {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.app.app-hero .settings-chips .setting-chip {
+  width: auto;
+  text-align: center;
+  border-radius: 50px;
+}
+.app.app-hero #chip-diff { display: none; }
 /* Status bar: hidden on landing page */
 .app.app-hero #status { display: none; }
 

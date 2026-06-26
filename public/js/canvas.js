@@ -606,8 +606,10 @@ export function floodFillAt(canvasX, canvasY, fillColor) {
   visited[startIdx] = 1;
   queue[tail++] = startIdx;
 
-  // Cap at 45% of the image to avoid flooding the white background.
-  const MAX_FILL = Math.floor(n * 0.45);
+  // Cap at 65% of the image to avoid flooding the entire white background.
+  // (Primary fill uses fillRegion when regionMap is ready; this BFS only
+  // runs as a fallback before segmentation completes.)
+  const MAX_FILL = Math.floor(n * 0.65);
 
   while (head < tail) {
     if (tail >= MAX_FILL) return { success: false };

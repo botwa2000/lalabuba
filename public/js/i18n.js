@@ -205,6 +205,7 @@ const TRANSLATIONS = {
     pencilBtn: "✏️ Draw",
     clearPencilBtn: "🗑️ Clear",
     pencilMode: "Pencil mode — draw freely on the picture!",
+    segmentingHint: "Still scanning the image — tap again in a moment!",
     customColorHint: "Pick any colour",
     customColorSelected: "Custom colour selected. Click a region to fill!",
     customColorLabel: "custom colour",

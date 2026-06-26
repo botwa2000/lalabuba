@@ -701,11 +701,16 @@ previewCanvas.addEventListener("click", (event) => {
 
   if (!state.coloringStartTime) state.coloringStartTime = Date.now();
 
-  // Primary fill: BFS from tap point, stopping at ink lines.
-  // Works immediately — no dependency on regionMap / segmentation worker.
-  const fillResult = floodFillAt(canvasX, canvasY, fillColor);
+  // Primary fill: use exact region pixels when worker has finished (accurate,
+  // no MAX_FILL cap). Fall back to BFS when regionMap is not yet ready.
+  let fillResult;
+  if (state.regionMap && regionId > 0 && regionId !== state.backgroundRegionId) {
+    fillResult = fillRegion(regionId, fillColor);
+  } else {
+    fillResult = floodFillAt(canvasX, canvasY, fillColor);
+  }
   if (!fillResult.success) {
-    // Tapped on a line or the outer background — ignore silently
+    if (state.isSegmenting) setStatus(t('segmentingHint'), false);
     return;
   }
 
