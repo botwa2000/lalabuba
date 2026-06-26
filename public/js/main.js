@@ -397,6 +397,7 @@ window.onTurnstileExpired = () => { state.turnstileToken = null; };
 window.onTurnstileError   = () => {
   state.turnstileToken = null;
   document.body.classList.remove('ts-verifying'); // don't leave the page dimmed
+  document.body.classList.add('ts-solved'); // tuck widget off-screen so it can't block canvas
 };
 
 function getTurnstileToken() {
@@ -419,6 +420,8 @@ function getTurnstileToken() {
   return new Promise((resolve) => {
     const finish = (val) => {
       document.body.classList.remove('ts-verifying');
+      // If no token (30 s timeout), tuck the widget off-screen so it can't block canvas.
+      if (!val) document.body.classList.add('ts-solved');
       resolve(val);
     };
     const poll = setInterval(() => {
@@ -485,9 +488,11 @@ form.addEventListener("submit", async (event) => {
     setStatus(error.message || "Something went wrong.", true);
   } finally {
     submitButton.disabled = false;
-    // Reset token so next submission gets a fresh one
+    // Reset token so next submission gets a fresh one.
+    // Do NOT remove ts-solved here — that would bring the Turnstile widget (z-index 2000)
+    // back to the centre of the screen right after drawing, blocking all canvas taps.
+    // ts-solved is removed at the START of the next Draw (inside getTurnstileToken).
     state.turnstileToken = null;
-    document.body.classList.remove('ts-solved'); // widget back to centre for next challenge
     const tsEl = document.getElementById('turnstile-widget');
     if (window.turnstile && tsEl) window.turnstile.reset(tsEl);
   }
