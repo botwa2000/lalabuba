@@ -415,6 +415,7 @@ function getTurnstileToken() {
   // challenge was on screen but never completed). The widget stays visible because
   // Cloudflare won't run a challenge inside a hidden container.
   document.body.classList.add('ts-verifying');
+  document.body.classList.remove('ts-solved'); // bring widget back to centre before the challenge shows
   return new Promise((resolve) => {
     const finish = (val) => {
       document.body.classList.remove('ts-verifying');
@@ -486,6 +487,7 @@ form.addEventListener("submit", async (event) => {
     submitButton.disabled = false;
     // Reset token so next submission gets a fresh one
     state.turnstileToken = null;
+    document.body.classList.remove('ts-solved'); // widget back to centre for next challenge
     const tsEl = document.getElementById('turnstile-widget');
     if (window.turnstile && tsEl) window.turnstile.reset(tsEl);
   }
