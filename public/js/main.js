@@ -15,7 +15,7 @@ import {
   debugPanel,
 } from './dom.js';
 import {
-  renderGeneratedImage, findRegionAt, fillRegion, undoLastFill, hexToRgb, redrawCanvas,
+  renderGeneratedImage, findRegionAt, fillRegion, floodFillAt, undoLastFill, hexToRgb, redrawCanvas,
 } from './canvas.js';
 import {
   activePalette, setStatus, renderLegend, setColorCount, showLoading, hideLoading,
@@ -630,56 +630,45 @@ previewCanvas.addEventListener('pointerup',     () => { _eraseDown = false; });
 previewCanvas.addEventListener('pointercancel', () => { _eraseDown = false; });
 
 previewCanvas.addEventListener("click", (event) => {
-  if (isPanMode()) return; // pan mode active — drag is for moving, not coloring
-  if (state.colorMode === 'paint') return; // paint mode uses draw-canvas, not click-fill
-  if (!state.regionMap) {
-    if (state.isSegmenting) setStatus(t('segmenting'));
-    return;
-  }
-  if (state.eraseMode) return; // handled by pointerdown above
+  if (isPanMode()) return;
+  if (state.colorMode === 'paint') return;
+  if (state.eraseMode) return;
+  if (!state.paintedImageData) return; // no image yet
 
   const { x: canvasX, y: canvasY } = getCanvasCoords(event);
 
+  // Determine fill color
+  const fillColor = state.selectedPaletteIndex === -1
+    ? hexToRgb(state.customColor)
+    : hexToRgb(activePalette()[state.selectedPaletteIndex].color);
+
+  // regionId: 0 until the background worker finishes — that's OK. Used only for
+  // color enforcement, double-click batch, and completion tracking.
   const regionId = findRegionAt(canvasX, canvasY);
+
+  // Color enforcement in numbers mode — only when regionMap is ready
+  if (!state.isFreeMode && showNumbersInput.checked && state.regionColorMap?.has(regionId)) {
+    const required = state.regionColorMap.get(regionId);
+    if (state.selectedPaletteIndex !== -1 && state.selectedPaletteIndex !== required) {
+      const c = activePalette()[required];
+      setStatus(t('needsColor', required + 1, c.label), false);
+      flashPaletteSwatch(required);
+      return;
+    }
+  }
 
   if (DEBUG && debugPanel) {
     debugPanel.textContent = [
       `Clicked     : (${canvasX}, ${canvasY})`,
-      `Region id   : ${regionId > 0 ? regionId : "none"}${regionId === state.backgroundRegionId ? " (bg)" : ""} (${state.regionPixels.get(regionId)?.length ?? 0} px)`,
+      `Region id   : ${regionId > 0 ? regionId : "none"}${regionId === state.backgroundRegionId ? " (bg)" : ""} (${state.regionPixels?.get(regionId)?.length ?? 0} px)`,
       `Mode        : fill ${activePalette()[state.selectedPaletteIndex]?.label}`,
     ].join("\n");
     document.getElementById("debug-details").open = true;
   }
 
-  if (!regionId) {
-    setStatus(t('notEnclosed'), true);
-    return;
-  }
-
-  let fillColor;
-  if (state.selectedPaletteIndex === -1) {
-    fillColor = hexToRgb(state.customColor);
-  } else {
-    // Color enforcement — skip in free mode
-    if (!state.isFreeMode && showNumbersInput.checked && state.regionColorMap && state.regionColorMap.has(regionId)) {
-      const required = state.regionColorMap.get(regionId);
-      if (state.selectedPaletteIndex !== required) {
-        const c = activePalette()[required];
-        setStatus(t('needsColor', required + 1, c.label), false);
-        flashPaletteSwatch(required);
-        return;
-      }
-    }
-    if (state.isFreeMode && state.selectedPaletteIndex === -1) {
-      fillColor = hexToRgb(state.customColor);
-    } else {
-      fillColor = hexToRgb(activePalette()[state.selectedPaletteIndex].color);
-    }
-  }
-
-  // ── Double-click/tap: fill ALL regions of the same color number ──────────
+  // ── Double-click: fill ALL regions of the same color number ────────────────
   const now = Date.now();
-  const isDouble = (now - _lastClickMs) < 400 && _lastClickId === regionId;
+  const isDouble = (now - _lastClickMs) < 400 && _lastClickId === regionId && regionId > 0;
   _lastClickMs = now; _lastClickId = regionId;
 
   if (isDouble && showNumbersInput.checked && state.regionColorMap?.has(regionId)) {
@@ -688,14 +677,12 @@ previewCanvas.addEventListener("click", (event) => {
     if (!state.coloringStartTime) state.coloringStartTime = Date.now();
     for (const [rid, num] of state.regionColorMap) {
       if (num === colorNum && !state.completedRegions.has(rid)) {
-        const completedBefore = state.completedRegions.has(rid);
         state.completedRegions.add(rid);
         const result = fillRegion(rid, fillColor);
-        if (result.success) batchRecords.push({ regionId: rid, record: result.record, completedBefore });
+        if (result.success) batchRecords.push({ regionId: rid, record: result.record, completedBefore: false });
       }
     }
     if (batchRecords.length) {
-      // Push as a single batch entry (array of records) — undo reverts all at once
       state.undoStack.push({ batch: batchRecords });
       if (state.undoStack.length > UNDO_MAX) state.undoStack.shift();
       updateUndoBtn();
@@ -711,12 +698,24 @@ previewCanvas.addEventListener("click", (event) => {
   }
 
   if (!state.coloringStartTime) state.coloringStartTime = Date.now();
+
+  // Primary fill: BFS from tap point, stopping at ink lines.
+  // Works immediately — no dependency on regionMap / segmentation worker.
+  const fillResult = floodFillAt(canvasX, canvasY, fillColor);
+  if (!fillResult.success) {
+    // Tapped on a line or the outer background — ignore silently
+    return;
+  }
+
+  // If regionMap is ready, mark the corresponding region for completion tracking.
   const completedBefore = state.completedRegions.has(regionId);
-  state.completedRegions.add(regionId);
-  const fillResult = fillRegion(regionId, fillColor);
+  if (regionId > 0) state.completedRegions.add(regionId);
+
   pushUndo(regionId, fillResult, completedBefore);
 
-  const label = state.selectedPaletteIndex === -1 ? t('customColorLabel') : activePalette()[state.selectedPaletteIndex].label;
+  const label = state.selectedPaletteIndex === -1
+    ? t('customColorLabel')
+    : activePalette()[state.selectedPaletteIndex].label;
   if (showNumbersInput.checked && state.regionColorMap && state.regionColorMap.size > 0) {
     const total = state.regionColorMap.size;
     const done = [...state.regionColorMap.keys()].filter(id => state.completedRegions.has(id)).length;
@@ -724,7 +723,7 @@ previewCanvas.addEventListener("click", (event) => {
   } else {
     setStatus(t('filled', label));
   }
-  speak(label); // read-aloud (no-op unless narration is on) — names the color filled
+  speak(label);
   checkCompletion();
   const hint = document.getElementById('coloring-hint');
   if (hint) hint.hidden = true;

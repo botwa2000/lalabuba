@@ -582,6 +582,56 @@ export function fillRegion(regionId, fillColor) {
   return { success: true, record: packUndoRecord(undoEntries) };
 }
 
+// BFS flood fill from a tap point — the primary fill mechanism.
+// Floods from (canvasX, canvasY) through non-line pixels, stopping at dark
+// ink lines. Uses state.lineMask when available (accurate from the trapped-ball
+// worker), falls back to a brightness < 80 heuristic.
+// Returns { success, record, area } — record uses the same packed undo format
+// as fillRegion so the undo stack is fully interoperable.
+export function floodFillAt(canvasX, canvasY, fillColor) {
+  if (!state.paintedImageData) return { success: false };
+  const paint  = state.paintedImageData.data;
+  const { width, height } = previewCanvas;
+  const n = width * height;
+  const lineMask = state.lineMask; // null until worker finishes — that's OK
+
+  const startIdx = canvasY * width + canvasX;
+  // Don't start on a line pixel — brightness test or lineMask.
+  const startBr = (paint[startIdx*4] + paint[startIdx*4+1] + paint[startIdx*4+2]) / 3;
+  if (lineMask ? lineMask[startIdx] : startBr < 80) return { success: false };
+
+  const visited = new Uint8Array(n);
+  const queue   = new Int32Array(n);
+  let head = 0, tail = 0;
+  visited[startIdx] = 1;
+  queue[tail++] = startIdx;
+
+  // Cap at 45% of the image to avoid flooding the white background.
+  const MAX_FILL = Math.floor(n * 0.45);
+
+  while (head < tail) {
+    if (tail >= MAX_FILL) return { success: false };
+    const i = queue[head++];
+    const x = i % width, y = (i / width) | 0;
+    if (x > 0)       { const nb = i-1;     if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < 80; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
+    if (x < width-1) { const nb = i+1;     if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < 80; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
+    if (y > 0)       { const nb = i-width; if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < 80; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
+    if (y < height-1){ const nb = i+width; if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < 80; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
+  }
+
+  const { r, g, b } = fillColor;
+  const undoEntries = [];
+  for (let qi = 0; qi < tail; qi++) {
+    const idx = queue[qi];
+    const o = idx * 4;
+    undoEntries.push(idx, paint[o], paint[o+1], paint[o+2], paint[o+3]);
+    paint[o] = r; paint[o+1] = g; paint[o+2] = b; paint[o+3] = 255;
+  }
+
+  redrawCanvas();
+  return { success: true, record: packUndoRecord(undoEntries), area: tail };
+}
+
 // Pack [idx, r, g, b, a, idx, r, g, b, a, ...] into compact Uint8Array
 // idx stored as 3 bytes LE (max 1024*1024 = 1048576 < 16M)
 function packUndoRecord(entries) {
