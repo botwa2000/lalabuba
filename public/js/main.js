@@ -1276,7 +1276,7 @@ function updateNarrateChip() {
 function updateArtStyleChip() {
   if (!chipArtStyle) return;
   const isClassic = state.artStyle !== 'artistic';
-  chipArtStyle.textContent = isClassic ? '🎨 Classic' : '✏️ Sketch';
+  chipArtStyle.textContent = isClassic ? '🖌️ Classic' : '✏️ Sketch';
   chipArtStyle.classList.toggle('setting-chip--on', isClassic);
   chipArtStyle.title = isClassic ? t('artStyleClassicHint') : t('artStyleSketchHint');
 }
