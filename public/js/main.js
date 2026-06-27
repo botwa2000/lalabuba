@@ -384,20 +384,26 @@ function celebrate() {
 })();
 
 // ─── Turnstile ───────────────────────────────────────────────────────────────
-// Auto-render uses data-callback="onTurnstileSuccess" on the widget div.
-// This fires regardless of script/module load order — no manual render needed.
+// Silent pre-load: widget starts off-screen at page load and obtains a token
+// in the background. For ~99 % of real users the token is ready before Draw!
+// is clicked — no popup, no interaction. The widget moves on-screen ONLY when
+// CF explicitly needs a human click (before-interactive-callback).
 window.onTurnstileSuccess = (token) => {
   state.turnstileToken = token;
-  document.body.classList.remove('ts-verifying'); // challenge solved → drop overlay
-  // …and tuck the solved widget box away so it doesn't linger centred over the
-  // app (Cloudflare leaves its success state rendered). Cleared on next Draw.
-  document.body.classList.add('ts-solved');
+  document.body.classList.remove('ts-needs-interaction');
 };
 window.onTurnstileExpired = () => { state.turnstileToken = null; };
 window.onTurnstileError   = () => {
   state.turnstileToken = null;
-  document.body.classList.remove('ts-verifying'); // don't leave the page dimmed
-  document.body.classList.add('ts-solved'); // tuck widget off-screen so it can't block canvas
+  document.body.classList.remove('ts-needs-interaction');
+};
+// CF fires this just before showing the visual checkbox — move widget on-screen.
+window.onTurnstileBeforeInteractive = () => {
+  document.body.classList.add('ts-needs-interaction');
+};
+// CF fires this after the user completes the interactive challenge.
+window.onTurnstileAfterInteractive = () => {
+  document.body.classList.remove('ts-needs-interaction');
 };
 
 function getTurnstileToken() {
@@ -405,29 +411,18 @@ function getTurnstileToken() {
                    window.location.protocol === 'capacitor:' ||
                    window.location.protocol === 'ionic:';
   if (isNative || !window.turnstile) return Promise.resolve(null);
-  // Token already stored from auto-render callback
   if (state.turnstileToken) return Promise.resolve(state.turnstileToken);
-  // Token might be available in the widget but callback fired before state was ready
   const el = document.getElementById('turnstile-widget');
   const existing = el ? window.turnstile.getResponse(el) : null;
   if (existing) return Promise.resolve(existing);
-  // No token yet → show a dimmed verify overlay that points at the interaction-only
-  // checkbox so it can't be missed (the cause of "bot check failed" on mobile: the
-  // challenge was on screen but never completed). The widget stays visible because
-  // Cloudflare won't run a challenge inside a hidden container.
-  document.body.classList.add('ts-verifying');
-  document.body.classList.remove('ts-solved'); // bring widget back to centre before the challenge shows
+  // Token not ready yet — wait silently. If CF needs a human click it will call
+  // onTurnstileBeforeInteractive which moves the widget on-screen automatically.
   return new Promise((resolve) => {
-    const finish = (val) => {
-      document.body.classList.remove('ts-verifying');
-      // If no token (30 s timeout), tuck the widget off-screen so it can't block canvas.
-      if (!val) document.body.classList.add('ts-solved');
-      resolve(val);
-    };
     const poll = setInterval(() => {
-      if (state.turnstileToken) { clearInterval(poll); finish(state.turnstileToken); }
+      if (state.turnstileToken) { clearInterval(poll); clearTimeout(timer); resolve(state.turnstileToken); }
     }, 100);
-    setTimeout(() => { clearInterval(poll); finish(null); }, 30000);
+    // 15 s grace period, then pass null so the API call still proceeds.
+    const timer = setTimeout(() => { clearInterval(poll); resolve(null); }, 15000);
   });
 }
 
@@ -488,10 +483,8 @@ form.addEventListener("submit", async (event) => {
     setStatus(error.message || "Something went wrong.", true);
   } finally {
     submitButton.disabled = false;
-    // Reset token so next submission gets a fresh one.
-    // Do NOT remove ts-solved here — that would bring the Turnstile widget (z-index 2000)
-    // back to the centre of the screen right after drawing, blocking all canvas taps.
-    // ts-solved is removed at the START of the next Draw (inside getTurnstileToken).
+    // Clear token and restart the silent background challenge for the next Draw.
+    // Widget stays off-screen (default CSS); ts-needs-interaction is already clear.
     state.turnstileToken = null;
     const tsEl = document.getElementById('turnstile-widget');
     if (window.turnstile && tsEl) window.turnstile.reset(tsEl);
