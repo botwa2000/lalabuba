@@ -106,22 +106,24 @@ async function run() {
       await snap(page, `${vp.name}--02-coloring`);
 
       // ── Coloring state: numbers OFF ──────────────────────────────────────
-      const numsBtn = await page.$('#canvas-numbers-btn');
-      if (numsBtn) {
-        await numsBtn.click();
+      // dispatchEvent bypasses Playwright visibility checks — button may be hidden
+      // behind the "More" overflow on narrow viewports but is still in the DOM.
+      const numsCount = await page.locator('#canvas-numbers-btn').count();
+      if (numsCount > 0) {
+        await page.locator('#canvas-numbers-btn').dispatchEvent('click');
         await page.waitForTimeout(500);
         await snap(page, `${vp.name}--03-coloring-no-numbers`);
 
         // Restore numbers on
-        await numsBtn.click();
+        await page.locator('#canvas-numbers-btn').dispatchEvent('click');
         await page.waitForTimeout(300);
       }
 
       // ── Coloring state: Free! mode activated ─────────────────────────────
-      const freeBtn = await page.$('#go-free-btn');
-      if (freeBtn) {
-        // Click directly activate (no undo history yet so no confirmation dialog)
-        await freeBtn.click();
+      const freeCount = await page.locator('#go-free-btn').count();
+      if (freeCount > 0) {
+        // dispatchEvent works even if button is in overflow drawer
+        await page.locator('#go-free-btn').dispatchEvent('click');
         await page.waitForTimeout(600);
         await snap(page, `${vp.name}--04-free-mode`);
       }
