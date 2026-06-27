@@ -212,6 +212,25 @@ export function nearestPaletteIndex(r, g, b, palette) {
   return best;
 }
 
+// Compute centroid for a worker region. regionPixels (px) may be empty for
+// heavily textured images where buildRegionPixels filtered all line-masked pixels.
+// Falls back to scanning regionMap directly so badges always land inside the region.
+function _centroid(id, px, bW) {
+  let sx = 0, sy = 0, c = 0;
+  if (px && px.length > 0) {
+    const step = Math.max(1, (px.length / 300) | 0);
+    for (let i = 0; i < px.length; i += step) { sx += px[i] % bW; sy += (px[i] / bW) | 0; c++; }
+  }
+  if (c === 0 && state.regionMap) {
+    const rm = state.regionMap;
+    const step = Math.max(1, (rm.length / 1000) | 0);
+    for (let j = 0; j < rm.length; j += step) {
+      if (rm[j] === id) { sx += j % bW; sy += (j / bW) | 0; c++; }
+    }
+  }
+  return { x: c ? (sx / c) | 0 : 0, y: c ? (sy / c) | 0 : 0 };
+}
+
 export function overlayNumbers() {
   const palette = _palette;
   const colorCount = _colorCount;
@@ -242,11 +261,8 @@ export function overlayNumbers() {
         .sort((a, b) => b[1].length - a[1].length)
         .slice(0, colorCount);
       regions = bySize.map(([id, px]) => {
-        let sx = 0, sy = 0;
-        const step = Math.max(1, (px.length / 300) | 0);
-        let c = 0;
-        for (let i = 0; i < px.length; i += step) { sx += px[i] % bW; sy += (px[i] / bW) | 0; c++; }
-        return { id, x: c ? (sx / c) | 0 : 0, y: c ? (sy / c) | 0 : 0, area: px.length };
+        const { x, y } = _centroid(id, px, bW);
+        return { id, x, y, area: px.length };
       });
     }
 
@@ -356,11 +372,8 @@ export function overlayNumbers() {
         .sort((a, b) => b[1].length - a[1].length)
         .slice(0, colorCount);
       regions = bySize.map(([id, px]) => {
-        let sx = 0, sy = 0;
-        const step = Math.max(1, (px.length / 300) | 0);
-        let c = 0;
-        for (let i = 0; i < px.length; i += step) { sx += px[i] % bW; sy += (px[i] / bW) | 0; c++; }
-        const reg = { id, x: c ? (sx / c) | 0 : 0, y: c ? (sy / c) | 0 : 0, area: px.length };
+        const { x, y } = _centroid(id, px, bW);
+        const reg = { id, x, y, area: px.length };
         reg._mapId = id;
         return reg;
       });

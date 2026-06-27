@@ -500,7 +500,13 @@ form.addEventListener("submit", async (event) => {
 
 // ─── Show numbers checkbox ───────────────────────────────────────────────────
 showNumbersInput.addEventListener("change", () => {
-  redrawCanvas(); // just re-overlays/removes number badges — never resets fills
+  if (showNumbersInput.checked) {
+    // Clear stale cached regions so overlayNumbers() always rebuilds fresh.
+    // Prevents an empty map (built before segmentation completed) from persisting.
+    state.numberRegions = null;
+    state.regionColorMap = null;
+  }
+  redrawCanvas();
   updateFinishBtnVisibility();
 });
 
@@ -1292,6 +1298,10 @@ function updateArtStyleChip() {
   chipArtStyle.textContent = isClassic ? '🖌️ Classic' : '✏️ Sketch';
   chipArtStyle.classList.toggle('setting-chip--on', isClassic);
   chipArtStyle.title = isClassic ? t('artStyleClassicHint') : t('artStyleSketchHint');
+  const menuIcon  = document.getElementById('art-style-menu-icon');
+  const menuLabel = document.getElementById('art-style-menu-label');
+  if (menuIcon)  menuIcon.textContent  = isClassic ? '🖌️' : '✏️';
+  if (menuLabel) menuLabel.textContent = isClassic ? t('artStyleClassicHint') : t('artStyleSketchHint');
 }
 function updateAllChips() {
   updateDiffChip(); updateCountChip(); updatePaletteChip(); updateArtStyleChip(); updateNumbersChip(); updateSoundChip(); updateNarrateChip();
@@ -1330,6 +1340,11 @@ if (chipArtStyle) chipArtStyle.addEventListener('click', () => {
       syncCanvasNumbersBtn();
     }
   }
+});
+
+const artStyleMenuBtn = document.getElementById('art-style-menu-btn');
+if (artStyleMenuBtn) artStyleMenuBtn.addEventListener('click', () => {
+  if (chipArtStyle) chipArtStyle.click();
 });
 
 if (chipDiff) chipDiff.addEventListener('click', () => {
