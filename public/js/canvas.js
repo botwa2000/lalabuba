@@ -251,12 +251,12 @@ function _centroid(id, px, bW) {
 export function overlayNumbers() {
   const palette = _palette;
   const colorCount = _colorCount;
-  // Both baseImageData AND regionMap must be ready before drawing badges.
-  // regionMap arrives from the worker asynchronously; returning early prevents
-  // broken pre-worker state (all badges "1", BFS fill overflow, no colour
-  // enforcement). The canvas-numbers-btn is disabled until the worker finishes
-  // so the user cannot trigger this path prematurely.
-  if (!state.baseImageData || !state.regionMap) return;
+  // baseImageData must be ready; regionMap is optional (arrives from worker later).
+  // When regionMap is null we use sequential fake IDs for the brightness-based
+  // regions so badges are distinct. Once the worker finishes, _applyWorkerResult
+  // clears numberRegions/regionColorMap and the next redrawCanvas() rebuilds them
+  // with accurate worker-derived data.
+  if (!state.baseImageData) return;
   // The region set (centroids + areas) is derived from the BASE image, so it is
   // identical on every redraw — recomputing buildWalkableMask + findRegions (a
   // full connected-component pass over ~1M pixels) on every single fill was the
@@ -312,6 +312,10 @@ export function overlayNumbers() {
           }
         }
       }
+      // Pre-worker: regionMap not ready yet — give each brightness-based region a
+      // unique sequential ID so badges are distinct (prevents all-"1" collapse).
+      // These are replaced by real worker IDs once _applyWorkerResult fires.
+      if (!(mapId > 0) && !state.regionMap) mapId = index + 1;
       region._mapId = mapId; // cache resolved ID for click-handler colour enforcement
 
       const pixels = mapId > 0 ? state.regionPixels?.get(mapId) : null;
@@ -429,8 +433,8 @@ export function overlayNumbers() {
   const drawnMapIds = new Set(); // prevent drawing the same region badge twice
 
   regions.forEach((region) => {
-    // Use pre-computed id (worker-derived regions) or snap via regionMap.
-    let mapId = region.id ?? state.regionMap?.[region.y * w + region.x];
+    // Prefer the ID cached during colorMap build (handles pre-worker sequential IDs).
+    let mapId = region._mapId ?? region.id ?? state.regionMap?.[region.y * w + region.x];
     if (!(mapId > 0) && state.regionMap) {
       const snapR = 20;
       outer: for (let dy = -snapR; dy <= snapR; dy++) {
@@ -1010,14 +1014,10 @@ export async function renderGeneratedImage(imageBase64) {
   if (shareButton) shareButton.disabled = false;
   const shareArtworkBtn = document.getElementById('share-artwork-btn');
   if (shareArtworkBtn) shareArtworkBtn.disabled = false;
-  // Reset free mode on new generation, then enable canvas controls.
-  // canvas-numbers-btn stays DISABLED until the worker finishes segmentation —
-  // pre-worker state produces broken badges (all "1"), BFS fill overflow, and
-  // no colour enforcement. It is re-enabled in the .finally() block below.
   state.isFreeMode = false;
   const canvasNums = document.getElementById('canvas-numbers-btn');
   if (canvasNums) {
-    canvasNums.disabled = true; // re-enabled once regionMap is ready
+    canvasNums.disabled = false; // enabled immediately; badges upgrade to accurate data when worker finishes
     const numsOn = showNumbersInput.checked;
     canvasNums.classList.toggle('action-btn--on', numsOn);
     canvasNums.textContent = numsOn ? t('numbersBtn') : t('numbersBtnOff');
@@ -1048,18 +1048,17 @@ export async function renderGeneratedImage(imageBase64) {
       if (gen !== _segGeneration) return; // superseded — discard
       _applyWorkerResult(result);
     })
-    .catch(() => {
-      // Fallback: synchronous segmentation (blocks briefly but works everywhere)
+    .catch((err) => {
       if (gen !== _segGeneration) return;
-      try { precomputeRegions(); } catch { /* ignore */ }
+      // Skip sync fallback on timeout: complex images take equally long on the main
+      // thread and would freeze the browser. Badges already show via sequential IDs.
+      if (err?.message !== 'worker-timeout') {
+        try { precomputeRegions(); } catch { /* ignore */ }
+      }
     })
     .finally(() => {
       if (gen !== _segGeneration) return;
       state.isSegmenting = false;
-      // Enable the Numbers button now that regionMap is ready and overlayNumbers()
-      // will produce correct badges, fills, and colour enforcement.
-      const numBtn = document.getElementById('canvas-numbers-btn');
-      if (numBtn) numBtn.disabled = false;
-      redrawCanvas(); // regionMap is now set → overlayNumbers() draws proper badges
+      redrawCanvas(); // regionMap now set → overlayNumbers() upgrades to accurate badges
     });
 }
