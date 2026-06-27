@@ -255,7 +255,9 @@
   .app-body { margin: 0; min-height: 0; overflow: hidden; }
   /* canvas-area fills the flex-row height */
   .canvas-area { height: 100%; min-height: 0; }
-  /* Hide example cards and tagline — mirrors tablet landscape fix; keeps prompt above fold */
+  /* Hide hero text + examples in landscape — panel is 200px, heading word-wraps; form is focus */
+  .config-panel .hero-draw-heading,
+  .config-panel .hero-sub-heading,
   .config-panel .examples-grid,
   .config-panel .shuffle-cards-btn { display: none !important; }
   .config-panel .hero-tagline       { display: none; }
