@@ -871,6 +871,7 @@ export function drawBaseImage(image) {
   state.coloringStartTime = null;
   state.undoStack = [];
   state.isSegmenting = false; // worker path sets this; reset on new image
+  state.anyFillApplied = false; // any fill (even pre-segmentation BFS) grants reward
   // Segmentation is now triggered asynchronously from renderGeneratedImage() after
   // drawBaseImage() returns, so the image appears immediately with no main-thread hang.
 }

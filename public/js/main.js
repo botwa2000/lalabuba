@@ -202,7 +202,7 @@ function finishColoringManually() {
   const targets = meaningfulTargets();
   const covered = targets.length ? freeColouredRegions(targets) : new Set();
   const hasProgress =
-    state.completedRegions.size > 0 || covered.size > 0 || hasPencilMarks();
+    state.completedRegions.size > 0 || covered.size > 0 || hasPencilMarks() || state.anyFillApplied;
   if (!hasProgress) { setStatus(t('finishNeedsColor')); return; }
   celebrate();
 }
@@ -722,6 +722,8 @@ previewCanvas.addEventListener("click", (event) => {
     if (state.isSegmenting) setStatus(t('segmentingHint'), false);
     return;
   }
+
+  state.anyFillApplied = true;
 
   // If regionMap is ready, mark the corresponding region for completion tracking.
   const completedBefore = state.completedRegions.has(regionId);
