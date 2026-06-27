@@ -41,6 +41,7 @@ function _postToWorker(imageDataBuffer, width, height, gen) {
     const worker = _getWorker();
     if (!worker) { reject(new Error('no-worker')); return; }
 
+    let timeoutId;
     const onMsg = ({ data }) => {
       if (data.gen !== gen) return; // stale — a newer render already started
       cleanup();
@@ -52,12 +53,23 @@ function _postToWorker(imageDataBuffer, width, height, gen) {
       reject(e);
     };
     const cleanup = () => {
+      clearTimeout(timeoutId);
       worker.removeEventListener('message', onMsg);
       worker.removeEventListener('error', onErr);
     };
 
     worker.addEventListener('message', onMsg);
     worker.addEventListener('error', onErr);
+
+    // 90-second safety valve: if the worker is still running (very complex image),
+    // reject so .catch() falls back to synchronous segmentation and .finally()
+    // re-enables the Numbers button. Worker is destroyed so the next generation
+    // starts fresh.
+    timeoutId = setTimeout(() => {
+      cleanup();
+      _worker = null;
+      reject(new Error('worker-timeout'));
+    }, 90000);
 
     // Slice (copy) the pixel buffer so state.baseImageData.data.buffer is not
     // detached — the main thread still needs it for drawing/coloring.
@@ -239,12 +251,12 @@ function _centroid(id, px, bW) {
 export function overlayNumbers() {
   const palette = _palette;
   const colorCount = _colorCount;
-  if (!state.baseImageData) return;
-  // regionMap may be null while the worker is still running. In that case the
-  // brightness-based centroid path runs without regionMap lookups (mapId stays
-  // undefined → all badges draw with default colour index 0). _applyWorkerResult()
-  // clears numberRegions/regionColorMap so the .finally() redraw rebuilds with
-  // proper worker IDs and colours once segmentation finishes.
+  // Both baseImageData AND regionMap must be ready before drawing badges.
+  // regionMap arrives from the worker asynchronously; returning early prevents
+  // broken pre-worker state (all badges "1", BFS fill overflow, no colour
+  // enforcement). The canvas-numbers-btn is disabled until the worker finishes
+  // so the user cannot trigger this path prematurely.
+  if (!state.baseImageData || !state.regionMap) return;
   // The region set (centroids + areas) is derived from the BASE image, so it is
   // identical on every redraw — recomputing buildWalkableMask + findRegions (a
   // full connected-component pass over ~1M pixels) on every single fill was the
@@ -978,11 +990,14 @@ export async function renderGeneratedImage(imageBase64) {
   if (shareButton) shareButton.disabled = false;
   const shareArtworkBtn = document.getElementById('share-artwork-btn');
   if (shareArtworkBtn) shareArtworkBtn.disabled = false;
-  // Reset free mode on new generation, then enable canvas controls
+  // Reset free mode on new generation, then enable canvas controls.
+  // canvas-numbers-btn stays DISABLED until the worker finishes segmentation —
+  // pre-worker state produces broken badges (all "1"), BFS fill overflow, and
+  // no colour enforcement. It is re-enabled in the .finally() block below.
   state.isFreeMode = false;
   const canvasNums = document.getElementById('canvas-numbers-btn');
   if (canvasNums) {
-    canvasNums.disabled = false;
+    canvasNums.disabled = true; // re-enabled once regionMap is ready
     const numsOn = showNumbersInput.checked;
     canvasNums.classList.toggle('action-btn--on', numsOn);
     canvasNums.textContent = numsOn ? t('numbersBtn') : t('numbersBtnOff');
@@ -995,7 +1010,12 @@ export async function renderGeneratedImage(imageBase64) {
   // user never waits on the main thread. Increment the generation counter so stale
   // results from a superseded render (e.g. difficulty change mid-flight) are
   // discarded and never overwrite the current image's segmentation state.
-  if (!state.baseImageData) return;
+  if (!state.baseImageData) {
+    // No pixel data (getImageData failed) — still enable the button so it's not
+    // permanently grayed out even though numbers won't work.
+    if (canvasNums) canvasNums.disabled = false;
+    return;
+  }
   _segGeneration++;
   const gen = _segGeneration;
   state.isSegmenting = true;
@@ -1016,6 +1036,10 @@ export async function renderGeneratedImage(imageBase64) {
     .finally(() => {
       if (gen !== _segGeneration) return;
       state.isSegmenting = false;
-      redrawCanvas(); // now regionMap is set → overlayNumbers() shows badges
+      // Enable the Numbers button now that regionMap is ready and overlayNumbers()
+      // will produce correct badges, fills, and colour enforcement.
+      const numBtn = document.getElementById('canvas-numbers-btn');
+      if (numBtn) numBtn.disabled = false;
+      redrawCanvas(); // regionMap is now set → overlayNumbers() draws proper badges
     });
 }
