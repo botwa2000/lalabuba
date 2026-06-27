@@ -354,6 +354,34 @@
 .settings-menu .lang-toggle-btn:hover { border: none; box-shadow: none; }
 .settings-menu .lang-toggle-btn .lang-caret { margin-left: auto; }
 
+.settings-menu-divider {
+  border: none;
+  border-top: 1px solid var(--border, rgba(0,0,0,.08));
+  margin: 4px 8px;
+}
+.settings-menu-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--text-muted, #888);
+  pointer-events: none;
+}
+.settings-menu-legal {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  padding: 6px 12px 10px;
+}
+.settings-legal-link {
+  font-size: 0.78rem;
+  color: var(--text-muted, #999);
+  text-decoration: none;
+}
+.settings-legal-link:hover { text-decoration: underline; color: var(--purple); }
+
 @keyframes dropIn {
   from { opacity: 0; transform: translateY(-8px) scale(0.96); }
   to   { opacity: 1; transform: translateY(0)    scale(1);    }

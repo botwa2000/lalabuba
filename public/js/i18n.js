@@ -196,6 +196,8 @@ const TRANSLATIONS = {
     srcBackend: "🖥️ Backend", srcDirect: "🌐 Direct", srcDemo: "🎭 Demo",
     regenBtn: "🎲 Again!",
     helpBtn: "? How it works",
+    tierFree: "Free plan", tierFreeDesc: "Unlimited & free",
+    privacyLink: "Privacy", termsLink: "Terms", impressumLink: "Impressum", contactLink: "Contact",
     helpLine1: "✏️ Type anything to draw — a cat, a dragon, a rocket ship…",
     helpLine2: "🎨 Click Draw! and AI creates a coloring page just for you",
     helpLine3: "🔢 Tap a numbered area, then tap a color to fill it",

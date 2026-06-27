@@ -331,6 +331,7 @@ For quadrant definitions see `docs/screen-quadrants.md`.
 
 These have broken in the past — test explicitly after any related change:
 
+- [ ] **No duplicate UI elements**: every button/icon has exactly one instance unless intentional by design. Check: gallery (🖼️ header only), art style chip (one in chips row), difficulty (pills in hero, chip in coloring). If a new button is added, grep `id="<id>"` to confirm it appears once.
 - [ ] **Dense-image coloring** (Extreme submarine): all regions colorable, numbers appear
 - [ ] **Turnstile popup**: no visible widget on clean load; challenge shows only when CF demands
 - [ ] **Color auto-select**: tapping in Numbers mode auto-selects correct color (no silent reject)
