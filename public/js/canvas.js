@@ -75,6 +75,11 @@ function _applyWorkerResult(result) {
   const rp = new Map();
   regionIds.forEach((id, i) => rp.set(id, new Int32Array(regionPixelBuffers[i])));
   state.regionPixels = rp;
+  // Clear overlay caches built before worker data arrived (brightness-only pass
+  // has no regionMap IDs, so regionColorMap is empty/wrong). Force a rebuild so
+  // the .finally() redraw uses proper worker-derived region IDs and colours.
+  state.numberRegions = null;
+  state.regionColorMap = null;
 }
 
 // Module-level palette context, set by setPaletteContext() from ui.js
@@ -234,10 +239,12 @@ function _centroid(id, px, bW) {
 export function overlayNumbers() {
   const palette = _palette;
   const colorCount = _colorCount;
-  // Both baseImageData AND regionMap must be ready (regionMap arrives from the
-  // worker asynchronously). Returning early here prevents overlayNumbers from
-  // caching a broken empty regionColorMap before the worker result is applied.
-  if (!state.baseImageData || !state.regionMap) return;
+  if (!state.baseImageData) return;
+  // regionMap may be null while the worker is still running. In that case the
+  // brightness-based centroid path runs without regionMap lookups (mapId stays
+  // undefined → all badges draw with default colour index 0). _applyWorkerResult()
+  // clears numberRegions/regionColorMap so the .finally() redraw rebuilds with
+  // proper worker IDs and colours once segmentation finishes.
   // The region set (centroids + areas) is derived from the BASE image, so it is
   // identical on every redraw — recomputing buildWalkableMask + findRegions (a
   // full connected-component pass over ~1M pixels) on every single fill was the
