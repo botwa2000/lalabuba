@@ -566,20 +566,32 @@ export function precomputeRegions() {
 // the watershed model every pixel of a region is already owned (the band is
 // assigned to the nearest region and line pixels are excluded), so the fill is a
 // flat solid paint of the region's pixels — no bleed, no gap-reclaim heuristics.
-// Returns { success: true, record } where record encodes every touched pixel's
+// Returns { success, record } where record encodes every touched pixel's
 // previous RGBA so it can be undone.
 export function fillRegion(regionId, fillColor) {
   if (!state.regionPixels?.get(regionId)) return { success: false };
 
-  const { undoEntries } = fillRegionCore({
-    paint: state.paintedImageData.data,
-    regionPixels: state.regionPixels,
-    regionId,
-    fillColor,
-  });
+  const paint = state.paintedImageData.data;
+  const { r, g, b } = fillColor;
+  let { undoEntries } = fillRegionCore({ paint, regionPixels: state.regionPixels, regionId, fillColor });
+
+  // Fallback for heavily textured regions (dense stippling / rivets) where every pixel
+  // was marked as a line by buildOutlineMask so the non-line set is empty.
+  // In that case paint ALL pixels owned by the region via regionMap (includes dot pixels).
+  if (undoEntries.length === 0 && state.regionMap) {
+    undoEntries = [];
+    const rm = state.regionMap;
+    for (let i = 0; i < rm.length; i++) {
+      if (rm[i] === regionId) {
+        const o = i * 4;
+        undoEntries.push(i, paint[o], paint[o + 1], paint[o + 2], paint[o + 3]);
+        paint[o] = r; paint[o + 1] = g; paint[o + 2] = b; paint[o + 3] = 255;
+      }
+    }
+  }
 
   redrawCanvas();
-  return { success: true, record: packUndoRecord(undoEntries) };
+  return { success: undoEntries.length > 0, record: packUndoRecord(undoEntries) };
 }
 
 // BFS flood fill from a tap point — the primary fill mechanism.
