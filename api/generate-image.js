@@ -168,6 +168,7 @@ module.exports = async (req, res) => {
     const subject    = sanitizeSubject(body.subject);
     const difficulty = ["easy", "medium", "hard", "extreme"].includes(body.difficulty) ? body.difficulty : "medium";
     const size       = ["small", "medium", "large", "xxl"].includes(body.size) ? body.size : "medium";
+    const artStyle   = body.artStyle === "artistic" ? "artistic" : "structured";
     const width      = [512, 768, 1024].includes(body.width)  ? body.width  : 1024;
     const height     = [512, 768, 1024].includes(body.height) ? body.height : 1024;
     const seedRaw    = Number(body.seed);
@@ -192,7 +193,7 @@ module.exports = async (req, res) => {
       res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
       return;
     }
-    const prompt = buildPrompt(englishSubject, difficulty, size);
+    const prompt = buildPrompt(englishSubject, difficulty, size, artStyle);
     const generated = await generateImage(prompt, width, height, seed, {
       provider: IMAGE_PROVIDER,
       hfToken: HF_TOKEN,

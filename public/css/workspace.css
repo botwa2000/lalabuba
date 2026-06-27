@@ -577,6 +577,104 @@
   border-top-color: rgba(255,112,67,0.25);
 }
 
+/* ─── Canvas options panel (background colour / shape / frame) ───────────── */
+.canvas-options-section {
+  padding: 12px 0 6px;
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+}
+.canvas-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.canvas-option-label {
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 64px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+.canvas-bg-swatches {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.canvas-bg-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform .15s, border-color .15s;
+}
+.canvas-bg-swatch--active,
+.canvas-bg-swatch:hover { border-color: var(--purple); transform: scale(1.15); }
+.canvas-bg-custom {
+  width: 26px; height: 26px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+}
+.canvas-shape-row,
+.canvas-frame-row {
+  display: flex;
+  gap: 6px;
+}
+.canvas-shape-btn,
+.canvas-frame-btn {
+  font-size: 1.1rem;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 3px 6px;
+  cursor: pointer;
+  transition: border-color .15s, transform .15s;
+}
+.canvas-shape-btn--active,
+.canvas-frame-btn--active {
+  border-color: var(--purple);
+  background: rgba(124,77,255,.1);
+}
+.canvas-shape-btn--locked,
+.canvas-frame-btn--locked {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.canvas-shape-btn:not(.canvas-shape-btn--locked):hover,
+.canvas-frame-btn:not(.canvas-frame-btn--locked):hover {
+  border-color: var(--purple);
+  transform: scale(1.1);
+}
+/* Frame styles — applied via data-frame on #preview-stage */
+#preview-stage[data-frame="classic"] #preview-canvas {
+  outline: 6px solid #333;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 10px #f5f5f0, 0 0 0 14px #333;
+}
+#preview-stage[data-frame="wooden"] #preview-canvas {
+  outline: 8px solid #8B5E3C;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 12px #C8A96E, 0 0 0 16px #8B5E3C;
+}
+#preview-stage[data-frame="gold"] #preview-canvas {
+  outline: 8px solid #B8860B;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 12px #FFD700, 0 0 0 16px #B8860B;
+}
+/* On mobile: hide frame/shape panel if panel is a drawer */
+@media (max-width: 767px) {
+  .canvas-options-section { padding: 10px 0 4px; }
+  .canvas-option-label { min-width: 52px; font-size: .7rem; }
+}
+
 /* ─── Share action button (prominent) ───────────────────────────────────── */
 .share-action-btn {
   background: linear-gradient(135deg, var(--orange), var(--red)) !important;

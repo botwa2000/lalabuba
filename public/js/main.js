@@ -1216,6 +1216,7 @@ const PALETTE_EMOJI = { classic: '🖍️', pastel: '🌸', nature: '🌿', neon
 const chipDiff    = document.getElementById('chip-diff');
 const chipCount   = document.getElementById('chip-count');
 const chipPalette = document.getElementById('chip-palette');
+const chipArtStyle = document.getElementById('chip-art-style');
 const chipNumbers = document.getElementById('chip-numbers');
 const chipSound   = document.getElementById('chip-sound');
 const chipNarrate = document.getElementById('chip-narrate');
@@ -1272,8 +1273,15 @@ function updateNarrateChip() {
   chipNarrate.classList.toggle('setting-chip--on', on);
   chipNarrate.title = t(on ? 'narrateOnChip' : 'narrateOffChip');
 }
+function updateArtStyleChip() {
+  if (!chipArtStyle) return;
+  const isClassic = state.artStyle !== 'artistic';
+  chipArtStyle.textContent = isClassic ? '🎨 Classic' : '✏️ Sketch';
+  chipArtStyle.classList.toggle('setting-chip--on', isClassic);
+  chipArtStyle.title = isClassic ? t('artStyleClassicHint') : t('artStyleSketchHint');
+}
 function updateAllChips() {
-  updateDiffChip(); updateCountChip(); updatePaletteChip(); updateNumbersChip(); updateSoundChip(); updateNarrateChip();
+  updateDiffChip(); updateCountChip(); updatePaletteChip(); updateArtStyleChip(); updateNumbersChip(); updateSoundChip(); updateNarrateChip();
 }
 
 if (chipSound) chipSound.addEventListener('click', () => {
@@ -1286,6 +1294,29 @@ if (chipNarrate) chipNarrate.addEventListener('click', () => {
   updateNarrateChip();
   // Confirm with a spoken sample the moment it's switched on.
   if (on) speak(t('narratePraise'));
+});
+
+// ─── Art style chip ───────────────────────────────────────────────────────────
+// Load persisted value first.
+try { state.artStyle = localStorage.getItem('lalabuba-art-style') || 'structured'; } catch {}
+updateArtStyleChip();
+
+if (chipArtStyle) chipArtStyle.addEventListener('click', () => {
+  state.artStyle = state.artStyle === 'structured' ? 'artistic' : 'structured';
+  try { localStorage.setItem('lalabuba-art-style', state.artStyle); } catch {}
+  updateArtStyleChip();
+  // In artistic mode, auto-switch coloring tool to pencil (freehand is the primary tool)
+  // and turn off numbers (artistic images have fewer sealed regions).
+  if (state.artStyle === 'artistic' && state.currentImage) {
+    setColorMode('pencil');
+    if (showNumbersInput.checked) {
+      showNumbersInput.checked = false;
+      showNumbersInput.dispatchEvent(new Event('change'));
+      updateNumbersChip();
+      syncHeroNumbersBtn();
+      syncCanvasNumbersBtn();
+    }
+  }
 });
 
 if (chipDiff) chipDiff.addEventListener('click', () => {
@@ -1464,6 +1495,99 @@ function _exitFreeMode() {
   syncHeroNumbersBtn();
   syncCanvasNumbersBtn();
 }
+
+// ─── Canvas background colour ─────────────────────────────────────────────────
+const CANVAS_BG_UNLOCK = 5; // completions to unlock additional shapes/frames
+
+function applyCanvasBg(color) {
+  state.canvasBgColor = color;
+  try { localStorage.setItem('lalabuba-canvas-bg', color); } catch {}
+  const pc = document.getElementById('preview-canvas');
+  if (pc) pc.style.backgroundColor = color;
+  // sync active state on swatches
+  document.querySelectorAll('.canvas-bg-swatch').forEach(s => {
+    s.classList.toggle('canvas-bg-swatch--active', s.dataset.color === color);
+  });
+  const customInput = document.getElementById('canvas-bg-color');
+  if (customInput) customInput.value = color;
+}
+
+// Restore from localStorage
+try { const saved = localStorage.getItem('lalabuba-canvas-bg'); if (saved) state.canvasBgColor = saved; } catch {}
+
+document.querySelectorAll('.canvas-bg-swatch').forEach(btn => {
+  btn.addEventListener('click', () => applyCanvasBg(btn.dataset.color));
+});
+const canvasBgColorInput = document.getElementById('canvas-bg-color');
+if (canvasBgColorInput) {
+  canvasBgColorInput.addEventListener('input', e => applyCanvasBg(e.target.value));
+}
+// Apply on page load and after image renders
+applyCanvasBg(state.canvasBgColor);
+
+// ─── Canvas shape & frame ─────────────────────────────────────────────────────
+const SHAPE_UNLOCK = { oval: CANVAS_BG_UNLOCK, diamond: CANVAS_BG_UNLOCK * 2 };
+const FRAME_UNLOCK = { wooden: CANVAS_BG_UNLOCK, gold: CANVAS_BG_UNLOCK * 2 };
+
+function applyCanvasShape(shape) {
+  const progress = (() => { try { return getProgress().totalCompleted || 0; } catch { return 0; } })();
+  const needed = SHAPE_UNLOCK[shape];
+  if (needed && progress < needed) {
+    setStatus(t('canvasShapeLocked', needed), true);
+    return;
+  }
+  state.canvasShape = shape;
+  try { localStorage.setItem('lalabuba-canvas-shape', shape); } catch {}
+  document.querySelectorAll('.canvas-shape-btn').forEach(b =>
+    b.classList.toggle('canvas-shape-btn--active', b.dataset.shape === shape));
+  const pc = document.getElementById('preview-canvas');
+  if (!pc) return;
+  const clips = {
+    circle:  'circle(50% at 50% 50%)',
+    oval:    'ellipse(48% 46% at 50% 50%)',
+    diamond: 'polygon(50% 0%,100% 50%,50% 100%,0% 50%)',
+    square:  'none',
+  };
+  pc.style.clipPath = clips[shape] || 'none';
+  // Also clip the draw canvas
+  const dc = document.getElementById('draw-canvas');
+  if (dc) dc.style.clipPath = clips[shape] || 'none';
+}
+
+function applyCanvasFrame(frame) {
+  const progress = (() => { try { return getProgress().totalCompleted || 0; } catch { return 0; } })();
+  const needed = FRAME_UNLOCK[frame];
+  if (needed && progress < needed) {
+    setStatus(t('canvasFrameLocked', needed), true);
+    return;
+  }
+  state.canvasFrame = frame;
+  try { localStorage.setItem('lalabuba-canvas-frame', frame); } catch {}
+  document.querySelectorAll('.canvas-frame-btn').forEach(b =>
+    b.classList.toggle('canvas-frame-btn--active', b.dataset.frame === frame));
+  const stage = document.getElementById('preview-stage');
+  if (!stage) return;
+  stage.dataset.frame = frame;
+}
+
+document.querySelectorAll('.canvas-shape-btn:not(.canvas-shape-btn--locked)').forEach(btn =>
+  btn.addEventListener('click', () => applyCanvasShape(btn.dataset.shape)));
+document.querySelectorAll('.canvas-shape-btn--locked').forEach(btn =>
+  btn.addEventListener('click', () => {
+    const needed = SHAPE_UNLOCK[btn.dataset.shape] || CANVAS_BG_UNLOCK;
+    setStatus(t('canvasShapeLocked', needed), true);
+  }));
+document.querySelectorAll('.canvas-frame-btn:not(.canvas-frame-btn--locked)').forEach(btn =>
+  btn.addEventListener('click', () => applyCanvasFrame(btn.dataset.frame)));
+document.querySelectorAll('.canvas-frame-btn--locked').forEach(btn =>
+  btn.addEventListener('click', () => {
+    const needed = FRAME_UNLOCK[btn.dataset.frame] || CANVAS_BG_UNLOCK;
+    setStatus(t('canvasFrameLocked', needed), true);
+  }));
+
+// Restore shape/frame on load
+try { const s = localStorage.getItem('lalabuba-canvas-shape'); if (s) applyCanvasShape(s); } catch {}
+try { const f = localStorage.getItem('lalabuba-canvas-frame'); if (f) applyCanvasFrame(f); } catch {}
 
 // ─── Populate-only helpers (A1) ───────────────────────────────────────────────
 function pulseDraw() {

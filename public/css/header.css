@@ -430,8 +430,11 @@
    completion celebration on every device. The Journal icon (+ its dot)
    stays as the always-visible collection affordance. */
 @media (max-width: 767px) {
-  .top-actions { right: 48px; gap: 6px; }
+  .top-actions { right: 48px; gap: 6px; top: 8px; }
   .top-action-btn { width: 34px; height: 34px; font-size: 1.05rem; }
+  /* Settings gear must match journal/gallery size and top so all icons align */
+  .settings-toggle-btn { width: 34px; height: 34px; font-size: 1rem; }
+  .settings-wrap { top: 8px; right: 10px; }
   .days-colored-pill { display: none !important; }
   /* The full-text teaser is too wide for the 390px header (it overlapped the
      centred wordmark). On mobile the first-time announcement is a pulse ring on

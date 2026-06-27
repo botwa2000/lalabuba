@@ -23,6 +23,8 @@ export const state = {
   turnstileWidgetId: null,
   undoStack: [],        // [{regionId, record: Uint8Array, completedBefore: boolean}]
   colorMode: 'tap',     // 'tap' | 'pencil' | 'brush'
+  artStyle: 'structured', // 'structured' (Classic) | 'artistic' (Sketch)
+  canvasBgColor: '#ffffff', // user-selected canvas background colour
   paletteOverride: null, // when set, activePalette() uses this instead of PALETTES[selected]
   isFreeMode: false,    // one-way unlock: no enforcement, any color any area
   hasFreehand: false,   // any pencil/paint stroke drawn this image — gates costly draw-layer reads

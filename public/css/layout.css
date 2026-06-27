@@ -52,15 +52,15 @@
   pointer-events: none;
 }
 
-/* Toggle button — sticks to the top-right of the panel */
+/* Toggle button — floats at the right edge of the panel, vertically centred */
 .panel-toggle-btn {
-  position: sticky;
-  top: 0;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 20;
-  align-self: flex-end;
   width: 36px;
   height: 36px;
-  margin: 10px 4px 0 auto;
   flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid var(--border);
@@ -278,6 +278,9 @@
 
 /* Numbers chip in sidebar duplicates the action bar Numbers button — hide in coloring mode */
 .app:not(.app-hero) #chip-numbers { display: none; }
+
+/* Canvas options (background/shape/frame) only visible after an image is generated */
+.app.app-hero .canvas-options-section { display: none; }
 
 /* ── Container queries: config-panel inner content adapts to sidebar width ─── */
 /* Match app-body bleed margin to app padding at each mobile breakpoint to prevent viewport overflow */

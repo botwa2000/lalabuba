@@ -180,6 +180,7 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
         body: JSON.stringify({
           subject,
           difficulty,
+          artStyle: state.artStyle || 'structured',
           size: state.selectedSize,
           seed,
           width:  (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).w,

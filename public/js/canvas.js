@@ -232,6 +232,24 @@ export function overlayNumbers() {
     // consistent across canvas sizes (same difficulty = same relative region count).
     const scaledMinArea = Math.round(diff.minArea * (previewCanvas.width * previewCanvas.height) / (1024 * 1024));
     regions = findRegions(mask, previewCanvas.width, previewCanvas.height, scaledMinArea, colorCount);
+
+    // Dense/artistic images have few near-white areas, so brightness-based search
+    // finds no regions. Fall back to worker regionPixels centroids (the same data
+    // used by the fill system) so number badges always appear on colorable areas.
+    if (regions.length < 3 && state.regionPixels && state.regionPixels.size > 0) {
+      const bW = previewCanvas.width;
+      const bySize = [...state.regionPixels.entries()]
+        .sort((a, b) => b[1].length - a[1].length)
+        .slice(0, colorCount);
+      regions = bySize.map(([id, px]) => {
+        let sx = 0, sy = 0;
+        const step = Math.max(1, (px.length / 300) | 0);
+        let c = 0;
+        for (let i = 0; i < px.length; i += step) { sx += px[i] % bW; sy += (px[i] / bW) | 0; c++; }
+        return { id, x: c ? (sx / c) | 0 : 0, y: c ? (sy / c) | 0 : 0, area: px.length };
+      });
+    }
+
     state.numberRegions = regions;
   }
   const src = state.baseImageData.data;
@@ -245,9 +263,8 @@ export function overlayNumbers() {
     regions.forEach((region, index) => {
       let paletteIndex = index % palette.length;
 
-      // Snap centroid to nearest positive region (same logic as badge drawing)
-      // so regionColorMap stays in sync with visible badges.
-      let mapId = state.regionMap?.[region.y * w + region.x];
+      // Use pre-computed id (worker-derived regions) or look up via regionMap.
+      let mapId = region.id ?? state.regionMap?.[region.y * w + region.x];
       if (!(mapId > 0) && state.regionMap) {
         const snapR = 20;
         snap: for (let dy = -snapR; dy <= snapR; dy++) {
@@ -336,8 +353,8 @@ export function overlayNumbers() {
   const drawnMapIds = new Set(); // prevent drawing the same region badge twice
 
   regions.forEach((region) => {
-    // If centroid lands on an outline/background pixel, snap to nearest region pixel.
-    let mapId = state.regionMap?.[region.y * w + region.x];
+    // Use pre-computed id (worker-derived regions) or snap via regionMap.
+    let mapId = region.id ?? state.regionMap?.[region.y * w + region.x];
     if (!(mapId > 0) && state.regionMap) {
       const snapR = 20;
       outer: for (let dy = -snapR; dy <= snapR; dy++) {
@@ -822,7 +839,7 @@ export function drawBaseImage(image) {
   document.getElementById('mode-brush-btn')  && (document.getElementById('mode-brush-btn').disabled  = false);
 
   context.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-  context.fillStyle = "#ffffff";
+  context.fillStyle = state.canvasBgColor || '#ffffff';
   context.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
   context.drawImage(image, 0, 0, previewCanvas.width, previewCanvas.height);
   // getImageData can throw a SecurityError on some iOS WKWebView builds.

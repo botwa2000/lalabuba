@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=227" />
-  <link rel="stylesheet" href="/css/header.css?v=227" />
-  <link rel="stylesheet" href="/css/hero.css?v=227" />
-  <link rel="stylesheet" href="/css/generator.css?v=227" />
-  <link rel="stylesheet" href="/css/layout.css?v=227" />
-  <link rel="stylesheet" href="/css/workspace.css?v=227" />
-  <link rel="stylesheet" href="/css/palette.css?v=227" />
-  <link rel="stylesheet" href="/css/modals.css?v=227" />
-  <link rel="stylesheet" href="/css/footer.css?v=227" />
-  <link rel="stylesheet" href="/css/print.css?v=227" />
-  <link rel="stylesheet" href="/css/cookies.css?v=227" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=227" />
-  <script src="/js/cookies.js?v=227"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=229" />
+  <link rel="stylesheet" href="/css/header.css?v=229" />
+  <link rel="stylesheet" href="/css/hero.css?v=229" />
+  <link rel="stylesheet" href="/css/generator.css?v=229" />
+  <link rel="stylesheet" href="/css/layout.css?v=229" />
+  <link rel="stylesheet" href="/css/workspace.css?v=229" />
+  <link rel="stylesheet" href="/css/palette.css?v=229" />
+  <link rel="stylesheet" href="/css/modals.css?v=229" />
+  <link rel="stylesheet" href="/css/footer.css?v=229" />
+  <link rel="stylesheet" href="/css/print.css?v=229" />
+  <link rel="stylesheet" href="/css/cookies.css?v=229" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=229" />
+  <script src="/js/cookies.js?v=229"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -288,6 +288,7 @@
             <button type="button" class="setting-chip" id="chip-diff">⭐⭐</button>
             <button type="button" class="setting-chip" id="chip-count">🎨 12</button>
             <button type="button" class="setting-chip" id="chip-palette">🖍️</button>
+            <button type="button" class="setting-chip setting-chip--on" id="chip-art-style" title="Drawing style" aria-label="Art style">🎨 Classic</button>
             <button type="button" class="setting-chip" id="chip-numbers">🔢</button>
             <button type="button" class="setting-chip setting-chip--on" id="chip-sound" aria-label="Sound">🔊</button>
             <button type="button" class="setting-chip" id="chip-narrate" aria-label="Read aloud">🗣️</button>
@@ -336,6 +337,40 @@
 
               <p id="status" class="status-bar" role="status" data-i18n="statusDefault"></p>
             </form>
+          </section>
+
+          <!-- ─── Canvas options (coloring state only) ──────────────────── -->
+          <section class="canvas-options-section app-coloring-only" aria-label="Canvas options">
+            <div class="canvas-option-row">
+              <label class="canvas-option-label" for="canvas-bg-color" data-i18n="canvasBgLabel">Canvas colour</label>
+              <div class="canvas-bg-swatches" id="canvas-bg-swatches">
+                <button type="button" class="canvas-bg-swatch canvas-bg-swatch--active" data-color="#ffffff" title="White" style="background:#ffffff;"></button>
+                <button type="button" class="canvas-bg-swatch" data-color="#fff9e6" title="Cream" style="background:#fff9e6;"></button>
+                <button type="button" class="canvas-bg-swatch" data-color="#e8f5e9" title="Mint" style="background:#e8f5e9;"></button>
+                <button type="button" class="canvas-bg-swatch" data-color="#e3f2fd" title="Sky" style="background:#e3f2fd;"></button>
+                <button type="button" class="canvas-bg-swatch" data-color="#fce4ec" title="Pink" style="background:#fce4ec;"></button>
+                <button type="button" class="canvas-bg-swatch" data-color="#f3e5f5" title="Lavender" style="background:#f3e5f5;"></button>
+                <input type="color" id="canvas-bg-color" class="canvas-bg-custom" value="#ffffff" title="Custom colour" aria-label="Custom canvas colour" />
+              </div>
+            </div>
+            <div class="canvas-option-row">
+              <label class="canvas-option-label" data-i18n="canvasShapeLabel">Shape</label>
+              <div class="canvas-shape-row" id="canvas-shape-row">
+                <button type="button" class="canvas-shape-btn canvas-shape-btn--active" data-shape="square" title="Square (default)">⬜</button>
+                <button type="button" class="canvas-shape-btn" data-shape="circle" title="Circle (free)">⭕</button>
+                <button type="button" class="canvas-shape-btn canvas-shape-btn--locked" data-shape="oval" title="Oval 🔒">🥚</button>
+                <button type="button" class="canvas-shape-btn canvas-shape-btn--locked" data-shape="diamond" title="Diamond 🔒">💎</button>
+              </div>
+            </div>
+            <div class="canvas-option-row">
+              <label class="canvas-option-label" data-i18n="canvasFrameLabel">Frame</label>
+              <div class="canvas-frame-row" id="canvas-frame-row">
+                <button type="button" class="canvas-frame-btn canvas-frame-btn--active" data-frame="none" title="No frame">🚫</button>
+                <button type="button" class="canvas-frame-btn" data-frame="classic" title="Classic frame (free)">🖼️</button>
+                <button type="button" class="canvas-frame-btn canvas-frame-btn--locked" data-frame="wooden" title="Wooden 🔒">🪵</button>
+                <button type="button" class="canvas-frame-btn canvas-frame-btn--locked" data-frame="gold" title="Gold 🔒">✨</button>
+              </div>
+            </div>
           </section>
 
         </div><!-- /panel-inner -->
@@ -722,7 +757,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=227"></script>
+  <script type="module" src="/js/main.js?v=229"></script>
 </body>
 </html>
 
