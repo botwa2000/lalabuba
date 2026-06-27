@@ -129,7 +129,10 @@ If any screenshot shows a layout problem: fix it, redeploy, re-run screenshots. 
 - [ ] ◀ collapse button hides panel; ▶ expands it
 - [ ] Collapsed panel shows toggle button only
 
-### 6. If anything is wrong
+### 6. Comprehensive testing plan
+Full test plan (all features, APIs, viewports, art modes, canvas options, unlocks, performance, Android beta log) is in **`TESTING_PLAN.md`** at the repo root. Every new feature must be added to it. Items marked 🔴 must be run on every change; full sweep required for major releases.
+
+### 7. If anything is wrong
 Fix the bug, increment version again, commit, push, wait for deploy, re-run the relevant QA checks. Repeat until clean. Do NOT report done until all checklist items pass.
 
 ---
