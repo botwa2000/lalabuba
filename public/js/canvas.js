@@ -258,6 +258,7 @@ export function overlayNumbers() {
     if (regions.length < 3 && state.regionPixels && state.regionPixels.size > 0) {
       const bW = previewCanvas.width;
       const bySize = [...state.regionPixels.entries()]
+        .filter(([id]) => id !== state.backgroundRegionId)
         .sort((a, b) => b[1].length - a[1].length)
         .slice(0, colorCount);
       regions = bySize.map(([id, px]) => {
@@ -309,7 +310,10 @@ export function overlayNumbers() {
           paletteIndex = nearestPaletteIndex(sumR/count, sumG/count, sumB/count, palette);
         }
       }
-      if (mapId > 0) state.regionColorMap.set(mapId, paletteIndex);
+      // Never assign a numbered badge to the background region — its vast white
+      // area causes all brightness-based centroids to collapse onto the same mapId,
+      // which lets drawnMapIds deduplicate away all but the first badge.
+      if (mapId > 0 && mapId !== state.backgroundRegionId) state.regionColorMap.set(mapId, paletteIndex);
     });
 
     // ── Graph coloring: ensure no two adjacent regions share a color ─────────
@@ -363,12 +367,13 @@ export function overlayNumbers() {
       state.regionColorMap = final;
     }
 
-    // If all brightness-based centroids landed on barrier pixels (mapId=0 for
-    // every region), the map is empty and the block mechanic can't fire.
-    // Rebuild from worker regionPixels — their IDs are guaranteed positive.
-    if (state.regionColorMap.size === 0 && state.regionPixels?.size > 0) {
+    // If too few distinct non-background regions were resolved (brightness centroids
+    // that all mapped to the background ID, or genuine barrier-pixel centroids),
+    // rebuild badges entirely from worker regionPixels which are always correct.
+    if (state.regionColorMap.size < Math.min(colorCount, 3) && state.regionPixels?.size > 0) {
       const bW = previewCanvas.width;
       const bySize = [...state.regionPixels.entries()]
+        .filter(([id]) => id !== state.backgroundRegionId)
         .sort((a, b) => b[1].length - a[1].length)
         .slice(0, colorCount);
       regions = bySize.map(([id, px]) => {
@@ -418,6 +423,8 @@ export function overlayNumbers() {
         }
       }
     }
+    // Never draw a badge for the background region — it covers the whole page border.
+    if (state.backgroundRegionId && mapId === state.backgroundRegionId) return;
     // Hide badge once the region has been filled, or if already drawn for this mapId.
     if (mapId > 0 && state.completedRegions.has(mapId)) return;
     if (mapId > 0 && drawnMapIds.has(mapId)) return;

@@ -65,12 +65,19 @@ async function run() {
     // ── Switch to demo mode (no API, no Turnstile) ─────────────────────────
     // 1. Fake window.Capacitor.isNativePlatform() → getTurnstileToken() returns null immediately
     // 2. Set provider-select to "demo" → requestGeneratedImage() returns SVG data URL synchronously
+    // 3. Enable Numbers mode so the badge overlay is tested on the turtle SVG
     await page.evaluate(() => {
       // Bypass Turnstile check in getTurnstileToken()
       window.Capacitor = { isNativePlatform: () => true, Plugins: { SplashScreen: { hide: () => Promise.resolve() } } };
       // Switch to demo provider (hidden select, always present in DOM)
       const sel = document.getElementById('provider-select');
       if (sel) { sel.value = 'demo'; sel.dispatchEvent(new Event('change')); }
+      // Set difficulty to Hard so we exercise the Hard minArea path
+      const diff = document.getElementById('difficulty-select');
+      if (diff) { diff.value = 'hard'; diff.dispatchEvent(new Event('change')); }
+      // Enable Numbers so badges render in the coloring screenshot
+      const nums = document.getElementById('show-numbers');
+      if (nums && !nums.checked) { nums.checked = true; nums.dispatchEvent(new Event('change')); }
     });
 
     // ── Coloring state: fill subject and click Draw! ───────────────────────
@@ -80,7 +87,7 @@ async function run() {
       const panel = document.getElementById('config-panel');
       if (panel) panel.classList.remove('collapsed');
     });
-    await page.fill('#subject', 'butterfly', { force: true });
+    await page.fill('#subject', 'turtle', { force: true });
 
     // Submit the form — try native click first, fall back to JS form submit
     const submitted = await page.evaluate(() => {

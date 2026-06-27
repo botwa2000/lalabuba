@@ -69,6 +69,24 @@ export function buildDemoImage(subject) {
     `));
   }
 
+  if (normalized.includes("turtle")) {
+    return svgDataUrl(svgShell(`
+      <ellipse cx="512" cy="540" rx="240" ry="185"/>
+      <circle cx="512" cy="280" r="76"/>
+      <ellipse cx="248" cy="448" rx="96" ry="48" transform="rotate(-35 248 448)"/>
+      <ellipse cx="776" cy="448" rx="96" ry="48" transform="rotate(35 776 448)"/>
+      <ellipse cx="268" cy="648" rx="88" ry="42" transform="rotate(30 268 648)"/>
+      <ellipse cx="756" cy="648" rx="88" ry="42" transform="rotate(-30 756 648)"/>
+      <polygon points="512,430 552,452 552,496 512,518 472,496 472,452"/>
+      <polygon points="432,496 472,518 472,562 432,584 392,562 392,518"/>
+      <polygon points="592,496 632,518 632,562 592,584 552,562 552,518"/>
+      <polygon points="512,518 552,540 552,584 512,606 472,584 472,540"/>
+      <polygon points="432,584 472,606 472,650 432,672 392,650 392,606"/>
+      <polygon points="592,584 632,606 632,650 592,672 552,650 552,606"/>
+      <circle cx="492" cy="258" r="16"/>
+    `));
+  }
+
   if (normalized.includes("castle")) {
     return svgDataUrl(svgShell(`
       <rect x="250" y="330" width="524" height="470"/>
