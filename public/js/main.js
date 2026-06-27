@@ -1419,10 +1419,10 @@ const finishColoringSep = document.querySelector('.action-sep--finish');
 if (finishColoringBtn) {
   finishColoringBtn.addEventListener('click', () => finishColoringManually());
 }
-// Shown only once a picture is loaded AND numbers are off (free-colour mode);
-// guided colour-by-number pages finish automatically when every number is placed.
+// Shown whenever a picture is loaded — works in both numbers and free-colour mode.
+// Auto-finish on all-numbers-placed is a nice bonus but not the only path.
 function updateFinishBtnVisibility() {
-  const show = !!state.currentImage && !showNumbersInput.checked;
+  const show = !!state.currentImage;
   if (finishColoringBtn) finishColoringBtn.hidden = !show;
   if (finishColoringSep) finishColoringSep.hidden = !show;
 }
