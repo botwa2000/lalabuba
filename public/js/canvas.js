@@ -924,8 +924,28 @@ export function drawBaseImage(image) {
   // Wrap so the image stays visible even if pixel manipulation fails.
   try {
     const raw = context.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
-    closeOutlineGaps(raw);
-    closeOutlineGaps(raw);
+    if (state.artStyle !== 'artistic') {
+      // Structured/Classic mode: binarize the AI image to pure black/white using the
+      // same adaptive line-detection algorithm the segmentation worker uses. This:
+      //   1. Removes dithered noise, scattered dots, and non-solid anti-aliased lines
+      //      from AI output (the "bad quality, lines not solid" problem).
+      //   2. Makes pre-worker BFS fills work correctly: pure-black pixels (0) test as
+      //      < 80 → barrier; pure-white pixels (255) test as > 80 → fillable. Before
+      //      this fix, the raw noisy image caused the BFS to block on scattered dark
+      //      dots (brightness 30-80), making areas uncolorable.
+      //   3. The worker's own segmentation runs on this clean image → better regions.
+      const mask = buildOutlineMask(raw.data, previewCanvas.width, previewCanvas.height);
+      const d = raw.data;
+      for (let i = 0, n = mask.length; i < n; i++) {
+        const o = i * 4;
+        const v = mask[i] ? 0 : 255;
+        d[o] = v; d[o + 1] = v; d[o + 2] = v; d[o + 3] = 255;
+      }
+    } else {
+      // Artistic/Sketch mode: preserve gray tones and sketch texture; just close gaps.
+      closeOutlineGaps(raw);
+      closeOutlineGaps(raw);
+    }
     context.putImageData(raw, 0, 0);
   } catch { /* leave drawImage result as-is */ }
   try {
