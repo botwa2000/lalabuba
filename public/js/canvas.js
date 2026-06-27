@@ -346,6 +346,44 @@ export function overlayNumbers() {
       }
       state.regionColorMap = final;
     }
+
+    // If all brightness-based centroids landed on barrier pixels (mapId=0 for
+    // every region), the map is empty and the block mechanic can't fire.
+    // Rebuild from worker regionPixels — their IDs are guaranteed positive.
+    if (state.regionColorMap.size === 0 && state.regionPixels?.size > 0) {
+      const bW = previewCanvas.width;
+      const bySize = [...state.regionPixels.entries()]
+        .sort((a, b) => b[1].length - a[1].length)
+        .slice(0, colorCount);
+      regions = bySize.map(([id, px]) => {
+        let sx = 0, sy = 0;
+        const step = Math.max(1, (px.length / 300) | 0);
+        let c = 0;
+        for (let i = 0; i < px.length; i += step) { sx += px[i] % bW; sy += (px[i] / bW) | 0; c++; }
+        const reg = { id, x: c ? (sx / c) | 0 : 0, y: c ? (sy / c) | 0 : 0, area: px.length };
+        reg._mapId = id;
+        return reg;
+      });
+      state.numberRegions = regions;
+      state.regionColorMap = new Map();
+      regions.forEach((reg, idx) => {
+        const pixels = state.regionPixels?.get(reg.id);
+        let paletteIndex = idx % palette.length;
+        if (pixels && pixels.length > 0) {
+          let sumR = 0, sumG = 0, sumB = 0;
+          const step2 = Math.max(1, Math.floor(pixels.length / 200));
+          let count = 0;
+          for (let pi = 0; pi < pixels.length; pi += step2) {
+            const o = pixels[pi] * 4;
+            sumR += src[o]; sumG += src[o + 1]; sumB += src[o + 2];
+            count++;
+          }
+          const avgBr = (sumR + sumG + sumB) / (count * 3);
+          if (avgBr < 240) paletteIndex = nearestPaletteIndex(sumR / count, sumG / count, sumB / count, palette);
+        }
+        state.regionColorMap.set(reg.id, paletteIndex);
+      });
+    }
   }
 
   context.textAlign = "center";
