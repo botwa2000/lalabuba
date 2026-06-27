@@ -276,6 +276,7 @@ export function overlayNumbers() {
           }
         }
       }
+      region._mapId = mapId; // cache resolved ID for click-handler colour enforcement
 
       const pixels = mapId > 0 ? state.regionPixels?.get(mapId) : null;
       if (pixels && pixels.length > 0) {

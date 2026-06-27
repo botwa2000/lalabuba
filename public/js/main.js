@@ -655,9 +655,21 @@ previewCanvas.addEventListener("click", (event) => {
 
   // Color guidance in numbers mode — block fill if wrong color, flash the correct one.
   // The kid must select the right colour first; this is the core colour-by-number mechanic.
-  if (!state.isFreeMode && showNumbersInput.checked && state.regionColorMap?.has(regionId)) {
-    const required = state.regionColorMap.get(regionId);
-    if (state.selectedPaletteIndex !== required) {
+  if (!state.isFreeMode && showNumbersInput.checked && regionId > 0 && state.regionColorMap?.size > 0) {
+    // Direct hit (exact numbered region); fall back to nearest badge centroid when
+    // the worker region isn't one of the N badge regions (common on complex images).
+    let required = state.regionColorMap.get(regionId) ?? -1;
+    if (required < 0 && state.numberRegions?.length > 0) {
+      let bestDist = Infinity;
+      for (const reg of state.numberRegions) {
+        const mid = reg._mapId ?? 0;
+        if (!(mid > 0) || !state.regionColorMap.has(mid)) continue;
+        const dx = canvasX - reg.x, dy = canvasY - reg.y;
+        const d = dx * dx + dy * dy;
+        if (d < bestDist) { bestDist = d; required = state.regionColorMap.get(mid); }
+      }
+    }
+    if (required >= 0 && state.selectedPaletteIndex !== required) {
       const colorLabel = activePalette()[required]?.label ?? '';
       flashPaletteSwatch(required);
       setStatus(t('needsColor', required + 1, colorLabel));
