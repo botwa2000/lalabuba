@@ -644,8 +644,8 @@ previewCanvas.addEventListener("click", (event) => {
 
   const { x: canvasX, y: canvasY } = getCanvasCoords(event);
 
-  // Determine fill color
-  const fillColor = state.selectedPaletteIndex === -1
+  // Determine fill color (let — may be updated below by color auto-select)
+  let fillColor = state.selectedPaletteIndex === -1
     ? hexToRgb(state.customColor)
     : hexToRgb(activePalette()[state.selectedPaletteIndex].color);
 
@@ -653,14 +653,16 @@ previewCanvas.addEventListener("click", (event) => {
   // color enforcement, double-click batch, and completion tracking.
   const regionId = findRegionAt(canvasX, canvasY);
 
-  // Color enforcement in numbers mode — only when regionMap is ready
+  // Color guidance in numbers mode — auto-select the correct color instead of blocking.
+  // Blocking was the cause of "most areas can't be colored": regions assigned a specific
+  // palette color silently rejected every tap with a different color selected.
   if (!state.isFreeMode && showNumbersInput.checked && state.regionColorMap?.has(regionId)) {
     const required = state.regionColorMap.get(regionId);
-    if (state.selectedPaletteIndex !== -1 && state.selectedPaletteIndex !== required) {
-      const c = activePalette()[required];
-      setStatus(t('needsColor', required + 1, c.label), false);
-      flashPaletteSwatch(required);
-      return;
+    if (state.selectedPaletteIndex !== required) {
+      // Switch to the correct color for this region so the fill proceeds.
+      state.selectedPaletteIndex = required;
+      fillColor = hexToRgb(activePalette()[required].color);
+      renderLegend(); // update active-swatch ring in palette UI
     }
   }
 
@@ -707,9 +709,11 @@ previewCanvas.addEventListener("click", (event) => {
   if (!state.coloringStartTime) state.coloringStartTime = Date.now();
 
   // Primary fill: use exact region pixels when worker has finished (accurate,
-  // no MAX_FILL cap). Fall back to BFS when regionMap is not yet ready.
+  // no MAX_FILL cap). fillRegion works for ANY region including the background —
+  // it has the exact pixel list so it never overflows. Fall back to BFS only when
+  // regionMap is not yet ready (segmentation still running).
   let fillResult;
-  if (state.regionMap && regionId > 0 && regionId !== state.backgroundRegionId) {
+  if (state.regionMap && regionId > 0) {
     fillResult = fillRegion(regionId, fillColor);
   } else {
     fillResult = floodFillAt(canvasX, canvasY, fillColor);
