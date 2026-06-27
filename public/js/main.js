@@ -653,16 +653,15 @@ previewCanvas.addEventListener("click", (event) => {
   // color enforcement, double-click batch, and completion tracking.
   const regionId = findRegionAt(canvasX, canvasY);
 
-  // Color guidance in numbers mode — auto-select the correct color instead of blocking.
-  // Blocking was the cause of "most areas can't be colored": regions assigned a specific
-  // palette color silently rejected every tap with a different color selected.
+  // Color guidance in numbers mode — block fill if wrong color, flash the correct one.
+  // The kid must select the right colour first; this is the core colour-by-number mechanic.
   if (!state.isFreeMode && showNumbersInput.checked && state.regionColorMap?.has(regionId)) {
     const required = state.regionColorMap.get(regionId);
     if (state.selectedPaletteIndex !== required) {
-      // Switch to the correct color for this region so the fill proceeds.
-      state.selectedPaletteIndex = required;
-      fillColor = hexToRgb(activePalette()[required].color);
-      renderLegend(); // update active-swatch ring in palette UI
+      const colorLabel = activePalette()[required]?.label ?? '';
+      flashPaletteSwatch(required);
+      setStatus(t('needsColor', required + 1, colorLabel));
+      return;
     }
   }
 
