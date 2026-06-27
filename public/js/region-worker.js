@@ -60,7 +60,19 @@ self.onmessage = ({ data }) => {
   const validIds = new Set();
   for (const [id, buf] of segBuf) {
     if (buf.length >= 30) validIds.add(id);
-    else for (const p of buf) label[p] = -1;
+  }
+  // Dense/Extreme images can produce zero regions above 30px (every pixel is a
+  // line dot so all trapped-ball seeds are tiny). Rescue the largest regions
+  // down to 5px so the image stays colorable rather than going completely dark.
+  if (validIds.size === 0 && segBuf.size > 0) {
+    const sorted = [...segBuf.entries()].sort((a, b) => b[1].length - a[1].length);
+    const floor = Math.max(1, Math.min(5, sorted[0][1].length));
+    for (const [id, buf] of sorted) {
+      if (buf.length >= floor) validIds.add(id);
+    }
+  }
+  for (const [id, buf] of segBuf) {
+    if (!validIds.has(id)) for (const p of buf) label[p] = -1;
   }
 
   // 7. Background region: nearest to the top-left inner corner (outer white space).

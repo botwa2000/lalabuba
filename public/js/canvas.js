@@ -534,9 +534,18 @@ export function precomputeRegions() {
       label[i] = -1;
     }
   }
+  const validSet = new Set();
+  for (const [id, buf] of segBuf) {
+    if (buf.length >= 30) validSet.add(id);
+  }
+  if (validSet.size === 0 && segBuf.size > 0) {
+    const sorted = [...segBuf.entries()].sort((a, b) => b[1].length - a[1].length);
+    const floor = Math.max(1, Math.min(5, sorted[0][1].length));
+    for (const [id, buf] of sorted) { if (buf.length >= floor) validSet.add(id); }
+  }
   state.regionPixels = new Map();
   for (const [id, buf] of segBuf) {
-    if (buf.length >= 30) state.regionPixels.set(id, buf);
+    if (validSet.has(id)) state.regionPixels.set(id, buf);
     else for (const p of buf) label[p] = -1;
   }
 
@@ -607,10 +616,25 @@ export function floodFillAt(canvasX, canvasY, fillColor) {
   const n = width * height;
   const lineMask = state.lineMask; // null until worker finishes — that's OK
 
-  const startIdx = canvasY * width + canvasX;
-  // Don't start on a line pixel — brightness test or lineMask.
-  const startBr = (paint[startIdx*4] + paint[startIdx*4+1] + paint[startIdx*4+2]) / 3;
-  if (lineMask ? lineMask[startIdx] : startBr < 80) return { success: false };
+  let startIdx = canvasY * width + canvasX;
+  // Don't start on a line pixel. If the tap landed on one, search within 16 px
+  // for the nearest non-line pixel so dense-stipple images still get filled.
+  const isLine = (idx) => lineMask ? lineMask[idx] : (paint[idx*4]+paint[idx*4+1]+paint[idx*4+2])/3 < 80;
+  if (isLine(startIdx)) {
+    let found = false;
+    outer16: for (let r = 1; r <= 16; r++) {
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          if (Math.abs(dx) < r && Math.abs(dy) < r) continue;
+          const nx = canvasX + dx, ny = canvasY + dy;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+          const ni = ny * width + nx;
+          if (!isLine(ni)) { startIdx = ni; found = true; break outer16; }
+        }
+      }
+    }
+    if (!found) return { success: false };
+  }
 
   const visited = new Uint8Array(n);
   const queue   = new Int32Array(n);
@@ -698,7 +722,7 @@ export function findRegionAt(canvasX, canvasY) {
   if (!state.regionMap) return 0;
   const direct = state.regionMap[canvasY * width + canvasX];
   if (direct > 0) return direct;
-  for (let r = 1; r <= 8; r++) {
+  for (let r = 1; r <= 16; r++) {
     for (let dy = -r; dy <= r; dy++) {
       for (let dx = -r; dx <= r; dx++) {
         if (Math.abs(dx) < r && Math.abs(dy) < r) continue;

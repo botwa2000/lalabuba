@@ -43,6 +43,18 @@
 /* Segment control (Tap / Paint): buttons must be flush — override .action-group gap */
 .action-group.color-mode-group { gap: 0; }
 
+/* Locked brush button: greyed-out with a lock badge */
+.mode-btn-locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.mode-btn-locked::after {
+  content: '🔒';
+  font-size: .65em;
+  vertical-align: super;
+  margin-left: 2px;
+}
+
 .action-sep {
   width: 1.5px;
   height: 20px;

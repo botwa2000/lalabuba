@@ -246,6 +246,13 @@ function celebrate() {
           setStatus(t('crayonUnlockedToast', t(`pack${cap(pk.id)}Name`)));
         }
       } catch {}
+      // Brush tool unlock: exactly at the threshold, show celebration.
+      try {
+        if (progress.totalCompleted === BRUSH_UNLOCK_AT) {
+          setStatus(t('brushUnlockedToast'));
+          syncBrushLock();
+        }
+      } catch {}
       // Sticker Scenes: theme-matched decoration drip + scene unlocks.
       try {
         const { newDecos, newScenes } = awardForCompletion(
@@ -976,7 +983,26 @@ const modePencilBtn = document.getElementById('mode-pencil-btn');
 const modeBrushBtn  = document.getElementById('mode-brush-btn');
 const drawToolsGroup = document.getElementById('draw-tools-group');
 
+const BRUSH_UNLOCK_AT = 3; // completions required to unlock the Brush tool
+
+function isBrushUnlocked() {
+  try { return (getProgress().totalCompleted || 0) >= BRUSH_UNLOCK_AT; } catch { return false; }
+}
+
+function syncBrushLock() {
+  if (!modeBrushBtn) return;
+  const locked = !isBrushUnlocked();
+  modeBrushBtn.classList.toggle('mode-btn-locked', locked);
+  modeBrushBtn.title = locked ? t('brushLocked', BRUSH_UNLOCK_AT) : '';
+}
+
 function setColorMode(mode) {
+  // Gate: Brush requires BRUSH_UNLOCK_AT completions.
+  if (mode === 'brush' && !isBrushUnlocked()) {
+    setStatus(t('brushLocked', BRUSH_UNLOCK_AT), true);
+    syncBrushLock();
+    return;
+  }
   state.colorMode = mode;
   if (modeTapBtn)    modeTapBtn.classList.toggle('active',    mode === 'tap');
   if (modePencilBtn) modePencilBtn.classList.toggle('active', mode === 'pencil');
@@ -1004,6 +1030,9 @@ function setColorMode(mode) {
     }
   }
 }
+
+// Re-evaluate lock state on page show (in case progress updated elsewhere).
+syncBrushLock();
 
 if (modeTapBtn)    modeTapBtn.addEventListener('click',    () => setColorMode('tap'));
 if (modePencilBtn) modePencilBtn.addEventListener('click', () => setColorMode('pencil'));

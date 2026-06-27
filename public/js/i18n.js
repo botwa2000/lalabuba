@@ -244,6 +244,8 @@ const TRANSLATIONS = {
     pencilModeBtn: "✏️ Pencil",
     brushModeBtn: "🖌️ Brush",
     brushMode: "Brush mode — paint over an area to colour it!",
+    brushLocked: (n) => `🔒 Brush unlocks after ${n} colourings — keep going!`,
+    brushUnlockedToast: "🖌️ Brush unlocked! Try painting over an area!",
     paintCoverage: (pct) => `${pct}% covered — keep going!`,
     landscapeHint: "Rotate device for best experience 🔄",
     genTimeout: "Generation timed out. Please check your connection and try again.",
