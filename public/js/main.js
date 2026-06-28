@@ -957,7 +957,7 @@ document.querySelectorAll('.lang-option').forEach(btn => {
     }
     const hdt = document.getElementById('hero-daily-text');
     if (hdt) hdt.textContent = getTranslatedDailyWord(dailyWord, lang);
-    updateDiffChip(); updatePaletteChip(); updateNumbersChip(); // refresh translated chip titles
+    updateDiffChip(); updatePaletteChip(); updateModeChip(); // refresh translated chip titles
     refreshWeekScenePill(); // re-translate the scene-of-the-week pill
     syncCanvasNumbersBtn(); // re-sync after applyTranslations() resets data-i18n buttons
     langDropdown.hidden = true;
@@ -1238,8 +1238,7 @@ const PALETTE_EMOJI = { classic: '🖍️', pastel: '🌸', nature: '🌿', neon
 const chipDiff    = document.getElementById('chip-diff');
 const chipCount   = document.getElementById('chip-count');
 const chipPalette = document.getElementById('chip-palette');
-const chipArtStyle = document.getElementById('chip-art-style');
-const chipNumbers = document.getElementById('chip-numbers');
+const chipMode    = document.getElementById('chip-mode');
 const chipSound   = document.getElementById('chip-sound');
 const chipNarrate = document.getElementById('chip-narrate');
 
@@ -1273,11 +1272,42 @@ function updatePaletteChip() {
   chipPalette.textContent = (PALETTE_EMOJI[v] || '🖍️') + ' ' + label;
   chipPalette.title = t('palette') + ': ' + label;
 }
-function updateNumbersChip() {
-  if (!chipNumbers) return;
-  const on = showNumbersInput.checked;
-  chipNumbers.textContent = '🔢 ' + t('numbersChip');
-  chipNumbers.classList.toggle('setting-chip--on', on);
+const DRAW_MODES = ['classic', 'numbers', 'sketch'];
+function getDrawMode() {
+  if (state.artStyle === 'artistic') return 'sketch';
+  if (showNumbersInput.checked) return 'numbers';
+  return 'classic';
+}
+function applyDrawMode(mode) {
+  if (mode === 'sketch') {
+    state.artStyle = 'artistic';
+    try { localStorage.setItem('lalabuba-art-style', 'artistic'); } catch {}
+    if (showNumbersInput.checked) {
+      showNumbersInput.checked = false;
+      showNumbersInput.dispatchEvent(new Event('change'));
+      syncCanvasNumbersBtn();
+    }
+    if (state.currentImage) setColorMode('pencil');
+  } else {
+    state.artStyle = 'structured';
+    try { localStorage.setItem('lalabuba-art-style', 'structured'); } catch {}
+    const wantNumbers = mode === 'numbers';
+    if (showNumbersInput.checked !== wantNumbers) {
+      showNumbersInput.checked = wantNumbers;
+      showNumbersInput.dispatchEvent(new Event('change'));
+      syncCanvasNumbersBtn();
+    }
+  }
+  updateModeChip();
+}
+function updateModeChip() {
+  if (!chipMode) return;
+  const mode = getDrawMode();
+  const labels = { classic: '🖌️ Classic', numbers: '🔢 Numbers', sketch: '✏️ Sketch' };
+  const hints  = { classic: t('artStyleClassicHint'), numbers: t('artStyleClassicHint'), sketch: t('artStyleSketchHint') };
+  chipMode.textContent = labels[mode] || '🖌️ Classic';
+  chipMode.classList.toggle('setting-chip--on', mode !== 'sketch');
+  chipMode.title = hints[mode] || '';
 }
 function updateSoundChip() {
   if (!chipSound) return;
@@ -1295,15 +1325,8 @@ function updateNarrateChip() {
   chipNarrate.classList.toggle('setting-chip--on', on);
   chipNarrate.title = t(on ? 'narrateOnChip' : 'narrateOffChip');
 }
-function updateArtStyleChip() {
-  if (!chipArtStyle) return;
-  const isClassic = state.artStyle !== 'artistic';
-  chipArtStyle.textContent = isClassic ? '🖌️ Classic' : '✏️ Sketch';
-  chipArtStyle.classList.toggle('setting-chip--on', isClassic);
-  chipArtStyle.title = isClassic ? t('artStyleClassicHint') : t('artStyleSketchHint');
-}
 function updateAllChips() {
-  updateDiffChip(); updateCountChip(); updatePaletteChip(); updateArtStyleChip(); updateNumbersChip(); updateSoundChip(); updateNarrateChip();
+  updateDiffChip(); updateCountChip(); updatePaletteChip(); updateModeChip(); updateSoundChip(); updateNarrateChip();
 }
 
 if (chipSound) chipSound.addEventListener('click', () => {
@@ -1319,26 +1342,15 @@ if (chipNarrate) chipNarrate.addEventListener('click', () => {
 });
 
 // ─── Art style chip ───────────────────────────────────────────────────────────
-// Load persisted value first.
+// ─── Mode chip (Classic / Numbers / Sketch — 3-way cycle) ────────────────────
+// Sketch images are soft/blurry so Numbers mode is incompatible with them.
+// One chip combines art-style + numbers to make that relationship explicit.
 try { state.artStyle = localStorage.getItem('lalabuba-art-style') || 'structured'; } catch {}
-updateArtStyleChip();
+updateModeChip();
 
-if (chipArtStyle) chipArtStyle.addEventListener('click', () => {
-  state.artStyle = state.artStyle === 'structured' ? 'artistic' : 'structured';
-  try { localStorage.setItem('lalabuba-art-style', state.artStyle); } catch {}
-  updateArtStyleChip();
-  // In artistic mode, auto-switch coloring tool to pencil (freehand is the primary tool)
-  // and turn off numbers (artistic images have fewer sealed regions).
-  if (state.artStyle === 'artistic' && state.currentImage) {
-    setColorMode('pencil');
-    if (showNumbersInput.checked) {
-      showNumbersInput.checked = false;
-      showNumbersInput.dispatchEvent(new Event('change'));
-      updateNumbersChip();
-      syncHeroNumbersBtn();
-      syncCanvasNumbersBtn();
-    }
-  }
+if (chipMode) chipMode.addEventListener('click', () => {
+  const next = DRAW_MODES[(DRAW_MODES.indexOf(getDrawMode()) + 1) % DRAW_MODES.length];
+  applyDrawMode(next);
 });
 
 
@@ -1375,26 +1387,14 @@ if (chipPalette) chipPalette.addEventListener('click', () => {
   updateCountChip(); // palette affects max count
 });
 
-if (chipNumbers) chipNumbers.addEventListener('click', () => {
-  showNumbersInput.checked = !showNumbersInput.checked;
-  showNumbersInput.dispatchEvent(new Event('change'));
-  updateNumbersChip();
-  syncHeroNumbersBtn();
-});
-
-function syncHeroNumbersBtn() {
-  const heroBtn = document.getElementById('hero-numbers-toggle');
-  if (!heroBtn) return;
-  const on = showNumbersInput.checked;
-  heroBtn.classList.toggle('setting-chip--on', on);
-}
+function syncHeroNumbersBtn() { /* #hero-numbers-toggle does not exist; kept for call-site compat */ }
 
 const heroNumbersToggle = document.getElementById('hero-numbers-toggle');
 if (heroNumbersToggle) {
   heroNumbersToggle.addEventListener('click', () => {
     showNumbersInput.checked = !showNumbersInput.checked;
     showNumbersInput.dispatchEvent(new Event('change'));
-    updateNumbersChip();
+    updateModeChip();
     syncHeroNumbersBtn();
   });
 }
@@ -1409,7 +1409,7 @@ if (canvasNumbersBtn) {
     if (state.isFreeMode) { _exitFreeMode(); return; }
     showNumbersInput.checked = !showNumbersInput.checked;
     showNumbersInput.dispatchEvent(new Event('change'));
-    updateNumbersChip();
+    updateModeChip();
     syncHeroNumbersBtn();
     syncCanvasNumbersBtn();
   });
@@ -1486,7 +1486,7 @@ function _activateFreeMode() {
   // Hide numbers
   showNumbersInput.checked = false;
   showNumbersInput.dispatchEvent(new Event('change'));
-  updateNumbersChip();
+  updateModeChip();
   syncCanvasNumbersBtn();
   // Update go-free button appearance
   if (goFreeBtn) {
@@ -1514,7 +1514,7 @@ function _exitFreeMode() {
   // Turn numbers back on (setColorCount already called renderLegend with isFreeMode=false)
   showNumbersInput.checked = true;
   showNumbersInput.dispatchEvent(new Event('change'));
-  updateNumbersChip();
+  updateModeChip();
   syncHeroNumbersBtn();
   syncCanvasNumbersBtn();
 }
