@@ -653,21 +653,43 @@
   border-color: var(--purple);
   transform: scale(1.1);
 }
-/* Frame styles — applied via data-frame on #preview-stage */
-#preview-stage[data-frame="classic"] #preview-canvas {
-  outline: 6px solid #333;
-  outline-offset: 4px;
-  box-shadow: 0 0 0 10px #f5f5f0, 0 0 0 14px #333;
+/* ── Shape: applied to .canvas-frame wrapper via data-shape on #preview-stage ── */
+/* border-radius + overflow:hidden for circle/oval so box-shadow frames follow    */
+/* the curved edge. clip-path used for diamond (no border-radius equivalent).     */
+#preview-stage[data-shape="circle"] .canvas-frame {
+  border-radius: 50%;
+  overflow: hidden;
 }
-#preview-stage[data-frame="wooden"] #preview-canvas {
-  outline: 8px solid #8B5E3C;
-  outline-offset: 4px;
-  box-shadow: 0 0 0 12px #C8A96E, 0 0 0 16px #8B5E3C;
+#preview-stage[data-shape="oval"] .canvas-frame {
+  border-radius: 50% / 45%;
+  overflow: hidden;
 }
-#preview-stage[data-frame="gold"] #preview-canvas {
-  outline: 8px solid #B8860B;
-  outline-offset: 4px;
-  box-shadow: 0 0 0 12px #FFD700, 0 0 0 16px #B8860B;
+#preview-stage[data-shape="diamond"] .canvas-frame {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+/* ── Frame: box-shadow on .canvas-frame — follows border-radius for curved shapes */
+#preview-stage[data-frame="classic"] .canvas-frame {
+  box-shadow: 0 0 0 8px #f5f5f0, 0 0 0 15px #333, 0 4px 24px rgba(0,0,0,.18);
+}
+#preview-stage[data-frame="wooden"] .canvas-frame {
+  box-shadow: 0 0 0 12px #C8A96E, 0 0 0 22px #8B5E3C, 0 4px 24px rgba(0,0,0,.22);
+}
+#preview-stage[data-frame="gold"] .canvas-frame {
+  box-shadow: 0 0 0 12px #FFD700, 0 0 0 22px #B8860B, 0 4px 24px rgba(0,0,0,.22);
+}
+/* Diamond clips box-shadow — use filter drop-shadow instead */
+#preview-stage[data-shape="diamond"][data-frame="classic"] .canvas-frame {
+  box-shadow: none;
+  filter: drop-shadow(0 0 6px #333) drop-shadow(0 0 14px #f5f5f0) drop-shadow(0 0 20px #333);
+}
+#preview-stage[data-shape="diamond"][data-frame="wooden"] .canvas-frame {
+  box-shadow: none;
+  filter: drop-shadow(0 0 6px #8B5E3C) drop-shadow(0 0 14px #C8A96E) drop-shadow(0 0 20px #8B5E3C);
+}
+#preview-stage[data-shape="diamond"][data-frame="gold"] .canvas-frame {
+  box-shadow: none;
+  filter: drop-shadow(0 0 6px #B8860B) drop-shadow(0 0 14px #FFD700) drop-shadow(0 0 20px #B8860B);
 }
 /* On mobile: hide frame/shape panel if panel is a drawer */
 @media (max-width: 767px) {

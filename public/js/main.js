@@ -1301,10 +1301,6 @@ function updateArtStyleChip() {
   chipArtStyle.textContent = isClassic ? '🖌️ Classic' : '✏️ Sketch';
   chipArtStyle.classList.toggle('setting-chip--on', isClassic);
   chipArtStyle.title = isClassic ? t('artStyleClassicHint') : t('artStyleSketchHint');
-  const menuIcon  = document.getElementById('art-style-menu-icon');
-  const menuLabel = document.getElementById('art-style-menu-label');
-  if (menuIcon)  menuIcon.textContent  = isClassic ? '🖌️' : '✏️';
-  if (menuLabel) menuLabel.textContent = isClassic ? t('artStyleClassicHint') : t('artStyleSketchHint');
 }
 function updateAllChips() {
   updateDiffChip(); updateCountChip(); updatePaletteChip(); updateArtStyleChip(); updateNumbersChip(); updateSoundChip(); updateNarrateChip();
@@ -1345,10 +1341,6 @@ if (chipArtStyle) chipArtStyle.addEventListener('click', () => {
   }
 });
 
-const artStyleMenuBtn = document.getElementById('art-style-menu-btn');
-if (artStyleMenuBtn) artStyleMenuBtn.addEventListener('click', () => {
-  if (chipArtStyle) chipArtStyle.click();
-});
 
 if (chipDiff) chipDiff.addEventListener('click', () => {
   const cur = DIFF_CYCLE.indexOf(difficultySelect.value);
@@ -1571,18 +1563,15 @@ function applyCanvasShape(shape) {
   try { localStorage.setItem('lalabuba-canvas-shape', shape); } catch {}
   document.querySelectorAll('.canvas-shape-btn').forEach(b =>
     b.classList.toggle('canvas-shape-btn--active', b.dataset.shape === shape));
+  // Shape is driven by CSS via data-shape on the stage — the .canvas-frame wrapper
+  // uses border-radius (circle/oval) or clip-path (diamond) so frames (box-shadow)
+  // correctly follow the shape. Clear any legacy inline clip-path on the canvases.
+  const stage = document.getElementById('preview-stage');
+  if (stage) stage.dataset.shape = shape;
   const pc = document.getElementById('preview-canvas');
-  if (!pc) return;
-  const clips = {
-    circle:  'circle(50% at 50% 50%)',
-    oval:    'ellipse(48% 46% at 50% 50%)',
-    diamond: 'polygon(50% 0%,100% 50%,50% 100%,0% 50%)',
-    square:  'none',
-  };
-  pc.style.clipPath = clips[shape] || 'none';
-  // Also clip the draw canvas
   const dc = document.getElementById('draw-canvas');
-  if (dc) dc.style.clipPath = clips[shape] || 'none';
+  if (pc) pc.style.clipPath = '';
+  if (dc) dc.style.clipPath = '';
 }
 
 function applyCanvasFrame(frame) {

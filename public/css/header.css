@@ -382,25 +382,6 @@
 }
 .settings-legal-link:hover { text-decoration: underline; color: var(--purple); }
 
-.settings-menu-frames {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-}
-.settings-menu-frames-label {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--text-muted, #888);
-  flex-shrink: 0;
-  min-width: 3rem;
-}
-.settings-frames-btn-row {
-  display: flex;
-  gap: 4px;
-}
-/* Hide frame row when no canvas exists (hero/landing state) */
-.app.app-hero .settings-menu-frames { display: none; }
 
 @keyframes dropIn {
   from { opacity: 0; transform: translateY(-8px) scale(0.96); }
