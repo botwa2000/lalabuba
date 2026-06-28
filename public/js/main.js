@@ -661,10 +661,13 @@ previewCanvas.addEventListener("click", (event) => {
 
   // Color guidance in numbers mode — block fill if wrong color, flash the correct one.
   // The kid must select the right colour first; this is the core colour-by-number mechanic.
-  if (!state.isFreeMode && showNumbersInput.checked && regionId > 0 && state.regionColorMap?.size > 0) {
-    // Direct hit (exact numbered region); fall back to nearest badge centroid when
-    // the worker region isn't one of the N badge regions (common on complex images).
-    let required = state.regionColorMap.get(regionId) ?? -1;
+  // NOTE: regionId may be 0 pre-worker (no regionMap yet) — the gate intentionally omits
+  // the regionId > 0 check so the centroid-distance fallback can enforce color pre-worker.
+  if (!state.isFreeMode && showNumbersInput.checked && state.regionColorMap?.size > 0) {
+    // Direct hit via worker regionMap (post-worker); otherwise fall back to nearest
+    // badge centroid which works both pre-worker (sequential IDs) and post-worker
+    // (for worker regions not assigned a badge).
+    let required = (regionId > 0 ? state.regionColorMap.get(regionId) : undefined) ?? -1;
     if (required < 0 && state.numberRegions?.length > 0) {
       let bestDist = Infinity;
       for (const reg of state.numberRegions) {
