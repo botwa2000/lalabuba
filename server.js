@@ -96,23 +96,39 @@ function serveStaticFile(req, res, pathname) {
     return;
   }
 
-  fs.readFile(absolutePath, (error, contents) => {
-    if (error) {
-      if (error.code === "ENOENT" || error.code === "EISDIR") {
-        sendJson(res, 404, { error: "Not found" });
-        return;
-      }
-      sendJson(res, 500, { error: "Failed to read static file." });
+  // Candidates to try in order:
+  // 1. exact path  2. path + .html  3. path/index.html
+  const candidates = [
+    absolutePath,
+    path.extname(absolutePath) === "" ? absolutePath + ".html" : null,
+    absolutePath + "/index.html",
+  ].filter(Boolean);
+
+  function tryNext(i) {
+    if (i >= candidates.length) {
+      sendJson(res, 404, { error: "Not found" });
       return;
     }
-    const extension = path.extname(absolutePath);
-    const noCache = [".js", ".css", ".html", ".webmanifest"].includes(extension);
-    res.writeHead(200, {
-      "Content-Type": MIME_TYPES[extension] || "application/octet-stream",
-      ...(noCache ? { "Cache-Control": "no-store" } : {}),
+    const candidate = candidates[i];
+    fs.readFile(candidate, (error, contents) => {
+      if (error) {
+        if (error.code === "ENOENT" || error.code === "EISDIR") {
+          tryNext(i + 1);
+          return;
+        }
+        sendJson(res, 500, { error: "Failed to read static file." });
+        return;
+      }
+      const extension = path.extname(candidate);
+      const noCache = [".js", ".css", ".html", ".webmanifest"].includes(extension);
+      res.writeHead(200, {
+        "Content-Type": MIME_TYPES[extension] || "application/octet-stream",
+        ...(noCache ? { "Cache-Control": "no-store" } : {}),
+      });
+      res.end(contents);
     });
-    res.end(contents);
-  });
+  }
+  tryNext(0);
 }
 
 // Returns the names of any SET critical secret whose VALUE is malformed
