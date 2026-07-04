@@ -23,6 +23,7 @@ import '../../core/l10n/l10n_service.dart';
 import '../../core/di/providers.dart';
 import '../../features/generate/generate_service.dart';
 import '../../features/gallery/gallery_screen.dart';
+import '../../shared/services/analytics_service.dart';
 import '../../shared/services/storage_service.dart';
 import '../../shared/widgets/lala_color_swatch.dart';
 import '../../shared/widgets/lala_loading_overlay.dart';
@@ -68,6 +69,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   bool _celebrationShown = false;
   String _subject = '';
   int? _currentSeed;
+  // Timestamps for analytics duration tracking.
+  DateTime? _generateStart;
+  DateTime? _coloringStart;
   // Colour currently under the finger while dragging the eyedropper (null when
   // not sampling). Shown as a floating preview pill.
   Color? _eyedropperPreview;
@@ -143,19 +147,30 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     });
     ref.read(canvasProvider.notifier).reset();
 
+    final difficulty = settings?.difficulty ?? 'medium';
+    final colorCount = settings?.colorCount ?? 12;
+    _generateStart = DateTime.now();
+    AnalyticsService.track('image_generate_started', {
+      'subject': _subject,
+      'difficulty': difficulty,
+      'color_count': colorCount,
+      'source': widget.args.source,
+      'is_retry': seed != null,
+    });
+
     try {
       final result = await svc.generate(
         subject: _subject,
-        difficulty: settings?.difficulty ?? 'medium',
-        colorCount: settings?.colorCount ?? 12,
+        difficulty: difficulty,
+        colorCount: colorCount,
         seed: seed,
       );
 
-      final minArea = _minAreaFor(settings?.difficulty ?? 'medium');
-      final maxNumbered = _maxNumberedFor(settings?.difficulty ?? 'medium');
+      final minArea = _minAreaFor(difficulty);
+      final maxNumbered = _maxNumberedFor(difficulty);
       final paletteColors = _getPaletteColors(
         settings?.palette ?? 'classic',
-        settings?.colorCount ?? 12,
+        colorCount,
       );
       await ref.read(canvasProvider.notifier).loadImage(
         result.imageBytes,
@@ -168,6 +183,17 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       await ref.read(subscriptionProvider.notifier).recordGeneration();
       unawaited(ref.read(progressProvider.notifier).recordGeneration());
 
+      _coloringStart = DateTime.now();
+      final genMs = _generateStart != null
+          ? _coloringStart!.difference(_generateStart!).inMilliseconds
+          : 0;
+      AnalyticsService.track('image_generate_success', {
+        'subject': _subject,
+        'difficulty': difficulty,
+        'color_count': colorCount,
+        'duration_ms': genMs,
+      });
+
       if (mounted) {
         setState(() {
           _hintVisible = true;
@@ -177,7 +203,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           if (mounted) setState(() => _hintVisible = false);
         });
       }
-    } catch (e) {
+    } catch (e, stack) {
+      AnalyticsService.recordError(e, stack);
+      AnalyticsService.track('image_generate_failed', {
+        'subject': _subject,
+        'difficulty': difficulty,
+        'error': e.toString().substring(0, e.toString().length.clamp(0, 200)),
+      });
       if (mounted) {
         setState(() {
           _errorMsg = e.toString();
@@ -1682,6 +1714,20 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   }
 
   Future<void> _onColoringComplete(CanvasState canvas) async {
+    final durationMs = _coloringStart != null
+        ? DateTime.now().difference(_coloringStart!).inMilliseconds
+        : 0;
+    AnalyticsService.track('coloring_completed', {
+      'subject': _subject,
+      'difficulty': ref.read(settingsProvider).valueOrNull?.difficulty ?? 'medium',
+      'regions_filled': canvas.regionColors.length,
+      'total_regions': canvas.detection?.regions.length ?? 0,
+      'show_numbers': canvas.showNumbers,
+      'is_free_mode': canvas.isFreeMode,
+      'source': widget.args.source,
+      'duration_ms': durationMs,
+    });
+
     final l10n = ref.read(l10nProvider);
     final settings = ref.read(settingsProvider).valueOrNull;
 
@@ -1863,6 +1909,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       await Gal.putImageBytes(bytes,
           album: 'Lalabuba',
           name: 'lalabuba_${DateTime.now().millisecondsSinceEpoch}');
+      AnalyticsService.track('draw_saved', {'subject': _subject});
       // Credit the saving stickers (saver / collector / curator).
       unawaited(
           ref.read(progressProvider.notifier).recordSave().then(_toastBadges));
@@ -1909,6 +1956,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         text: l10n.t('shareImageText', {'subject': widget.args.displayLabel}),
         sharePositionOrigin: _shareOrigin(),
       ));
+      AnalyticsService.track('draw_shared', {'subject': _subject});
       // Credit the sharing stickers (sharer / superSharer).
       unawaited(
           ref.read(progressProvider.notifier).recordShare().then(_toastBadges));

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../shared/services/analytics_service.dart';
 import '../../shared/services/storage_service.dart';
 import '../rewards/crayon_packs.dart';
 
@@ -54,6 +55,7 @@ class SettingsNotifier extends AsyncNotifier<SettingsState> {
     final next = available[(idx + 1) % available.length];
     await StorageService.write(StorageService.kDifficulty, next);
     state = AsyncData(s.copyWith(difficulty: next));
+    AnalyticsService.track('difficulty_changed', {'from': s.difficulty, 'to': next});
   }
 
   Future<void> cyclePalette(List<String> allowed) async {
@@ -65,6 +67,7 @@ class SettingsNotifier extends AsyncNotifier<SettingsState> {
     final next = available[(idx + 1) % available.length];
     await StorageService.write(StorageService.kPalette, next);
     state = AsyncData(s.copyWith(palette: next));
+    AnalyticsService.track('palette_changed', {'from': s.palette, 'to': next});
   }
 
   Future<void> cycleColorCount(List<int> allowed) async {
@@ -76,6 +79,7 @@ class SettingsNotifier extends AsyncNotifier<SettingsState> {
     final next = available[(idx + 1) % available.length];
     await StorageService.writeInt(StorageService.kColorCount, next);
     state = AsyncData(s.copyWith(colorCount: next));
+    AnalyticsService.track('color_count_changed', {'value': next});
   }
 
   Future<void> toggleNumbers() async {
@@ -84,6 +88,7 @@ class SettingsNotifier extends AsyncNotifier<SettingsState> {
     final next = !s.showNumbers;
     await StorageService.writeBool(StorageService.kShowNumbers, next);
     state = AsyncData(s.copyWith(showNumbers: next));
+    AnalyticsService.track('numbers_toggled', {'enabled': next});
   }
 
   Future<void> setDifficulty(String d) async {

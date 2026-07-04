@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app.dart';
+import 'core/config/app_config.dart';
+import 'shared/services/analytics_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +25,16 @@ void main() async {
     statusBarColor: Colors.transparent,
     systemNavigationBarColor: Colors.transparent,
   ));
+
+  // Analytics must init before runApp so the Crashlytics FlutterError handler
+  // is in place before any widget tree errors can occur.
+  try {
+    final config = await AppConfig.load();
+    await AnalyticsService.init(enabled: config.analyticsEnabled);
+  } catch (_) {
+    // If config fails to load, start analytics enabled (safe default).
+    await AnalyticsService.init();
+  }
 
   runApp(const ProviderScope(child: LalabubaApp()));
 }
