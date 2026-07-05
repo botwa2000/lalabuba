@@ -317,6 +317,7 @@
   font-size: .82rem;
   font-weight: 800;
   color: var(--muted);
+  white-space: nowrap;
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
