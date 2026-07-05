@@ -41,15 +41,21 @@ class CanvasScreenArgs {
   final String subject;
   final String displayLabel;
   final int? seed; // null = generate new
-  // Where the subject came from: 'custom' (typed), 'card', 'daily', 'surprise'.
+  // Where the subject came from: 'custom' (typed), 'card', 'daily', 'surprise', 'explore'.
   // Drives the "own idea" and "daily word" stickers on completion.
   final String source;
+  // When set, skip API generation and render this image directly.
+  final Uint8List? preloadedBytes;
+  // Difficulty to use when preloadedBytes is set (affects palette/region counts).
+  final String preloadedDifficulty;
 
   const CanvasScreenArgs({
     required this.subject,
     required this.displayLabel,
     this.seed,
     this.source = 'custom',
+    this.preloadedBytes,
+    this.preloadedDifficulty = 'medium',
   });
 }
 
@@ -107,7 +113,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     StorageService.readBool(StorageService.kTutorialCanvas, false).then((seen) {
       if (mounted && !seen) setState(() => _canvasTutorialSeen = false);
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) => _generate());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.args.preloadedBytes != null) {
+        _renderPreloaded();
+      } else {
+        _generate();
+      }
+    });
   }
 
   @override
@@ -115,6 +127,37 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     _transformCtrl.dispose();
     _disposeScreenSnap();
     super.dispose();
+  }
+
+  // Render an image that was pre-fetched by the Explore screen (no API call).
+  Future<void> _renderPreloaded() async {
+    final bytes = widget.args.preloadedBytes;
+    if (bytes == null) return;
+    setState(() { _isGenerating = true; _errorMsg = null; });
+    ref.read(canvasProvider.notifier).reset();
+    final settings = ref.read(settingsProvider).valueOrNull;
+    final difficulty = widget.args.preloadedDifficulty;
+    final colorCount = settings?.colorCount ?? 12;
+    final paletteColors = _getPaletteColors(settings?.palette ?? 'classic', colorCount);
+    try {
+      await ref.read(canvasProvider.notifier).loadImage(
+        bytes,
+        _minAreaFor(difficulty),
+        showNumbers: settings?.showNumbers ?? false,
+        palette: paletteColors,
+        maxNumbered: _maxNumberedFor(difficulty),
+      );
+      _coloringStart = DateTime.now();
+      AnalyticsService.track('image_generate_success', {
+        'subject': _subject,
+        'difficulty': difficulty,
+        'source': 'explore',
+        'preloaded': true,
+      });
+      if (mounted) setState(() { _isGenerating = false; _hintVisible = true; });
+    } catch (e) {
+      if (mounted) setState(() { _isGenerating = false; _errorMsg = e.toString(); });
+    }
   }
 
   Future<void> _generate({int? seed}) async {

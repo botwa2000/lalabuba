@@ -296,3 +296,101 @@
 @media (max-width: 360px) {
   .examples-grid { gap: 8px; }
 }
+
+/* ── Hero browse-topics section ───────────────────────────────────────────── */
+/* Hidden in coloring state; shown only on the landing page. */
+.hero-browse-section { display: none; }
+.app.app-hero .hero-browse-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0 20px;
+  width: 100%;
+}
+
+.hero-browse-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--ff-body);
+  font-size: .82rem;
+  font-weight: 800;
+  color: var(--muted);
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.hero-browse-divider::before,
+.hero-browse-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.hero-topic-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 720px;
+}
+
+.hero-topic-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px 8px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  text-decoration: none;
+  color: var(--text);
+  font-family: var(--ff-body);
+  font-size: 1.5rem;
+  transition: transform .14s, box-shadow .14s, border-color .14s;
+  cursor: pointer;
+}
+.hero-topic-card span {
+  font-size: .65rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  line-height: 1;
+}
+.hero-topic-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(124,77,255,.18);
+  border-color: #7c4dff;
+}
+.hero-topic-card:hover span { color: #7c4dff; }
+
+.hero-today-link {
+  font-family: var(--ff-body);
+  font-size: .85rem;
+  font-weight: 700;
+  color: #7c4dff;
+  text-decoration: none;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 2px solid rgba(124,77,255,.25);
+  transition: background .14s, border-color .14s;
+}
+.hero-today-link:hover {
+  background: rgba(124,77,255,.08);
+  border-color: #7c4dff;
+}
+
+@media (max-width: 600px) {
+  .hero-topic-grid {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 360px;
+  }
+  .hero-topic-card { padding: 8px 4px 6px; font-size: 1.3rem; }
+}
+@media (max-width: 360px) {
+  .hero-topic-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+}

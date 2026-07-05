@@ -419,6 +419,16 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET") {
+    // /challenge — Flutter QR codes link here; redirect to web share format.
+    if (p === "/challenge") {
+      const subject = parsedUrl.searchParams.get("subject") || "";
+      const seed    = parsedUrl.searchParams.get("seed")    || "";
+      const qs = new URLSearchParams({ s: "1", q: subject, seed }).toString();
+      res.writeHead(301, { Location: `/?${qs}`, "Cache-Control": "no-store" });
+      res.end();
+      return;
+    }
+
     // Dynamic: /coloring-pages/today/
     if (p === "/coloring-pages/today" || p === "/coloring-pages/today/") {
       return serveTodayPage(res);

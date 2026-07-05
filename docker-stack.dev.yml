@@ -21,6 +21,7 @@ services:
       - lalabuba_dev_CF_ACCOUNT_ID
       - lalabuba_dev_CF_API_TOKEN
       - lalabuba_dev_TURNSTILE_SECRET_KEY
+      - lalabuba_dev_GALLERY_ADMIN_KEY
     deploy:
       replicas: 1
       update_config:
@@ -47,3 +48,4 @@ secrets:
   lalabuba_dev_CF_ACCOUNT_ID: { external: true }
   lalabuba_dev_CF_API_TOKEN: { external: true }
   lalabuba_dev_TURNSTILE_SECRET_KEY: { external: true }
+  lalabuba_dev_GALLERY_ADMIN_KEY: { external: true }

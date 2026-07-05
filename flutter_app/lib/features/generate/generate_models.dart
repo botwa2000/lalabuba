@@ -32,13 +32,13 @@ class GenerationRequest {
 class GenerationResult {
   final Uint8List imageBytes;
   final int seed;
-  final String? blobUrl;
+  final String? imageUrl; // absolute https://lalabuba.com/img/c/... or null
   final String subject;
 
   const GenerationResult({
     required this.imageBytes,
     required this.seed,
     required this.subject,
-    this.blobUrl,
+    this.imageUrl,
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/canvas/canvas_screen.dart';
+import '../../features/explore/explore_screen.dart';
 import '../../features/gallery/gallery_screen.dart';
 import '../../features/rewards/rewards_screen.dart';
 import '../../features/rewards/scenes_screen.dart';
@@ -12,6 +13,8 @@ export '../../features/canvas/canvas_screen.dart' show CanvasScreenArgs;
 class Routes {
   static const home = '/';
   static const canvas = '/canvas';
+  static const explore = '/explore';
+  static const exploreTopic = '/explore/:topic';
   static const gallery = '/gallery';
   static const rewards = '/rewards';
   static const scenes = '/scenes';
@@ -44,6 +47,34 @@ final appRouter = GoRouter(
           ),
         );
       },
+    ),
+    GoRoute(
+      path: Routes.explore,
+      name: 'explore',
+      pageBuilder: (ctx, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const ExploreScreen(),
+        transitionsBuilder: (ctx, anim, _, child) =>
+            FadeTransition(opacity: anim, child: child),
+      ),
+      routes: [
+        GoRoute(
+          path: ':topic',
+          name: 'exploreTopic',
+          pageBuilder: (ctx, state) {
+            final topic = state.pathParameters['topic'] ?? '';
+            final extra = state.extra as (String, String)?;
+            final emoji = extra?.$1 ?? '🎨';
+            final name  = extra?.$2 ?? topic;
+            return CustomTransitionPage(
+              key: state.pageKey,
+              child: ExploreTopicScreen(topic: topic, emoji: emoji, name: name),
+              transitionsBuilder: (ctx, anim, _, child) =>
+                  FadeTransition(opacity: anim, child: child),
+            );
+          },
+        ),
+      ],
     ),
     GoRoute(
       path: Routes.gallery,

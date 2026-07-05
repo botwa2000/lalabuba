@@ -73,13 +73,22 @@ class GenerateService {
       final returnedSeed =
           int.tryParse(response.headers.value('x-image-seed') ?? '') ??
               effectiveSeed;
-      final blobUrl = response.headers.value('x-image-url');
+
+      // Server returns a relative path (/img/c/...) — make it absolute so it
+      // works in share sheets and QR links outside the app.
+      final rawUrl = response.headers.value('x-image-url');
+      final baseUrl = _dio.options.baseUrl.replaceFirst(RegExp(r'/$'), '');
+      final imageUrl = rawUrl == null
+          ? null
+          : rawUrl.startsWith('/')
+              ? '$baseUrl$rawUrl'
+              : rawUrl;
 
       return GenerationResult(
         imageBytes: bytes,
         seed: returnedSeed,
         subject: subject,
-        blobUrl: blobUrl,
+        imageUrl: imageUrl,
       );
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) {
