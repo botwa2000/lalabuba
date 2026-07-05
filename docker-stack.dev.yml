@@ -11,6 +11,8 @@ services:
       HOST: 0.0.0.0
       PORT: "3000"
       IMAGE_PROVIDER: huggingface
+    volumes:
+      - /opt/lalabuba-dev/data:/app/data
     secrets:
       - lalabuba_dev_DATABASE_URL
       - lalabuba_dev_HF_TOKEN
@@ -18,7 +20,6 @@ services:
       - lalabuba_dev_NOVITA_API_KEY
       - lalabuba_dev_CF_ACCOUNT_ID
       - lalabuba_dev_CF_API_TOKEN
-      - lalabuba_dev_BLOB_READ_WRITE_TOKEN
       - lalabuba_dev_TURNSTILE_SECRET_KEY
     deploy:
       replicas: 1
@@ -45,5 +46,4 @@ secrets:
   lalabuba_dev_NOVITA_API_KEY: { external: true }
   lalabuba_dev_CF_ACCOUNT_ID: { external: true }
   lalabuba_dev_CF_API_TOKEN: { external: true }
-  lalabuba_dev_BLOB_READ_WRITE_TOKEN: { external: true }
   lalabuba_dev_TURNSTILE_SECRET_KEY: { external: true }

@@ -15,6 +15,7 @@ else
 fi
 
 cd "$DIR"
+echo "[0/5] ensure data dirs"; mkdir -p "$DIR/data/images/c" "$DIR/data/images/g"
 echo "[1/5] pull origin/$BR"; git fetch -q origin "$BR"; git checkout -f -B "$BR" "origin/$BR"
 echo "[2/5] build $IMG";      docker build -t "$IMG" . >/dev/null
 echo "[3/5] deploy $NAME";    docker stack deploy -c "$STACK" "$NAME" >/dev/null

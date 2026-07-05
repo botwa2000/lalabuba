@@ -1,37 +1,34 @@
+const fs   = require("fs");
+const path = require("path");
 const { sanitizeSubject, isSafeSubject } = require("../lib/content-safety");
 const { buildPrompt, generateImage } = require("../lib/image-providers");
 const { translateToEnglish } = require("../lib/translate");
-
-// Vercel Blob — optional; only active when BLOB_READ_WRITE_TOKEN is set.
-let blobPut = null, blobList = null, blobDel = null;
-try {
-  const vb = require("@vercel/blob");
-  blobPut = vb.put; blobList = vb.list; blobDel = vb.del;
-} catch { /* not installed — sharing degrades to seed-based fallback */ }
 
 const HF_TOKEN = process.env.HF_TOKEN;
 const HF_MODEL = process.env.HF_MODEL || "black-forest-labs/FLUX.1-schnell";
 const IMAGE_PROVIDER = process.env.IMAGE_PROVIDER || "huggingface";
 
-// Shared images expire after this many days (blobs are deleted, links show expiry message).
-const SHARE_TTL_DAYS = 7;
-const SHARE_TTL_MS   = SHARE_TTL_DAYS * 24 * 60 * 60 * 1000;
+// Shared coloring images stored locally; expire after 7 days.
+const COLORING_DIR  = path.join(__dirname, "../data/images/c");
+const SHARE_TTL_MS  = 7 * 24 * 60 * 60 * 1000;
 
-// Delete blobs uploaded more than SHARE_TTL_DAYS ago. Fire-and-forget — never awaited.
-async function cleanupOldBlobs() {
-  if (!blobList || !blobDel || !process.env.BLOB_READ_WRITE_TOKEN) return;
-  const cutoff = Date.now() - SHARE_TTL_MS;
+function ensureColoringDir() {
+  if (!fs.existsSync(COLORING_DIR)) fs.mkdirSync(COLORING_DIR, { recursive: true });
+}
+
+// Delete local images older than SHARE_TTL_MS. Fire-and-forget — never awaited.
+function cleanupOldLocalImages() {
   try {
-    let cursor;
-    do {
-      const page = await blobList({ prefix: "coloring/", cursor, limit: 100 });
-      const expired = page.blobs.filter(b => new Date(b.uploadedAt).getTime() < cutoff);
-      if (expired.length) await blobDel(expired.map(b => b.url));
-      cursor = page.cursor;
-      if (!page.hasMore) break;
-    } while (cursor);
+    if (!fs.existsSync(COLORING_DIR)) return;
+    const cutoff = Date.now() - SHARE_TTL_MS;
+    for (const file of fs.readdirSync(COLORING_DIR)) {
+      const fp = path.join(COLORING_DIR, file);
+      try {
+        if (fs.statSync(fp).mtimeMs < cutoff) fs.unlinkSync(fp);
+      } catch { /* ignore per-file errors */ }
+    }
   } catch (err) {
-    console.error("Blob cleanup error (non-fatal):", err.message);
+    console.error("Local image cleanup error (non-fatal):", err.message);
   }
 }
 
@@ -200,24 +197,18 @@ module.exports = async (req, res) => {
       hfModel: HF_MODEL,
     });
 
-    // Upload to Vercel Blob for instant sharing; clean up expired blobs asynchronously.
+    // Save generated image locally for sharing; clean up expired files asynchronously.
     let imageUrl = null;
-    if (blobPut && process.env.BLOB_READ_WRITE_TOKEN) {
-      try {
-        // addRandomSuffix:true → unguessable URL. With false, blobs lived at the
-        // predictable path coloring/<seed> and could be enumerated/guessed to pull
-        // other children's pages. The real URL is returned via X-Image-Url (used
-        // by sharing), so randomizing the path doesn't break anything.
-        const blob = await blobPut(`coloring/${seed}`, generated.buffer, {
-          access: "public",
-          contentType: generated.contentType,
-          addRandomSuffix: true,
-        });
-        imageUrl = blob.url;
-        cleanupOldBlobs(); // fire-and-forget
-      } catch (blobErr) {
-        console.error("Blob upload failed (non-fatal):", blobErr.message);
-      }
+    try {
+      ensureColoringDir();
+      const ext      = generated.contentType === "image/jpeg" ? "jpg" : "png";
+      const rand     = Math.random().toString(36).slice(2, 8);
+      const filename = `${seed}-${rand}.${ext}`;
+      fs.writeFileSync(path.join(COLORING_DIR, filename), generated.buffer);
+      imageUrl = `/img/c/${filename}`;
+      cleanupOldLocalImages(); // fire-and-forget
+    } catch (fileErr) {
+      console.error("Local image save failed (non-fatal):", fileErr.message);
     }
 
     const exposedHeaders = ["X-Image-Seed"];

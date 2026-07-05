@@ -4,7 +4,8 @@
 // With no args generates 2 images for every topic × difficulty combo (72 total).
 // With args generates only the specified slice.
 //
-// Requires: BLOB_READ_WRITE_TOKEN + IMAGE_PROVIDER env (loads .env automatically).
+// Requires: IMAGE_PROVIDER env (loads .env automatically).
+// Images saved to data/images/g/ and manifest updated in data/gallery.json.
 
 "use strict";
 
@@ -26,19 +27,6 @@ try {
 } catch {}
 
 const gallery = require("../lib/gallery");
-
-let blobPut;
-try {
-  blobPut = require("@vercel/blob").put;
-} catch {
-  console.error("@vercel/blob not installed. Run: npm install @vercel/blob");
-  process.exit(1);
-}
-
-if (!process.env.BLOB_READ_WRITE_TOKEN) {
-  console.error("BLOB_READ_WRITE_TOKEN not set in .env");
-  process.exit(1);
-}
 
 const IMAGES_PER_SLOT = 2; // images to generate per topic+difficulty
 const DELAY_MS = 4000;     // delay between requests to avoid rate limiting
@@ -75,7 +63,7 @@ async function main() {
         const subject = subjects[(done + i) % subjects.length];
         process.stdout.write(`[${++done}/${total}] ${topic}/${difficulty}: "${subject}" ... `);
         try {
-          const { url } = await gallery.generateAndUpload(subject, difficulty, blobPut, `${topic}-${difficulty}`);
+          const { url } = await gallery.generateAndUpload(subject, difficulty, `${topic}-${difficulty}`);
           await gallery.addToGallery(topic, difficulty, subject, url);
           console.log("✓");
         } catch (err) {

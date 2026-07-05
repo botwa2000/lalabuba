@@ -3,9 +3,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install prod deps only. The app has no required runtime deps today (@vercel/blob
-# is optional and inert without BLOB_READ_WRITE_TOKEN); this stays correct if deps
-# are added later.
+# Install prod deps only (none currently required); stays correct if deps are added later.
 COPY package.json ./
 RUN npm install --omit=dev --no-audit --no-fund || true
 

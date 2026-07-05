@@ -6,9 +6,7 @@
   "scripts": {
     "start": "node server.js"
   },
-  "dependencies": {
-    "@vercel/blob": "^2.4.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "sharp": "^0.34.5"
   }

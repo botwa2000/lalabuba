@@ -345,6 +345,22 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ── Serve generated images (coloring shares + gallery) ────────────────────
+  const imgMatch = p.match(/^\/img\/(c|g)\/([A-Za-z0-9_.-]+)$/);
+  if (imgMatch && req.method === "GET") {
+    const imgPath = path.join(__dirname, "data", "images", imgMatch[1], imgMatch[2]);
+    try {
+      const buf = fs.readFileSync(imgPath);
+      const ext = path.extname(imgMatch[2]).toLowerCase();
+      const ct  = (ext === ".jpg" || ext === ".jpeg") ? "image/jpeg" : "image/png";
+      res.writeHead(200, { "Content-Type": ct, "Cache-Control": "public, max-age=604800, immutable" });
+      res.end(buf);
+    } catch {
+      return sendJson(res, 404, { error: "Image not found" });
+    }
+    return;
+  }
+
   // ── Gallery API ────────────────────────────────────────────────────────────
   if (p === "/api/gallery" && req.method === "GET") {
     const topic      = parsedUrl.searchParams.get("topic");
@@ -372,12 +388,8 @@ const server = http.createServer(async (req, res) => {
     if (!topic || !difficulty || !subject) {
       return sendJson(res, 400, { error: "topic, difficulty, subject required" });
     }
-    let blobPut;
-    try { blobPut = require("@vercel/blob").put; } catch {
-      return sendJson(res, 503, { error: "@vercel/blob not available" });
-    }
     try {
-      const { url } = await gallery.generateAndUpload(subject, difficulty, blobPut, `${topic}-${difficulty}`);
+      const { url } = await gallery.generateAndUpload(subject, difficulty, `${topic}-${difficulty}`);
       const entry   = await gallery.addToGallery(topic, difficulty, subject, url);
       return sendJson(res, 200, { ok: true, entry });
     } catch (err) {
@@ -392,15 +404,11 @@ const server = http.createServer(async (req, res) => {
     if (!adminKey || req.headers["x-admin-key"] !== adminKey) {
       return sendJson(res, 403, { error: "Forbidden" });
     }
-    let blobPut;
-    try { blobPut = require("@vercel/blob").put; } catch {
-      return sendJson(res, 503, { error: "@vercel/blob not available" });
-    }
     const { word } = gallery.getDailyWord();
     const results  = [];
     for (const diff of ["easy", "medium", "hard"]) {
       try {
-        const { url } = await gallery.generateAndUpload(word, diff, blobPut, `daily-${diff}`);
+        const { url } = await gallery.generateAndUpload(word, diff, `daily-${diff}`);
         await gallery.addDailyImage(word, diff, url);
         results.push({ difficulty: diff, url });
       } catch (err) {

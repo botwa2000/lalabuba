@@ -337,7 +337,7 @@ flutter_app/assets/
 - HD resolution (1024 × 1024)
 - Pencil / freehand drawing mode
 - **Gallery: save up to 100 artworks** permanently to device
-- **Exact image sharing** (Vercel Blob URL — friends see the identical image)
+- **Exact image sharing** (server-hosted URL — friends see the identical image)
 - Print in HD
 - Zoom + pan controls
 - No "come back tomorrow" friction
@@ -400,7 +400,7 @@ flutter_app/assets/
 - **GDPR (EU):** Analytics consent prompt on first launch (EU users detected by locale). PostHog analytics only fires after consent. Children's profiles never generate analytics events.
 - **App Store Kids Category:** The app targets the Kids category. This means: no third-party advertising SDKs, no third-party analytics SDKs that collect PII (PostHog is self-hosted EU, acceptable), no links that take children out of the app without parent confirmation.
 - **Privacy manifest (iOS 17+):** Declare all API categories used: NSUserDefaults (settings), network (image generation), file system (gallery save). No use of prohibited data collection categories.
-- **Data retention:** Generated images on Vercel Blob are deleted after 7 days (already implemented in backend). No user data is retained on servers beyond the session.
+- **Data retention:** Generated images are stored on Hetzner and deleted after 7 days (backend cleanup). No user data is retained on servers beyond the session.
 
 ### Input validation
 - Subject field: max 80 characters, strip HTML/script tags, normalize whitespace — all in Dart before API call
@@ -685,7 +685,7 @@ Body:
 Response:
 Headers:
   X-Image-Seed: 123456789
-  X-Image-Url: https://blob.vercel-storage.com/... (if Blob enabled)
+  X-Image-Url: /img/c/seed-random.png (relative URL to Hetzner-hosted image)
 Body: raw image bytes (PNG or JPEG)
 ```
 
@@ -722,9 +722,9 @@ Tier 1 → Pollinations (free) → Tier 2 → Together AI → Tier 3 → Cloudfl
 - Uses Flutter's `share_plus` package for native share sheet
 
 ### Exact sharing (Plus / Family)
-- When Vercel Blob is configured on the backend, the `X-Image-Url` header contains a direct CDN URL
+- The `X-Image-Url` header contains a Hetzner-hosted image URL (`/img/c/...`)
 - This URL is shared instead of the seed URL — friends see the identical image
-- Blob URLs expire after 7 days (handled by backend cleanup)
+- Images expire after 7 days (handled by backend cleanup)
 
 ### Challenge mode (Family tier)
 - Tapping 🏆 Challenge generates a shareable deep link
