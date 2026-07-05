@@ -88,6 +88,9 @@ export function loadFromShare() {
       } else if (Number.isFinite(seed)) {
         // Legacy share link without stored image — regenerate using seed.
         await generatePage(q, seed);
+      } else {
+        // Direct link from coloring-page CTAs (no seed, no cached image) — generate fresh.
+        await generatePage(q);
       }
     } catch (err) {
       setStatus(err.message || 'Failed to load shared picture.', true);

@@ -76,9 +76,14 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .gallery-card { border-color: #3a2a6a; background: #1e1533; }
-  .gallery-card:hover { border-color: #9c6dff; }
-  .gallery-card img { background: #2a1f4a; }
-  .gallery-card-label { color: #e0d8ff; }
-  .gallery-empty { background: #1e1533; border-color: #3a2a6a; color: #9080c0; }
+  :root:not([data-theme="light"]) .gallery-card { border-color: #3a2a6a; background: #1e1533; }
+  :root:not([data-theme="light"]) .gallery-card:hover { border-color: #9c6dff; }
+  :root:not([data-theme="light"]) .gallery-card img { background: #2a1f4a; }
+  :root:not([data-theme="light"]) .gallery-card-label { color: #e0d8ff; }
+  :root:not([data-theme="light"]) .gallery-empty { background: #1e1533; border-color: #3a2a6a; color: #9080c0; }
 }
+:root[data-theme="dark"] .gallery-card { border-color: #3a2a6a; background: #1e1533; }
+:root[data-theme="dark"] .gallery-card:hover { border-color: #9c6dff; }
+:root[data-theme="dark"] .gallery-card img { background: #2a1f4a; }
+:root[data-theme="dark"] .gallery-card-label { color: #e0d8ff; }
+:root[data-theme="dark"] .gallery-empty { background: #1e1533; border-color: #3a2a6a; color: #9080c0; }

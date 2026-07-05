@@ -227,6 +227,7 @@ function serveTodayPage(res) {
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
+  <script>(function(){var t=localStorage.getItem('lalabuba-theme');if(t){document.documentElement.setAttribute('data-theme',t);}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}})();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Today's Coloring Page: ${wordTitle} (${date}) | Lalabuba</title>
   <meta name="description" content="Today's free AI coloring page is: ${wordTitle}! Color it easy, medium, or hard — free, instant, no account needed."/>
@@ -242,6 +243,7 @@ function serveTodayPage(res) {
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
   <link rel="stylesheet" href="/css/legal.css"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
+  <script type="module" src="/js/lp-theme.js"></script>
   <script type="application/ld+json">{
     "@context":"https://schema.org","@type":"WebPage",
     "name":"Today's Coloring Page: ${wordTitle}",
@@ -256,6 +258,8 @@ function serveTodayPage(res) {
   <a href="/coloring-pages/">Coloring Pages</a>
   <span class="nav-sep">›</span>
   <span class="nav-current">Today</span>
+  <span class="nav-spacer"></span>
+  <button id="lp-theme-btn" aria-label="Toggle dark/light mode">🌙</button>
 </nav>
 <div class="lp-hero">
   <div class="lp-hero-inner">

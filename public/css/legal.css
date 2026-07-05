@@ -10,7 +10,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --lp-purple:  #a78bfa;
     --lp-bg:      #1a1625;
     --lp-surface: #2a2040;
@@ -18,6 +18,24 @@
     --lp-muted:   #a3a3c0;
     --lp-border:  rgba(255,255,255,0.1);
   }
+}
+
+/* explicit data-theme overrides OS preference */
+:root[data-theme="dark"] {
+  --lp-purple:  #a78bfa;
+  --lp-bg:      #1a1625;
+  --lp-surface: #2a2040;
+  --lp-ink:     #f0eaff;
+  --lp-muted:   #a3a3c0;
+  --lp-border:  rgba(255,255,255,0.1);
+}
+:root[data-theme="light"] {
+  --lp-purple:  #7c4dff;
+  --lp-bg:      #fef9ef;
+  --lp-surface: #ffffff;
+  --lp-ink:     #1e1b2e;
+  --lp-muted:   #6b7280;
+  --lp-border:  #e8e0f0;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,6 +73,19 @@ body {
 .legal-nav a { color: var(--lp-purple); text-decoration: none; }
 .legal-nav a:hover { text-decoration: underline; }
 .legal-nav .nav-current { color: var(--lp-muted); }
+.legal-nav .nav-spacer { flex: 1; }
+#lp-theme-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 6px;
+  color: var(--lp-muted);
+  transition: background 0.15s;
+}
+#lp-theme-btn:hover { background: var(--lp-border); }
 
 /* ─── Content ────────────────────────────────────────────────────────────── */
 .legal-content {
