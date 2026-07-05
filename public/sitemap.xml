@@ -23,6 +23,13 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://lalabuba.com/"/>
   </url>
 
+  <!-- ── Today's Coloring Page (fresh daily — re-indexed every day) ───── -->
+  <url>
+    <loc>https://lalabuba.com/coloring-pages/today/</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- ── Features ─────────────────────────────────────────────────────── -->
   <url>
     <loc>https://lalabuba.com/features</loc>
