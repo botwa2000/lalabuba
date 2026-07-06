@@ -102,6 +102,16 @@ export function loadFromShare() {
 }
 
 export function initShareHandlers() {
+  // Platform detection: Android users get Google Play link
+  const appLink  = document.getElementById('share-app-link');
+  const appLabel = document.getElementById('share-app-label');
+  if (appLink && appLabel && /Android/i.test(navigator.userAgent)) {
+    appLink.href = 'https://play.google.com/store/apps/details?id=com.lalabuba.lalabuba';
+    appLink.setAttribute('aria-label', 'Get Lalabuba on Google Play');
+    appLabel.removeAttribute('data-i18n');
+    appLabel.textContent = 'No app yet? Get it free on Google Play';
+  }
+
   document.getElementById('share-button').addEventListener('click', openShareModal);
 
   document.getElementById('close-share-modal').addEventListener('click', () => {

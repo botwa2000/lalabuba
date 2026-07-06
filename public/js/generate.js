@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { t } from './i18n.js';
-import { subjectInput, difficultySelect, providerSelect } from './dom.js';
+import { subjectInput, difficultySelect } from './dom.js';
 import { setStatus, showLoading, hideLoading, activePalette, showCanvasError } from './ui.js';
 import { renderGeneratedImage } from './canvas.js';
 import { SIZE_DIMS } from './data.js';
@@ -153,7 +153,7 @@ export async function generatePage(subject, seedOverride = null, isPreDefined = 
 }
 
 export async function requestGeneratedImage(subject, difficulty = "medium", seedOverride = null, isPreDefined = false) {
-  const provider = providerSelect.value;
+  const provider = 'backend';
   const seed = (seedOverride !== null && Number.isFinite(seedOverride))
     ? Math.floor(seedOverride)
     : Math.floor(Math.random() * 2_000_000_000);

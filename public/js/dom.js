@@ -2,7 +2,6 @@ export const form = document.getElementById("generator-form");
 export const subjectInput = document.getElementById("subject");
 export const showNumbersInput = document.getElementById("show-numbers");
 export const difficultySelect = document.getElementById("difficulty-select");
-export const providerSelect = document.getElementById("provider-select");
 export const paletteSelect = document.getElementById("palette-select");
 export const statusElement = document.getElementById("status");
 export const previewStage = document.getElementById("preview-stage");

@@ -10,7 +10,7 @@ import { isNarrateOn, toggleNarrate, narrateSupported, speak } from './narrate.j
 import { animateCompletion } from './canvas.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
 import {
-  form, subjectInput, showNumbersInput, difficultySelect, providerSelect,
+  form, subjectInput, showNumbersInput, difficultySelect,
   paletteSelect, previewCanvas, drawCanvas, printButton, downloadButton,
   debugPanel,
 } from './dom.js';
@@ -524,16 +524,6 @@ paletteSelect.addEventListener("change", async () => {
   if (showNumbersInput.checked) {
     await renderGeneratedImage(state.currentImage);
   }
-});
-
-// ─── Provider select ─────────────────────────────────────────────────────────
-providerSelect.addEventListener("change", () => {
-  const hints = {
-    direct:  "Ready — type any word in any language.",
-    backend: "Ready — make sure the server is running (npm start).",
-    demo:    "Offline demo: try butterfly, cat, rocket, or castle.",
-  };
-  setStatus(hints[providerSelect.value] || "Ready.");
 });
 
 // ─── Difficulty select ───────────────────────────────────────────────────────
