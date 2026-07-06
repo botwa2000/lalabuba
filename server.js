@@ -202,7 +202,18 @@ async function serveTopicPageWithGallery(res, topic) {
 
   const topicImages = gallery.getAllForTopic(topic);
   const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
-  const enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, meta)) : baseHtml;
+  let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, meta)) : baseHtml;
+
+  // Inject first gallery image as og:image for Pinterest/social sharing
+  const firstImg = ["easy","medium","hard"].reduce((found, d) => found || (topicImages[d]||[])[0], null);
+  if (firstImg) {
+    const absUrl = `https://lalabuba.com${firstImg.url}`;
+    enhanced = enhanced.replace(
+      /<meta property="og:image"[^>]*>/,
+      `<meta property="og:image" content="${absUrl}"/>`
+    );
+  }
+
   serveHtml(res, enhanced);
 }
 
@@ -273,6 +284,114 @@ function serveTodayPage(res) {
   <section class="lp-section gallery-section">
     <h2 class="section-heading">${wordTitle} — ${date}</h2>
     <p class="section-sub">Pick a difficulty and start coloring, or generate a brand-new one.</p>
+    ${galleryHtml}
+  </section>
+  <section class="lp-section">
+    <h2 class="section-heading">Try Other Difficulties</h2>
+    <div class="lp-diff-grid">
+      ${["easy","medium","hard"].map(d => `<div class="lp-diff-card">
+        <span class="lp-diff-emoji">${{easy:"🌟",medium:"🌟🌟",hard:"🌟🌟🌟"}[d]}</span>
+        <h3>${d.charAt(0).toUpperCase()+d.slice(1)}</h3>
+        <a href="/?s=1&q=${encodeURIComponent(word)}&d=${d}" class="lp-diff-link">Generate ${d} →</a>
+      </div>`).join("")}
+    </div>
+  </section>
+  <section class="lp-section">
+    <h2 class="section-heading">Browse All Topics</h2>
+    <div class="lp-related-grid">
+      ${Object.entries(gallery.TOPIC_META).map(([slug, m]) =>
+        `<a href="/coloring-pages/${slug}/" class="lp-related-card"><span class="lp-rel-emoji">${m.emoji}</span> ${m.name}</a>`
+      ).join("")}
+    </div>
+  </section>
+</div>
+<footer class="legal-footer">
+  <span>© 2026 Lalabuba</span>
+  <span class="sep">·</span>
+  <a href="/">App</a>
+  <span class="sep">·</span>
+  <a href="/coloring-pages/">Coloring Pages</a>
+  <span class="sep">·</span>
+  <a href="/features">Features</a>
+  <span class="sep">·</span>
+  <a href="/privacy">Privacy</a>
+  <span class="sep">·</span>
+  <a href="/contact">Contact</a>
+</footer>
+</body>
+</html>`;
+  serveHtml(res, html);
+}
+
+function serveDailyPage(res, date, word) {
+  const entry = gallery.getDailyEntry(date);
+  const wordTitle = word.charAt(0).toUpperCase() + word.slice(1);
+  const imgs = entry?.images || [];
+
+  let galleryHtml = "";
+  if (imgs.length) {
+    galleryHtml = `<div class="gallery-grid">${imgs.map(e =>
+      galleryCardHtml({ ...e, subject: word }, { name: wordTitle })
+    ).join("")}</div>`;
+  } else {
+    galleryHtml = `<p class="gallery-empty">No saved coloring pages for this date yet. Try generating your own:
+      <a href="/?s=1&q=${encodeURIComponent(word)}&d=easy" class="lp-cta-inline">Generate ${wordTitle} →</a></p>`;
+  }
+
+  const firstImg = imgs[0];
+  const ogImage  = firstImg ? `https://lalabuba.com${firstImg.url}` : "https://lalabuba.com/og-image.png";
+  const canonUrl = `https://lalabuba.com/coloring-pages/daily/${date}-${word}/`;
+
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <script>(function(){var t=localStorage.getItem('lalabuba-theme');if(t){document.documentElement.setAttribute('data-theme',t);}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Free ${wordTitle} Coloring Page (${date}) | Lalabuba</title>
+  <meta name="description" content="Free printable ${wordTitle} coloring page from ${date}. Color online at easy, medium, or hard difficulty — no account needed."/>
+  <link rel="canonical" href="${canonUrl}"/>
+  <meta property="og:title" content="${wordTitle} Coloring Page — ${date}"/>
+  <meta property="og:description" content="Free AI ${wordTitle} coloring page. Easy, medium, and hard difficulty. Color online or print!"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="${canonUrl}"/>
+  <meta property="og:image" content="${ogImage}"/>
+  <meta property="og:site_name" content="Lalabuba"/>
+  <meta name="theme-color" content="#7c4dff"/>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+  <link rel="icon" href="/favicon.png" type="image/png"/>
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+  <link rel="stylesheet" href="/css/legal.css"/>
+  <link rel="stylesheet" href="/css/gallery.css"/>
+  <script type="module" src="/js/lp-theme.js"></script>
+  <script type="application/ld+json">{
+    "@context":"https://schema.org","@type":"WebPage",
+    "name":"${wordTitle} Coloring Page — ${date}",
+    "description":"Free AI ${wordTitle} coloring page from ${date}",
+    "url":"${canonUrl}"
+  }</script>
+</head>
+<body>
+<nav class="legal-nav">
+  <a href="/" class="legal-logo"><span class="legal-logo-emoji">🎨</span> Lalabuba</a>
+  <span class="nav-sep">›</span>
+  <a href="/coloring-pages/">Coloring Pages</a>
+  <span class="nav-sep">›</span>
+  <span class="nav-current">${wordTitle} (${date})</span>
+  <span class="nav-spacer"></span>
+  <button id="lp-theme-btn" aria-label="Toggle dark/light mode">🌙</button>
+</nav>
+<div class="lp-hero">
+  <div class="lp-hero-inner">
+    <span class="lp-hero-emoji">🖌️</span>
+    <h1>${wordTitle} Coloring Page</h1>
+    <p class="lp-hero-desc">Free printable ${wordTitle} coloring page — <strong>${date}</strong>. Pick a difficulty or generate your own!</p>
+    <a href="/?s=1&q=${encodeURIComponent(word)}&d=easy" class="lp-cta">Generate your own ${wordTitle} →</a>
+  </div>
+</div>
+<div class="legal-content">
+  <section class="lp-section gallery-section">
+    <h2 class="section-heading">${wordTitle} — ${date}</h2>
     ${galleryHtml}
   </section>
   <section class="lp-section">
@@ -433,14 +552,57 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Dynamic: /coloring-pages/today/
+    // /today/ → 301 to dated archive URL so ranking power accumulates on dated URLs
     if (p === "/coloring-pages/today" || p === "/coloring-pages/today/") {
-      return serveTodayPage(res);
+      const { word, date } = gallery.getDailyWord();
+      res.writeHead(301, { Location: `/coloring-pages/daily/${date}-${word}/`, "Cache-Control": "no-store" });
+      res.end();
+      return;
+    }
+    // Dynamic: /coloring-pages/daily/YYYY-MM-DD-word/ — dated archive page
+    const dailyMatch = p.match(/^\/coloring-pages\/daily\/(\d{4}-\d{2}-\d{2})-([a-z]+)\/?$/);
+    if (dailyMatch) {
+      return serveDailyPage(res, dailyMatch[1], dailyMatch[2]);
     }
     // Dynamic: /coloring-pages/:topic/ — inject gallery into static HTML
     const topicMatch = p.match(/^\/coloring-pages\/([a-z]+)\/?$/);
     if (topicMatch && gallery.TOPIC_META[topicMatch[1]]) {
       return serveTopicPageWithGallery(res, topicMatch[1]);
+    }
+    // German pages: /ausmalbilder/:slug/ — static HTML + optional gallery injection from mapped English topic
+    const DE_TOPIC_MAP = {
+      drache: "dragon", einhorn: "unicorn", schmetterling: "butterfly",
+      dinosaurier: "dinosaur", katze: "cat", prinzessin: "princess",
+      meerjungfrau: "mermaid", rakete: "rocket",
+    };
+    const deTopicMatch = p.match(/^\/ausmalbilder\/([a-z]+)\/?$/);
+    if (deTopicMatch) {
+      const deSlug   = deTopicMatch[1];
+      const enTopic  = DE_TOPIC_MAP[deSlug];
+      const staticPath = path.join(PUBLIC_DIR, "ausmalbilder", deSlug, "index.html");
+      let baseHtml;
+      try { baseHtml = fs.readFileSync(staticPath, "utf8"); } catch { /* fall through to static serve */ }
+      if (baseHtml) {
+        if (enTopic) {
+          const topicImages = gallery.getAllForTopic(enTopic);
+          const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
+          let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, gallery.TOPIC_META[enTopic])) : baseHtml;
+          const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
+          if (firstImg) {
+            enhanced = enhanced.replace(/<meta property="og:image"[^>]*>/, `<meta property="og:image" content="https://lalabuba.com${firstImg.url}"/>`);
+          }
+          return serveHtml(res, enhanced);
+        }
+        return serveHtml(res, baseHtml);
+      }
+    }
+    // German hub /ausmalbilder/ — static file
+    if (p === "/ausmalbilder" || p === "/ausmalbilder/") {
+      const hubPath = path.join(PUBLIC_DIR, "ausmalbilder", "index.html");
+      try {
+        const html = fs.readFileSync(hubPath, "utf8");
+        return serveHtml(res, html);
+      } catch { /* fall through */ }
     }
     return serveStaticFile(req, res, p);
   }
