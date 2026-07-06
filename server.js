@@ -31,6 +31,16 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "127.0.0.1"; // container sets HOST=0.0.0.0
 const PUBLIC_DIR = path.join(__dirname, "public");
 
+// German slug → English topic (for gallery image injection on DE pages)
+const DE_TOPIC_MAP = {
+  drache: "dragon", einhorn: "unicorn", schmetterling: "butterfly",
+  dinosaurier: "dinosaur", katze: "cat", prinzessin: "princess",
+  meerjungfrau: "mermaid", rakete: "rocket",
+  schultuete: "schultuete", einschulung: "einschulung",
+};
+// English topic → German slug (inverse)
+const EN_TO_DE_SLUG = Object.fromEntries(Object.entries(DE_TOPIC_MAP).map(([de, en]) => [en, de]));
+
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -340,7 +350,9 @@ function serveDailyPage(res, date, word) {
 
   const firstImg = imgs[0];
   const ogImage  = firstImg ? `https://lalabuba.com${firstImg.url}` : "https://lalabuba.com/og-image.png";
-  const canonUrl = `https://lalabuba.com/coloring-pages/daily/${date}-${word}/`;
+  const canonUrl  = `https://lalabuba.com/coloring-pages/daily/${date}-${word}/`;
+  const deSlugDe  = gallery.DE_DAILY_WORDS[word];
+  const deAltLink = deSlugDe ? `\n  <link rel="alternate" hreflang="de" href="https://lalabuba.com/ausmalbilder/taeglich/${date}-${deSlugDe}/"/>` : "";
 
   const html = `<!doctype html>
 <html lang="en">
@@ -351,6 +363,8 @@ function serveDailyPage(res, date, word) {
   <title>Free ${wordTitle} Coloring Page (${date}) | Lalabuba</title>
   <meta name="description" content="Free printable ${wordTitle} coloring page from ${date}. Color online at easy, medium, or hard difficulty — no account needed."/>
   <link rel="canonical" href="${canonUrl}"/>
+  <link rel="alternate" hreflang="en" href="${canonUrl}"/>
+  <link rel="alternate" hreflang="x-default" href="${canonUrl}"/>${deAltLink}
   <meta property="og:title" content="${wordTitle} Coloring Page — ${date}"/>
   <meta property="og:description" content="Free AI ${wordTitle} coloring page. Easy, medium, and hard difficulty. Color online or print!"/>
   <meta property="og:type" content="website"/>
@@ -425,6 +439,114 @@ function serveDailyPage(res, date, word) {
   <a href="/privacy">Privacy</a>
   <span class="sep">·</span>
   <a href="/contact">Contact</a>
+</footer>
+</body>
+</html>`;
+  serveHtml(res, html);
+}
+
+function serveGermanDailyPage(res, date, deWord) {
+  const entry      = gallery.getDailyEntry(date);
+  const enWord     = gallery.getDailyWordForDate(date);
+  const deDisplay  = deWord.charAt(0).toUpperCase() + deWord.slice(1);
+  const imgs       = entry?.images || [];
+  const deCanon    = `https://lalabuba.com/ausmalbilder/taeglich/${date}-${deWord}/`;
+  const enUrl      = `https://lalabuba.com/coloring-pages/daily/${date}-${enWord}/`;
+
+  let galleryHtml = "";
+  if (imgs.length) {
+    galleryHtml = `<div class="gallery-grid">${imgs.map(e =>
+      galleryCardHtml({ ...e, subject: deDisplay }, { name: deDisplay })
+    ).join("")}</div>`;
+  } else {
+    galleryHtml = `<p class="gallery-empty">Das Ausmalbild für dieses Datum ist noch nicht verfügbar. <a href="/?s=1&q=${encodeURIComponent(deDisplay)}&d=easy" class="lp-cta-inline">Jetzt ${deDisplay} erstellen →</a></p>`;
+  }
+
+  const firstImg = imgs[0];
+  const ogImage  = firstImg ? `https://lalabuba.com${firstImg.url}` : "https://lalabuba.com/og-image.png";
+
+  const relatedHtml = Object.entries(gallery.TOPIC_META)
+    .filter(([, m]) => !m.seasonal)
+    .map(([slug, m]) => {
+      const deSlug = EN_TO_DE_SLUG[slug] || slug;
+      return `<a href="/ausmalbilder/${deSlug}/" class="lp-related-card"><span class="lp-rel-emoji">${m.emoji}</span> ${m.name}</a>`;
+    }).join("");
+
+  const html = `<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <script>(function(){var t=localStorage.getItem('lalabuba-theme');if(t){document.documentElement.setAttribute('data-theme',t);}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Kostenloses ${deDisplay} Ausmalbild (${date}) | Lalabuba</title>
+  <meta name="description" content="Kostenloses ${deDisplay} Ausmalbild zum Ausdrucken vom ${date}. Online ausmalen in leicht, mittel oder schwer — kostenlos, sofort, ohne Anmeldung."/>
+  <link rel="canonical" href="${deCanon}"/>
+  <link rel="alternate" hreflang="de" href="${deCanon}"/>
+  <link rel="alternate" hreflang="en" href="${enUrl}"/>
+  <link rel="alternate" hreflang="x-default" href="${enUrl}"/>
+  <meta property="og:title" content="${deDisplay} Ausmalbild — ${date}"/>
+  <meta property="og:description" content="Kostenloses KI-${deDisplay}-Ausmalbild. Leicht, mittel und schwer. Online ausmalen oder ausdrucken!"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="${deCanon}"/>
+  <meta property="og:image" content="${ogImage}"/>
+  <meta property="og:site_name" content="Lalabuba"/>
+  <meta name="theme-color" content="#7c4dff"/>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+  <link rel="icon" href="/favicon.png" type="image/png"/>
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+  <link rel="stylesheet" href="/css/legal.css"/>
+  <link rel="stylesheet" href="/css/gallery.css"/>
+  <script type="module" src="/js/lp-theme.js"></script>
+  <script type="application/ld+json">{
+    "@context":"https://schema.org","@type":"WebPage",
+    "name":"${deDisplay} Ausmalbild — ${date}",
+    "description":"Kostenloses KI-${deDisplay}-Ausmalbild vom ${date}",
+    "url":"${deCanon}"
+  }</script>
+</head>
+<body>
+<nav class="legal-nav">
+  <a href="/" class="legal-logo"><span class="legal-logo-emoji">🎨</span> Lalabuba</a>
+  <span class="nav-sep">›</span>
+  <a href="/ausmalbilder/">Ausmalbilder</a>
+  <span class="nav-sep">›</span>
+  <span class="nav-current">${deDisplay} (${date})</span>
+  <span class="nav-spacer"></span>
+  <button id="lp-theme-btn" aria-label="Hell/Dunkel wechseln">🌙</button>
+</nav>
+<div class="lp-hero">
+  <div class="lp-hero-inner">
+    <span class="lp-hero-emoji">🖌️</span>
+    <h1>${deDisplay} Ausmalbild</h1>
+    <p class="lp-hero-desc">Kostenloses ${deDisplay}-Ausmalbild vom <strong>${date}</strong>. Wähle eine Schwierigkeit oder erstelle dein eigenes!</p>
+    <a href="/?s=1&q=${encodeURIComponent(deDisplay)}&d=easy" class="lp-cta">Eigenes ${deDisplay} erstellen →</a>
+  </div>
+</div>
+<div class="legal-content">
+  <section class="lp-section gallery-section">
+    <h2 class="section-heading">${deDisplay} — ${date}</h2>
+    ${galleryHtml}
+  </section>
+  <section class="lp-section">
+    <h2 class="section-heading">Schwierigkeitsgrad wählen</h2>
+    <div class="lp-diff-grid">
+      ${[["easy","Leicht","🌟"],["medium","Mittel","🌟🌟"],["hard","Schwer","🌟🌟🌟"]].map(([d,dDE,stars]) =>
+        `<div class="lp-diff-card"><span class="lp-diff-emoji">${stars}</span><h3>${dDE}</h3><a href="/?s=1&q=${encodeURIComponent(deDisplay)}&d=${d}" class="lp-diff-link">${dDE} erstellen →</a></div>`
+      ).join("")}
+    </div>
+  </section>
+  <section class="lp-section">
+    <h2 class="section-heading">Alle Themen entdecken</h2>
+    <div class="lp-related-grid">${relatedHtml}</div>
+  </section>
+</div>
+<footer class="legal-footer">
+  <span>© 2026 Lalabuba</span>
+  <span class="sep">·</span><a href="/">App</a>
+  <span class="sep">·</span><a href="/ausmalbilder/">Ausmalbilder</a>
+  <span class="sep">·</span><a href="/features">Features</a>
+  <span class="sep">·</span><a href="/privacy">Datenschutz</a>
+  <span class="sep">·</span><a href="/contact">Kontakt</a>
 </footer>
 </body>
 </html>`;
@@ -541,6 +663,41 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { word, results });
   }
 
+  // Admin: top up gallery — generates up to `batch` images for slots below `target`.
+  // Cycles through TOPIC_META subjects so no external subject list needed.
+  if (p === "/api/gallery/topup" && req.method === "POST") {
+    const adminKey = process.env.GALLERY_ADMIN_KEY;
+    if (!adminKey || req.headers["x-admin-key"] !== adminKey) {
+      return sendJson(res, 403, { error: "Forbidden" });
+    }
+    let body;
+    try { body = await readJsonBody(req); } catch { body = {}; }
+    const target = Math.min(parseInt(body.target) || 4, gallery.MAX_PER_SLOT || 9);
+    const batch  = Math.min(parseInt(body.batch)  || 3, 10);
+
+    const results = [];
+    let generated = 0;
+    outer: for (const topic of gallery.TOPICS) {
+      for (const diff of gallery.DIFFICULTIES) {
+        if (generated >= batch) break outer;
+        const images   = gallery.getImages(topic, diff);
+        if (images.length >= target) continue;
+        const subjects = gallery.TOPIC_META[topic].subjects;
+        const subject  = subjects[images.length % subjects.length];
+        try {
+          const { url } = await gallery.generateAndUpload(subject, diff, `${topic}-${diff}`);
+          const entry   = await gallery.addToGallery(topic, diff, subject, url);
+          results.push({ topic, diff, url, ok: true });
+          generated++;
+        } catch (err) {
+          console.error(`topup error ${topic}/${diff}:`, err.message);
+          results.push({ topic, diff, error: err.message });
+        }
+      }
+    }
+    return sendJson(res, 200, { generated, target, results });
+  }
+
   if (req.method === "GET") {
     // /challenge — Flutter QR codes link here; redirect to web share format.
     if (p === "/challenge") {
@@ -569,12 +726,18 @@ const server = http.createServer(async (req, res) => {
     if (topicMatch && gallery.TOPIC_META[topicMatch[1]]) {
       return serveTopicPageWithGallery(res, topicMatch[1]);
     }
+    // German daily: /ausmalbilder/heute/ → 301 to dated URL
+    if (p === "/ausmalbilder/heute" || p === "/ausmalbilder/heute/") {
+      const { word: deWord, date } = gallery.getDailyWordDE();
+      res.writeHead(301, { Location: `/ausmalbilder/taeglich/${date}-${deWord}/`, "Cache-Control": "no-store" });
+      res.end(); return;
+    }
+    // German dated daily: /ausmalbilder/taeglich/YYYY-MM-DD-wort/
+    const deDailyMatch = p.match(/^\/ausmalbilder\/taeglich\/(\d{4}-\d{2}-\d{2})-([a-z]+)\/?$/);
+    if (deDailyMatch) {
+      return serveGermanDailyPage(res, deDailyMatch[1], deDailyMatch[2]);
+    }
     // German pages: /ausmalbilder/:slug/ — static HTML + optional gallery injection from mapped English topic
-    const DE_TOPIC_MAP = {
-      drache: "dragon", einhorn: "unicorn", schmetterling: "butterfly",
-      dinosaurier: "dinosaur", katze: "cat", prinzessin: "princess",
-      meerjungfrau: "mermaid", rakete: "rocket",
-    };
     const deTopicMatch = p.match(/^\/ausmalbilder\/([a-z]+)\/?$/);
     if (deTopicMatch) {
       const deSlug   = deTopicMatch[1];
