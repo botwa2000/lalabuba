@@ -31,3 +31,4 @@ public/mockups/
 
 # Generated coloring images (stored on Docker volume on Hetzner; never committed).
 data/images/
+data/gallery.json
