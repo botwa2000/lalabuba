@@ -11,8 +11,12 @@ export function getActivePencilColor() {
   return activePalette()[state.selectedPaletteIndex]?.color ?? '#000000';
 }
 
+// Cached per-stroke — snapshotted at touchstart so touchmove never forces a reflow.
+// Invalidated at stroke end; a new snapshot is taken at the next touchstart.
+let _cachedRect = null;
+
 function getPencilPos(e) {
-  const rect = drawCanvas.getBoundingClientRect();
+  const rect = _cachedRect || (_cachedRect = drawCanvas.getBoundingClientRect());
   const src = e.touches ? e.touches[0] : e;
   return {
     x: (src.clientX - rect.left) * (drawCanvas.width  / rect.width),
@@ -79,6 +83,7 @@ function _maskStroke() {
 }
 
 function pencilStart(e) {
+  _cachedRect = drawCanvas.getBoundingClientRect(); // snapshot once per stroke
   state.pencilDrawing = true;
   state.hasFreehand = true; // gate: draw-layer reads only happen once freehand is used
   const { x, y } = getPencilPos(e);
@@ -125,6 +130,7 @@ export function setStrokeEndCallback(cb) { strokeEndCallback = cb; }
 function pencilEnd() {
   if (!state.pencilDrawing) return;
   state.pencilDrawing = false;
+  _cachedRect = null; // release so next stroke re-snapshots after any scroll/resize
   _maskStroke(); // wipe paint on lines / outside the shape before anything reads it
   if (state.colorMode === 'brush' && paintEndCallback) {
     paintEndCallback();
@@ -148,9 +154,13 @@ export function initDrawingTool() {
   drawCanvas.addEventListener('mousemove', (e) => { if (isDrawingActive()) pencilMove(e); });
   drawCanvas.addEventListener('mouseup',   pencilEnd);
   drawCanvas.addEventListener('mouseleave', pencilEnd);
-  drawCanvas.addEventListener('touchstart', (e) => { if (isDrawingActive()) { e.preventDefault(); pencilStart(e); } }, { passive: false });
-  drawCanvas.addEventListener('touchmove',  (e) => { if (isDrawingActive()) { e.preventDefault(); pencilMove(e); } }, { passive: false });
-  drawCanvas.addEventListener('touchend',   pencilEnd);
+  drawCanvas.addEventListener('touchstart',  (e) => { if (isDrawingActive()) { e.preventDefault(); pencilStart(e); } }, { passive: false });
+  drawCanvas.addEventListener('touchmove',   (e) => { if (isDrawingActive()) { e.preventDefault(); pencilMove(e); } }, { passive: false });
+  drawCanvas.addEventListener('touchend',    pencilEnd);
+  // touchcancel fires on Samsung/Android when palm-rejection or a system gesture
+  // interrupts the stroke. Without this, state.pencilDrawing stays true and the
+  // next stroke starts in a corrupted context (wrong region, unmasked paint).
+  drawCanvas.addEventListener('touchcancel', pencilEnd);
 }
 
 // Credit the Free Drawer sticker on first pencil/brush use. Called from main.js
