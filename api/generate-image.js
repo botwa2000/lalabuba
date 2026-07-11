@@ -195,6 +195,7 @@ module.exports = async (req, res) => {
       provider: IMAGE_PROVIDER,
       hfToken: HF_TOKEN,
       hfModel: HF_MODEL,
+      difficulty,
     });
 
     // Save generated image locally for sharing; clean up expired files asynchronously.
