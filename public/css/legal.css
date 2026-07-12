@@ -530,3 +530,23 @@ nav.legal-nav.lp-branded #lp-theme-btn { padding: 6px 8px; }
   .lp-nav-wordmark { font-size: 1.25rem; }
   .lp-nav-cta { font-size: 0.8rem; padding: 6px 12px; }
 }
+
+/* ─── Social icons injected into legal-footer by lp-nav.js ──────────────── */
+.lf-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  color: var(--lp-muted);
+  text-decoration: none;
+  transition: color 0.15s, transform 0.15s, opacity 0.15s;
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+.lf-social:hover        { opacity: 1; transform: translateY(-2px); }
+.lf-social-ig:hover     { color: #e1306c; }
+.lf-social-pin:hover    { color: #e60023; }
+.lf-social-icon         { width: 13px; height: 13px; fill: currentColor; }
