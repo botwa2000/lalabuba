@@ -6,11 +6,31 @@ const WORDMARK = 'Lalabuba'.split('').map((l, i) =>
   `<span style="color:${COLORS[i]}">${l}</span>`
 ).join('');
 
-const isDE = document.documentElement.lang === 'de';
-const CTA_LABEL  = isDE ? '✏️ Ausmalen!' : '✏️ Draw!';
-const ARIA_THEME = isDE ? 'Hell/Dunkel wechseln' : 'Toggle theme';
-const ARIA_DARK  = isDE ? 'Zu hell wechseln' : 'Switch to light mode';
-const ARIA_LIGHT = isDE ? 'Zu dunkel wechseln' : 'Switch to dark mode';
+const LANG = document.documentElement.lang.split('-')[0]; // 'zh-Hans' → 'zh'
+const LP_CTA = {
+  en:'✏️ Draw!', de:'✏️ Ausmalen!', fr:'✏️ Colorier!', es:'✏️ ¡Colorear!',
+  pt:'✏️ Colorir!', ru:'✏️ Раскрасить!', it:'✏️ Colorare!', nl:'✏️ Kleuren!',
+  pl:'✏️ Kolorować!', tr:'✏️ Boyama!', zh:'✏️ 涂色！', hi:'✏️ रंग भरें!',
+};
+const LP_ARIA_THEME = {
+  en:'Toggle theme', de:'Hell/Dunkel wechseln', fr:'Changer le thème', es:'Cambiar tema',
+  pt:'Alterar tema', ru:'Переключить тему', it:'Cambia tema', nl:'Thema wisselen',
+  pl:'Zmień motyw', tr:'Temayı değiştir', zh:'切换主题', hi:'थीम बदलें',
+};
+const LP_ARIA_DARK = {
+  en:'Switch to light mode', de:'Zu hell wechseln', fr:'Passer en mode clair', es:'Cambiar a modo claro',
+  pt:'Mudar para modo claro', ru:'Переключить на светлую', it:'Passa alla modalità chiara', nl:'Naar lichte modus',
+  pl:'Tryb jasny', tr:'Açık moda geç', zh:'切换到浅色', hi:'लाइट मोड',
+};
+const LP_ARIA_LIGHT = {
+  en:'Switch to dark mode', de:'Zu dunkel wechseln', fr:'Passer en mode sombre', es:'Cambiar a modo oscuro',
+  pt:'Mudar para modo escuro', ru:'Переключить на тёмную', it:'Passa alla modalità scura', nl:'Naar donkere modus',
+  pl:'Tryb ciemny', tr:'Karanlık moda geç', zh:'切换到深色', hi:'डार्क मोड',
+};
+const CTA_LABEL  = LP_CTA[LANG]       || LP_CTA.en;
+const ARIA_THEME = LP_ARIA_THEME[LANG] || LP_ARIA_THEME.en;
+const ARIA_DARK  = LP_ARIA_DARK[LANG]  || LP_ARIA_DARK.en;
+const ARIA_LIGHT = LP_ARIA_LIGHT[LANG] || LP_ARIA_LIGHT.en;
 
 function wireTheme() {
   const btn = document.getElementById('lp-theme-btn');

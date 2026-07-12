@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { URL } = require("url");
 const gallery = require("./lib/gallery");
+const i18n = require("./lib/coloring-i18n");
 
 // Production + local server for Lalabuba on Hetzner (Docker Swarm).
 //
@@ -163,28 +164,33 @@ function malformedSecrets() {
 
 // ── Gallery HTML helpers ─────────────────────────────────────────────────────
 
-function galleryCardHtml(entry, meta) {
+function galleryCardHtml(entry, meta, t) {
   const label = entry.subject.charAt(0).toUpperCase() + entry.subject.slice(1);
   const diff  = entry.difficulty || "easy";
   // ?s=1&img=URL loads the CDN image directly in share.js without an AI call.
   const href  = `/?s=1&img=${encodeURIComponent(entry.url)}&q=${encodeURIComponent(entry.subject)}&d=${diff}`;
-  return `<a href="${href}" class="gallery-card" title="Color: ${label}">
+  const cta   = t?.colorThis || "Color this →";
+  return `<a href="${href}" class="gallery-card" title="${label}">
     <img src="${entry.url}" alt="${label} coloring page" loading="lazy" width="280" height="280"/>
     <div class="gallery-card-label">${label}</div>
-    <div class="gallery-card-cta">Color this →</div>
+    <div class="gallery-card-cta">${cta}</div>
   </a>`;
 }
 
-function gallerySection(topicImages, meta) {
-  const diffLabel = { easy: "Easy 🌟", medium: "Medium 🌟🌟", hard: "Hard 🌟🌟🌟" };
+function gallerySection(topicImages, meta, t) {
+  const diffLabel = t?.diffLabels || { easy: "Easy 🌟", medium: "Medium 🌟🌟", hard: "Hard 🌟🌟🌟" };
+  const name = meta.name;
+  const q    = encodeURIComponent(name.toLowerCase());
+  const title    = t?.readyMadeTitle ? t.readyMadeTitle(name) : `Ready-Made ${name} Coloring Pages`;
+  const subtitle = t?.readyMadeSub  ? t.readyMadeSub(name, q) : `Pick one to color instantly — or <a href="/?s=1&q=${q}&d=easy">generate a fresh one</a>.`;
   let html = `<section class="lp-section gallery-section">
-    <h2 class="section-heading">Ready-Made ${meta.name} Coloring Pages</h2>
-    <p class="section-sub">Pick one to color instantly — or <a href="/?s=1&q=${encodeURIComponent(meta.name.toLowerCase())}&d=easy">generate a fresh one</a>.</p>`;
+    <h2 class="section-heading">${title}</h2>
+    <p class="section-sub">${subtitle}</p>`;
   for (const diff of ["easy", "medium", "hard"]) {
     const imgs = topicImages[diff] || [];
     if (!imgs.length) continue;
     html += `<h3 class="gallery-diff-heading">${diffLabel[diff]}</h3>
-    <div class="gallery-grid">${imgs.map(e => galleryCardHtml({ ...e, difficulty: diff }, meta)).join("")}</div>`;
+    <div class="gallery-grid">${imgs.map(e => galleryCardHtml({ ...e, difficulty: diff }, meta, t)).join("")}</div>`;
   }
   html += `</section>`;
   return html;
@@ -212,7 +218,7 @@ async function serveTopicPageWithGallery(res, topic) {
 
   const topicImages = gallery.getAllForTopic(topic);
   const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
-  let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, meta)) : baseHtml;
+  let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, meta, null)) : baseHtml;
 
   // Inject first gallery image as og:image for Pinterest/social sharing
   const firstImg = ["easy","medium","hard"].reduce((found, d) => found || (topicImages[d]||[])[0], null);
@@ -230,9 +236,20 @@ async function serveTopicPageWithGallery(res, topic) {
 const LP_WORDMARK = ['#ff4757','#ff7043','#ffca28','#26c281','#1e90ff','#7c4dff','#f06292','#ff6b6b']
   .map((c, i) => `<span style="color:${c}">${'Lalabuba'[i]}</span>`).join('');
 
+const LP_NAV_CTA = {
+  en: '✏️ Draw!', de: '✏️ Ausmalen!', fr: '✏️ Colorier!', es: '✏️ ¡Colorear!',
+  pt: '✏️ Colorir!', ru: '✏️ Раскрасить!', it: '✏️ Colorare!', nl: '✏️ Kleuren!',
+  pl: '✏️ Kolorować!', tr: '✏️ Boyama!', zh: '✏️ 涂色！', hi: '✏️ रंग भरें!',
+};
+const LP_NAV_ARIA = {
+  en: 'Toggle theme', de: 'Hell/Dunkel wechseln', fr: 'Changer le thème', es: 'Cambiar tema',
+  pt: 'Alterar tema', ru: 'Переключить тему', it: 'Cambia tema', nl: 'Thema wisselen',
+  pl: 'Zmień motyw', tr: 'Temayı değiştir', zh: '切换主题', hi: 'थीम बदलें',
+};
+
 function lpBrandNav(breadcrumbHtml, lang = 'en') {
-  const cta  = lang === 'de' ? '✏️ Ausmalen!' : '✏️ Draw!';
-  const aria = lang === 'de' ? 'Hell/Dunkel wechseln' : 'Toggle theme';
+  const cta  = LP_NAV_CTA[lang] || LP_NAV_CTA.en;
+  const aria = LP_NAV_ARIA[lang] || LP_NAV_ARIA.en;
   return `<nav class="legal-nav lp-branded">
   <a href="/" class="lp-nav-brand" aria-label="Lalabuba">
     <img src="/logo.png" class="lp-nav-mascot" alt="" width="36" height="36" loading="lazy">
@@ -244,6 +261,232 @@ function lpBrandNav(breadcrumbHtml, lang = 'en') {
     <button id="lp-theme-btn" aria-label="${aria}">🌙</button>
   </div>
 </nav>`;
+}
+
+// ── i18n coloring-page SSR ───────────────────────────────────────────────────
+
+const THEME_SCRIPT = `<script>(function(){var t=localStorage.getItem('lalabuba-theme');if(t){document.documentElement.setAttribute('data-theme',t);}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}})();</script>`;
+
+const HEAD_COMMON = `  <meta name="theme-color" content="#7c4dff"/>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+  <link rel="icon" href="/favicon.png" type="image/png"/>
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+  <link rel="stylesheet" href="/css/legal.css"/>
+  <link rel="stylesheet" href="/css/gallery.css"/>
+  <script type="module" src="/js/lp-nav.js"></script>`;
+
+// Build full hreflang block for coloring hub pages across all languages
+function hubHreflang(currentLang) {
+  const lines = [
+    `  <link rel="alternate" hreflang="en" href="https://lalabuba.com/coloring-pages/"/>`,
+    `  <link rel="alternate" hreflang="de" href="https://lalabuba.com/ausmalbilder/"/>`,
+  ];
+  for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
+    lines.push(`  <link rel="alternate" hreflang="${cfg.htmlLang}" href="https://lalabuba.com/${cfg.root}/"/>`);
+  }
+  lines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/coloring-pages/"/>`);
+  return lines.join('\n');
+}
+
+// Build full hreflang for a topic page across all languages
+function topicHreflang(enTopic) {
+  const lines = [
+    `  <link rel="alternate" hreflang="en" href="https://lalabuba.com/coloring-pages/${enTopic}/"/>`,
+  ];
+  const deSlug = EN_TO_DE_SLUG[enTopic];
+  if (deSlug) lines.push(`  <link rel="alternate" hreflang="de" href="https://lalabuba.com/ausmalbilder/${deSlug}/"/>`);
+  for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
+    const slug = cfg.topicSlugs[enTopic];
+    if (slug) lines.push(`  <link rel="alternate" hreflang="${cfg.htmlLang}" href="https://lalabuba.com/${cfg.root}/${slug}/"/>`);
+  }
+  lines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/coloring-pages/${enTopic}/"/>`);
+  return lines.join('\n');
+}
+
+function serveI18nHub(res, lang) {
+  const cfg = i18n.LANGS[lang];
+  if (!cfg) return sendJson(res, 404, { error: 'Not found' });
+  const { root, htmlLang, t } = cfg;
+  const canon = `https://lalabuba.com/${root}/`;
+
+  const topicCards = i18n.TOPICS.map(enTopic => {
+    const slug   = cfg.topicSlugs[enTopic] || enTopic;
+    const name   = t.topicNames[enTopic] || enTopic;
+    const emoji  = i18n.TOPIC_EMOJIS[enTopic] || '🎨';
+    return `<a href="/${root}/${slug}/" class="lp-hub-card">
+        <span class="lp-hub-emoji">${emoji}</span>
+        <span class="lp-hub-name">${name}</span>
+        <span class="lp-hub-cta">${t.topicCta}</span>
+      </a>`;
+  }).join('\n      ');
+
+  const ldJson = JSON.stringify({
+    "@context": "https://schema.org", "@type": "CollectionPage",
+    "name": t.hubH1, "description": t.hubDesc, "url": canon,
+    "hasPart": i18n.TOPICS.map(enTopic => ({
+      "@type": "WebPage",
+      "name": `${t.topicNames[enTopic] || enTopic}`,
+      "url": `${canon}${cfg.topicSlugs[enTopic] || enTopic}/`,
+    })),
+  });
+
+  const html = `<!doctype html>
+<html lang="${htmlLang}">
+<head>
+  <meta charset="utf-8"/>
+  ${THEME_SCRIPT}
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>${t.hubTitle}</title>
+  <meta name="description" content="${t.hubDesc}"/>
+  <link rel="canonical" href="${canon}"/>
+${hubHreflang(lang)}
+  <meta property="og:title" content="${t.hubTitle}"/>
+  <meta property="og:description" content="${t.hubDesc}"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="${canon}"/>
+  <meta property="og:image" content="https://lalabuba.com/og-image.png"/>
+  <meta property="og:site_name" content="Lalabuba"/>
+${HEAD_COMMON}
+  <script type="application/ld+json">${ldJson}</script>
+</head>
+<body>
+${lpBrandNav(`<span class="nav-current">${t.hubH1}</span>`, lang)}
+<div class="lp-hero">
+  <div class="lp-hero-inner">
+    <span class="lp-hero-emoji">🖍️</span>
+    <h1>${t.hubH1}</h1>
+    <p class="lp-hero-desc">${t.hubSub}</p>
+    <a href="/" class="lp-cta">${t.hubCta}</a>
+  </div>
+</div>
+<div class="legal-content">
+  <section class="lp-section">
+    <h2 class="section-heading">${t.hubSectionTitle}</h2>
+    <p class="section-sub">${t.hubSectionSub}</p>
+    <div class="lp-hub-grid">
+      ${topicCards}
+    </div>
+  </section>
+</div>
+<footer class="legal-footer">
+  ${t.footerLinks(root).map(([href, label], i) => (i ? `<span class="sep">·</span>\n  <a href="${href}">${label}</a>` : `<span>© 2026 Lalabuba</span>\n  <span class="sep">·</span>\n  <a href="${href}">${label}</a>`)).join('\n  ')}
+</footer>
+</body>
+</html>`;
+  serveHtml(res, html);
+}
+
+async function serveI18nTopic(res, lang, enTopic) {
+  const cfg = i18n.LANGS[lang];
+  if (!cfg || !gallery.TOPIC_META[enTopic]) return sendJson(res, 404, { error: 'Not found' });
+  const { root, htmlLang, t } = cfg;
+  const topicSlug  = cfg.topicSlugs[enTopic] || enTopic;
+  const topicName  = t.topicNames[enTopic] || enTopic;
+  const canon      = `https://lalabuba.com/${root}/${topicSlug}/`;
+  const q          = encodeURIComponent(enTopic);
+  const emoji      = i18n.TOPIC_EMOJIS[enTopic] || '🎨';
+
+  const topicImages = gallery.getAllForTopic(enTopic);
+  const hasAny  = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
+  let galSection = '';
+  if (hasAny) {
+    const topicMeta = { name: topicName };
+    galSection = gallerySection(topicImages, topicMeta, t);
+  }
+
+  const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
+  const ogImage  = firstImg ? `https://lalabuba.com${firstImg.url}` : 'https://lalabuba.com/og-image.png';
+
+  const relatedTopics = i18n.TOPICS
+    .filter(et => et !== enTopic)
+    .map(et => {
+      const sl = cfg.topicSlugs[et] || et;
+      const nm = t.topicNames[et] || et;
+      return `<a href="/${root}/${sl}/" class="lp-related-card"><span class="lp-rel-emoji">${i18n.TOPIC_EMOJIS[et]}</span> ${nm}</a>`;
+    }).join('');
+
+  const html = `<!doctype html>
+<html lang="${htmlLang}">
+<head>
+  <meta charset="utf-8"/>
+  ${THEME_SCRIPT}
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>${t.topicPageTitle(topicName)}</title>
+  <meta name="description" content="${t.topicPageDesc(topicName)}"/>
+  <link rel="canonical" href="${canon}"/>
+${topicHreflang(enTopic)}
+  <meta property="og:title" content="${t.topicPageTitle(topicName)}"/>
+  <meta property="og:description" content="${t.topicPageDesc(topicName)}"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="${canon}"/>
+  <meta property="og:image" content="${ogImage}"/>
+  <meta property="og:site_name" content="Lalabuba"/>
+${HEAD_COMMON}
+  <script type="application/ld+json">${JSON.stringify({
+    "@context":"https://schema.org","@type":"WebPage",
+    "name": t.topicPageTitle(topicName),
+    "description": t.topicPageDesc(topicName),
+    "url": canon,
+  })}</script>
+</head>
+<body>
+${lpBrandNav(`<a href="/${root}/">${t.hubH1 ? t.hubH1.split(' ').slice(0,3).join(' ') : 'Coloring'}</a><span class="nav-sep">›</span><span class="nav-current">${topicName}</span>`, lang)}
+<div class="lp-hero">
+  <div class="lp-hero-inner">
+    <span class="lp-hero-emoji">${emoji}</span>
+    <h1>${t.topicPageH1(topicName)}</h1>
+    <p class="lp-hero-desc">${t.topicPageSub(topicName)}</p>
+    <a href="/?s=1&q=${q}&d=easy" class="lp-cta">${t.generateCta(topicName)}</a>
+  </div>
+</div>
+<div class="legal-content">
+  ${galSection}
+  <section class="lp-section">
+    <h2 class="section-heading">${t.topicsHeading}</h2>
+    <div class="lp-related-grid">${relatedTopics}</div>
+  </section>
+  <section class="lp-section" style="text-align:center">
+    <a href="/?s=1&q=${q}&d=easy" class="lp-cta">${t.generateCta(topicName)}</a>
+  </section>
+</div>
+<footer class="legal-footer">
+  ${t.footerLinks(root).map(([href, label], i) => (i ? `<span class="sep">·</span>\n  <a href="${href}">${label}</a>` : `<span>© 2026 Lalabuba</span>\n  <span class="sep">·</span>\n  <a href="${href}">${label}</a>`)).join('\n  ')}
+</footer>
+</body>
+</html>`;
+  serveHtml(res, html);
+}
+
+// Serve the main app (index.html) with lang-specific meta for /fr/, /es/, etc.
+let _indexHtmlCache = null;
+function getIndexHtml() {
+  if (!_indexHtmlCache) {
+    _indexHtmlCache = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+  }
+  return _indexHtmlCache;
+}
+
+function serveLanguageRoot(res, lang) {
+  const meta = i18n.LANG_ROOT_META[lang];
+  if (!meta) return sendJson(res, 404, { error: 'Not found' });
+  const cfg  = i18n.LANGS[lang];
+  const htmlLang = meta.htmlLang || cfg?.htmlLang || lang;
+  const base = getIndexHtml();
+
+  // Inject lang attr, meta title/desc, lang preset, canonical for this lang root
+  const langRoot = `https://lalabuba.com/${lang}/`;
+  let html = base
+    .replace('<html lang="en">', `<html lang="${htmlLang}">`)
+    .replace(/<title>[^<]*<\/title>/, `<title>${meta.title}</title>`)
+    .replace(/<meta name="description"[^>]*>/, `<meta name="description" content="${meta.desc}"/>`)
+    .replace('<link rel="canonical" href="https://lalabuba.com/" />', `<link rel="canonical" href="${langRoot}"/>`)
+    .replace('content="en_US"', `content="${meta.ogLocale}"`)
+    // Pre-seed the language in localStorage so the app boots in the right language
+    .replace(
+      '(function(){var t=localStorage.getItem(\'lalabuba-theme\')',
+      `(function(){localStorage.setItem('lalabuba-lang','${lang}');var t=localStorage.getItem('lalabuba-theme')`
+    );
+  serveHtml(res, html);
 }
 
 function serveTodayPage(res) {
@@ -744,7 +987,7 @@ const server = http.createServer(async (req, res) => {
         if (enTopic) {
           const topicImages = gallery.getAllForTopic(enTopic);
           const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
-          let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, gallery.TOPIC_META[enTopic])) : baseHtml;
+          let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, gallery.TOPIC_META[enTopic], null)) : baseHtml;
           const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
           if (firstImg) {
             enhanced = enhanced.replace(/<meta property="og:image"[^>]*>/, `<meta property="og:image" content="https://lalabuba.com${firstImg.url}"/>`);
@@ -762,6 +1005,42 @@ const server = http.createServer(async (req, res) => {
         return serveHtml(res, html);
       } catch { /* fall through */ }
     }
+
+    // ── Language root pages: /de/, /fr/, /es/, /pt/, /ru/, /it/, /nl/, /pl/, /tr/, /zh/, /hi/ ──
+    const langRootMatch = p.match(/^\/([a-z]{2,3})\/?$/);
+    if (langRootMatch) {
+      const lrCode = langRootMatch[1];
+      if (lrCode === 'de' || i18n.LANGS[lrCode]) {
+        return serveLanguageRoot(res, lrCode);
+      }
+    }
+
+    // ── i18n coloring-page hub: /pages-a-colorier/, /paginas-para-colorear/, etc. ──
+    // Build a fast lookup of root → lang on first use
+    if (!serveI18nHub._roots) {
+      serveI18nHub._roots = {};
+      for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
+        serveI18nHub._roots[cfg.root] = lang;
+      }
+    }
+
+    // Match /<root>/ (hub) or /<root>/<slug>/ (topic)
+    const pathNoSlash = p.replace(/\/$/, '');
+    const parts = pathNoSlash.split('/').filter(Boolean); // ['pages-a-colorier'] or ['pages-a-colorier','dragon']
+
+    if (parts.length === 1 && serveI18nHub._roots[parts[0]]) {
+      return serveI18nHub(res, serveI18nHub._roots[parts[0]]);
+    }
+
+    if (parts.length === 2 && serveI18nHub._roots[parts[0]]) {
+      const lang     = serveI18nHub._roots[parts[0]];
+      const topicSlug = parts[1];
+      const cfg      = i18n.LANGS[lang];
+      // Reverse slug → enTopic
+      const enTopic  = Object.entries(cfg.topicSlugs).find(([, s]) => s === topicSlug)?.[0];
+      if (enTopic) return serveI18nTopic(res, lang, enTopic);
+    }
+
     return serveStaticFile(req, res, p);
   }
 
