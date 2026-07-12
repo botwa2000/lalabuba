@@ -227,6 +227,25 @@ async function serveTopicPageWithGallery(res, topic) {
   serveHtml(res, enhanced);
 }
 
+const LP_WORDMARK = ['#ff4757','#ff7043','#ffca28','#26c281','#1e90ff','#7c4dff','#f06292','#ff6b6b']
+  .map((c, i) => `<span style="color:${c}">${'Lalabuba'[i]}</span>`).join('');
+
+function lpBrandNav(breadcrumbHtml, lang = 'en') {
+  const cta  = lang === 'de' ? '✏️ Ausmalen!' : '✏️ Draw!';
+  const aria = lang === 'de' ? 'Hell/Dunkel wechseln' : 'Toggle theme';
+  return `<nav class="legal-nav lp-branded">
+  <a href="/" class="lp-nav-brand" aria-label="Lalabuba">
+    <img src="/logo.png" class="lp-nav-mascot" alt="" width="36" height="36" loading="lazy">
+    <span class="lp-nav-wordmark">${LP_WORDMARK}</span>
+  </a>
+  <div class="lp-nav-crumbs">${breadcrumbHtml}</div>
+  <div class="lp-nav-actions">
+    <a href="/" class="lp-nav-cta">${cta}</a>
+    <button id="lp-theme-btn" aria-label="${aria}">🌙</button>
+  </div>
+</nav>`;
+}
+
 function serveTodayPage(res) {
   const { word, date } = gallery.getDailyWord();
   const todayEntry = gallery.getTodayEntry();
@@ -264,7 +283,7 @@ function serveTodayPage(res) {
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
   <link rel="stylesheet" href="/css/legal.css"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
-  <script type="module" src="/js/lp-theme.js"></script>
+  <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
     "@context":"https://schema.org","@type":"WebPage",
     "name":"Today's Coloring Page: ${wordTitle}",
@@ -273,15 +292,7 @@ function serveTodayPage(res) {
   }</script>
 </head>
 <body>
-<nav class="legal-nav">
-  <a href="/" class="legal-logo"><span class="legal-logo-emoji">🎨</span> Lalabuba</a>
-  <span class="nav-sep">›</span>
-  <a href="/coloring-pages/">Coloring Pages</a>
-  <span class="nav-sep">›</span>
-  <span class="nav-current">Today</span>
-  <span class="nav-spacer"></span>
-  <button id="lp-theme-btn" aria-label="Toggle dark/light mode">🌙</button>
-</nav>
+${lpBrandNav(`<a href="/coloring-pages/">Coloring Pages</a><span class="nav-sep">›</span><span class="nav-current">Today</span>`)}
 <div class="lp-hero">
   <div class="lp-hero-inner">
     <span class="lp-hero-emoji">📅</span>
@@ -377,7 +388,7 @@ function serveDailyPage(res, date, word) {
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
   <link rel="stylesheet" href="/css/legal.css"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
-  <script type="module" src="/js/lp-theme.js"></script>
+  <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
     "@context":"https://schema.org","@type":"WebPage",
     "name":"${wordTitle} Coloring Page — ${date}",
@@ -386,15 +397,7 @@ function serveDailyPage(res, date, word) {
   }</script>
 </head>
 <body>
-<nav class="legal-nav">
-  <a href="/" class="legal-logo"><span class="legal-logo-emoji">🎨</span> Lalabuba</a>
-  <span class="nav-sep">›</span>
-  <a href="/coloring-pages/">Coloring Pages</a>
-  <span class="nav-sep">›</span>
-  <span class="nav-current">${wordTitle} (${date})</span>
-  <span class="nav-spacer"></span>
-  <button id="lp-theme-btn" aria-label="Toggle dark/light mode">🌙</button>
-</nav>
+${lpBrandNav(`<a href="/coloring-pages/">Coloring Pages</a><span class="nav-sep">›</span><span class="nav-current">${wordTitle} (${date})</span>`)}
 <div class="lp-hero">
   <div class="lp-hero-inner">
     <span class="lp-hero-emoji">🖌️</span>
@@ -496,7 +499,7 @@ function serveGermanDailyPage(res, date, deWord) {
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
   <link rel="stylesheet" href="/css/legal.css"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
-  <script type="module" src="/js/lp-theme.js"></script>
+  <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
     "@context":"https://schema.org","@type":"WebPage",
     "name":"${deDisplay} Ausmalbild — ${date}",
@@ -505,15 +508,7 @@ function serveGermanDailyPage(res, date, deWord) {
   }</script>
 </head>
 <body>
-<nav class="legal-nav">
-  <a href="/" class="legal-logo"><span class="legal-logo-emoji">🎨</span> Lalabuba</a>
-  <span class="nav-sep">›</span>
-  <a href="/ausmalbilder/">Ausmalbilder</a>
-  <span class="nav-sep">›</span>
-  <span class="nav-current">${deDisplay} (${date})</span>
-  <span class="nav-spacer"></span>
-  <button id="lp-theme-btn" aria-label="Hell/Dunkel wechseln">🌙</button>
-</nav>
+${lpBrandNav(`<a href="/ausmalbilder/">Ausmalbilder</a><span class="nav-sep">›</span><span class="nav-current">${deDisplay} (${date})</span>`, 'de')}
 <div class="lp-hero">
   <div class="lp-hero-inner">
     <span class="lp-hero-emoji">🖌️</span>

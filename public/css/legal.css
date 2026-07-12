@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap');
+
 /* ─── Shared styles for all Lalabuba static & landing pages ──────────── */
 :root {
   --lp-purple:  #7c4dff;
@@ -438,4 +440,93 @@ strong { color: var(--lp-ink); }
   .legal-nav, .lp-hero .lp-cta, .badge-row { display: none; }
   .lp-hero { background: none; color: var(--lp-ink); padding: 0 0 24px; }
   .lp-hero h1 { color: var(--lp-ink); }
+}
+
+/* ─── Branded page header (upgraded by lp-nav.js) ───────────────────────── */
+nav.legal-nav.lp-branded {
+  max-width: 100%;
+  margin: 0;
+  padding: 0 20px;
+  height: 58px;
+  background: var(--lp-surface);
+  border-bottom: 1px solid var(--lp-border);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+
+.lp-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.lp-nav-mascot {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.lp-nav-wordmark {
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 1.45rem;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.lp-nav-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px 8px;
+  flex: 1;
+  padding: 0 16px;
+  font-size: 0.83rem;
+  color: var(--lp-muted);
+  overflow: hidden;
+  min-width: 0;
+}
+.lp-nav-crumbs a { color: var(--lp-purple); text-decoration: none; white-space: nowrap; }
+.lp-nav-crumbs a:hover { text-decoration: underline; }
+.lp-nav-crumbs .nav-sep { color: var(--lp-border); user-select: none; }
+.lp-nav-crumbs .nav-current { color: var(--lp-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.lp-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.lp-nav-cta {
+  display: inline-flex;
+  align-items: center;
+  background: var(--lp-purple);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 7px 16px;
+  border-radius: 999px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.lp-nav-cta:hover { opacity: 0.88; transform: translateY(-1px); color: #fff; text-decoration: none; }
+
+nav.legal-nav.lp-branded #lp-theme-btn { padding: 6px 8px; }
+
+@media (max-width: 640px) {
+  nav.legal-nav.lp-branded { padding: 0 14px; height: 52px; }
+  .lp-nav-crumbs { display: none; }
+  .lp-nav-wordmark { font-size: 1.25rem; }
+  .lp-nav-cta { font-size: 0.8rem; padding: 6px 12px; }
 }
