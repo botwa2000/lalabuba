@@ -43,16 +43,17 @@ function upgradeNav() {
       !el.classList.contains('legal-logo') &&
       !el.classList.contains('nav-spacer') &&
       el.id !== 'lp-theme-btn'
-    )
-    .map(el => el.outerHTML)
-    .join('');
+    );
+  // Drop the leading separator that sat between the logo and the breadcrumb
+  while (crumbs.length && crumbs[0].classList.contains('nav-sep')) crumbs.shift();
+  const crumbsHtml = crumbs.map(el => el.outerHTML).join('');
 
   nav.innerHTML = `
     <a href="/" class="lp-nav-brand" aria-label="Lalabuba">
       <img src="/logo.png" class="lp-nav-mascot" alt="" width="36" height="36" loading="lazy">
       <span class="lp-nav-wordmark">${WORDMARK}</span>
     </a>
-    <div class="lp-nav-crumbs" aria-label="Breadcrumb">${crumbs}</div>
+    <div class="lp-nav-crumbs" aria-label="Breadcrumb">${crumbsHtml}</div>
     <div class="lp-nav-actions">
       <a href="/" class="lp-nav-cta">${CTA_LABEL}</a>
       <button id="lp-theme-btn" aria-label="${ARIA_THEME}">🌙</button>
