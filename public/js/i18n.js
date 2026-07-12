@@ -2974,6 +2974,66 @@ const TRANSLATIONS = {
 
 const SUPPORTED_LANGS = Object.keys(TRANSLATIONS);
 
+// ── Coloring-page URL data (mirrors lib/coloring-i18n.js for client-side use) ──
+const COLORING_ROOTS = {
+  en:'coloring-pages', de:'ausmalbilder', fr:'pages-a-colorier',
+  es:'paginas-para-colorear', pt:'paginas-para-colorir', ru:'raskraski',
+  it:'disegni-da-colorare', nl:'kleurplaten', pl:'kolorowanki',
+  tr:'boyama-sayfalari', zh:'zhuose-ye', hi:'rang-bharane-ke-chitra',
+};
+
+const COLORING_TOPIC_SLUGS = {
+  dragon:    {en:'dragon',de:'drache',fr:'dragon',es:'dragon',pt:'dragao',ru:'drakon',it:'drago',nl:'draak',pl:'smok',tr:'ejderha',zh:'long',hi:'ajgar'},
+  unicorn:   {en:'unicorn',de:'einhorn',fr:'licorne',es:'unicornio',pt:'unicornio',ru:'edinorog',it:'unicorno',nl:'eenhoorn',pl:'jednorozec',tr:'unicorn',zh:'qilin',hi:'eksing'},
+  butterfly: {en:'butterfly',de:'schmetterling',fr:'papillon',es:'mariposa',pt:'borboleta',ru:'babochka',it:'farfalla',nl:'vlinder',pl:'motyl',tr:'kelebek',zh:'hudie',hi:'titali'},
+  dinosaur:  {en:'dinosaur',de:'dinosaurier',fr:'dinosaure',es:'dinosaurio',pt:'dinossauro',ru:'dinozavr',it:'dinosauro',nl:'dinosaurus',pl:'dinozaur',tr:'dinozor',zh:'konglong',hi:'dayanasora'},
+  cat:       {en:'cat',de:'katze',fr:'chat',es:'gato',pt:'gato',ru:'koshka',it:'gatto',nl:'kat',pl:'kot',tr:'kedi',zh:'mao',hi:'billi'},
+  princess:  {en:'princess',de:'prinzessin',fr:'princesse',es:'princesa',pt:'princesa',ru:'printsessa',it:'principessa',nl:'prinses',pl:'ksiezniczka',tr:'prenses',zh:'gongzhu',hi:'rajkumari'},
+  mermaid:   {en:'mermaid',de:'meerjungfrau',fr:'sirene',es:'sirena',pt:'sereia',ru:'rusalka',it:'sirena',nl:'zeemeermin',pl:'syrenka',tr:'deniz-kizi',zh:'renyuv',hi:'jalpari'},
+  rocket:    {en:'rocket',de:'rakete',fr:'fusee',es:'cohete',pt:'foguete',ru:'raketa',it:'razzo',nl:'raket',pl:'rakieta',tr:'roket',zh:'huojian',hi:'raket'},
+};
+
+const COLORING_TOPIC_NAMES = {
+  dragon:    {en:'Dragon',de:'Drachen',fr:'Dragon',es:'Dragón',pt:'Dragão',ru:'Дракон',it:'Drago',nl:'Draak',pl:'Smok',tr:'Ejderha',zh:'龙',hi:'अजगर'},
+  unicorn:   {en:'Unicorn',de:'Einhorn',fr:'Licorne',es:'Unicornio',pt:'Unicórnio',ru:'Единорог',it:'Unicorno',nl:'Eenhoorn',pl:'Jednorożec',tr:'Unicorn',zh:'独角兽',hi:'एकसींग'},
+  butterfly: {en:'Butterfly',de:'Schmetterling',fr:'Papillon',es:'Mariposa',pt:'Borboleta',ru:'Бабочка',it:'Farfalla',nl:'Vlinder',pl:'Motyl',tr:'Kelebek',zh:'蝴蝶',hi:'तितली'},
+  dinosaur:  {en:'Dinosaur',de:'Dinosaurier',fr:'Dinosaure',es:'Dinosaurio',pt:'Dinossauro',ru:'Динозавр',it:'Dinosauro',nl:'Dinosaurus',pl:'Dinozaur',tr:'Dinozor',zh:'恐龙',hi:'डायनासोर'},
+  cat:       {en:'Cat',de:'Katze',fr:'Chat',es:'Gato',pt:'Gato',ru:'Кошка',it:'Gatto',nl:'Kat',pl:'Kot',tr:'Kedi',zh:'猫',hi:'बिल्ली'},
+  princess:  {en:'Princess',de:'Prinzessin',fr:'Princesse',es:'Princesa',pt:'Princesa',ru:'Принцесса',it:'Principessa',nl:'Prinses',pl:'Księżniczka',tr:'Prenses',zh:'公主',hi:'राजकुमारी'},
+  mermaid:   {en:'Mermaid',de:'Meerjungfrau',fr:'Sirène',es:'Sirena',pt:'Sereia',ru:'Русалка',it:'Sirena',nl:'Zeemeermin',pl:'Syrenka',tr:'Deniz Kızı',zh:'人鱼',hi:'जलपरी'},
+  rocket:    {en:'Rocket',de:'Rakete',fr:'Fusée',es:'Cohete',pt:'Foguete',ru:'Ракета',it:'Razzo',nl:'Raket',pl:'Rakieta',tr:'Roket',zh:'火箭',hi:'रॉकेट'},
+};
+
+const COLORING_TODAY_LABELS = {
+  en:'🌟 Today\'s coloring page →', de:'🌟 Ausmalbild des Tages →',
+  fr:'🌟 Coloriage du jour →', es:'🌟 Página de hoy →',
+  pt:'🌟 Página de hoje →', ru:'🌟 Раскраска дня →',
+  it:'🌟 Disegno del giorno →', nl:'🌟 Kleurplaat van vandaag →',
+  pl:'🌟 Kolorowanka dnia →', tr:'🌟 Bugünün boyaması →',
+  zh:'🌟 今日涂色页 →', hi:'🌟 आज का चित्र →',
+};
+
+function updateTopicLinks(lang) {
+  const root = COLORING_ROOTS[lang] || 'coloring-pages';
+  document.querySelectorAll('[data-topic]').forEach(el => {
+    const topic = el.dataset.topic;
+    const slug  = COLORING_TOPIC_SLUGS[topic]?.[lang] || topic;
+    el.href = `/${root}/${slug}/`;
+    const span = el.querySelector('span');
+    if (span) span.textContent = COLORING_TOPIC_NAMES[topic]?.[lang] || span.textContent;
+  });
+  const todayLink = document.getElementById('hero-today-link');
+  if (todayLink) {
+    todayLink.href = lang === 'de' ? '/ausmalbilder/heute/' : '/coloring-pages/today/';
+    todayLink.textContent = COLORING_TODAY_LABELS[lang] || COLORING_TODAY_LABELS.en;
+  }
+  // Update URL bar to reflect language (enables link sharing in correct language)
+  const langPath = lang === 'en' ? '/' : `/${lang}/`;
+  if (location.pathname === '/' || /^\/[a-z]{2,3}\/$/.test(location.pathname)) {
+    history.replaceState({}, '', langPath);
+  }
+}
+
 // Auto-detect browser language on first visit, fall back to 'en'
 function detectLang() {
   const saved = localStorage.getItem('lalabuba-lang');
@@ -2996,9 +3056,11 @@ export function setLanguage(lang) {
   currentLang = lang;
   localStorage.setItem('lalabuba-lang', lang);
   applyTranslations();
+  updateTopicLinks(lang);
 }
 
 export function applyTranslations() {
+  updateTopicLinks(currentLang);
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.dataset.i18n);
   });

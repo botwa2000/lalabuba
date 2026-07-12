@@ -145,19 +145,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=258" />
-  <link rel="stylesheet" href="/css/header.css?v=258" />
-  <link rel="stylesheet" href="/css/hero.css?v=258" />
-  <link rel="stylesheet" href="/css/generator.css?v=258" />
-  <link rel="stylesheet" href="/css/layout.css?v=258" />
-  <link rel="stylesheet" href="/css/workspace.css?v=258" />
-  <link rel="stylesheet" href="/css/palette.css?v=258" />
-  <link rel="stylesheet" href="/css/modals.css?v=258" />
-  <link rel="stylesheet" href="/css/footer.css?v=258" />
-  <link rel="stylesheet" href="/css/print.css?v=258" />
-  <link rel="stylesheet" href="/css/cookies.css?v=258" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=258" />
-  <script src="/js/cookies.js?v=258"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=259" />
+  <link rel="stylesheet" href="/css/header.css?v=259" />
+  <link rel="stylesheet" href="/css/hero.css?v=259" />
+  <link rel="stylesheet" href="/css/generator.css?v=259" />
+  <link rel="stylesheet" href="/css/layout.css?v=259" />
+  <link rel="stylesheet" href="/css/workspace.css?v=259" />
+  <link rel="stylesheet" href="/css/palette.css?v=259" />
+  <link rel="stylesheet" href="/css/modals.css?v=259" />
+  <link rel="stylesheet" href="/css/footer.css?v=259" />
+  <link rel="stylesheet" href="/css/print.css?v=259" />
+  <link rel="stylesheet" href="/css/cookies.css?v=259" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=259" />
+  <script src="/js/cookies.js?v=259"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -349,16 +349,16 @@
           <section class="hero-browse-section" aria-label="Browse coloring page topics">
             <p class="hero-browse-divider">— browse by topic —</p>
             <div class="hero-topic-grid">
-              <a href="/coloring-pages/dragon/"    class="hero-topic-card">🐉<span>Dragon</span></a>
-              <a href="/coloring-pages/unicorn/"   class="hero-topic-card">🦄<span>Unicorn</span></a>
-              <a href="/coloring-pages/butterfly/" class="hero-topic-card">🦋<span>Butterfly</span></a>
-              <a href="/coloring-pages/dinosaur/"  class="hero-topic-card">🦕<span>Dinosaur</span></a>
-              <a href="/coloring-pages/cat/"       class="hero-topic-card">🐱<span>Cat</span></a>
-              <a href="/coloring-pages/princess/"  class="hero-topic-card">👸<span>Princess</span></a>
-              <a href="/coloring-pages/mermaid/"   class="hero-topic-card">🧜<span>Mermaid</span></a>
-              <a href="/coloring-pages/rocket/"    class="hero-topic-card">🚀<span>Rocket</span></a>
+              <a href="/coloring-pages/dragon/"    class="hero-topic-card" data-topic="dragon">🐉<span>Dragon</span></a>
+              <a href="/coloring-pages/unicorn/"   class="hero-topic-card" data-topic="unicorn">🦄<span>Unicorn</span></a>
+              <a href="/coloring-pages/butterfly/" class="hero-topic-card" data-topic="butterfly">🦋<span>Butterfly</span></a>
+              <a href="/coloring-pages/dinosaur/"  class="hero-topic-card" data-topic="dinosaur">🦕<span>Dinosaur</span></a>
+              <a href="/coloring-pages/cat/"       class="hero-topic-card" data-topic="cat">🐱<span>Cat</span></a>
+              <a href="/coloring-pages/princess/"  class="hero-topic-card" data-topic="princess">👸<span>Princess</span></a>
+              <a href="/coloring-pages/mermaid/"   class="hero-topic-card" data-topic="mermaid">🧜<span>Mermaid</span></a>
+              <a href="/coloring-pages/rocket/"    class="hero-topic-card" data-topic="rocket">🚀<span>Rocket</span></a>
             </div>
-            <a href="/coloring-pages/today/" class="hero-today-link">🌟 Today's coloring page →</a>
+            <a href="/coloring-pages/today/" class="hero-today-link" id="hero-today-link">🌟 Today's coloring page →</a>
           </section>
 
           <!-- ─── Canvas options (coloring state only) ──────────────────── -->
@@ -783,7 +783,7 @@
     window.addEventListener('unhandledrejection', hideSplashIfNative);
   })();
   </script>
-  <script type="module" src="/js/main.js?v=258"></script>
+  <script type="module" src="/js/main.js?v=259"></script>
 </body>
 </html>
 
