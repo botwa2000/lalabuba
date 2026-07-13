@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "pg": "^8"
+  },
   "devDependencies": {
     "sharp": "^0.34.5"
   }

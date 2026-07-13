@@ -4,6 +4,8 @@ const path = require("path");
 const { URL } = require("url");
 const gallery = require("./lib/gallery");
 const i18n = require("./lib/coloring-i18n");
+const db = require("./lib/db");
+const communityRouter = require("./api/community/router");
 
 // Production + local server for Lalabuba on Hetzner (Docker Swarm).
 //
@@ -82,12 +84,12 @@ function enhanceRes(res) {
   return res;
 }
 
-function readJsonBody(req) {
+function readJsonBody(req, maxBytes = 1_000_000) {
   return new Promise((resolve, reject) => {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
-      if (body.length > 1_000_000) reject(new Error("Request body too large."));
+      if (body.length > maxBytes) reject(new Error("Request body too large."));
     });
     req.on("end", () => {
       try { resolve(body ? JSON.parse(body) : {}); }
@@ -827,8 +829,8 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // ── Serve generated images (coloring shares + gallery) ────────────────────
-  const imgMatch = p.match(/^\/img\/(c|g)\/([A-Za-z0-9_.-]+)$/);
+  // ── Serve generated images (coloring shares + gallery + community shared) ──
+  const imgMatch = p.match(/^\/img\/(c|g|s)\/([A-Za-z0-9_.-]+)$/);
   if (imgMatch && req.method === "GET") {
     const imgPath = path.join(__dirname, "data", "images", imgMatch[1], imgMatch[2]);
     try {
@@ -933,6 +935,20 @@ const server = http.createServer(async (req, res) => {
       }
     }
     return sendJson(res, 200, { generated, target, results });
+  }
+
+  // ── Community API ──────────────────────────────────────────────────────────
+  if (p.startsWith("/api/community/")) {
+    req.query = Object.fromEntries(parsedUrl.searchParams);
+    if (req.method !== "GET" && req.method !== "OPTIONS") {
+      // Community artwork uploads are up to 900KB image (~1.3MB base64 in JSON).
+      const bodyLimit = p === "/api/community/artwork" ? 2_000_000 : 1_000_000;
+      try { req.body = await readJsonBody(req, bodyLimit); }
+      catch (e) { return res.status(400).json({ error: e.message || "Invalid JSON body." }); }
+    } else {
+      req.body = {};
+    }
+    return communityRouter(req, res, p);
   }
 
   if (req.method === "GET") {
@@ -1046,6 +1062,14 @@ const server = http.createServer(async (req, res) => {
   sendJson(res, 405, { error: "Method not allowed." });
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`Lalabuba server listening on http://${HOST}:${PORT}`);
+(async () => {
+  await db.runMigrations();
+  db.cleanupExpiredArtworks().catch(err => console.error("[cleanup]", err.message));
+  setInterval(() => db.cleanupExpiredArtworks().catch(() => {}), 24 * 60 * 60 * 1000);
+  server.listen(PORT, HOST, () => {
+    console.log(`Lalabuba server listening on http://${HOST}:${PORT}`);
+  });
+})().catch(err => {
+  console.error("Fatal startup error:", err.message || err);
+  process.exit(1);
 });
