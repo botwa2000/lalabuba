@@ -7,11 +7,6 @@ import 'package:lalabuba/features/community/models/leaderboard_model.dart';
 import 'package:lalabuba/features/community/widgets/community_artwork_card.dart';
 import 'package:lalabuba/features/community/widgets/leaderboard_entry_widget.dart';
 
-void _disableNetworkImages() {
-  // Replace Image.network with a stub so widget tests don't hit the network.
-  // Achieved by providing a custom image error builder; actual images 404 in tests.
-}
-
 Widget _wrap(Widget child) => MaterialApp(
       home: Scaffold(body: child),
     );

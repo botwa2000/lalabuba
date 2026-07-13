@@ -3,7 +3,7 @@ const db   = require("../../lib/db");
 const auth = require("../../lib/community-auth");
 
 const getRateLimiter  = auth.makeRateLimiter(30,  auth.HOUR);
-const postRateLimiter = auth.makeRateLimiter(5,   auth.HOUR);
+const postRateLimiter = auth.makeRateLimiter(20,  auth.HOUR);
 
 module.exports = async (req, res) => {
   const origin = req.headers.origin;

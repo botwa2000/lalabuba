@@ -171,7 +171,16 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
           const SnackBar(content: Text('You left the family.')),
         );
       }
-    } catch (_) {
+    } catch (e) {
+      if (mounted) {
+        leaveMessenger.showSnackBar(
+          SnackBar(content: Text(
+            e.toString().contains('429') || e.toString().contains('Too many')
+              ? 'Too many attempts. Please wait a moment and try again.'
+              : 'Could not leave family. Please try again.'
+          )),
+        );
+      }
     } finally {
       if (mounted) setState(() => _acting = false);
     }

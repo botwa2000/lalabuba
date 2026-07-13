@@ -136,14 +136,14 @@ class CommunityService {
   }
 
   Future<void> reportArtwork(int artworkId) async {
-    await _dio.post<void>(
+    await _dio.post<Map<String, dynamic>>(
       '/api/community/report/$artworkId',
       options: Options(headers: await _headers()),
     );
   }
 
   Future<void> deleteArtwork(int artworkId) async {
-    await _dio.delete<void>(
+    await _dio.delete<Map<String, dynamic>>(
       '/api/community/artwork/$artworkId',
       options: Options(headers: await _headers()),
     );
@@ -163,7 +163,7 @@ class CommunityService {
     required int longestStreak,
     required String? lastActiveDate,
   }) async {
-    await _dio.post<void>(
+    await _dio.post<Map<String, dynamic>>(
       '/api/community/progress',
       data: {
         'totalCompleted': totalCompleted,
@@ -175,11 +175,12 @@ class CommunityService {
     );
   }
 
-  Future<FamilyData> getFamily() async {
+  Future<FamilyData?> getFamily() async {
     final r = await _dio.get<Map<String, dynamic>>(
       '/api/community/family',
       options: Options(headers: await _headers()),
     );
+    if (r.data?['inFamily'] != true) return null;
     return FamilyData.fromJson(r.data ?? {});
   }
 
@@ -197,7 +198,7 @@ class CommunityService {
   }
 
   Future<void> joinFamily(String code) async {
-    await _dio.post<void>(
+    await _dio.post<Map<String, dynamic>>(
       '/api/community/family',
       data: {'action': 'join', 'familyCode': code},
       options: Options(headers: await _headers(withConsent: true)),
@@ -205,7 +206,7 @@ class CommunityService {
   }
 
   Future<void> leaveFamily() async {
-    await _dio.post<void>(
+    await _dio.post<Map<String, dynamic>>(
       '/api/community/family',
       data: {'action': 'leave'},
       options: Options(headers: await _headers()),
