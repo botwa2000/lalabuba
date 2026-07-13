@@ -8,9 +8,8 @@ const i18n = require("./lib/coloring-i18n");
 // Production + local server for Lalabuba on Hetzner (Docker Swarm).
 //
 // Single source of request logic: the route handlers in ./api/* are reused
-// verbatim. They were written for Vercel's (req,res) shape, so we add a thin
-// Express-like shim (req.body, res.status().json().send()) on top of Node's raw
-// http req/res and dispatch to them. Secrets arrive as env vars, injected by
+// verbatim. We add a thin Express-like shim (req.body, res.status().json().send())
+// on top of Node's raw http req/res and dispatch to them. Secrets arrive as env vars, injected by
 // docker-entrypoint.sh from Docker Swarm secrets (never on disk / in the image).
 
 // Load .env for LOCAL dev only (no extra packages). In the container all config
@@ -68,7 +67,7 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
-// Adapt a Node http response to the subset of the Vercel/Express API the
+// Adapt a Node http response to the subset of the Express API the
 // handlers use: res.status(code).json(obj) / .send(buf) / .end().
 function enhanceRes(res) {
   res.status = (code) => { res.statusCode = code; return res; };

@@ -39,7 +39,7 @@ $r.workflow_runs | Select-Object name, conclusion, created_at, @{n='sha';e={$_.h
 
 - **Pipeline:** GitHub Actions → `.github/workflows/android-release.yml`
 - **Trigger:** push to `main` (automatic, path-filtered)
-- **Watched paths:** `public/**`, `android/**`, `capacitor.config.json`, `package.json`
+- **Watched paths:** `flutter_app/**`, `public/**`
 - **Status check:** see GitHub Actions link above — all recent builds green
 - The new build lands in Play Console → Internal testing as a draft.
   Open the release and tap **"Start rollout"** to make it available.
@@ -82,13 +82,13 @@ Fix: **Codemagic dashboard → App → Settings → Repository → Regenerate we
 
 ---
 
-## Vercel
+## Hetzner — production server
 
-- **Project:** lalabuba
-- **Blob token:** `BLOB_READ_WRITE_TOKEN` in `.env`
-- **CLI:** Not installed system-wide. Install: `npm i -g vercel` then `vercel login`
-- **Deploy preview:** `vercel`
-- **Deploy production:** `vercel --prod`
+- **Server:** `91.99.212.17` (taxalex box, Docker Swarm)
+- **Prod URL:** `https://lalabuba.com` → port 3020
+- **Dev URL:** `https://dev.lalabuba.com` → port 3021
+- **Deploy:** `scripts/deploy.sh push "msg"` (commit + push); `scripts/deploy.sh dev` or `prod` (deploy to server)
+- **SSH key:** from `C:\Users\Alexa\taxalex\.secrets` (`HETZNER_SSH_KEY`, `HETZNER_HOST`, `HETZNER_USER`)
 
 ---
 
@@ -96,12 +96,13 @@ Fix: **Codemagic dashboard → App → Settings → Repository → Regenerate we
 
 | Key | Service | Notes |
 |-----|---------|-------|
-| `HF_TOKEN` | Hugging Face | Image generation (Tier 1) |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob | Image storage |
-| `TOGETHER_API_KEY` | Together AI | Tier-2 AI fallback |
-| `CF_ACCOUNT_ID` | Cloudflare | Workers AI (Tier 3) |
-| `CF_API_TOKEN` | Cloudflare | Workers AI (Tier 3) |
-| `NOVITA_API_KEY` | Novita.ai | Tier-4 AI fallback |
+| `HF_TOKEN` | Hugging Face | Image generation fallback |
+| `TOGETHER_API_KEY` | Together AI | AI fallback (currently dead — 402) |
+| `CF_ACCOUNT_ID` | Cloudflare | Workers AI (currently dead — 401) |
+| `CF_API_TOKEN` | Cloudflare | Workers AI (currently dead — 401) |
+| `NOVITA_API_KEY` | Novita.ai | Primary paid AI provider |
+| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile | Web bot protection |
+| `RESEND_API_KEY` | Resend | Contact form email |
 | `CM_API_TOKEN` | Codemagic | In `bonifatus-secrets/KEYSTORE-CREDENTIALS.txt` |
 
 ---
@@ -111,18 +112,18 @@ Fix: **Codemagic dashboard → App → Settings → Repository → Regenerate we
 Memory resets each session — use this file as the source of truth.
 
 1. **GitHub status** — no token needed; use `Invoke-RestMethod` against public API (see snippet above)
-2. **Codemagic status** — get `CM_API_TOKEN` from dashboard, store in `.env`, use API snippets above
-3. **Vercel** — `BLOB_READ_WRITE_TOKEN` is in `.env`; install CLI if needed
+2. **Codemagic status** — get `CM_API_TOKEN` from `bonifatus-secrets/KEYSTORE-CREDENTIALS.txt`, use API snippets above
+3. **Hetzner SSH** — key path + host + user from `C:\Users\Alexa\taxalex\.secrets`
 4. **All credentials** — check `.env` first; table above lists what's stored
 
 ---
 
 ## Reset onboarding for testing
 
+**Web browser:** open DevTools console and run:
 ```js
-// In the app's WebView console (Chrome DevTools → chrome://inspect)
 localStorage.removeItem('lalabuba-onboarded');
 location.reload();
 ```
 
-Or uninstall and reinstall the app.
+**Flutter app:** uninstall and reinstall the app (clears `flutter_secure_storage`).

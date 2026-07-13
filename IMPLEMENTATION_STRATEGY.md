@@ -12,15 +12,12 @@
 ---
 
 ## Infrastructure & Hosting — LOCKED DECISIONS
-> These supersede any Vercel-centric references later in this document (§1.3–1.4,
-> §3.3, §5.5, §7, §8). Where those mention Vercel KV / Edge Config / Neon / Vercel
-> Auth, read the equivalents below.
+> Hetzner is the live production host. Any remaining Vercel references in this
+> document (§1.3–1.4, §3.3, §5.5, §7, §8) are stale planning notes — use the
+> Hetzner equivalents below.
 
-- **Host: migrate off Vercel to Hetzner now** (pre-launch = smallest migration
-  surface; staying on Vercel and building the monetization/admin stack on
-  Vercel-native services only grows the surface we'd later unwind). The core
-  generation logic is already portable (`lib/` served by `server.js`); the only
-  real coupling is **Vercel Blob**, which is optional and cleanly abstracted.
+- **Host: Hetzner `91.99.212.17`** — live in production. Docker Swarm, nginx,
+  PostgreSQL 16, Cloudflare in front. Migration from Vercel is complete.
 - **Server: `91.99.212.17`** — the spare-capacity Hetzner box (currently hosts
   only taxalex.de prod+dev; the former DMS box). Isolates the kids+payments app
   from the busier bonistock/bonifatus box (`159.69.180.183`). **Verify free
@@ -107,7 +104,7 @@
 
 1. **Entitlement source of truth = RevenueCat** (cross-platform: App Store + Play + web/Stripe under one entitlement API). Maps directly onto `Entitlements.fromJson`. Client treats RevenueCat entitlement as authoritative; **server independently re-validates** for anything that costs money (image generation).
 2. **Two-layer metering.** Client meter (existing) = UX/soft cap. **Server meter (new, durable) = hard enforcement**, because `X-Device-ID` is client-controllable (the server already notes this for the bot gate). Free quota keyed by device id in durable KV; "unlimited" only granted when the server confirms a paid entitlement.
-3. **Durable store = Vercel KV / Upstash Redis (Marketplace)** for server-side quota + entitlement cache. No relational DB needed at launch.
+3. **Durable store = Redis** (container on Hetzner) for server-side quota + entitlement cache. No relational DB needed at launch.
 4. **Remote config = a small server-hosted JSON** (tiers → entitlements, content-pack flags, free cap, paywall copy) consumed via the existing `Entitlements.fromJson`. Lets us flip monetization/caps without an app release.
 5. **All child-side data stays anonymous and on-device.** No accounts for children. The **only** identity is an optional **parent account** (RevenueCat app user id / Stripe customer), created only inside the parental-gated Parent Zone, holding no child PII.
 6. **No third-party behavioral analytics or ads — ever.** Aggregate, first-party, anonymous counters only (see §6).
@@ -170,7 +167,7 @@ In `api/generate-image.js`, **after** the existing rate-limit + bot/app-key gate
 - **Paywall = a parental-gated bottom sheet** (`lala_bottom_sheet.dart` exists) triggered when `!canGenerate` *and* `monetizationEnabled`. At launch the cap simply shows "come back tomorrow" (current behavior), no paywall.
 
 ### 3.5 Server receipt validation (added, dormant)
-- New Vercel function `api/revenuecat-webhook.js`: **verifies the RevenueCat `Authorization` header**, updates the entitlement cache in KV. Inert until RevenueCat is configured.
+- New server handler `api/revenuecat-webhook.js`: **verifies the RevenueCat `Authorization` header**, updates the entitlement cache in Redis. Inert until RevenueCat is configured.
 
 ### 3.6 Physical commerce (later, Stripe)
 - New `api/print-order.js` (Stripe Checkout session) — physical goods, parental-gated, available to all users. Out-of-scope for the inert launch but the route + parental gate are scaffolded.
@@ -225,7 +222,7 @@ Introduce a single declarative map: every palette / sticker pack / content pack 
 ### Web (`public/`, `api/`)
 - New: `public/js/progress.js`, `public/parent.html` + gated JS, `api/quota.js` (or inline in generate-image.js), `api/revenuecat-webhook.js` (dormant), `api/event.js` (analytics).
 - Edit: `api/generate-image.js` (durable KV quota + entitlement re-check after existing gates), `public/js/main.js` (completion → progress), `public/js/gallery.js` (journal/collection + PDF export), legal pages.
-- Infra: provision **Vercel KV / Upstash Redis** via Marketplace; add env keys.
+- Infra: provision **Redis** container on Hetzner; add env keys.
 
 ### Shared
 - i18n: add keys for journal/badges/stickers/parent-zone/paywall/print to **all** `flutter_app/assets/i18n/*.json` and the web `i18n.js` table (web currently inlines strings — match its pattern). Keep parity across all 12 languages.
@@ -233,9 +230,9 @@ Introduce a single declarative map: every palette / sticker pack / content pack 
 ---
 
 ## 8. Dependencies & infra to add
-- Vercel: **KV/Upstash Redis** (Marketplace) for quota/entitlement/analytics.
+- Hetzner: **Redis** container for quota/entitlement/analytics.
 - Flutter: `purchases_flutter`, `printing`, `pdf` (all dormant until `monetizationEnabled`).
-- Env (placeholders only in `.env.example`): `KV_REST_API_URL`, `KV_REST_API_TOKEN`, `REVENUECAT_SECRET`, `STRIPE_SECRET`, `APP_API_KEY` (already referenced).
+- Env (placeholders only in `.env.example`): `REDIS_URL`, `REVENUECAT_SECRET`, `STRIPE_SECRET`, `APP_API_KEY` (already referenced).
 
 ## 9. QA / verification plan
 - **Web:** bump `?v=NNN` (currently 187 → 188), Playwright at desktop/390/844 across hero + coloring + journal + parent-gate states; confirm completion → counter increments, journal persists across reload, parental gate blocks Parent Zone, free cap enforced **server-side** (simulate spoofed device id → still capped).
@@ -243,7 +240,7 @@ Introduce a single declarative map: every palette / sticker pack / content pack 
 - **Compliance self-check:** no third-party tracker added; all outbound/purchase surfaces gated; erasure works end-to-end; Blob TTL set.
 
 ## 10. Deploy plan
-- Web: commit + push → Vercel auto-deploy → verify live `?v=188` + KV wired. Follow the CLAUDE.md deploy+QA routine (version bump, screenshot QA, checklist).
+- Web: commit + push → GitHub Actions auto-deploys to Hetzner dev → verify live `?v=188` + Redis wired. Follow the CLAUDE.md deploy+QA routine (version bump, screenshot QA, checklist).
 - Mobile: trigger `flutter-release.yml` (platform=both, track=internal). **Also build a release APK and copy to `C:\Users\Alexa\OneDrive\TEMP`** for sideload testing (standing instruction — see memory `feedback-apk-on-store-push`).
 - Monetization stays **off**: `monetizationEnabled=false` in remote config; paywall never shown; everything free.
 

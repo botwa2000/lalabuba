@@ -281,7 +281,7 @@ For quadrant definitions see `docs/screen-quadrants.md`.
 
 - [ ] TestFlight build installs
 - [ ] Same functional checks as Android §5.5
-- [ ] Turnstile skipped (Capacitor native flag)
+- [ ] Turnstile skipped (Flutter native path — no Origin header → server skips Turnstile)
 - [ ] Safe-area insets respected (notch/Dynamic Island)
 
 ---

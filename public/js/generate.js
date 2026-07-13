@@ -172,21 +172,10 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
   }
 
   if (provider === "backend" || provider === "direct") {
-    // Capacitor 4+ uses https://localhost on Android (not capacitor://), so
-    // protocol sniffing fails. Use Capacitor.isNativePlatform() instead.
-    const isNative = window.Capacitor?.isNativePlatform?.() ||
-                     window.location.protocol === 'capacitor:' ||
-                     window.location.protocol === 'ionic:';
-    const apiBase = isNative ? 'https://lalabuba.com' : '';
-    // 75-second hard timeout — prevents an infinite hang if the network is
-    // blocked (e.g. Google Play test environment) while being generous enough
-    // not to kill a slow-but-working FREE generation. A novel subject is served
-    // by Pollinations' free queue in ~45s (cache hits ~1-2s); the server gives
-    // Pollinations up to 50s, so the client must wait longer than that or it
-    // would clip the free result and (worse) trigger a paid fallback. 45s was
-    // too short and caused false "timed out" failures. (Flutter/native allows
-    // 90s.) AbortController is supported on all Android WebViews (minSdk 24 /
-    // Chrome 56+).
+    const apiBase = '';
+    // 75-second hard timeout — prevents an infinite hang on slow connections.
+    // Novel subjects take ~20-30s on the server (Novita); Pollinations cache
+    // hits return in ~1-2s. Hard/extreme go straight to Novita (~20-30s).
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 75000);
     let response;

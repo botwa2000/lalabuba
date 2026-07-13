@@ -5,7 +5,7 @@
 #   printf '%s' "$VALUE" | remote-secret.sh <dev|prod> <NAME>
 #
 # This is the codified replacement for the ad-hoc `docker secret create` typed by
-# hand during the Vercel→Hetzner migration — which appended a literal backslash-n
+# hand during initial setup — which appended a literal backslash-n
 # to TURNSTILE_SECRET_KEY/CF_ACCOUNT_ID and silently broke production. It pipes
 # the value with `printf '%s'` (no added bytes) and REFUSES known-corrupt input.
 set -euo pipefail

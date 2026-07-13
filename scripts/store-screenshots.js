@@ -108,7 +108,6 @@ async function run(){
 
         // ── coloring (demo provider, no API/Turnstile) ──
         await page.evaluate(()=>{
-          window.Capacitor = { isNativePlatform:()=>true, Plugins:{ SplashScreen:{ hide:()=>Promise.resolve() } } };
           const sel=document.getElementById('provider-select');
           if(sel){ sel.value='demo'; sel.dispatchEvent(new Event('change')); }
           const panel=document.getElementById('config-panel'); if(panel) panel.classList.remove('collapsed');

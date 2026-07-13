@@ -8,8 +8,6 @@
   <meta name="keywords" content="coloring pages for kids, AI coloring, color by number, free coloring pages, kids activities, printable coloring, coloring book online, ausmalbilder, coloriage, colorear" />
   <meta name="author" content="Lalabuba" />
   <meta name="theme-color" content="#7c4dff" />
-  <!-- Detect native app before any external scripts load (prevents Turnstile iframe rendering in WebView) -->
-  <script>if (window.Capacitor) document.documentElement.classList.add('is-native');</script>
   <!-- Apply saved theme before CSS loads to prevent flash of wrong color -->
   <script>(function(){var t=localStorage.getItem('lalabuba-theme');if(t){document.documentElement.setAttribute('data-theme',t);}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}})();</script>
   <link rel="canonical" href="https://lalabuba.com/" />
@@ -145,19 +143,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=259" />
-  <link rel="stylesheet" href="/css/header.css?v=259" />
-  <link rel="stylesheet" href="/css/hero.css?v=259" />
-  <link rel="stylesheet" href="/css/generator.css?v=259" />
-  <link rel="stylesheet" href="/css/layout.css?v=259" />
-  <link rel="stylesheet" href="/css/workspace.css?v=259" />
-  <link rel="stylesheet" href="/css/palette.css?v=259" />
-  <link rel="stylesheet" href="/css/modals.css?v=259" />
-  <link rel="stylesheet" href="/css/footer.css?v=259" />
-  <link rel="stylesheet" href="/css/print.css?v=259" />
-  <link rel="stylesheet" href="/css/cookies.css?v=259" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=259" />
-  <script src="/js/cookies.js?v=259"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=260" />
+  <link rel="stylesheet" href="/css/header.css?v=260" />
+  <link rel="stylesheet" href="/css/hero.css?v=260" />
+  <link rel="stylesheet" href="/css/generator.css?v=260" />
+  <link rel="stylesheet" href="/css/layout.css?v=260" />
+  <link rel="stylesheet" href="/css/workspace.css?v=260" />
+  <link rel="stylesheet" href="/css/palette.css?v=260" />
+  <link rel="stylesheet" href="/css/modals.css?v=260" />
+  <link rel="stylesheet" href="/css/footer.css?v=260" />
+  <link rel="stylesheet" href="/css/print.css?v=260" />
+  <link rel="stylesheet" href="/css/cookies.css?v=260" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=260" />
+  <script src="/js/cookies.js?v=260"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -769,21 +767,7 @@
 
   <!-- Safety net: if the main module throws before it can hide the splash screen,
        hide it here so the app never appears permanently frozen on native. -->
-  <script>
-  (function () {
-    function hideSplashIfNative() {
-      try {
-        var C = window.Capacitor;
-        if (C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.SplashScreen) {
-          C.Plugins.SplashScreen.hide({ fadeOutDuration: 300 });
-        }
-      } catch (e) { /* best-effort */ }
-    }
-    window.addEventListener('error', hideSplashIfNative);
-    window.addEventListener('unhandledrejection', hideSplashIfNative);
-  })();
-  </script>
-  <script type="module" src="/js/main.js?v=259"></script>
+  <script type="module" src="/js/main.js?v=260"></script>
 </body>
 </html>
 

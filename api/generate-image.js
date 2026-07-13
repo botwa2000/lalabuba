@@ -92,9 +92,6 @@ const ALLOWED_ORIGINS = [
   "https://www.lalabuba.com",
   "https://dev.lalabuba.com",
   "http://localhost:3000",
-  "capacitor://localhost",
-  "ionic://localhost",
-  "https://localhost",   // Capacitor 4+ Android WebView origin
 ];
 
 module.exports = async (req, res) => {
@@ -141,8 +138,8 @@ module.exports = async (req, res) => {
     // bypass — a browser script could set that header at will to skip the bot
     // check, so the Turnstile gate now applies to every request carrying a web
     // Origin regardless of any custom headers.
-    const NATIVE_ORIGINS = ['capacitor://localhost', 'ionic://localhost', 'https://localhost'];
-    const isNative = !origin || NATIVE_ORIGINS.includes(origin);
+    // Flutter's Dio HTTP client sends no Origin header — absence of Origin = native/Flutter request.
+    const isNative = !origin;
 
     if (isNative) {
       // Optional app-key gate for native callers. When APP_API_KEY is set in the

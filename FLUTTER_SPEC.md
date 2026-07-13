@@ -10,8 +10,8 @@
 ## 1. Context & Goals
 
 ### What we are building
-A native Flutter mobile app (iOS + Android) that replaces the Capacitor-wrapped web app for mobile.
-The existing Vercel web app (`lalabuba.com`) continues unchanged — the Flutter app is a separate, superior mobile experience sharing the same backend API.
+A native Flutter mobile app (iOS + Android) — the primary mobile experience for Lalabuba.
+The web app (`lalabuba.com`) runs on Hetzner and continues unchanged — the Flutter app shares the same backend API.
 
 ### Why Flutter
 - Native rendering: no WebView, no CSS layout bugs, no DOM
@@ -31,11 +31,9 @@ The existing Vercel web app (`lalabuba.com`) continues unchanged — the Flutter
 ```
 lalabuba/                   ← existing repo root
 ├── public/                 ← web app (unchanged)
-├── api/                    ← Vercel serverless (shared by both)
+├── api/                    ← legacy serverless handlers (reference only; not deployed)
 ├── lib/                    ← shared server-side JS libs
-├── android/                ← legacy Capacitor Android (keep until Flutter ships)
-├── ios/                    ← legacy Capacitor iOS (keep until Flutter ships)
-├── flutter_app/            ← NEW: entire Flutter project lives here
+├── flutter_app/            ← Flutter project (iOS + Android)
 │   ├── lib/
 │   ├── assets/
 │   ├── android/

@@ -1,5 +1,5 @@
-// First-time onboarding tutorial overlay (native app only)
-// Shows once on fresh install; gated by localStorage.
+// First-time onboarding tutorial overlay.
+// Shows once to new users; gated by localStorage.
 
 const KEY = 'lalabuba-onboarded';
 
@@ -25,7 +25,6 @@ const SLIDES = [
 ];
 
 export function initOnboarding() {
-  if (!window.Capacitor?.isNativePlatform?.()) return;
   if (localStorage.getItem(KEY)) return;
 
   let current = 0;

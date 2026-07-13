@@ -18,8 +18,8 @@ if [ -d /run/secrets ]; then
     val="$(cat "$f")"   # $(...) already drops real trailing newlines
 
     # ── Self-heal migration artifacts ───────────────────────────────────────
-    # During the Vercel→Hetzner migration some secrets were created with a
-    # trailing LITERAL backslash-n (the two characters "\" "n") or a CR. Real
+    # Some secrets were created with a trailing LITERAL backslash-n (the two
+    # characters "\" "n") or a CR during initial setup. Real
     # newlines are stripped by $(cat) but a literal "\n" is ordinary text and
     # survives — it once broke TURNSTILE_SECRET_KEY and CF_ACCOUNT_ID and every
     # API call that used them. Strip those trailing artifacts and warn loudly so

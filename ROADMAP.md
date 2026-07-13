@@ -8,18 +8,11 @@ Living document. Strike completed items with `~~strikethrough~~`. Add new items 
 
 ### Navigation model
 
-The web and mobile app share one codebase. `data-platform="native"` is set on `<body>` at boot when running inside Capacitor. All mobile-specific layout and behaviour is gated behind that attribute in CSS and JS — the web layout is never touched.
+The **web app** is a single-page vanilla JS app running on Hetzner. The **mobile app** is a separate native Flutter app (iOS + Android) sharing the same backend API at `lalabuba.com`.
 
-```js
-// main.js — earliest possible boot
-if (window.Capacitor?.isNativePlatform?.()) {
-  document.body.dataset.platform = 'native';
-}
-```
+On **web**: one long scrollable page. Works well for discovery, SEO, desktop.
 
-On **web**: one long scrollable page (current design). Works well for discovery, SEO, desktop.
-
-On **native**: four screens managed by a small `screens.js` module (`pushScreen(id)` / `popScreen()`). Screens are `<div class="screen">` elements; one is active at a time, transitions are CSS-driven. A fixed bottom tab bar is the primary navigation chrome.
+On **native (Flutter)**: screen-based navigation via Flutter's Navigator. Four main screens (Home, Canvas, Gallery, Settings) with a bottom tab bar.
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -97,7 +90,7 @@ The coloring engine (`canvas.js`), AI generation pipeline, and i18n system requi
 
 ### Core principle — Option B: Anonymous UUID
 
-No child creates an account. On first launch the app generates `crypto.randomUUID()`, stores it in the device keychain (iOS Keychain / Android Keystore via Capacitor Preferences Secure Storage). That UUID is the user ID — opaque, not PII, never shown to the child.
+No child creates an account. On first launch the app generates `crypto.randomUUID()`, stores it in the device keychain (iOS Keychain / Android Keystore via `flutter_secure_storage`). That UUID is the user ID — opaque, not PII, never shown to the child.
 
 **Premium status flow:**
 - Purchase → RevenueCat validates receipt → entitlement stored locally + synced to RevenueCat cloud under UUID
@@ -113,12 +106,12 @@ No child creates an account. On first launch the app generates `crypto.randomUUI
 
 | Component | Where | Purpose |
 |---|---|---|
-| Device UUID | Capacitor Preferences (secure) | Persistent user identity, no PII |
-| RevenueCat SDK | `@revenuecat/purchases-capacitor` | IAP receipt validation + entitlement sync |
+| Device UUID | `flutter_secure_storage` (iOS Keychain / Android Keystore) | Persistent user identity, no PII |
+| RevenueCat SDK | `purchases_flutter` | IAP receipt validation + entitlement sync |
 | StoreKit 2 | iOS native | App Store purchase flow |
 | Play Billing | Android native | Google Play purchase flow |
-| `lib/entitlements.js` (new) | Vercel backend | RevenueCat webhook handler, UUID → email mapping |
-| Database | Vercel Marketplace (Postgres/KV) | UUID → entitlement + optional parent email |
+| `lib/entitlements.js` (new) | Hetzner backend | RevenueCat webhook handler, UUID → email mapping |
+| Database | Hetzner Postgres | UUID → entitlement + optional parent email |
 
 ### What's free vs. premium
 
@@ -142,7 +135,7 @@ No child creates an account. On first launch the app generates `crypto.randomUUI
 
 **No lifetime pricing.** Subscription only. Lifetime is incompatible with per-generation AI costs.
 
-**Paywall is suppressed entirely on web.** Web stays fully free; it drives native app discovery. All IAP and limit code must be behind `Capacitor.isNativePlatform()` guards.
+**Paywall is suppressed entirely on web.** Web stays fully free; it drives native app discovery. All IAP and limit code lives in the Flutter app only — the web app has no paywall logic.
 
 ### Paywall UX
 
@@ -208,73 +201,71 @@ A Tier 2 user generating 200+ images/month consistently causes a loss. Control m
 
 ## Implementation Phases
 
-### M1 — Platform detection + web chrome removal
-*Prerequisite for all mobile work. Ship this first — it's safe and invisible to web users.*
+### M1 — Flutter system chrome setup
+*Prerequisite for all mobile work. Ship this first — safe and invisible to web users.*
 
-- [ ] Set `data-platform="native"` on `<body>` in `main.js` on Capacitor boot
-- [ ] CSS: on `[data-platform="native"]` hide `.site-footer`, `.site-header`, `#cookie-banner`, `#turnstile-widget`
-- [ ] CSS: `padding-top: env(safe-area-inset-top)` on `.app` root on native
-- [ ] Configure Capacitor Status Bar plugin: edge-to-edge (overlay content), app handles padding via CSS
+- [ ] Enable edge-to-edge display in Flutter: `SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge)`
+- [ ] Wrap root widget in `SafeArea` to handle notch / Dynamic Island / home indicator insets
+- [ ] Set status bar style to match app theme (light/dark icons via `SystemChrome.setSystemUIOverlayStyle`)
 - [ ] Verify: no visual overlap with Dynamic Island / notch on iPhone; no overlap with Android status bar
 
-### M2 — Bottom tab bar + screen wrappers
-- [ ] Add `<nav class="tab-bar">` to `index.html` (hidden on web); 3 tabs: Create 🎨, Gallery 🖼️, Settings ⚙️
-- [ ] CSS: tab bar fixed to bottom, `padding-bottom: env(safe-area-inset-bottom)`, 56px height + safe area
-- [ ] Wrap existing sections in screen divs: `#screen-create`, `#screen-gallery`, `#screen-settings`
-- [ ] Write `public/js/screens.js`: `pushScreen(id)`, `popScreen()` with CSS transition classes
-- [ ] Wire tab taps to `pushScreen()` / show correct screen
-- [ ] Move gallery button from header `<nav>` into Gallery tab (remove from header)
-- [ ] Move language picker from header into Settings screen
+### M2 — Flutter bottom tab bar + screen wrappers
+- [ ] Add `BottomNavigationBar` (or `NavigationBar`) with 3 tabs: Create 🎨, Gallery 🖼️, Settings ⚙️
+- [ ] Bottom nav uses `BottomNavigationBar.height` + `MediaQuery.of(context).padding.bottom` for safe area
+- [ ] Implement `IndexedStack` or `Navigator` per tab to maintain scroll position across tab switches
+- [ ] Create screen widgets: `CreateScreen`, `GalleryScreen`, `SettingsScreen`
+- [ ] Wire tab taps to update selected index
+- [ ] Gallery tab replaces the modal approach — full screen widget
+- [ ] Language picker moves to Settings screen
 
-### M3 — Canvas screen + transitions
-- [ ] Add `#screen-canvas` div wrapping `.workspace` content
-- [ ] Add top nav bar inside canvas screen: back arrow, subject `<h2>`, overflow `⋮` button
+### M3 — Flutter canvas screen + transitions
+- [ ] Create `CanvasScreen` widget pushed via `Navigator.push` when generation starts
+- [ ] Add `AppBar` inside canvas screen: back arrow, subject title, overflow `⋮` button
 - [ ] Overflow menu items: Print, Regen, Share art, Clear pencil
-- [ ] Wire back arrow + Android hardware back button (Capacitor App plugin `backButton` event) to `popScreen()`
-- [ ] Wire generation start to `pushScreen('canvas')` — canvas screen appears with loading animation
-- [ ] Transition: slide-up from bottom on push, slide-down on pop
+- [ ] Android hardware back button handled via `PopScope` / `WillPopScope` widget
+- [ ] Transition: slide-up from bottom on push (`SlideTransition`), slide-down on pop
+- [ ] Canvas screen appears with loading animation during generation; transitions to coloring state when image ready
 
-### M4 — Canvas screen layout (full-height)
-- [ ] Apply `100dvh` flex column layout to `#screen-canvas` on native
-- [ ] Apply `env(safe-area-inset-top/bottom)` to top nav bar and palette dock respectively
-- [ ] `#preview-stage`: `flex: 1; min-height: 0` so canvas fills remaining space
-- [ ] Replace `.palette-sidebar` with `.palette-dock` on native: 72px fixed bar, 44px swatches, horizontal scroll
-- [ ] Replace `.canvas-actions` row with `.canvas-action-bar` on native: 56px bar, 5 icon+label buttons (Undo, Pencil, Zoom, Save, Challenge)
-- [ ] Number legend: hide `.palette-sidebar` label column on native; add 🔢 icon to action bar that triggers a bottom-sheet slide-up with the legend
+### M4 — Flutter canvas screen layout (full-height)
+- [ ] `CanvasScreen` uses `Column` filling `100%` screen height via `Expanded` + `SafeArea`
+- [ ] `CustomPaint` / `WebView` canvas widget uses `Expanded(flex: 1)` so it fills remaining space
+- [ ] Palette dock: `SizedBox(height: 72)` fixed bar, 44px `InkWell` swatches in `ListView.builder` horizontal scroll
+- [ ] Action bar: `SizedBox(height: 56)` row, 5 `IconButton`s with labels (Undo, Pencil, Zoom, Save, Challenge)
+- [ ] Number legend: show as `showModalBottomSheet` triggered by 🔢 action bar icon
 
-### M5 — Create screen polish (native)
-- [ ] Input + Draw button: `position: sticky; bottom: 0` above tab bar, slides above keyboard
-- [ ] Viewport meta: add `interactive-widget=resizes-content` for Android keyboard push-up
-- [ ] Suggestion cards: change from pill/text style to 2×3 visual card grid on native (image or icon + label)
-- [ ] Daily word: promote from small pill to a full-width card at top of suggestion grid on native
+### M5 — Flutter create screen polish
+- [ ] Input + Draw button pinned above keyboard: wrap in `AnimatedPadding` keyed to `MediaQuery.of(context).viewInsets.bottom`
+- [ ] `resizeToAvoidBottomInset: true` on `Scaffold` (default) ensures content shifts up with keyboard
+- [ ] Suggestion cards: 2×3 `GridView` with visual cards (icon + label) replacing pill/text style
+- [ ] Daily word: full-width card at top of suggestion grid
 
-### M6 — Settings screen
-- [ ] Build `#screen-settings` content: Language, Defaults (difficulty / palette / color count), Notifications, Premium section (stub), About / Legal
-- [ ] Move language picker DOM into settings screen; remove from header
+### M6 — Flutter settings screen
+- [ ] Build `SettingsScreen` widget: Language, Defaults (difficulty / palette / color count), Notifications, Premium section (stub), About / Legal
+- [ ] Language picker moves from web header into settings screen
 - [ ] Premium stub: "You're on the free plan" + "Upgrade" button (wired up in P2)
-- [ ] About section: version number (from `capacitor.config.json`), Privacy Policy link, Terms, Impressum
+- [ ] About section: version from `PackageInfo.fromPlatform()`, Privacy Policy link, Terms, Impressum
 
 ---
 
 ### P1 — UUID + RevenueCat SDK foundation
-*Start after M1 is shipped so platform detection is reliable.*
+*Start after M1 is shipped.*
 
-- [ ] Install `@revenuecat/purchases-capacitor` Capacitor plugin
-- [ ] On native app boot: read UUID from Capacitor SecureStorage; if absent generate `crypto.randomUUID()` and write it
-- [ ] Configure RevenueCat: `Purchases.configure({ apiKey, appUserID: uuid })`
+- [ ] Add `purchases_flutter` and `flutter_secure_storage` to `pubspec.yaml`
+- [ ] On Flutter app boot: read UUID from `FlutterSecureStorage`; if absent generate `Uuid().v4()` and write it
+- [ ] Configure RevenueCat: `await Purchases.configure(PurchasesConfiguration(apiKey)..appUserID = uuid)`
   - Use platform-specific API key (App Store key on iOS, Google Play key on Android)
-- [ ] On boot: `Purchases.getCustomerInfo()` → set `state.isPremium` flag
+- [ ] On boot: `await Purchases.getCustomerInfo()` → set `isPremium` in app state
 - [ ] Implement `Purchases.restorePurchases()` wired to "Restore Purchase" button in Settings
 
 ### P2 — Paywall UI + tier limits
 *Requires M6 (Settings screen) for the Restore button placement.*
 
 - [ ] Add `state.tier` (`'free'` / `'explorer'` / `'unlimited'`) derived from RevenueCat entitlement on boot
-- [ ] Add `state.dailyGensUsed` + `state.dailyGensDate` to `state.js`; persist in SecureStorage; reset when date changes (free tier daily cap)
-- [ ] Add `state.monthlyGensUsed` + `state.monthlyGensMonth`; persist in SecureStorage; reset when month changes (Explorer monthly cap)
-- [ ] Gate in `generate.js`:
-  - Free: `dailyGensUsed >= 10` → generation-limit paywall
-  - Explorer: `monthlyGensUsed >= 100` → generation-limit paywall
+- [ ] Add `dailyGensUsed` + `dailyGensDate` to Flutter app state; persist in `FlutterSecureStorage`; reset when date changes (free tier daily cap)
+- [ ] Add `monthlyGensUsed` + `monthlyGensMonth`; persist in `FlutterSecureStorage`; reset when month changes (Explorer monthly cap)
+- [ ] Gate in Flutter `GenerateService` (before API call):
+  - Free: `dailyGensUsed >= 10` → show generation-limit paywall
+  - Explorer: `monthlyGensUsed >= 100` → show generation-limit paywall
   - Unlimited: no client-side generation gate
 - [ ] Gate difficulty chips:
   - Hard: locked for free; unlocked for Explorer + Unlimited
@@ -287,8 +278,8 @@ A Tier 2 user generating 200+ images/month consistently causes a loss. Control m
 - [ ] Generation-limit paywall: primary "Go Premium ✨" CTA + countdown (daily for free, monthly for Explorer) + secondary gallery link below divider
 - [ ] Feature paywall: clean "Go Premium ✨" CTA + "Maybe later" — no gallery escape hatch — show which tier unlocks the feature
 - [ ] Wire paywall CTAs to `Purchases.purchase(package)` offering correct tier; on success update `state.tier`, close modal
-- [ ] Add `i18n.js` keys: `paywallLimitTitle`, `paywallLimitBody`, `paywallFeatureTitle`, `paywallFeatureBody`, `paywallCta`, `paywallRestore`, `paywallLater`, `paywallGalleryEscape`, `paywallResets`, `paywallTier1Name`, `paywallTier2Name` (12 languages)
-- [ ] Suppress all paywall logic when `!Capacitor.isNativePlatform()` — web stays fully free
+- [ ] Add Flutter i18n ARB keys: `paywallLimitTitle`, `paywallLimitBody`, `paywallFeatureTitle`, `paywallFeatureBody`, `paywallCta`, `paywallRestore`, `paywallLater`, `paywallGalleryEscape`, `paywallResets`, `paywallTier1Name`, `paywallTier2Name` (12 languages)
+- [ ] All paywall logic is Flutter-only — web app has no paywall code
 
 ### P3 — App Store / Play Store compliance setup
 *Run in parallel with P1/P2 — store setup takes days of review time.*
@@ -375,8 +366,8 @@ The same validation logic runs on every generated image regardless of origin —
 
 **Architecture:**
 - **Shared gallery** — one cron generates images for all users. Per-user generation would multiply AI costs by active user count.
-- **Cloudflare R2** for image storage — zero egress fees vs. Vercel Blob's $0.08/GB. At 500 images × ~500 KB = 250 MB stored, storage cost is < $0.01/month regardless. Egress is the variable that matters at scale.
-- **Gallery manifest** — a JSON file at a stable CDN URL listing metadata for all current gallery images. App polls this on launch, downloads delta to local cache (Capacitor Filesystem).
+- **Cloudflare R2** for image storage — zero egress fees. At 500 images × ~500 KB = 250 MB stored, storage cost is < $0.01/month regardless. Egress is the variable that matters at scale.
+- **Gallery manifest** — a JSON file at a stable CDN URL listing metadata for all current gallery images. App polls this on launch, downloads delta to local cache (Flutter `path_provider` app documents dir).
 
 **Gallery manifest entry:**
 ```json
@@ -404,16 +395,16 @@ Popularity score: `completions + (age_days_from_today × -0.5)`. Images with zer
 - Premium users: full 500-image rotating gallery
 
 **Cron job (`0 6 * * *` — 6 AM UTC daily):**
-- [ ] Write `api/cron/gallery-batch.js` Vercel Cron endpoint
+- [ ] Write `api/cron/gallery-batch.js` server-side cron endpoint (scheduled via server cron: `0 6 * * *`)
 - [ ] Pick 40 prompts from `GALLERY_WORDS` list (diverse across themes: animals, fantasy, vehicles, nature, space, food, seasonal)
 - [ ] Generate each via existing pipeline; run `validateImage()` from G0; keep first 30 that pass
 - [ ] Upload passing images to Cloudflare R2; update manifest JSON
 - [ ] Apply rotation: if manifest > 500 entries, remove 20 per rotation policy above; delete removed images from R2
 - [ ] Increment `completions` counter in manifest when a user completes coloring a gallery image (via lightweight `/api/gallery/complete` POST)
 
-**App-side caching:**
-- [ ] On app launch: fetch manifest, compare against local cache, download new image data to Capacitor Filesystem
-- [ ] Gallery tab renders from local cache — works offline after first download
+**App-side caching (Flutter):**
+- [ ] On app launch: fetch manifest, compare against local cache, download new image data to `path_provider` app documents directory
+- [ ] Gallery screen renders from local cache — works offline after first download
 - [ ] Thumbnail shown immediately from cache; full image lazy-loaded on tap
 
 **Bootstrap (one-time):**
@@ -451,9 +442,9 @@ Digest contains:
 | Any 5xx error spike: > 10 errors in 5 minutes | Backend error spike |
 
 **Implementation:**
-- [ ] Add Resend API key to Vercel environment variables
+- [ ] Add Resend API key to server environment (Docker Swarm secret `lalabuba_prod_resend_api_key`)
 - [ ] Write `lib/mailer.js`: `sendAlert(subject, htmlBody)` and `sendDigest(data)` — thin wrapper around Resend API
-- [ ] Write `api/cron/daily-digest.js` Vercel Cron (`0 8 * * *`): query KV for yesterday's counters, format digest, call `sendDigest()`
+- [ ] Write `api/cron/daily-digest.js` server-side cron (`0 8 * * *`): query KV for yesterday's counters, format digest, call `sendDigest()`
 - [ ] Add alert calls inline in relevant handlers:
   - `/api/generate-image`: on monthly counter crossing 150 and 300
   - `api/cron/gallery-batch.js`: on < 15 passing images
@@ -481,7 +472,7 @@ Digest contains:
 7. **Canvas transition style**: slide-up sheet vs. horizontal push — test both on device before deciding.
 8. **Tab bar labels**: icon + text label vs. icon only? Kids likely need labels.
 9. **Android keyboard handling**: `resizes-content` vs. `overlays-content` viewport meta — test on real Android device with the pinned input layout.
-10. **Back gesture on iOS**: swipe-from-left-edge on canvas → back to Create. Needs either a JS touch gesture handler or rely on the Capacitor App `backButton` event (which fires on Android hardware back but not iOS swipe).
+10. **Back gesture on iOS**: swipe-from-left-edge on canvas → back to Create. Flutter's `Navigator` handles the iOS swipe-back gesture natively; Android hardware back is handled by `PopScope`.
 
 ---
 
@@ -489,12 +480,12 @@ Digest contains:
 
 - RevenueCat handles cross-platform receipt validation — do not build our own
 - Web app stays fully free; it drives native app discovery
-- All IAP, UUID, and daily-limit code must be behind `Capacitor.isNativePlatform()` guards
+- All IAP, UUID, and daily-limit code lives in the Flutter app only — web app has no paywall logic
 - Test IAP with StoreKit sandbox (Xcode Scheme → StoreKit config) and Play Billing test accounts before any real purchases
-- `100dvh` (dynamic viewport height) is required on mobile — `100vh` does not resize with the software keyboard on iOS
+- Flutter canvas uses `LayoutBuilder` / `Expanded` for full-height layouts — no CSS viewport units
 - Coloring engine, AI pipeline, and i18n require no structural changes for any of these phases
 - Image quality validation (`lib/imageQuality.js`) is a shared utility — same checks for user prompts, cron batch, and any future generation path. Never bypass it.
-- Gallery uses Cloudflare R2 (zero egress) not Vercel Blob — matters at scale
+- Gallery uses Cloudflare R2 (zero egress) — matters at scale
 - Gallery is a shared asset (one cron for all users) — never generate per-user gallery batches
 - No lifetime IAP products — subscription only. Lifetime is economically incompatible with per-generation AI costs
 - AI model routing is server-side only — never trust the client to declare its own tier or model

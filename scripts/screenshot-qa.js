@@ -80,7 +80,6 @@ async function run() {
     await page.evaluate((realMode) => {
       if (!realMode) {
         // Demo mode: bypass Turnstile + switch to demo provider
-        window.Capacitor = { isNativePlatform: () => true, Plugins: { SplashScreen: { hide: () => Promise.resolve() } } };
         const sel = document.getElementById('provider-select');
         if (sel) { sel.value = 'demo'; sel.dispatchEvent(new Event('change')); }
       }

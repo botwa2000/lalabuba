@@ -1075,7 +1075,7 @@ Vercel logs show in real time which provider handled each request:
 
 ## Overview
 
-The Android app is built with Capacitor (same web code as iOS) and published via Codemagic CI/CD to Google Play Store. Build: AAB (Android App Bundle) signed with a Java keystore.
+The Android app is a native Flutter app, built via GitHub Actions and published to Google Play Store. Build: AAB (Android App Bundle) signed with a Java keystore.
 
 ---
 

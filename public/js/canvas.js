@@ -27,8 +27,7 @@ let _segGeneration = 0;   // incremented on each new render; stale results disca
 function _getWorker() {
   if (_worker) return _worker;
   try {
-    // ES module workers: supported on Chrome 80+, Firefox 114+, Safari 15+,
-    // iOS 15+, Android Chromium (Capacitor target).
+    // ES module workers: supported on Chrome 80+, Firefox 114+, Safari 15+, iOS 15+.
     _worker = new Worker(new URL('./region-worker.js?v=214', import.meta.url), { type: 'module' });
   } catch { _worker = null; }
   return _worker;

@@ -414,10 +414,7 @@ window.onTurnstileAfterInteractive = () => {
 };
 
 function getTurnstileToken() {
-  const isNative = window.Capacitor?.isNativePlatform?.() ||
-                   window.location.protocol === 'capacitor:' ||
-                   window.location.protocol === 'ionic:';
-  if (isNative || !window.turnstile) return Promise.resolve(null);
+  if (!window.turnstile) return Promise.resolve(null);
   if (state.turnstileToken) return Promise.resolve(state.turnstileToken);
   const el = document.getElementById('turnstile-widget');
   const existing = el ? window.turnstile.getResponse(el) : null;
@@ -1766,11 +1763,6 @@ if (dailyInfoBtn && dailyInfoPopup) {
 
 // ─── Initialization ───────────────────────────────────────────────────────────
 
-// Mark native app so CSS can hide web-only elements (e.g. store badges)
-if (window.Capacitor?.isNativePlatform?.()) {
-  document.body.classList.add('is-native');
-}
-
 // Hide debug-only elements in production
 if (!DEBUG) {
   const debugAside = document.getElementById('debug-aside');
@@ -1785,12 +1777,6 @@ try {
 } catch (e) {
   console.error('[Lalabuba] Startup error:', e);
 } finally {
-  // Always hide the native splash screen — launchAutoHide is false, so if
-  // anything above throws the app would appear permanently frozen otherwise.
-  if (window.Capacitor?.isNativePlatform?.()) {
-    window.Capacitor?.Plugins?.SplashScreen?.hide({ fadeOutDuration: 300 })?.catch(() => {});
-    setTimeout(initOnboarding, 500);
-  }
 }
 
 // ─── Gallery: continue drawing ────────────────────────────────────────────────

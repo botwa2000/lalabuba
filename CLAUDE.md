@@ -2,8 +2,8 @@
 
 ## Project overview
 Lalabuba is a kids AI coloring web app. Vanilla JS ES modules + HTML5 Canvas.
-Server: `server.js` (local dev), `api/generate-image.js` (Vercel serverless).
-Mobile: Capacitor 8.3.0 → iOS (Codemagic) + Android (GitHub Actions).
+Server: `server.js` — runs on Hetzner via Docker Swarm. `api/generate-image.js` is a legacy reference file only (not deployed).
+Mobile: Flutter → iOS (Codemagic) + Android (GitHub Actions).
 
 ## CSS versioning
 All `<link>` tags in `public/index.html` use `?v=NNN`. Bump `NNN` by 1 on every deploy so browsers fetch fresh assets. Current version is tracked in `index.html` — grep for `?v=` to find it.
@@ -52,14 +52,12 @@ git commit -m "description\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthrop
 git push origin main
 ```
 
-### 3. Confirm Vercel deployed
-```powershell
-# Wait ~20s then check:
-$headers = @{ "Authorization" = "Bearer $token"; "Accept" = "application/vnd.github+json" }
-$dep = Invoke-RestMethod "https://api.github.com/repos/botwa2000/lalabuba/deployments?per_page=1" -Headers $headers
-$st  = Invoke-RestMethod "https://api.github.com/repos/botwa2000/lalabuba/deployments/$($dep[0].id)/statuses" -Headers $headers
-Write-Host "$($dep[0].sha.Substring(0,7)): $($st[0].state)"   # must be "success"
+### 3. Confirm Hetzner deployed
+The deploy script already health-checks the service. Confirm with:
+```bash
+ssh -i ~/.ssh/id_rsa root@91.99.212.17 "docker service logs lalabuba-prod_app --since 2m 2>&1 | tail -5"
 ```
+Look for the commit hash and no error lines.
 
 ### 4. Verify live assets
 Fetch `https://lalabuba.com/css/hero.css?v=NNN` and `https://lalabuba.com/js/main.js?v=NNN` — confirm new version number and the specific lines changed.
@@ -163,7 +161,7 @@ enforcement-off) lives in the local memory `reference-flutter-testing.md` and
 
 ---
 
-## Deployment — Hetzner (migrated off Vercel)
+## Deployment — Hetzner
 
 > Full migration plan: `MIGRATION.md`. Strategy detail: `IMPLEMENTATION_STRATEGY.md`.
 > Server identity, IP, SSH key path, and DB facts are in the **local auto-memory**
