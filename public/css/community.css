@@ -1,4 +1,7 @@
 /* ── Community features ─────────────────────────────────────────────────────── */
+/* All community modals also honour the HTML hidden attribute and .hidden class. */
+.community-lightbox[hidden],
+.community-lightbox.hidden { display: none; }
 /* Parent: .gallery-modal-card → display:flex; flex-direction:column; overflow-y:auto */
 /* The header is sticky; tabs and content scroll with the card body. */
 
