@@ -622,3 +622,20 @@ if (previewCanvas && communityShareBtn) {
     communityShareBtn.disabled = previewCanvas.hidden;
   }).observe(previewCanvas, { attributes: true, attributeFilter: ["hidden"] });
 }
+
+// ── Progress sync to server ───────────────────────────────────────────────────
+// Called by main.js after recordCompletion so web users appear on the leaderboard.
+// Fire-and-forget: never blocks the completion flow; all errors are swallowed.
+
+export async function syncProgressToServer(progress) {
+  try {
+    await apiPost("/api/community/progress", {
+      totalCompleted: progress.totalCompleted || 0,
+      currentStreak:  progress.streak || 0,
+      longestStreak:  progress.longestStreak || 0,
+      lastActiveDate: progress.lastColoredDay || null,
+    });
+  } catch {
+    // Best-effort: leaderboard sync is not critical to the coloring experience.
+  }
+}

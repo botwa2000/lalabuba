@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:dio/dio.dart' show DioException;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:vector_math/vector_math_64.dart' show Vector3;
 import 'package:flutter/material.dart';
@@ -23,11 +24,15 @@ import '../../core/l10n/l10n_service.dart';
 import '../../core/di/providers.dart';
 import '../../features/generate/generate_service.dart';
 import '../../features/gallery/gallery_screen.dart';
+import '../../features/community/community_service.dart';
+import '../../features/community/widgets/nickname_picker.dart';
+import '../../features/community/widgets/share_type_picker.dart';
 import '../../shared/services/analytics_service.dart';
 import '../../shared/services/storage_service.dart';
 import '../../shared/widgets/lala_color_swatch.dart';
 import '../../shared/widgets/lala_loading_overlay.dart';
 import '../../shared/widgets/lala_showcase.dart';
+import '../../shared/widgets/parental_gate.dart';
 import 'canvas_models.dart';
 import 'stroke_mask.dart';
 import 'canvas_painter.dart';
@@ -1195,6 +1200,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             ),
             const SizedBox(width: 8),
             _ActionBtn(
+              label: '🌟 Community',
+              onTap: canvas.isReady ? () => _shareToCommunity(canvas) : null,
+            ),
+            const SizedBox(width: 8),
+            _ActionBtn(
               label: l10n.t('challengeBtn'),
               onTap: (_currentSeed != null && canvas.isReady)
                   ? _showChallengeDialog
@@ -2004,6 +2014,122 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       unawaited(
           ref.read(progressProvider.notifier).recordShare().then(_toastBadges));
     } catch (_) {}
+  }
+
+  Future<void> _shareToCommunity(CanvasState canvas) async {
+    if (!canvas.isReady) return;
+    final l10n = ref.read(l10nProvider);
+    CommunityService svc;
+    try {
+      svc = ref.read(communityServiceProvider);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not connect to community')),
+      );
+      return;
+    }
+
+    // 1. Load profile — check if sharing is enabled
+    bool withConsent = false;
+    bool hasNickname = false;
+    try {
+      final profile = await svc.getProfile();
+      withConsent = !profile.sharingEnabled;
+      hasNickname = profile.hasNickname;
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    // 2. If sharing not enabled yet, require parental gate
+    if (withConsent) {
+      final ok = await showParentalGate(context, l10n);
+      if (!ok || !mounted) return;
+    }
+
+    // 3. If no nickname yet, let the child pick one
+    if (!hasNickname) {
+      final nickname = await showNicknamePicker(context, svc);
+      if (nickname == null || !mounted) return;
+      try {
+        await svc.setupProfile(
+          nickname: nickname,
+          withParentalConsent: withConsent,
+        );
+        withConsent = false; // consent already applied in setupProfile
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save nickname: $e')),
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
+
+    // 4. Pick share type
+    final shareType = await showShareTypePicker(
+      context,
+      hasFreehand: canvas.strokes.isNotEmpty,
+    );
+    if (shareType == null || !mounted) return;
+
+    // 5. Capture canvas as PNG bytes
+    final bytes = await _captureCanvas(canvas);
+    if (bytes == null || !mounted) return;
+
+    // Show uploading snackbar
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(const SnackBar(
+        content: Text('Uploading… 🌟'),
+        duration: Duration(seconds: 30),
+      ));
+
+    // 6. Upload
+    try {
+      final settings = ref.read(settingsProvider).valueOrNull;
+      await svc.shareArtwork(
+        shareType: shareType,
+        subject: _subject,
+        difficulty: settings?.difficulty,
+        seed: _currentSeed,
+        jpegBytes: bytes,
+        withParentalConsent: withConsent,
+      );
+      AnalyticsService.track('community_shared', {
+        'subject': _subject,
+        'shareType': shareType,
+      });
+      unawaited(
+          ref.read(progressProvider.notifier).recordShare().then(_toastBadges));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🌟 Shared! It\'s in the community gallery'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } on DioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).clearSnackBars();
+      final msg = switch (e.response?.statusCode) {
+        429 => 'Weekly share limit reached — try again next week',
+        403 => 'Sharing requires parent permission first',
+        413 => 'Image too large — please try again',
+        _ => 'Could not share — please try again',
+      };
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(msg)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not share — please try again')),
+      );
+    }
   }
 
   Future<void> _printArtwork(CanvasState canvas) async {

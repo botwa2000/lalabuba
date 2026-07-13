@@ -9,6 +9,7 @@ import { isSoundOn, toggleSound, playComplete, bounce, sparkleBurst } from './fx
 import { isNarrateOn, toggleNarrate, narrateSupported, speak } from './narrate.js';
 import { animateCompletion } from './canvas.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
+import { syncProgressToServer } from './community.js';
 import {
   form, subjectInput, showNumbersInput, difficultySelect,
   paletteSelect, previewCanvas, drawCanvas, printButton, downloadButton,
@@ -237,6 +238,8 @@ function celebrate() {
       });
       progress = r.progress;
       newBadges = r.newBadges;
+      // Sync progress to community server (fire-and-forget, best-effort).
+      syncProgressToServer(progress).catch(() => {});
       // Crayon-pack unlocks: a completion that crosses a pack threshold reveals a
       // new palette — celebrate it (separate from sticker reveal so both show).
       try {
