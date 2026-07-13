@@ -66,7 +66,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader('🌟 Community Profile'),
+        _SectionHeader(l10n.t('communityProfileHeader')),
         Card(
           child: Column(
             children: [
@@ -81,7 +81,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         style: const TextStyle(fontSize: 28),
                       ),
                 title: Text(
-                  _profile?.nickname ?? 'No nickname set',
+                  _profile?.nickname ?? l10n.t('communityNoNickname'),
                   style: GoogleFonts.fredoka(
                     fontWeight: FontWeight.w700,
                     color: _profile?.nickname == null
@@ -91,13 +91,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 subtitle: Text(
                   _profile?.sharingEnabled == true
-                      ? '✅ Sharing enabled'
-                      : '🔒 Sharing off (parent approval needed)',
+                      ? l10n.t('communitySharingOn')
+                      : l10n.t('communitySharingOff'),
                   style: GoogleFonts.nunito(fontSize: 12),
                 ),
                 trailing: TextButton(
                   onPressed: _editProfile,
-                  child: Text('Edit',
+                  child: Text(l10n.t('communityEditBtn'),
                       style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
                 ),
               ),
@@ -105,13 +105,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // Family group tile
               ListTile(
                 leading: const Text('👨‍👩‍👧', style: TextStyle(fontSize: 24)),
-                title: Text('Family Group',
+                title: Text(l10n.t('communityFamilyGroupTitle'),
                     style: GoogleFonts.nunito(
                         fontSize: 14, fontWeight: FontWeight.w700)),
                 subtitle: Text(
                   _profile?.familyId != null
-                      ? 'In a family group'
-                      : 'Share with family members',
+                      ? l10n.t('communityFamilyInGroup')
+                      : l10n.t('communityFamilyShareSub'),
                   style: GoogleFonts.nunito(fontSize: 12),
                 ),
                 trailing: const Icon(Icons.chevron_right_rounded),
@@ -135,11 +135,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     // Avatar
     final newAvatar = await showAvatarPicker(
-        context, _profile?.avatarIndex ?? 0);
+        context, _profile?.avatarIndex ?? 0, l10n);
     if (!mounted) return;
 
     // Nickname
-    final newNickname = await showNicknamePicker(context, svc);
+    final newNickname = await showNicknamePicker(context, svc, l10n);
     if (!mounted) return;
 
     // Parental consent if sharing not yet enabled
@@ -161,7 +161,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         setState(() => _profile = updated);
         messenger.showSnackBar(
-          const SnackBar(content: Text('✅ Profile updated!')),
+          SnackBar(content: Text(l10n.t('communityProfileUpdated'))),
         );
       }
     } catch (e) {

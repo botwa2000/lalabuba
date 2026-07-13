@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/l10n/l10n_service.dart';
 import '../community_service.dart';
 import '../models/artwork_model.dart';
 import '../widgets/community_artwork_card.dart';
@@ -67,7 +68,6 @@ class _CommunityGalleryScreenState
     });
 
     try {
-      // Resolve base URL from config
       final config = ref.read(appConfigProvider).valueOrNull;
       if (config != null) _baseUrl = config.apiBaseUrl;
 
@@ -103,22 +103,24 @@ class _CommunityGalleryScreenState
   Widget build(BuildContext context) {
     super.build(context);
     final cs = Theme.of(context).colorScheme;
+    final l10n = ref.watch(l10nProvider);
+
+    final filters = [
+      ('all', l10n.t('communityFilterAll')),
+      ('colored', l10n.t('communityFilterColorings')),
+      ('template', l10n.t('communityFilterTemplates')),
+      ('freehand', l10n.t('communityFilterDrawings')),
+    ];
 
     return Column(
       children: [
-        // Filter chips
         SizedBox(
           height: 44,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             children: [
-              for (final f in const [
-                ('all', 'All'),
-                ('colored', '🎨 Colorings'),
-                ('template', '📋 Templates'),
-                ('freehand', '✏️ Drawings'),
-              ])
+              for (final f in filters)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
@@ -131,7 +133,6 @@ class _CommunityGalleryScreenState
             ],
           ),
         ),
-        // Leaderboard shortcut
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Row(
@@ -139,7 +140,7 @@ class _CommunityGalleryScreenState
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Text('🏆', style: TextStyle(fontSize: 16)),
-                  label: Text('Top Artists',
+                  label: Text(l10n.t('communityTopArtists'),
                       style: GoogleFonts.fredoka(
                           fontSize: 14, fontWeight: FontWeight.w700)),
                   onPressed: () => Navigator.of(context).push(
@@ -156,15 +157,14 @@ class _CommunityGalleryScreenState
             ],
           ),
         ),
-        // Gallery grid or states
         Expanded(
-          child: _buildBody(cs),
+          child: _buildBody(cs, l10n),
         ),
       ],
     );
   }
 
-  Widget _buildBody(ColorScheme cs) {
+  Widget _buildBody(ColorScheme cs, L10n l10n) {
     if (_artworks.isEmpty && _loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -175,12 +175,12 @@ class _CommunityGalleryScreenState
           children: [
             const Text('😕', style: TextStyle(fontSize: 40)),
             const SizedBox(height: 12),
-            Text('Could not load gallery',
+            Text(l10n.t('communityGalleryLoadError'),
                 style: GoogleFonts.nunito(fontSize: 15)),
             const SizedBox(height: 8),
             TextButton(
                 onPressed: () => _load(reset: true),
-                child: const Text('Try again')),
+                child: Text(l10n.t('tryAgain'))),
           ],
         ),
       );
@@ -193,7 +193,7 @@ class _CommunityGalleryScreenState
             const Text('🌟', style: TextStyle(fontSize: 56)),
             const SizedBox(height: 16),
             Text(
-              'No artworks yet!\nBe the first to share 🎨',
+              l10n.t('communityGalleryEmpty'),
               textAlign: TextAlign.center,
               style: GoogleFonts.nunito(
                   fontSize: 16,
@@ -231,6 +231,7 @@ class _CommunityGalleryScreenState
   }
 
   void _openLightbox(BuildContext context, CommunityArtwork artwork) {
+    final l10n = ref.read(l10nProvider);
     HapticFeedback.lightImpact();
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -238,6 +239,7 @@ class _CommunityGalleryScreenState
           artwork: artwork,
           baseUrl: _baseUrl,
           svc: ref.read(communityServiceProvider),
+          l10n: l10n,
           onStarChanged: (newCount, starred) {
             final idx = _artworks.indexWhere((a) => a.id == artwork.id);
             if (idx >= 0 && mounted) {
@@ -261,6 +263,7 @@ class _ArtworkLightbox extends StatefulWidget {
   final CommunityArtwork artwork;
   final String baseUrl;
   final CommunityService svc;
+  final L10n l10n;
   final void Function(int newCount, bool starred) onStarChanged;
   final VoidCallback onReported;
 
@@ -268,6 +271,7 @@ class _ArtworkLightbox extends StatefulWidget {
     required this.artwork,
     required this.baseUrl,
     required this.svc,
+    required this.l10n,
     required this.onStarChanged,
     required this.onReported,
   });
@@ -308,20 +312,20 @@ class _ArtworkLightboxState extends State<_ArtworkLightbox> {
   }
 
   Future<void> _report() async {
+    final l10n = widget.l10n;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Report this artwork?'),
-        content: const Text(
-            'This will flag the artwork for review. Thank you for keeping the community safe!'),
+        title: Text(l10n.t('communityReportTitle')),
+        content: Text(l10n.t('communityReportBody')),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Report',
-                  style: TextStyle(color: Colors.red))),
+              child: Text(l10n.t('communityReportBtn'),
+                  style: const TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -330,7 +334,7 @@ class _ArtworkLightboxState extends State<_ArtworkLightbox> {
       await widget.svc.reportArtwork(widget.artwork.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thanks — we\'ll review this.')),
+          SnackBar(content: Text(l10n.t('communityReportedToast'))),
         );
         widget.onReported();
         Navigator.of(context).pop();
@@ -370,7 +374,7 @@ class _ArtworkLightboxState extends State<_ArtworkLightbox> {
         actions: [
           IconButton(
             icon: const Icon(Icons.flag_outlined, color: Colors.white70),
-            tooltip: 'Report',
+            tooltip: widget.l10n.t('communityReportBtn'),
             onPressed: _report,
           ),
         ],

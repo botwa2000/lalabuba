@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/di/providers.dart';
 import '../community_service.dart';
 import '../models/leaderboard_model.dart';
 import '../widgets/leaderboard_entry_widget.dart';
@@ -60,21 +61,22 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          '🏆 Top Artists',
+          l10n.t('leaderboardTitle'),
           style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
         ),
         bottom: TabBar(
           controller: _tabCtrl,
           tabs: [
             Tab(
-              child: Text('📅 This Week',
+              child: Text(l10n.t('leaderboardWeeklyTab'),
                   style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
             ),
             Tab(
-              child: Text('🏅 All Time',
+              child: Text(l10n.t('leaderboardAllTimeTab'),
                   style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
             ),
           ],
@@ -91,6 +93,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   }
 
   Widget _buildList(Leaderboard? data, bool loading) {
+    final l10n = ref.read(l10nProvider);
     if (loading) return const Center(child: CircularProgressIndicator());
     if (data == null && _error != null) {
       return Center(
@@ -99,11 +102,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
           children: [
             const Text('😕', style: TextStyle(fontSize: 40)),
             const SizedBox(height: 12),
-            Text('Could not load leaderboard',
+            Text(l10n.t('leaderboardLoadError'),
                 style: GoogleFonts.nunito(fontSize: 15)),
             const SizedBox(height: 8),
             TextButton(
-                onPressed: _ensureLoaded, child: const Text('Try again')),
+                onPressed: _ensureLoaded,
+                child: Text(l10n.t('tryAgain'))),
           ],
         ),
       );
@@ -116,7 +120,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             const Text('🌟', style: TextStyle(fontSize: 56)),
             const SizedBox(height: 16),
             Text(
-              'No entries yet!\nColor pictures and share them\nto appear here 🎨',
+              l10n.t('leaderboardEmpty'),
               textAlign: TextAlign.center,
               style: GoogleFonts.nunito(fontSize: 16),
             ),

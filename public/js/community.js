@@ -6,6 +6,8 @@
  * Interacts with the DOM via getElementById / querySelector.
  */
 
+import { t } from './i18n.js';
+
 // ── Device identity ─────────────────────────────────────────────────────────
 
 function getCommunityId() {
@@ -205,7 +207,7 @@ async function loadNextPage() {
     nextPage = data.nextPage ?? nextPage;
   } catch (e) {
     if (nextPage === 0 && communityGrid) {
-      communityGrid.innerHTML = `<p class="community-empty" style="display:block">Could not load community gallery. Check your connection.</p>`;
+      communityGrid.innerHTML = `<p class="community-empty" style="display:block">${t('communityGalleryLoadErrorWeb')}</p>`;
     }
   } finally {
     isLoading = false;
@@ -308,7 +310,7 @@ lightboxStarBtn?.addEventListener("click", async () => {
       if (starsEl) starsEl.textContent = `⭐ ${res.starCount}`;
     }
   } catch (e) {
-    showToast("Could not star — try again.");
+    showToast(t('communityStarError'));
   }
 });
 
@@ -316,10 +318,10 @@ lightboxReportBtn?.addEventListener("click", async () => {
   if (!lightboxArtwork) return;
   try {
     await apiPost(`/api/community/report/${lightboxArtwork.id}`, {});
-    showToast("Reported — thank you for helping keep the gallery safe.");
+    showToast(t('communityReportedWeb'));
     closeLightbox();
   } catch (e) {
-    showToast("Could not report — try again.");
+    showToast(t('communityReportErrorWeb'));
   }
 });
 
@@ -371,7 +373,7 @@ lbTabBtns.forEach(btn => {
 
 async function loadLeaderboard(type) {
   if (!leaderboardList) return;
-  leaderboardList.innerHTML = `<li class="community-empty" style="display:block">Loading…</li>`;
+  leaderboardList.innerHTML = `<li class="community-empty" style="display:block">${t('communityLoadingLb')}</li>`;
   if (leaderboardEmpty) leaderboardEmpty.hidden = true;
   try {
     const data = await fetch(`/api/community/leaderboard?type=${type}`).then(r => r.json());
@@ -386,8 +388,8 @@ async function loadLeaderboard(type) {
       li.className = "lb-entry";
       const rankMedal = entry.rank === 1 ? "🥇" : entry.rank === 2 ? "🥈" : entry.rank === 3 ? "🥉" : entry.rank;
       const scoreLabel = type === "weekly"
-        ? `${entry.weeklyCompleted || 0} this week · ⭐ ${entry.weeklyStars || 0}`
-        : `${entry.totalCompleted || 0} total`;
+        ? t('communityLbScoreWeekly', entry.weeklyCompleted || 0, entry.weeklyStars || 0)
+        : t('communityLbScoreAllTime', entry.totalCompleted || 0);
 
       li.innerHTML = `
         <span class="lb-rank">${rankMedal}</span>
@@ -399,7 +401,7 @@ async function loadLeaderboard(type) {
       leaderboardList.appendChild(li);
     }
   } catch (e) {
-    if (leaderboardList) leaderboardList.innerHTML = `<li class="community-empty" style="display:block">Could not load leaderboard.</li>`;
+    if (leaderboardList) leaderboardList.innerHTML = `<li class="community-empty" style="display:block">${t('leaderboardLoadError')}</li>`;
   }
 }
 
@@ -477,7 +479,7 @@ nicknameCancelBtn?.addEventListener("click", () => {
 });
 nicknameConfirmBtn?.addEventListener("click", async () => {
   const nickname = nicknameSelect?.value?.trim();
-  if (!nickname) { showToast("Please pick a nickname first!"); return; }
+  if (!nickname) { showToast(t('communityPickNickFirst')); return; }
   if (nicknameModal) { nicknameModal.classList.add("hidden"); nicknameModal.setAttribute("aria-hidden", "true"); }
   _nicknameResolve?.({ nickname, avatarIndex: selectedAvatarIdx });
 });
@@ -528,10 +530,10 @@ const communityShareBtn = document.getElementById("community-share-btn");
 communityShareBtn?.addEventListener("click", async () => {
   const canvas    = document.getElementById("preview-canvas");
   const drawCanvas = document.getElementById("draw-canvas");
-  if (!canvas || canvas.hidden) { showToast("Draw something first! 🎨"); return; }
+  if (!canvas || canvas.hidden) { showToast(t('communityDrawFirst')); return; }
 
   communityShareBtn.disabled = true;
-  communityShareBtn.textContent = "🌟 Sharing…";
+  communityShareBtn.textContent = t('communitySharing');
 
   try {
     // 1. Check profile — need parental consent + nickname.
@@ -589,7 +591,7 @@ communityShareBtn?.addEventListener("click", async () => {
       imageData,
     }, consentHeader);
 
-    showToast("🌟 Shared! Your artwork is now in the community gallery.");
+    showToast(t('communitySharedToast'));
 
     // Refresh community gallery next time it opens.
     galleryInitDone = false;
@@ -600,16 +602,16 @@ communityShareBtn?.addEventListener("click", async () => {
     if (e.message === "cancelled") {
       // User cancelled — no toast needed.
     } else if (e.code === "SHARE_LIMIT") {
-      showToast(e.message || "Weekly share limit reached.");
+      showToast(e.message || t('communityShareLimitReached'));
     } else if (e.code === "PARENTAL_CONSENT_REQUIRED") {
-      showToast("Parental approval needed to share.");
+      showToast(t('communityParentalNeeded'));
     } else {
       console.error("[community] share error:", e.message);
-      showToast("Could not share — try again.");
+      showToast(t('communityShareError'));
     }
   } finally {
     communityShareBtn.disabled = false;
-    communityShareBtn.textContent = "🌟 Share";
+    communityShareBtn.textContent = t('communityShareBtn');
   }
 });
 

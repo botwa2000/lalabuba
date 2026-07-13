@@ -2049,7 +2049,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
     // 3. If no nickname yet, let the child pick one
     if (!hasNickname) {
-      final nickname = await showNicknamePicker(context, svc);
+      final nickname = await showNicknamePicker(context, svc, l10n);
       if (nickname == null || !mounted) return;
       try {
         await svc.setupProfile(
@@ -2071,6 +2071,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     // 4. Pick share type
     final shareType = await showShareTypePicker(
       context,
+      l10n,
       hasFreehand: canvas.strokes.isNotEmpty,
     );
     if (shareType == null || !mounted) return;

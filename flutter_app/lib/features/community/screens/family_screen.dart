@@ -36,7 +36,6 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
       final data = await svc.getFamily();
       if (mounted) setState(() { _family = data; _loading = false; });
     } catch (e) {
-      // If no family (404 or similar), show the "no family" state
       if (mounted) setState(() { _family = null; _loading = false; });
     }
   }
@@ -54,8 +53,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
         await _load();
         messenger.showSnackBar(
           SnackBar(
-            content: Text(
-                '🎉 Family created! Your code: ${result.familyCode}'),
+            content: Text(l10n.t('familyCreatedMsg', {'code': result.familyCode})),
           ),
         );
       }
@@ -81,7 +79,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Enter family code',
+        title: Text(l10n.t('familyEnterCodeTitle'),
             style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
         content: TextField(
           controller: ctrl,
@@ -124,7 +122,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
       if (mounted) {
         await _load();
         messenger.showSnackBar(
-          const SnackBar(content: Text('🎉 You joined the family!')),
+          SnackBar(content: Text(l10n.t('familyJoinedMsg'))),
         );
       }
     } catch (e) {
@@ -132,8 +130,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
         messenger.showSnackBar(
           SnackBar(
               content: Text(e.toString().contains('400')
-                  ? 'Invalid or expired family code'
-                  : 'Error joining family: $e')),
+                  ? l10n.t('familyInvalidCode')
+                  : l10n.t('familyJoinError'))),
         );
       }
     } finally {
@@ -142,22 +140,22 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
   }
 
   Future<void> _leaveFamily() async {
+    final l10n = ref.read(l10nProvider);
     final leaveMessenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Leave family?',
+        title: Text(l10n.t('familyLeaveDialogTitle'),
             style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
-        content:
-            const Text('You can rejoin later with the same code if you change your mind.'),
+        content: Text(l10n.t('familyLeaveDialogBody')),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child:
-                  const Text('Leave', style: TextStyle(color: Colors.red))),
+              child: Text(l10n.t('familyLeaveBtn'),
+                  style: const TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -168,7 +166,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
       if (mounted) {
         await _load();
         leaveMessenger.showSnackBar(
-          const SnackBar(content: Text('You left the family.')),
+          SnackBar(content: Text(l10n.t('familyLeaveMsg'))),
         );
       }
     } catch (e) {
@@ -176,8 +174,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
         leaveMessenger.showSnackBar(
           SnackBar(content: Text(
             e.toString().contains('429') || e.toString().contains('Too many')
-              ? 'Too many attempts. Please wait a moment and try again.'
-              : 'Could not leave family. Please try again.'
+              ? l10n.t('familyLeaveRateLimit')
+              : l10n.t('familyLeaveError')
           )),
         );
       }
@@ -189,16 +187,17 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = ref.watch(l10nProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('👨‍👩‍👧 Family Group',
+        title: Text(l10n.t('familyScreenTitle'),
             style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
         actions: [
           if (_family != null)
             TextButton(
               onPressed: _acting ? null : _leaveFamily,
-              child: Text('Leave',
+              child: Text(l10n.t('familyLeaveBtn'),
                   style: GoogleFonts.nunito(
                       color: cs.error, fontWeight: FontWeight.w700)),
             ),
@@ -209,12 +208,12 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
           : _acting
               ? const Center(child: CircularProgressIndicator())
               : _family == null
-                  ? _buildNoFamily(cs)
-                  : _buildFamily(_family!, cs),
+                  ? _buildNoFamily(cs, l10n)
+                  : _buildFamily(_family!, cs, l10n),
     );
   }
 
-  Widget _buildNoFamily(ColorScheme cs) {
+  Widget _buildNoFamily(ColorScheme cs, l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -224,14 +223,14 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
             const Text('👨‍👩‍👧', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 16),
             Text(
-              'Share progress with family!',
+              l10n.t('familyShareHeading'),
               textAlign: TextAlign.center,
               style: GoogleFonts.fredoka(
                   fontSize: 22, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
-              'Create a family group to see each other\'s colorings and cheer each other on.',
+              l10n.t('familyShareBody'),
               textAlign: TextAlign.center,
               style: GoogleFonts.nunito(
                   fontSize: 14,
@@ -240,7 +239,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
             const SizedBox(height: 32),
             FilledButton.icon(
               icon: const Text('🏠', style: TextStyle(fontSize: 18)),
-              label: Text('Start a Family',
+              label: Text(l10n.t('familyStartBtn'),
                   style:
                       GoogleFonts.fredoka(fontSize: 16, fontWeight: FontWeight.w700)),
               onPressed: _createFamily,
@@ -253,7 +252,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
             const SizedBox(height: 12),
             OutlinedButton.icon(
               icon: const Text('🔑', style: TextStyle(fontSize: 18)),
-              label: Text('Join with Code',
+              label: Text(l10n.t('familyJoinBtn'),
                   style:
                       GoogleFonts.fredoka(fontSize: 16, fontWeight: FontWeight.w700)),
               onPressed: _joinFamily,
@@ -269,18 +268,17 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
     );
   }
 
-  Widget _buildFamily(FamilyData family, ColorScheme cs) {
+  Widget _buildFamily(FamilyData family, ColorScheme cs, l10n) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Family code card
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Your family code',
+                Text(l10n.t('familyCodeLabel'),
                     style: GoogleFonts.nunito(
                         fontSize: 12,
                         color: cs.onSurface.withValues(alpha: 0.6))),
@@ -302,15 +300,15 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
                             ClipboardData(text: family.familyCode));
                         HapticFeedback.lightImpact();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Code copied to clipboard!')),
+                          SnackBar(
+                              content: Text(l10n.t('familyCodeCopied'))),
                         );
                       },
                     ),
                   ],
                 ),
                 Text(
-                  '${family.memberCount} member${family.memberCount != 1 ? 's' : ''}',
+                  l10n.t('familyMemberCount', {'count': family.memberCount.toString()}),
                   style: GoogleFonts.nunito(fontSize: 13),
                 ),
               ],
@@ -318,7 +316,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Text('Members',
+        Text(l10n.t('familyMembersLabel'),
             style: GoogleFonts.fredoka(
                 fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),

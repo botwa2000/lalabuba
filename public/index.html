@@ -143,20 +143,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=263" />
-  <link rel="stylesheet" href="/css/header.css?v=263" />
-  <link rel="stylesheet" href="/css/hero.css?v=263" />
-  <link rel="stylesheet" href="/css/generator.css?v=263" />
-  <link rel="stylesheet" href="/css/layout.css?v=263" />
-  <link rel="stylesheet" href="/css/workspace.css?v=263" />
-  <link rel="stylesheet" href="/css/palette.css?v=263" />
-  <link rel="stylesheet" href="/css/modals.css?v=263" />
-  <link rel="stylesheet" href="/css/footer.css?v=263" />
-  <link rel="stylesheet" href="/css/print.css?v=263" />
-  <link rel="stylesheet" href="/css/cookies.css?v=263" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=263" />
-  <link rel="stylesheet" href="/css/community.css?v=263" />
-  <script src="/js/cookies.js?v=263"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=264" />
+  <link rel="stylesheet" href="/css/header.css?v=264" />
+  <link rel="stylesheet" href="/css/hero.css?v=264" />
+  <link rel="stylesheet" href="/css/generator.css?v=264" />
+  <link rel="stylesheet" href="/css/layout.css?v=264" />
+  <link rel="stylesheet" href="/css/workspace.css?v=264" />
+  <link rel="stylesheet" href="/css/palette.css?v=264" />
+  <link rel="stylesheet" href="/css/modals.css?v=264" />
+  <link rel="stylesheet" href="/css/footer.css?v=264" />
+  <link rel="stylesheet" href="/css/print.css?v=264" />
+  <link rel="stylesheet" href="/css/cookies.css?v=264" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=264" />
+  <link rel="stylesheet" href="/css/community.css?v=264" />
+  <script src="/js/cookies.js?v=264"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -667,17 +667,17 @@
       <!-- Community gallery tab content (hidden by default) -->
       <div id="community-gallery-panel" class="community-panel" hidden>
         <div class="community-lb-row">
-          <button id="community-lb-btn" class="community-lb-btn">🏅 Leaderboard</button>
+          <button id="community-lb-btn" class="community-lb-btn" data-i18n="communityLbBtn">🏅 Leaderboard</button>
         </div>
         <div class="community-filters" role="group" aria-label="Filter artworks">
-          <button class="cf-btn active" data-type="all">All</button>
-          <button class="cf-btn" data-type="colored">🎨 Colored</button>
-          <button class="cf-btn" data-type="template">📋 Templates</button>
-          <button class="cf-btn" data-type="freehand">✏️ Freehand</button>
+          <button class="cf-btn active" data-type="all" data-i18n="communityFilterAll">All</button>
+          <button class="cf-btn" data-type="colored" data-i18n="communityFilterColorings">🎨 Colored</button>
+          <button class="cf-btn" data-type="template" data-i18n="communityFilterTemplates">📋 Templates</button>
+          <button class="cf-btn" data-type="freehand" data-i18n="communityFilterDrawings">✏️ Freehand</button>
         </div>
         <div id="community-grid" class="community-grid" role="list"></div>
         <div id="community-sentinel" class="community-sentinel" aria-hidden="true"></div>
-        <p id="community-empty" class="community-empty" hidden>No artworks yet — be the first to share! 🌟</p>
+        <p id="community-empty" class="community-empty" hidden data-i18n="communityEmptyWeb">No artworks yet — be the first to share! 🌟</p>
       </div>
     </div>
   </div>
@@ -790,37 +790,37 @@
 
   <!-- Safety net: if the main module throws before it can hide the splash screen,
        hide it here so the app never appears permanently frozen on native. -->
-  <script type="module" src="/js/main.js?v=263"></script>
-  <script type="module" src="/js/community.js?v=263"></script>
+  <script type="module" src="/js/main.js?v=264"></script>
+  <script type="module" src="/js/community.js?v=264"></script>
 
   <!-- Leaderboard modal -->
   <div id="leaderboard-modal" class="leaderboard-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="leaderboard-title">
     <div class="leaderboard-card">
       <div class="leaderboard-header">
-        <h3 id="leaderboard-title">🏅 Leaderboard</h3>
+        <h3 id="leaderboard-title" data-i18n="leaderboardTitle">🏅 Leaderboard</h3>
         <button id="close-leaderboard-btn" class="gallery-close" aria-label="Close">✕</button>
       </div>
       <div class="lb-tabs" role="tablist">
-        <button class="lb-tab active" data-type="weekly" role="tab" aria-selected="true">📅 This Week</button>
-        <button class="lb-tab" data-type="alltime" role="tab" aria-selected="false">🏅 All Time</button>
+        <button class="lb-tab active" data-type="weekly" role="tab" aria-selected="true" data-i18n="leaderboardWeeklyTab">📅 This Week</button>
+        <button class="lb-tab" data-type="alltime" role="tab" aria-selected="false" data-i18n="leaderboardAllTimeTab">🏅 All Time</button>
       </div>
       <ol id="leaderboard-list" class="leaderboard-list"></ol>
-      <p id="leaderboard-empty" class="community-empty" hidden>No entries yet — start coloring to appear here!</p>
+      <p id="leaderboard-empty" class="community-empty" hidden data-i18n="leaderboardEmptyWeb">No entries yet — start coloring to appear here!</p>
     </div>
   </div>
 
   <!-- Parental consent modal -->
   <div id="consent-modal" class="consent-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="consent-title">
     <div class="consent-card">
-      <h3 id="consent-title">👋 Quick Note for Parents</h3>
-      <p>Your child's artwork will be shared in the community gallery. No names or contact details are collected — just artwork and a fun animal nickname.</p>
+      <h3 id="consent-title" data-i18n="communityConsentTitle">👋 Quick Note for Parents</h3>
+      <p data-i18n="communityConsentBody">Your child's artwork will be shared in the community gallery. No names or contact details are collected — just artwork and a fun animal nickname.</p>
       <label class="consent-checkbox-label">
         <input type="checkbox" id="consent-checkbox" />
-        I'm a parent or guardian and I approve sharing this artwork
+        <span data-i18n="communityConsentCheckLabel">I'm a parent or guardian and I approve sharing this artwork</span>
       </label>
       <div class="consent-actions">
         <button id="consent-cancel-btn" class="consent-btn consent-btn--cancel">Cancel</button>
-        <button id="consent-confirm-btn" class="consent-btn consent-btn--confirm" disabled>Share! 🌟</button>
+        <button id="consent-confirm-btn" class="consent-btn consent-btn--confirm" disabled data-i18n="communityConsentConfirmBtn">Share! 🌟</button>
       </div>
     </div>
   </div>
@@ -828,27 +828,27 @@
   <!-- Share type picker (bottom sheet) -->
   <div id="share-type-modal" class="share-type-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="share-type-title">
     <div class="share-type-card">
-      <h3 id="share-type-title">What would you like to share?</h3>
+      <h3 id="share-type-title" data-i18n="shareTypeQuestion">What would you like to share?</h3>
       <div class="share-type-options">
         <button class="share-type-option" data-type="colored">
           <span class="sto-icon">🎨</span>
           <div>
-            <div class="sto-label">Share my coloring</div>
-            <div class="sto-desc">Share the finished artwork you've colored</div>
+            <div class="sto-label" data-i18n="shareTypeColored">My coloring 🎨</div>
+            <div class="sto-desc" data-i18n="shareTypeColoredDesc">Share the picture you've colored in</div>
           </div>
         </button>
         <button class="share-type-option" data-type="template" id="share-type-template">
           <span class="sto-icon">📋</span>
           <div>
-            <div class="sto-label">Share the template</div>
-            <div class="sto-desc">Let others color the same picture too</div>
+            <div class="sto-label" data-i18n="shareTypeTemplate">The template 📋</div>
+            <div class="sto-desc" data-i18n="shareTypeTemplateDesc">Let others color the same picture too</div>
           </div>
         </button>
         <button class="share-type-option" data-type="freehand" id="share-type-freehand" disabled>
           <span class="sto-icon">✏️</span>
           <div>
-            <div class="sto-label">Share my drawing</div>
-            <div class="sto-desc">Share your freehand pencil drawing</div>
+            <div class="sto-label" data-i18n="shareTypeDrawing">My drawing ✏️</div>
+            <div class="sto-desc" data-i18n="shareTypeDrawingDesc">Share your freehand pencil drawing</div>
           </div>
         </button>
       </div>
@@ -859,15 +859,15 @@
   <!-- Nickname setup modal -->
   <div id="nickname-modal" class="nickname-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="nickname-title">
     <div class="nickname-card">
-      <h3 id="nickname-title">Choose your nickname!</h3>
-      <p>Pick a fun animal name — this is how others will see you in the gallery.</p>
+      <h3 id="nickname-title" data-i18n="nicknameModalTitle">Choose your nickname!</h3>
+      <p data-i18n="nicknameModalBody">Pick a fun animal name — this is how others will see you in the gallery.</p>
       <div class="avatar-grid" id="avatar-grid" role="group" aria-label="Choose avatar"></div>
       <select id="nickname-select" class="nickname-select" aria-label="Choose nickname">
         <option value="">Loading nicknames…</option>
       </select>
       <div class="nickname-actions">
         <button id="nickname-cancel-btn" class="consent-btn consent-btn--cancel">Cancel</button>
-        <button id="nickname-confirm-btn" class="consent-btn consent-btn--confirm">Save &amp; Continue</button>
+        <button id="nickname-confirm-btn" class="consent-btn consent-btn--confirm" data-i18n="nicknameSaveBtn">Save &amp; Continue</button>
       </div>
     </div>
   </div>
@@ -878,8 +878,8 @@
     <img id="lightbox-community-img" src="" alt="Community artwork" />
     <div class="community-lightbox-actions">
       <button class="cl-btn cl-btn--star" id="lightbox-star-btn">⭐ 0</button>
-      <button class="cl-btn cl-btn--color" id="lightbox-color-btn" hidden>🎨 Color this too!</button>
-      <button class="cl-btn cl-btn--report" id="lightbox-report-btn">🚩 Report</button>
+      <button class="cl-btn cl-btn--color" id="lightbox-color-btn" hidden data-i18n="lightboxColorBtn">🎨 Color this too!</button>
+      <button class="cl-btn cl-btn--report" id="lightbox-report-btn" data-i18n="lightboxReportBtn">🚩 Report</button>
     </div>
   </div>
 

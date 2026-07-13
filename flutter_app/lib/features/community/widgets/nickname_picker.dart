@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/l10n/l10n_service.dart';
 import '../community_service.dart';
 
 /// Shows a bottom sheet for picking a curated nickname.
@@ -8,6 +9,7 @@ import '../community_service.dart';
 Future<String?> showNicknamePicker(
   BuildContext context,
   CommunityService svc,
+  L10n l10n,
 ) async {
   return showModalBottomSheet<String>(
     context: context,
@@ -15,13 +17,14 @@ Future<String?> showNicknamePicker(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
-    builder: (_) => _NicknamePickerSheet(svc: svc),
+    builder: (_) => _NicknamePickerSheet(svc: svc, l10n: l10n),
   );
 }
 
 class _NicknamePickerSheet extends StatefulWidget {
   final CommunityService svc;
-  const _NicknamePickerSheet({required this.svc});
+  final L10n l10n;
+  const _NicknamePickerSheet({required this.svc, required this.l10n});
 
   @override
   State<_NicknamePickerSheet> createState() => _NicknamePickerSheetState();
@@ -76,6 +79,7 @@ class _NicknamePickerSheetState extends State<_NicknamePickerSheet> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = widget.l10n;
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
 
     return Container(
@@ -98,7 +102,7 @@ class _NicknamePickerSheetState extends State<_NicknamePickerSheet> {
           ),
           const SizedBox(height: 16),
           Text(
-            '👤 Choose your name',
+            l10n.t('nicknamePickerTitle'),
             style: GoogleFonts.fredoka(fontSize: 20, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
@@ -107,7 +111,7 @@ class _NicknamePickerSheetState extends State<_NicknamePickerSheet> {
             onChanged: _filter,
             inputFormatters: [LengthLimitingTextInputFormatter(30)],
             decoration: InputDecoration(
-              hintText: 'Search nicknames…',
+              hintText: l10n.t('nicknameSearchHint'),
               prefixIcon: const Icon(Icons.search_rounded),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -123,7 +127,7 @@ class _NicknamePickerSheetState extends State<_NicknamePickerSheet> {
                 : _filtered.isEmpty
                     ? Center(
                         child: Text(
-                          'No matches for "$_query"',
+                          l10n.t('nicknameNoMatches', {'query': _query}),
                           style: GoogleFonts.nunito(
                               color: cs.onSurface.withValues(alpha: 0.5)),
                         ),
@@ -173,7 +177,7 @@ class _NicknamePickerSheetState extends State<_NicknamePickerSheet> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: Text(
-                'Choose ${_selected ?? "…"}',
+                l10n.t('nicknameChooseBtn', {'name': _selected ?? '…'}),
                 style:
                     GoogleFonts.fredoka(fontSize: 16, fontWeight: FontWeight.w700),
               ),

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/l10n/l10n_service.dart';
 
 /// Returns the chosen share type string ('colored', 'template', 'freehand')
 /// or null if the user dismissed.
 Future<String?> showShareTypePicker(
-  BuildContext context, {
+  BuildContext context,
+  L10n l10n, {
   bool hasFreehand = false,
 }) async {
   return showModalBottomSheet<String>(
@@ -13,13 +15,14 @@ Future<String?> showShareTypePicker(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
-    builder: (_) => _ShareTypeSheet(hasFreehand: hasFreehand),
+    builder: (_) => _ShareTypeSheet(hasFreehand: hasFreehand, l10n: l10n),
   );
 }
 
 class _ShareTypeSheet extends StatelessWidget {
   final bool hasFreehand;
-  const _ShareTypeSheet({required this.hasFreehand});
+  final L10n l10n;
+  const _ShareTypeSheet({required this.hasFreehand, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -41,13 +44,13 @@ class _ShareTypeSheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Share to Community 🌟',
+              l10n.t('shareTypeTitle'),
               style:
                   GoogleFonts.fredoka(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
-              'What would you like to share?',
+              l10n.t('shareTypeQuestion'),
               style: GoogleFonts.nunito(
                 fontSize: 14,
                 color: cs.onSurface.withValues(alpha: 0.7),
@@ -56,23 +59,23 @@ class _ShareTypeSheet extends StatelessWidget {
             const SizedBox(height: 20),
             _TypeTile(
               emoji: '🎨',
-              title: 'My coloring',
-              subtitle: 'Share your finished artwork',
+              title: l10n.t('shareTypeColored'),
+              subtitle: l10n.t('shareTypeColoredDesc'),
               value: 'colored',
             ),
             const SizedBox(height: 10),
             _TypeTile(
               emoji: '📋',
-              title: 'The template',
-              subtitle: 'Others can color it too!',
+              title: l10n.t('shareTypeTemplate'),
+              subtitle: l10n.t('shareTypeTemplateDesc'),
               value: 'template',
             ),
             if (hasFreehand) ...[
               const SizedBox(height: 10),
               _TypeTile(
                 emoji: '✏️',
-                title: 'My drawing',
-                subtitle: 'Share your freehand creation',
+                title: l10n.t('shareTypeDrawing'),
+                subtitle: l10n.t('shareTypeDrawingDesc'),
                 value: 'freehand',
               ),
             ],

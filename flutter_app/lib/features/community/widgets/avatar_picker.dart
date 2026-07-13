@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/l10n/l10n_service.dart';
 
 const kCommunityAvatars = [
   '🐉','🐧','🐻','🦄','🐯','🦊','🐰','🐬','🦅','🐺',
@@ -9,16 +10,17 @@ const kCommunityAvatars = [
 
 /// Shows a dialog for picking an avatar emoji.
 /// Returns the selected index or null if dismissed.
-Future<int?> showAvatarPicker(BuildContext context, int currentIndex) async {
+Future<int?> showAvatarPicker(BuildContext context, int currentIndex, L10n l10n) async {
   return showDialog<int>(
     context: context,
-    builder: (_) => _AvatarPickerDialog(currentIndex: currentIndex),
+    builder: (_) => _AvatarPickerDialog(currentIndex: currentIndex, l10n: l10n),
   );
 }
 
 class _AvatarPickerDialog extends StatefulWidget {
   final int currentIndex;
-  const _AvatarPickerDialog({required this.currentIndex});
+  final L10n l10n;
+  const _AvatarPickerDialog({required this.currentIndex, required this.l10n});
 
   @override
   State<_AvatarPickerDialog> createState() => _AvatarPickerDialogState();
@@ -36,9 +38,10 @@ class _AvatarPickerDialogState extends State<_AvatarPickerDialog> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = widget.l10n;
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text('Choose your avatar',
+      title: Text(l10n.t('avatarPickerTitle'),
           style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
       content: Wrap(
         spacing: 12,
@@ -78,7 +81,7 @@ class _AvatarPickerDialogState extends State<_AvatarPickerDialog> {
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(_selected),
-          child: Text('Choose',
+          child: Text(l10n.t('avatarPickerChoose'),
               style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
         ),
       ],
