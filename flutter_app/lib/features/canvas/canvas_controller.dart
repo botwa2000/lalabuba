@@ -172,6 +172,19 @@ class CanvasNotifier extends Notifier<CanvasState> {
         if (!completer.isCompleted) completer.complete(msg);
         // Detection finished cleanly — release the isolate + port.
         _killDetectIsolate();
+      } else if (msg is String && msg.startsWith('ERROR:')) {
+        // Isolate caught an exception in detectRegions (e.g. OOM on extreme).
+        if (!completer.isCompleted) {
+          completer.completeError(msg.substring(6));
+        }
+        _killDetectIsolate();
+      }
+    }, onDone: () {
+      // Isolate exited without sending a result (uncaught exception in isolate
+      // code that bypassed our try-catch, or isolate was killed externally).
+      // Surface an error so the UI shows a retry message instead of hanging.
+      if (!completer.isCompleted) {
+        completer.completeError('Region detection failed — please try again');
       }
     }, onError: (e) {
       if (!completer.isCompleted) completer.completeError(e);

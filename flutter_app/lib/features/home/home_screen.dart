@@ -20,6 +20,7 @@ import '../../shared/widgets/lala_text_field.dart';
 import '../../shared/widgets/lala_empty_hint.dart';
 import '../../shared/widgets/lala_bottom_sheet.dart';
 import '../../shared/widgets/lala_showcase.dart';
+import '../account/account_screen.dart';
 import '../rewards/daily_mission.dart';
 import '../rewards/crayon_packs.dart';
 import '../rewards/scenes.dart';
@@ -200,7 +201,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showLalaBottomSheet(
       context: context,
       title: '⚙️ ${l10n.t('settingsTitle')}',
-      initialChildSize: 0.62,
+      initialChildSize: 0.68,
       child: _SettingsSheetBody(
         onHowToPlay: (ctx) {
           // Close the sheet first, then run the coach-marks on the next frame so
@@ -217,15 +218,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Navigator.of(ctx).pop();
           context.pushNamed('settings');
         },
+        onAccount: (ctx) {
+          Navigator.of(ctx).pop();
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+                builder: (_) => const AccountScreen()),
+          );
+        },
       ),
     );
   }
 
-  // ─── Tablet hero (centered single column, both orientations) ─────────────────
-  // One responsive hero: content capped to a comfortable max-width and centered,
-  // type/cards scaled up, 4 cards in one row when wide enough else 2×2. Replaces
-  // the two-pane split on the home screen, where the second pane had no content
-  // (the image only exists after Draw, on the canvas screen).
+  // ─── Tablet hero (2-column layout) ──────────────────────────────────────────
+  // Left panel (55%): branding + suggestion cards. Right panel (45%): action
+  // controls (pills, prompt, Draw button, settings chips). This makes full use
+  // of tablet screen real-estate instead of centering a narrow single column.
 
   Widget _buildTabletHero(
     BuildContext context,
@@ -237,12 +244,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     final cs = Theme.of(context).colorScheme;
     final settings = settingsAsync.valueOrNull;
+    // Landscape tablets are shorter — fit more cards per row so the grid stays
+    // compact; portrait tablets can afford 2 rows.
+    final cardColumns = isLandscape ? 3 : 2;
 
-    // The prompt + Draw + chips footer. In LANDSCAPE this is PINNED below the
-    // scroll area so the Draw button is always on screen — a wide tablet in
-    // landscape is short, and letting Draw sit at the end of one long scroll
-    // pushed it (and the settings chips) off the bottom ("Draw button not shown
-    // when I rotate"). In portrait there's plenty of height, so it stays inline.
     Widget promptRow() => Row(
           children: [
             Expanded(
@@ -283,99 +288,95 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         );
 
-    final footer = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        promptRow(),
-        const SizedBox(height: 14),
-        _buildDrawButton(context, l10n, height: 58, fontSize: 20),
-        const SizedBox(height: 14),
-        Center(child: _buildSettingsChips(context, cs, l10n, settings, sub)),
-      ],
-    );
-
-    final scrollContent = <Widget>[
-      Text(
-        l10n.t('heroHeading'),
-        textAlign: TextAlign.center,
-        style: GoogleFonts.fredoka(
-          fontSize: 32,
-          fontWeight: FontWeight.w700,
-          color: cs.onSurface,
-        ),
-      ),
-      const SizedBox(height: 6),
-      Text(
-        l10n.t('tagline'),
-        textAlign: TextAlign.center,
-        style: GoogleFonts.nunito(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: cs.onSurface.withValues(alpha: 0.55),
-        ),
-      ),
-      const SizedBox(height: 22),
-      homeAsync.whenOrNull(
-            data: (home) => home.dailyChallenge != null
-                ? Center(
-                    child: _buildDailyPill(
-                        context, cs, l10n, home, _currentLocale))
-                : const SizedBox.shrink(),
-          ) ??
-          const SizedBox.shrink(),
-      const SizedBox(height: 12),
-      Center(child: _buildWeekScenePill(context, cs, l10n)),
-      const SizedBox(height: 22),
-      _buildPickDivider(context, l10n),
-      const SizedBox(height: 18),
-      homeAsync.when(
-        loading: () => const SizedBox(
-            height: 240, child: Center(child: CircularProgressIndicator())),
-        error: (_, __) => const SizedBox.shrink(),
-        data: (home) => _buildCardGrid(
-          context, home, l10n, _currentLocale,
-          columns: 4,
-          cardScale: 1.25,
-        ),
-      ),
-    ];
-
-    // Portrait: one scroll with the footer inline. Landscape: scroll the hero +
-    // cards, pin the footer so Draw is always reachable.
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 760),
-        child: isLandscape
-            ? Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(32, 20, 32, 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: scrollContent,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        32, 4, 32, 12 + MediaQuery.paddingOf(context).bottom),
-                    child: footer,
-                  ),
-                ],
-              )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(32, 28, 32, 28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ...scrollContent,
-                    const SizedBox(height: 24),
-                    footer,
-                  ],
+    // ── Left: branding + pick divider + card grid ──
+    Widget leftPanel(HomeState? home) => SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+              28, isLandscape ? 14 : 28, 16, isLandscape ? 14 : 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.t('heroHeading'),
+                style: GoogleFonts.fredoka(
+                  fontSize: isLandscape ? 24 : 28,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
                 ),
               ),
-      ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.t('tagline'),
+                style: GoogleFonts.nunito(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface.withValues(alpha: 0.55),
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildPickDivider(context, l10n),
+              const SizedBox(height: 16),
+              if (home != null)
+                _buildCardGrid(context, home, l10n, _currentLocale,
+                    columns: cardColumns, cardScale: 1.0),
+            ],
+          ),
+        );
+
+    // ── Right: inspiration pills + action controls ──
+    Widget rightPanel(HomeState? home) => SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+              16, isLandscape ? 14 : 28, 28, isLandscape ? 14 : 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (home?.dailyChallenge != null) ...[
+                Center(
+                    child: _buildDailyPill(
+                        context, cs, l10n, home!, _currentLocale)),
+                const SizedBox(height: 10),
+              ],
+              Center(child: _buildWeekScenePill(context, cs, l10n)),
+              SizedBox(height: isLandscape ? 16 : 32),
+              promptRow(),
+              const SizedBox(height: 14),
+              _buildDrawButton(context, l10n,
+                  height: isLandscape ? 52 : 58, fontSize: 20),
+              const SizedBox(height: 14),
+              Center(
+                  child:
+                      _buildSettingsChips(context, cs, l10n, settings, sub)),
+            ],
+          ),
+        );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          flex: 55,
+          child: homeAsync.when(
+            loading: () =>
+                const Center(child: CircularProgressIndicator.adaptive()),
+            error: (_, __) => const SizedBox.shrink(),
+            data: (home) => leftPanel(home),
+          ),
+        ),
+        VerticalDivider(
+          width: 1,
+          indent: 24,
+          endIndent: 24,
+          color: cs.outlineVariant.withValues(alpha: 0.5),
+        ),
+        Expanded(
+          flex: 45,
+          child: homeAsync.when(
+            loading: () =>
+                const Center(child: CircularProgressIndicator.adaptive()),
+            error: (_, __) => const SizedBox.shrink(),
+            data: (home) => rightPanel(home),
+          ),
+        ),
+      ],
     );
   }
 
@@ -685,11 +686,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           value: _diffLabel(settings?.difficulty ?? 'medium', l10n),
           onTap: () {
             HapticFeedback.selectionClick();
-            // All 4 difficulties are selectable for everyone (mirrors the web app
-            // and the palette chip above) — tier gating, if any, is applied at
-            // generation time, not by hiding levels here.
+            final p = ref.read(progressProvider).valueOrNull ?? const Progress();
             ref.read(settingsProvider.notifier).cycleDifficulty(
-                  const ['easy', 'medium', 'hard', 'extreme'],
+                  isExtremeUnlocked(p)
+                      ? const ['easy', 'medium', 'hard', 'extreme']
+                      : const ['easy', 'medium', 'hard'],
                 );
           },
         ),
@@ -1100,10 +1101,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           LalaChip(
             label: _diffLabel(settings?.difficulty ?? 'medium', l10n),
-            onTap: () => ref
-                .read(settingsProvider.notifier)
-                .cycleDifficulty(
-                    const ['easy', 'medium', 'hard', 'extreme']),
+            onTap: () {
+              final p = ref.read(progressProvider).valueOrNull ?? const Progress();
+              ref.read(settingsProvider.notifier).cycleDifficulty(
+                    isExtremeUnlocked(p)
+                        ? const ['easy', 'medium', 'hard', 'extreme']
+                        : const ['easy', 'medium', 'hard'],
+                  );
+            },
           ),
           LalaChip(
             label: _palLabel(settings?.palette ?? 'classic', l10n),
@@ -1210,10 +1215,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 class _SettingsSheetBody extends ConsumerWidget {
   final void Function(BuildContext sheetCtx) onHowToPlay;
   final void Function(BuildContext sheetCtx) onAbout;
+  final void Function(BuildContext sheetCtx) onAccount;
 
   const _SettingsSheetBody({
     required this.onHowToPlay,
     required this.onAbout,
+    required this.onAccount,
   });
 
   @override
@@ -1300,6 +1307,14 @@ class _SettingsSheetBody extends ConsumerWidget {
           icon: Icons.info_outline_rounded,
           label: l10n.t('settingsAbout'),
           onTap: () => onAbout(context),
+        ),
+        const SizedBox(height: 8),
+
+        // ── ACCOUNT ──
+        _SheetActionTile(
+          icon: Icons.person_rounded,
+          label: l10n.t('accountSaveProgress'),
+          onTap: () => onAccount(context),
         ),
       ],
     );

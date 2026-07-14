@@ -49,6 +49,7 @@ const kBadges = <StickerBadge>[
   StickerBadge('fantasyFan', '🐉', BadgeGroup.explorer, _fantasyFan),
 
   // ── Creativity (how they colour) ──
+  StickerBadge('extremeUnlock', '🔓', BadgeGroup.creativity, _extremeUnlock), // unlocked Extreme
   StickerBadge('rainbow', '🌈', BadgeGroup.creativity, _rainbow), // finished a Hard
   StickerBadge('champion', '🥇', BadgeGroup.creativity, _champion), // finished an Extreme
   StickerBadge('maxColors', '🎆', BadgeGroup.creativity, _maxColors),
@@ -89,8 +90,16 @@ bool _natureFan(Progress p) => p.themesColored.contains('nature');
 bool _peoplePal(Progress p) => p.themesColored.contains('people');
 bool _fantasyFan(Progress p) => p.themesColored.contains('fantasy');
 // Creativity
+bool _extremeUnlock(Progress p) => isExtremeUnlocked(p);
 bool _rainbow(Progress p) => p.hardCompleted >= 1; // finished a Hard (or Extreme)
 bool _champion(Progress p) => p.extremeCompleted >= 1;
+
+/// True when the player has completed at least one Easy, one Medium, and one
+/// pure Hard (i.e. hard that was not an Extreme) — all three pre-requisites.
+bool isExtremeUnlocked(Progress p) =>
+    p.easyCompleted >= 1 &&
+    p.mediumCompleted >= 1 &&
+    (p.hardCompleted - p.extremeCompleted) >= 1;
 bool _maxColors(Progress p) => p.maxColorUses >= 1;
 bool _paletteMaster(Progress p) =>
     p.palettesUsed.toSet().containsAll(const {'classic', 'pastel', 'nature'});
@@ -168,6 +177,8 @@ class Progress {
   final int longestStreak;
   final String? lastColoredDay; // YYYY-MM-DD
   final int daysColored;
+  final int easyCompleted; // Easy only
+  final int mediumCompleted; // Medium only
   final int hardCompleted; // Hard OR Extreme finished
   final int extremeCompleted; // Extreme only
   final int maxColorUses; // finished with the Max (99) colour count
@@ -191,6 +202,8 @@ class Progress {
     this.longestStreak = 0,
     this.lastColoredDay,
     this.daysColored = 0,
+    this.easyCompleted = 0,
+    this.mediumCompleted = 0,
     this.hardCompleted = 0,
     this.extremeCompleted = 0,
     this.maxColorUses = 0,
@@ -217,6 +230,8 @@ class Progress {
         'longestStreak': longestStreak,
         'lastColoredDay': lastColoredDay,
         'daysColored': daysColored,
+        'easyCompleted': easyCompleted,
+        'mediumCompleted': mediumCompleted,
         'hardCompleted': hardCompleted,
         'extremeCompleted': extremeCompleted,
         'maxColorUses': maxColorUses,
@@ -244,6 +259,8 @@ class Progress {
         longestStreak: (j['longestStreak'] ?? 0) as int,
         lastColoredDay: j['lastColoredDay'] as String?,
         daysColored: (j['daysColored'] ?? 0) as int,
+        easyCompleted: (j['easyCompleted'] ?? 0) as int,
+        mediumCompleted: (j['mediumCompleted'] ?? 0) as int,
         hardCompleted: (j['hardCompleted'] ?? 0) as int,
         extremeCompleted: (j['extremeCompleted'] ?? 0) as int,
         maxColorUses: (j['maxColorUses'] ?? 0) as int,
@@ -270,6 +287,8 @@ class Progress {
     int? longestStreak,
     String? lastColoredDay,
     int? daysColored,
+    int? easyCompleted,
+    int? mediumCompleted,
     int? hardCompleted,
     int? extremeCompleted,
     int? maxColorUses,
@@ -293,6 +312,8 @@ class Progress {
         longestStreak: longestStreak ?? this.longestStreak,
         lastColoredDay: lastColoredDay ?? this.lastColoredDay,
         daysColored: daysColored ?? this.daysColored,
+        easyCompleted: easyCompleted ?? this.easyCompleted,
+        mediumCompleted: mediumCompleted ?? this.mediumCompleted,
         hardCompleted: hardCompleted ?? this.hardCompleted,
         extremeCompleted: extremeCompleted ?? this.extremeCompleted,
         maxColorUses: maxColorUses ?? this.maxColorUses,
@@ -409,6 +430,10 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
       subjects[subj] = (subjects[subj] ?? 0) + 1;
     }
 
+    final easy =
+        difficulty == 'easy' ? p.easyCompleted + 1 : p.easyCompleted;
+    final medium =
+        difficulty == 'medium' ? p.mediumCompleted + 1 : p.mediumCompleted;
     final hard = (difficulty == 'hard' || difficulty == 'extreme')
         ? p.hardCompleted + 1
         : p.hardCompleted;
@@ -428,6 +453,8 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
       longestStreak: streak > p.longestStreak ? streak : p.longestStreak,
       lastColoredDay: lastDay,
       daysColored: daysColored,
+      easyCompleted: easy,
+      mediumCompleted: medium,
       hardCompleted: hard,
       extremeCompleted: extreme,
       maxColorUses:

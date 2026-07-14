@@ -12,8 +12,12 @@ void regionDetectIsolate(SendPort sendPort) {
 
   recv.listen((msg) {
     if (msg is RegionDetectParams) {
-      final result = detectRegions(msg);
-      sendPort.send(result);
+      try {
+        final result = detectRegions(msg);
+        sendPort.send(result);
+      } catch (e) {
+        sendPort.send('ERROR:$e');
+      }
     }
   });
 }

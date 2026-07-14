@@ -77,6 +77,18 @@ final _topicImagesProvider =
       easy: parse('easy'), medium: parse('medium'), hard: parse('hard'));
 });
 
+// Colour per topic — gives each card a distinct warm accent.
+const _topicColors = [
+  Color(0xFFFF6B6B), // dragon — coral red
+  Color(0xFF7C6DFF), // unicorn — purple
+  Color(0xFF4ECDC4), // butterfly — teal
+  Color(0xFF45B7D1), // dinosaur — sky blue
+  Color(0xFFFF9F43), // cat — amber
+  Color(0xFFFF78AC), // princess — pink
+  Color(0xFF26de81), // mermaid — sea green
+  Color(0xFF778CA3), // rocket — slate
+];
+
 // ── Hub screen ─────────────────────────────────────────────────────────────────
 
 class ExploreScreen extends ConsumerWidget {
@@ -85,6 +97,12 @@ class ExploreScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final width = MediaQuery.sizeOf(context).width;
+    final columns = width >= 900
+        ? 4
+        : width >= 600
+            ? 3
+            : 2;
     return Scaffold(
       appBar: AppBar(
         title: Text('Explore',
@@ -93,23 +111,90 @@ class ExploreScreen extends ConsumerWidget {
         backgroundColor: cs.surface,
         elevation: 0,
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.1,
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: _ExploreHeader(cs: cs),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            sliver: SliverGrid(
+              delegate: SliverChildBuilderDelegate(
+                (ctx, i) {
+                  final (slug, emoji, name) = _topics[i];
+                  return _TopicCard(
+                    slug: slug,
+                    emoji: emoji,
+                    name: name,
+                    accent: _topicColors[i % _topicColors.length],
+                  );
+                },
+                childCount: _topics.length,
+              ),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                mainAxisSpacing: 14,
+                crossAxisSpacing: 14,
+                childAspectRatio: 0.9,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExploreHeader extends StatelessWidget {
+  final ColorScheme cs;
+  const _ExploreHeader({required this.cs});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            cs.primaryContainer,
+            cs.secondaryContainer,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        itemCount: _topics.length,
-        itemBuilder: (ctx, i) {
-          final (slug, emoji, name) = _topics[i];
-          return _TopicCard(
-            slug: slug,
-            emoji: emoji,
-            name: name,
-          );
-        },
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '🎨 Ready-to-Color Pictures!',
+                  style: GoogleFonts.fredoka(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Pick a topic, tap a picture, and start coloring right away — no waiting, just fun!',
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onPrimaryContainer.withValues(alpha: 0.8),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text('🖌️', style: TextStyle(fontSize: 42)),
+        ],
       ),
     );
   }
@@ -119,34 +204,61 @@ class _TopicCard extends StatelessWidget {
   final String slug;
   final String emoji;
   final String name;
+  final Color accent;
   const _TopicCard(
-      {required this.slug, required this.emoji, required this.name});
+      {required this.slug,
+      required this.emoji,
+      required this.name,
+      required this.accent});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark
+        ? accent.withValues(alpha: 0.18)
+        : accent.withValues(alpha: 0.12);
+    final borderColor = accent.withValues(alpha: isDark ? 0.4 : 0.3);
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       onTap: () => context.pushNamed('exploreTopic',
           pathParameters: {'topic': slug}, extra: (emoji, name)),
       child: Container(
         decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
-          border:
-              Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+          color: bg,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: borderColor, width: 1.5),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 40)),
-            const SizedBox(height: 8),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: isDark ? 0.25 : 0.18),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(emoji, style: const TextStyle(fontSize: 36)),
+            ),
+            const SizedBox(height: 12),
             Text(
               name,
+              textAlign: TextAlign.center,
               style: GoogleFonts.fredoka(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
                   color: cs.onSurface),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Color now →',
+              style: GoogleFonts.nunito(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: accent,
+              ),
             ),
           ],
         ),
