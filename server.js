@@ -264,10 +264,14 @@ async function serveTopicPageWithGallery(res, topic) {
     );
   }
 
-  // Update canonical + hreflang self-reference to /en/ prefix
+  // Update canonical, og:url, and hreflang self-reference to /en/ prefix
   enhanced = enhanced.replace(
     /<link rel="canonical" href="https:\/\/lalabuba\.com\/coloring-pages\//,
     '<link rel="canonical" href="https://lalabuba.com/en/coloring-pages/'
+  );
+  enhanced = enhanced.replace(
+    /<meta property="og:url" content="https:\/\/lalabuba\.com\/coloring-pages\//,
+    '<meta property="og:url" content="https://lalabuba.com/en/coloring-pages/'
   );
   enhanced = enhanced.replace(
     /hreflang="en" href="https:\/\/lalabuba\.com\/coloring-pages\//g,
@@ -314,6 +318,10 @@ function serveDeTopicPageBySlug(res, deSlug) {
     enhanced = enhanced.replace(
       /<link rel="canonical" href="https:\/\/lalabuba\.com\/ausmalbilder\//,
       '<link rel="canonical" href="https://lalabuba.com/de/ausmalbilder/'
+    );
+    enhanced = enhanced.replace(
+      /<meta property="og:url" content="https:\/\/lalabuba\.com\/ausmalbilder\//,
+      '<meta property="og:url" content="https://lalabuba.com/de/ausmalbilder/'
     );
     enhanced = enhanced.replace(
       /hreflang="de" href="https:\/\/lalabuba\.com\/ausmalbilder\//g,
