@@ -6,6 +6,7 @@ const gallery = require("./lib/gallery");
 const i18n = require("./lib/coloring-i18n");
 const db = require("./lib/db");
 const communityRouter = require("./api/community/router");
+const authRouter      = require("./api/auth/router");
 
 // Production + local server for Lalabuba on Hetzner (Docker Swarm).
 //
@@ -935,6 +936,17 @@ const server = http.createServer(async (req, res) => {
       }
     }
     return sendJson(res, 200, { generated, target, results });
+  }
+
+  // ── Auth API ───────────────────────────────────────────────────────────────
+  if (p.startsWith("/api/auth/")) {
+    if (req.method !== "GET" && req.method !== "OPTIONS") {
+      try { req.body = await readJsonBody(req, 64_000); }
+      catch (e) { return res.status(400).json({ error: e.message || "Invalid JSON body." }); }
+    } else {
+      req.body = {};
+    }
+    return authRouter(req, res, p);
   }
 
   // ── Community API ──────────────────────────────────────────────────────────

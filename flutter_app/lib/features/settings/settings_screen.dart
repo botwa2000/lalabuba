@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/l10n/l10n_service.dart';
+import '../../services/account_service.dart';
 import '../../shared/widgets/parental_gate.dart';
 import '../community/community_service.dart';
 import '../community/models/profile_model.dart';
@@ -11,6 +12,7 @@ import '../community/widgets/nickname_picker.dart';
 import '../community/widgets/avatar_picker.dart';
 import '../community/screens/family_screen.dart';
 import '../community/widgets/community_artwork_card.dart' show avatarEmoji;
+import '../account/account_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -22,6 +24,51 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   CommunityProfile? _profile;
   bool _profileLoading = true;
+
+  Widget _buildAccountSection(BuildContext context, L10n l10n) {
+    final account = ref.watch(accountProvider);
+    final cs      = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(l10n.t('accountSaveProgress')),
+        Card(
+          child: ListTile(
+            leading: Text(
+              account.isSignedIn
+                  ? avatarEmoji(account.devices.isNotEmpty
+                      ? account.devices.first.avatarIndex : 0)
+                  : '👤',
+              style: const TextStyle(fontSize: 28),
+            ),
+            title: Text(
+              account.isSignedIn
+                  ? (account.email ?? l10n.t('accountTitle'))
+                  : l10n.t('accountSaveProgress'),
+              style: GoogleFonts.fredoka(
+                fontWeight: FontWeight.w700,
+                color: account.isSignedIn ? null
+                    : cs.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            subtitle: Text(
+              account.isSignedIn
+                  ? '✓ ${l10n.t("accountProgressSaved")}'
+                  : l10n.t('accountSaveProgressSub'),
+              style: GoogleFonts.nunito(
+                fontSize: 12,
+                color: account.isSignedIn ? cs.primary : null,
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AccountScreen()),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   void initState() {
@@ -53,6 +100,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildAccountSection(context, l10n),
+          const SizedBox(height: 16),
           _buildCommunitySection(context, l10n),
           const SizedBox(height: 16),
           _buildAboutSection(context, l10n),
