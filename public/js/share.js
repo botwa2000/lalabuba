@@ -53,7 +53,7 @@ export function loadFromShare() {
   // Expired link — restore the subject so the user can regenerate easily.
   if (imgUrl && exp && Date.now() > exp) {
     subjectInput.value = q;
-    setStatus('This shared link has expired — generate a new coloring page! 🎨', true);
+    setStatus(t('linkExpiredError') || 'This shared link has expired — generate a new coloring page! 🎨', true);
     return;
   }
 

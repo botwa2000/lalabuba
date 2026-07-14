@@ -1,32 +1,37 @@
 // First-time onboarding tutorial overlay.
 // Shows once to new users; gated by localStorage.
 
+import { t } from './i18n.js';
+
 const KEY = 'lalabuba-onboarded';
 
-const SLIDES = [
-  {
-    emoji: null,
-    showLogo: true,
-    title: 'Welcome to Lalabuba!',
-    body: 'Type any word and we\'ll turn it into a unique coloring page just for you.',
-  },
-  {
-    emoji: '🖌️',
-    showLogo: false,
-    title: 'Tap to color',
-    body: 'Pick a color from the palette, then tap any region of the drawing to fill it.',
-  },
-  {
-    emoji: '🏆',
-    showLogo: false,
-    title: 'Challenge a friend!',
-    body: 'Share your coloring page and race to see who finishes it first.',
-  },
-];
+function getSlides() {
+  return [
+    {
+      emoji: null,
+      showLogo: true,
+      title: t('onboardTitle1') || 'Welcome to Lalabuba!',
+      body:  t('onboardBody1')  || "Type any word and we'll turn it into a unique coloring page just for you.",
+    },
+    {
+      emoji: '🖌️',
+      showLogo: false,
+      title: t('onboardTitle2') || 'Tap to color',
+      body:  t('onboardBody2')  || 'Pick a color from the palette, then tap any region of the drawing to fill it.',
+    },
+    {
+      emoji: '🏆',
+      showLogo: false,
+      title: t('onboardTitle3') || 'Challenge a friend!',
+      body:  t('onboardBody3')  || 'Share your coloring page and race to see who finishes it first.',
+    },
+  ];
+}
 
 export function initOnboarding() {
   if (localStorage.getItem(KEY)) return;
 
+  const SLIDES = getSlides();
   let current = 0;
 
   const overlay = document.createElement('div');
@@ -46,6 +51,8 @@ export function initOnboarding() {
     const slide = SLIDES[current];
     const isLast = current === SLIDES.length - 1;
     const canSkip = current > 0;
+    const skipLabel = t('onboardSkip') || 'Skip';
+    const nextLabel = isLast ? (t('onboardStart') || "Let's go!") : (t('onboardNext') || 'Next →');
 
     const dots = SLIDES.map((_, i) =>
       `<span class="ob-dot${i === current ? ' ob-dot--active' : ''}"></span>`
@@ -63,11 +70,9 @@ export function initOnboarding() {
         <div class="ob-dots">${dots}</div>
         <div class="ob-actions">
           ${canSkip
-            ? '<button class="ob-btn ob-btn--skip" type="button">Skip</button>'
+            ? `<button class="ob-btn ob-btn--skip" type="button">${skipLabel}</button>`
             : '<span></span>'}
-          <button class="ob-btn ob-btn--next" type="button">
-            ${isLast ? "Let's go!" : 'Next →'}
-          </button>
+          <button class="ob-btn ob-btn--next" type="button">${nextLabel}</button>
         </div>
       </div>
     `;

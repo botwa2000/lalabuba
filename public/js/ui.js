@@ -200,8 +200,8 @@ export function openMaxPicker() {
     <div class="max-picker-panel" role="dialog" aria-modal="true" aria-label="Pick a color">
       <div class="max-picker-header">
         <div>
-          <div class="max-picker-title">🎨 Pick a color!</div>
-          <div class="max-picker-hint">Tap any color to paint with it</div>
+          <div class="max-picker-title">🎨 ${t('maxPickerTitle') || 'Pick a color!'}</div>
+          <div class="max-picker-hint">${t('maxPickerHint') || 'Tap any color to paint with it'}</div>
         </div>
         <button class="max-picker-close" id="max-picker-close" aria-label="Close">✕</button>
       </div>

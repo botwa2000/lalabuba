@@ -143,21 +143,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=266" />
-  <link rel="stylesheet" href="/css/header.css?v=266" />
-  <link rel="stylesheet" href="/css/hero.css?v=266" />
-  <link rel="stylesheet" href="/css/generator.css?v=266" />
-  <link rel="stylesheet" href="/css/layout.css?v=266" />
-  <link rel="stylesheet" href="/css/workspace.css?v=266" />
-  <link rel="stylesheet" href="/css/palette.css?v=266" />
-  <link rel="stylesheet" href="/css/modals.css?v=266" />
-  <link rel="stylesheet" href="/css/footer.css?v=266" />
-  <link rel="stylesheet" href="/css/print.css?v=266" />
-  <link rel="stylesheet" href="/css/cookies.css?v=266" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=266" />
-  <link rel="stylesheet" href="/css/community.css?v=266" />
-  <link rel="stylesheet" href="/css/account.css?v=266" />
-  <script src="/js/cookies.js?v=266"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=267" />
+  <link rel="stylesheet" href="/css/header.css?v=267" />
+  <link rel="stylesheet" href="/css/hero.css?v=267" />
+  <link rel="stylesheet" href="/css/generator.css?v=267" />
+  <link rel="stylesheet" href="/css/layout.css?v=267" />
+  <link rel="stylesheet" href="/css/workspace.css?v=267" />
+  <link rel="stylesheet" href="/css/palette.css?v=267" />
+  <link rel="stylesheet" href="/css/modals.css?v=267" />
+  <link rel="stylesheet" href="/css/footer.css?v=267" />
+  <link rel="stylesheet" href="/css/print.css?v=267" />
+  <link rel="stylesheet" href="/css/cookies.css?v=267" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=267" />
+  <link rel="stylesheet" href="/css/community.css?v=267" />
+  <link rel="stylesheet" href="/css/account.css?v=267" />
+  <script src="/js/cookies.js?v=267"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -350,18 +350,18 @@
 
           <!-- ─── Browse gallery topics — hero state only ─────────────── -->
           <section class="hero-browse-section" aria-label="Browse coloring page topics">
-            <p class="hero-browse-divider">— browse by topic —</p>
+            <p class="hero-browse-divider" data-i18n="browseTopic">— browse by topic —</p>
             <div class="hero-topic-grid">
-              <a href="/coloring-pages/dragon/"    class="hero-topic-card" data-topic="dragon">🐉<span>Dragon</span></a>
-              <a href="/coloring-pages/unicorn/"   class="hero-topic-card" data-topic="unicorn">🦄<span>Unicorn</span></a>
-              <a href="/coloring-pages/butterfly/" class="hero-topic-card" data-topic="butterfly">🦋<span>Butterfly</span></a>
-              <a href="/coloring-pages/dinosaur/"  class="hero-topic-card" data-topic="dinosaur">🦕<span>Dinosaur</span></a>
-              <a href="/coloring-pages/cat/"       class="hero-topic-card" data-topic="cat">🐱<span>Cat</span></a>
-              <a href="/coloring-pages/princess/"  class="hero-topic-card" data-topic="princess">👸<span>Princess</span></a>
-              <a href="/coloring-pages/mermaid/"   class="hero-topic-card" data-topic="mermaid">🧜<span>Mermaid</span></a>
-              <a href="/coloring-pages/rocket/"    class="hero-topic-card" data-topic="rocket">🚀<span>Rocket</span></a>
+              <a href="/coloring-pages/dragon/"    class="hero-topic-card" data-topic="dragon">🐉<span data-i18n="topicDragon">Dragon</span></a>
+              <a href="/coloring-pages/unicorn/"   class="hero-topic-card" data-topic="unicorn">🦄<span data-i18n="topicUnicorn">Unicorn</span></a>
+              <a href="/coloring-pages/butterfly/" class="hero-topic-card" data-topic="butterfly">🦋<span data-i18n="topicButterfly">Butterfly</span></a>
+              <a href="/coloring-pages/dinosaur/"  class="hero-topic-card" data-topic="dinosaur">🦕<span data-i18n="topicDinosaur">Dinosaur</span></a>
+              <a href="/coloring-pages/cat/"       class="hero-topic-card" data-topic="cat">🐱<span data-i18n="topicCat">Cat</span></a>
+              <a href="/coloring-pages/princess/"  class="hero-topic-card" data-topic="princess">👸<span data-i18n="topicPrincess">Princess</span></a>
+              <a href="/coloring-pages/mermaid/"   class="hero-topic-card" data-topic="mermaid">🧜<span data-i18n="topicMermaid">Mermaid</span></a>
+              <a href="/coloring-pages/rocket/"    class="hero-topic-card" data-topic="rocket">🚀<span data-i18n="topicRocket">Rocket</span></a>
             </div>
-            <a href="/coloring-pages/today/" class="hero-today-link" id="hero-today-link">🌟 Today's coloring page →</a>
+            <a href="/coloring-pages/today/" class="hero-today-link" id="hero-today-link" data-i18n="todayColoringLink">🌟 Today's coloring page →</a>
           </section>
 
           <!-- ─── Canvas options (coloring state only) ──────────────────── -->
@@ -551,14 +551,14 @@
         </a>
       </div>
       <nav class="footer-nav" aria-label="Site navigation">
-        <a href="/features">Features</a>
+        <a href="/features" data-i18n="footerFeatures">Features</a>
         <span>·</span>
-        <a href="/about">About</a>
+        <a href="/about" data-i18n="footerAbout">About</a>
         <span>·</span>
-        <a href="/coloring-pages/">Coloring Pages</a>
+        <a href="/coloring-pages/" data-i18n="footerColoringPages">Coloring Pages</a>
       </nav>
       <div class="footer-social">
-        <span class="footer-social-lbl">Follow us</span>
+        <span class="footer-social-lbl" data-i18n="footerFollow">Follow us</span>
         <a href="https://www.instagram.com/lalabuba.ai/" class="social-link social-ig" target="_blank" rel="noopener noreferrer" aria-label="Lalabuba on Instagram">
           <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
         </a>
@@ -568,13 +568,13 @@
       </div>
       <p class="footer-copy">Lalabuba 🎨 · <span data-i18n="footerFun">Free &amp; fun for everyone 🌈</span> · © 2026</p>
       <nav class="footer-legal" aria-label="Legal">
-        <a href="/privacy">Privacy Policy</a>
+        <a href="/privacy" data-i18n="privacyLink">Privacy Policy</a>
         <span>·</span>
-        <a href="/terms">Terms</a>
+        <a href="/terms" data-i18n="termsLink">Terms</a>
         <span>·</span>
-        <a href="/impressum">Impressum</a>
+        <a href="/impressum" data-i18n="impressumLink">Impressum</a>
         <span>·</span>
-        <a href="/contact">Contact</a>
+        <a href="/contact" data-i18n="contactLink">Contact</a>
         <span>·</span>
         <button id="cookie-settings-btn" class="footer-cookie-btn" data-i18n="cookieSettings">Cookie settings</button>
       </nav>
@@ -794,8 +794,8 @@
 
   <!-- Safety net: if the main module throws before it can hide the splash screen,
        hide it here so the app never appears permanently frozen on native. -->
-  <script type="module" src="/js/main.js?v=266"></script>
-  <script type="module" src="/js/community.js?v=266"></script>
+  <script type="module" src="/js/main.js?v=267"></script>
+  <script type="module" src="/js/community.js?v=267"></script>
 
   <!-- Leaderboard modal -->
   <div id="leaderboard-modal" class="leaderboard-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="leaderboard-title">
@@ -823,7 +823,7 @@
         <span data-i18n="communityConsentCheckLabel">I'm a parent or guardian and I approve sharing this artwork</span>
       </label>
       <div class="consent-actions">
-        <button id="consent-cancel-btn" class="consent-btn consent-btn--cancel">Cancel</button>
+        <button id="consent-cancel-btn" class="consent-btn consent-btn--cancel" data-i18n="cancel">Cancel</button>
         <button id="consent-confirm-btn" class="consent-btn consent-btn--confirm" disabled data-i18n="communityConsentConfirmBtn">Share! 🌟</button>
       </div>
     </div>
@@ -856,7 +856,7 @@
           </div>
         </button>
       </div>
-      <button class="share-type-cancel" id="share-type-cancel">Cancel</button>
+      <button class="share-type-cancel" id="share-type-cancel" data-i18n="shareTypeCancel">Cancel</button>
     </div>
   </div>
 
@@ -870,7 +870,7 @@
         <option value="">Loading nicknames…</option>
       </select>
       <div class="nickname-actions">
-        <button id="nickname-cancel-btn" class="consent-btn consent-btn--cancel">Cancel</button>
+        <button id="nickname-cancel-btn" class="consent-btn consent-btn--cancel" data-i18n="cancel">Cancel</button>
         <button id="nickname-confirm-btn" class="consent-btn consent-btn--confirm" data-i18n="nicknameSaveBtn">Save &amp; Continue</button>
       </div>
     </div>
@@ -893,7 +893,7 @@
   <!-- Account modal (content rendered by account.js) -->
   <div id="account-modal" role="dialog" aria-modal="true" aria-label="Account" hidden></div>
 
-  <script type="module" src="/js/account.js?v=266"></script>
+  <script type="module" src="/js/account.js?v=267"></script>
 </body>
 </html>
 

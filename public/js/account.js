@@ -299,9 +299,9 @@ function renderSignedIn(nickname, avatarEmoji) {
           <span class="account-device-avatar">${getAvatarEmoji(d.avatarIndex || 0)}</span>
           <span class="account-device-info">
             <span class="account-device-nick">${d.nickname || '—'}</span>
-            <span class="account-device-streak">🎨 ${d.totalCompleted || 0} · 🔥 ${d.currentStreak || 0} days</span>
+            <span class="account-device-streak">🎨 ${d.totalCompleted || 0} · 🔥 ${d.currentStreak || 0} ${t('daysLabel') || 'days'}</span>
           </span>
-          ${d.deviceUuid === myUuid ? '<span class="account-device-current">this device</span>' : ''}
+          ${d.deviceUuid === myUuid ? `<span class="account-device-current">${t('thisDevice') || 'This device'}</span>` : ''}
         </li>
       `).join('')}
     </ul>

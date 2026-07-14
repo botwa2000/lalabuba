@@ -704,7 +704,7 @@ function serveGermanDailyPage(res, date, deWord) {
   let galleryHtml = "";
   if (imgs.length) {
     galleryHtml = `<div class="gallery-grid">${imgs.map(e =>
-      galleryCardHtml({ ...e, subject: deDisplay }, { name: deDisplay })
+      galleryCardHtml({ ...e, subject: deDisplay }, { name: deDisplay }, { colorThis: 'Ausmalen →' })
     ).join("")}</div>`;
   } else {
     galleryHtml = `<p class="gallery-empty">Das Ausmalbild für dieses Datum ist noch nicht verfügbar. <a href="/?s=1&q=${encodeURIComponent(deDisplay)}&d=easy" class="lp-cta-inline">Jetzt ${deDisplay} erstellen →</a></p>`;

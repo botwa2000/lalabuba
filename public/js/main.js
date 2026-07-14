@@ -1293,7 +1293,7 @@ function applyDrawMode(mode) {
 function updateModeChip() {
   if (!chipMode) return;
   const mode = getDrawMode();
-  const labels = { classic: '🖌️ Classic', numbers: '🔢 Numbers', sketch: '✏️ Sketch' };
+  const labels = { classic: `🖌️ ${t('modeClassic') || 'Classic'}`, numbers: `🔢 ${t('modeNumbers') || 'Numbers'}`, sketch: `✏️ ${t('modeSketch') || 'Sketch'}` };
   const hints  = { classic: t('artStyleClassicHint'), numbers: t('artStyleClassicHint'), sketch: t('artStyleSketchHint') };
   chipMode.textContent = labels[mode] || '🖌️ Classic';
   chipMode.classList.toggle('setting-chip--on', mode !== 'sketch');
