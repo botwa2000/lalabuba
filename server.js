@@ -182,11 +182,14 @@ function malformedSecrets() {
 
 // ── Gallery HTML helpers ─────────────────────────────────────────────────────
 
-function galleryCardHtml(entry, meta, t) {
+// pageCtx = { basePath: '/en/coloring-pages/dinosaur/' } → links to individual image pages
+// If no basePath or no slug, falls back to ?s=1&img= direct-load link.
+function galleryCardHtml(entry, meta, t, pageCtx = {}) {
   const label = entry.subject.charAt(0).toUpperCase() + entry.subject.slice(1);
   const diff  = entry.difficulty || "easy";
-  // ?s=1&img=URL loads the CDN image directly in share.js without an AI call.
-  const href  = `/?s=1&img=${encodeURIComponent(entry.url)}&q=${encodeURIComponent(entry.subject)}&d=${diff}`;
+  const href  = (entry.slug && pageCtx.basePath)
+    ? `${pageCtx.basePath}${entry.slug}/`
+    : `/?s=1&img=${encodeURIComponent(entry.url)}&q=${encodeURIComponent(entry.subject)}&d=${diff}`;
   const cta   = t?.colorThis || "Color this →";
   return `<a href="${href}" class="gallery-card" title="${label}">
     <img src="${entry.url}" alt="${label} coloring page" loading="lazy" width="280" height="280"/>
@@ -195,7 +198,7 @@ function galleryCardHtml(entry, meta, t) {
   </a>`;
 }
 
-function gallerySection(topicImages, meta, t) {
+function gallerySection(topicImages, meta, t, pageCtx = {}) {
   const diffLabel = t?.diffLabels || { easy: "Easy 🌟", medium: "Medium 🌟🌟", hard: "Hard 🌟🌟🌟" };
   const name = meta.name;
   const q    = encodeURIComponent(name.toLowerCase());
@@ -208,7 +211,7 @@ function gallerySection(topicImages, meta, t) {
     const imgs = topicImages[diff] || [];
     if (!imgs.length) continue;
     html += `<h3 class="gallery-diff-heading">${diffLabel[diff]}</h3>
-    <div class="gallery-grid">${imgs.map(e => galleryCardHtml({ ...e, difficulty: diff }, meta, t)).join("")}</div>`;
+    <div class="gallery-grid">${imgs.map(e => galleryCardHtml({ ...e, difficulty: diff }, meta, t, pageCtx)).join("")}</div>`;
   }
   html += `</section>`;
   return html;
@@ -248,7 +251,8 @@ async function serveTopicPageWithGallery(res, topic) {
 
   const topicImages = gallery.getAllForTopic(topic);
   const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
-  let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, meta, null)) : baseHtml;
+  const basePath = `/en/coloring-pages/${topic}/`;
+  let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, meta, null, { basePath })) : baseHtml;
 
   // Inject first gallery image as og:image for Pinterest/social sharing
   const firstImg = ["easy","medium","hard"].reduce((found, d) => found || (topicImages[d]||[])[0], null);
@@ -260,10 +264,20 @@ async function serveTopicPageWithGallery(res, topic) {
     );
   }
 
+  // Update canonical + hreflang self-reference to /en/ prefix
+  enhanced = enhanced.replace(
+    /<link rel="canonical" href="https:\/\/lalabuba\.com\/coloring-pages\//,
+    '<link rel="canonical" href="https://lalabuba.com/en/coloring-pages/'
+  );
+  enhanced = enhanced.replace(
+    /hreflang="en" href="https:\/\/lalabuba\.com\/coloring-pages\//g,
+    `hreflang="en" href="https://lalabuba.com/en/coloring-pages/`
+  );
+
   // Inject unified nav (replaces old legal-nav block in static HTML)
   const topicNav = buildNav({
     lang: 'en',
-    breadcrumbs: [{ href: '/coloring-pages/', label: 'Coloring Pages' }, { label: meta.name }],
+    breadcrumbs: [{ href: '/en/coloring-pages/', label: 'Coloring Pages' }, { label: meta.name }],
     hreflangMap: topicHreflangMap(topic),
     ctaHref: `/?s=1&q=${encodeURIComponent(topic)}&d=easy`,
   });
@@ -272,10 +286,236 @@ async function serveTopicPageWithGallery(res, topic) {
   serveHtml(res, enhanced);
 }
 
+// Extracted DE topic page handler — shared by /ausmalbilder/:slug/ (old) and /de/ausmalbilder/:slug/ (new)
+function serveDeTopicPageBySlug(res, deSlug) {
+  const enTopic  = DE_TOPIC_MAP[deSlug];
+  const staticPath = path.join(PUBLIC_DIR, "ausmalbilder", deSlug, "index.html");
+  let baseHtml;
+  try { baseHtml = fs.readFileSync(staticPath, "utf8"); } catch { /* fall through */ }
+  if (!baseHtml) return sendJson(res, 404, { error: "Not found" });
+
+  const deTopicName = enTopic ? (DE_TOPIC_NAMES[enTopic] || deSlug) : deSlug;
+  const deNav = buildNav({
+    lang: 'de',
+    breadcrumbs: [{ href: '/de/ausmalbilder/', label: 'Ausmalbilder' }, { label: deTopicName }],
+    hreflangMap: enTopic ? topicHreflangMap(enTopic) : { de: `https://lalabuba.com/de/ausmalbilder/${deSlug}/` },
+    ctaHref: enTopic ? `/?s=1&q=${encodeURIComponent(enTopic)}&d=easy` : '/',
+  });
+  let enhanced = injectUnifiedNav(baseHtml, deNav);
+  if (enTopic) {
+    const topicImages = gallery.getAllForTopic(enTopic);
+    const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
+    const deMeta = { ...gallery.TOPIC_META[enTopic], name: deTopicName };
+    if (hasAny) enhanced = injectGalleryIntoHtml(enhanced, gallerySection(topicImages, deMeta, DE_GALLERY_T, { basePath: `/de/ausmalbilder/${deSlug}/` }));
+    const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
+    if (firstImg) {
+      enhanced = enhanced.replace(/<meta property="og:image"[^>]*>/, `<meta property="og:image" content="https://lalabuba.com${firstImg.url}"/>`);
+    }
+    enhanced = enhanced.replace(
+      /<link rel="canonical" href="https:\/\/lalabuba\.com\/ausmalbilder\//,
+      '<link rel="canonical" href="https://lalabuba.com/de/ausmalbilder/'
+    );
+    enhanced = enhanced.replace(
+      /hreflang="de" href="https:\/\/lalabuba\.com\/ausmalbilder\//g,
+      `hreflang="de" href="https://lalabuba.com/de/ausmalbilder/`
+    );
+  }
+  return serveHtml(res, enhanced);
+}
+
+// Serve individual coloring-page image (URL-4): /en/coloring-pages/:topic/:slug/
+function serveIndividualImagePage(res, lang, topic, imageSlug) {
+  const topicImages = gallery.getAllForTopic(topic);
+  let entry = null;
+  let difficulty = null;
+  for (const diff of ["easy","medium","hard"]) {
+    const found = (topicImages[diff] || []).find(e => e.slug === imageSlug);
+    if (found) { entry = { ...found, difficulty: diff }; difficulty = diff; break; }
+  }
+  if (!entry) return sendJson(res, 404, { error: "Not found" });
+
+  const meta        = gallery.TOPIC_META[topic];
+  const topicName   = meta?.name || topic;
+  const subject     = entry.subject || topic;
+  const subjectTitle = subject.charAt(0).toUpperCase() + subject.slice(1);
+  const diffLabel   = { easy: "Easy", medium: "Medium", hard: "Hard" }[difficulty] || difficulty;
+  const isDE        = lang === "de";
+  const htmlLang    = isDE ? "de" : "en";
+  const deSlug      = EN_TO_DE_SLUG[topic];
+  const hubHref     = isDE ? "/de/ausmalbilder/" : "/en/coloring-pages/";
+  const hubLabel    = isDE ? "Ausmalbilder" : "Coloring Pages";
+  const topicPath   = isDE && deSlug ? `/de/ausmalbilder/${deSlug}/` : `/en/coloring-pages/${topic}/`;
+  const basePath    = topicPath;
+  const canonical   = `https://lalabuba.com${basePath}${imageSlug}/`;
+  const title       = isDE
+    ? `${subjectTitle} Ausmalbild (${diffLabel}) — Kostenlos | Lalabuba`
+    : `${subjectTitle} Coloring Page (${diffLabel}) — Free Printable | Lalabuba`;
+  const desc        = isDE
+    ? `Kostenloses ${subject} Ausmalbild für Kinder. ${diffLabel}. Online ausmalen oder ausdrucken.`
+    : `Free printable ${subject} coloring page for kids. ${diffLabel} difficulty. Color online or print at Lalabuba.`;
+  const colorHref   = `/?s=1&img=${encodeURIComponent(entry.url)}&q=${encodeURIComponent(subject)}&d=${difficulty}`;
+  const printHref   = `${basePath}${imageSlug}/print`;
+  const dlHref      = `${basePath}${imageSlug}/print?download=1`;
+  const colorLabel  = isDE ? "Online ausmalen →" : "Color Online →";
+  const printLabel  = isDE ? "Drucken" : "Print";
+  const dlLabel     = isDE ? "Herunterladen" : "Download PNG";
+
+  const hreflangLines = [`  <link rel="alternate" hreflang="en" href="https://lalabuba.com/en/coloring-pages/${topic}/${imageSlug}/"/>`];
+  if (deSlug) hreflangLines.push(`  <link rel="alternate" hreflang="de" href="https://lalabuba.com/de/ausmalbilder/${deSlug}/${imageSlug}/"/>`);
+  hreflangLines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/en/coloring-pages/${topic}/${imageSlug}/"/>`);
+
+  const jsonLd = JSON.stringify({ "@context":"https://schema.org", "@graph": [
+    { "@type":"ImageObject", "name":title, "description":desc,
+      "contentUrl":`https://lalabuba.com${entry.url}`, "url":canonical,
+      "encodingFormat": entry.url.endsWith(".jpg") ? "image/jpeg" : "image/png",
+      "license":"https://creativecommons.org/licenses/by/4.0/",
+      "creator":{"@type":"Organization","name":"Lalabuba"} },
+    { "@type":"BreadcrumbList", "itemListElement":[
+      {"@type":"ListItem","position":1,"name":hubLabel,"item":`https://lalabuba.com${hubHref}`},
+      {"@type":"ListItem","position":2,"name":topicName,"item":`https://lalabuba.com${topicPath}`},
+      {"@type":"ListItem","position":3,"name":subjectTitle,"item":canonical},
+    ]},
+  ]});
+
+  const allImages = ["easy","medium","hard"].flatMap(d => (topicImages[d]||[]).map(e => ({...e,difficulty:d})));
+  const related   = allImages.filter(e => e.slug !== imageSlug).slice(0, 4);
+  const relatedHtml = related.length ? `
+  <section class="lp-section gallery-section">
+    <h2 class="section-heading">${isDE ? `Mehr ${topicName} Ausmalbilder` : `More ${topicName} Coloring Pages`}</h2>
+    <div class="gallery-grid">${related.map(e => galleryCardHtml(e, meta, null, { basePath })).join("")}</div>
+  </section>` : "";
+
+  const html = `<!doctype html>
+<html lang="${htmlLang}">
+<head>
+  <meta charset="utf-8"/>
+  ${THEME_SCRIPT}
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>${title}</title>
+  <meta name="description" content="${desc}"/>
+  <link rel="canonical" href="${canonical}"/>
+${hreflangLines.join('\n')}
+  <meta property="og:title" content="${title}"/>
+  <meta property="og:description" content="${desc}"/>
+  <meta property="og:type" content="article"/>
+  <meta property="og:url" content="${canonical}"/>
+  <meta property="og:image" content="https://lalabuba.com${entry.url}"/>
+  <meta property="og:site_name" content="Lalabuba"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="theme-color" content="#7c4dff"/>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+  <link rel="icon" href="/favicon.png" type="image/png"/>
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+  <link rel="stylesheet" href="/css/legal.css?v=272"/>
+  <link rel="stylesheet" href="/css/gallery.css?v=272"/>
+  <link rel="stylesheet" href="/css/image-page.css?v=272"/>
+  <script type="module" src="/js/lp-nav.js"></script>
+  <script type="application/ld+json">${jsonLd}</script>
+</head>
+<body>
+${buildNav({ lang: htmlLang, breadcrumbs: [
+  { href: hubHref, label: hubLabel },
+  { href: topicPath, label: topicName },
+  { label: subjectTitle },
+], hreflangMap: { en:`https://lalabuba.com/en/coloring-pages/${topic}/${imageSlug}/`,
+    ...(deSlug?{de:`https://lalabuba.com/de/ausmalbilder/${deSlug}/${imageSlug}/`}:{}) },
+   ctaHref: colorHref })}
+<main class="lp-main lp-image-page">
+  <div class="lp-image-hero">
+    <img src="${entry.url}" alt="${subjectTitle} coloring page — ${diffLabel}" class="lp-coloring-img" width="800" height="800" loading="eager"/>
+    <div class="lp-image-actions">
+      <a href="${colorHref}" class="lp-btn lp-btn-primary">✏️ ${colorLabel}</a>
+      <a href="${printHref}" class="lp-btn lp-btn-secondary" target="_blank" rel="noopener">🖨️ ${printLabel}</a>
+      <a href="${dlHref}" class="lp-btn lp-btn-outline" download="lalabuba-${imageSlug}.png">💾 ${dlLabel}</a>
+    </div>
+  </div>
+  <div class="lp-image-info lp-section">
+    <h1 class="lp-image-title">${subjectTitle}</h1>
+    <div class="lp-image-meta">
+      <span class="lp-diff-badge lp-diff-${difficulty}">${diffLabel}</span>
+      <a href="${topicPath}" class="lp-topic-link">${topicName}</a>
+    </div>
+    <p class="lp-image-desc">${desc}</p>
+    <a href="/?s=1&q=${encodeURIComponent(topic)}&d=${difficulty}" class="lp-generate-link">✨ ${isDE?`Mehr ${topicName} generieren`:`Generate more ${topicName}`} →</a>
+  </div>
+  ${relatedHtml}
+</main>
+<footer class="legal-footer">
+  <span>© 2026 Lalabuba</span>
+  <span class="sep">·</span>
+  <a href="/privacy">Privacy</a>
+  <span class="sep">·</span>
+  <a href="/imprint">Imprint</a>
+</footer>
+</body>
+</html>`;
+  serveHtml(res, html);
+}
+
+// Print / download route (URL-5): /en/coloring-pages/:topic/:slug/print?download=1
+function serveImagePrint(req, res, lang, topic, imageSlug) {
+  const topicImages = gallery.getAllForTopic(topic);
+  let entry = null;
+  for (const diff of ["easy","medium","hard"]) {
+    const found = (topicImages[diff] || []).find(e => e.slug === imageSlug);
+    if (found) { entry = found; break; }
+  }
+  if (!entry) return sendJson(res, 404, { error: "Not found" });
+
+  // ?download=1 → serve the PNG/JPG as attachment
+  const qs = new URL(req.url, "https://lalabuba.com").searchParams;
+  if (qs.get("download") === "1") {
+    const relPath = entry.url.replace(/^\/img\//, "");
+    const imgPath = path.join(__dirname, "data", "images", relPath);
+    try {
+      const buf = fs.readFileSync(imgPath);
+      const ext = entry.url.endsWith(".jpg") ? "jpg" : "png";
+      res.writeHead(200, {
+        "Content-Type":        ext === "jpg" ? "image/jpeg" : "image/png",
+        "Content-Disposition": `attachment; filename="lalabuba-${imageSlug}.${ext}"`,
+        "Content-Length":      buf.length,
+        "Cache-Control":       "public, max-age=31536000",
+      });
+      return res.end(buf);
+    } catch {
+      return sendJson(res, 404, { error: "Image file not found" });
+    }
+  }
+
+  // Print page — minimal HTML, triggers window.print() on load
+  const subjectTitle = (entry.subject || topic).charAt(0).toUpperCase() + (entry.subject || topic).slice(1);
+  const html = `<!doctype html>
+<html lang="${lang}">
+<head>
+  <meta charset="utf-8"/>
+  <title>${subjectTitle} — Print | Lalabuba</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{display:flex;flex-direction:column;align-items:center;min-height:100vh;background:#fff;padding:16px;font-family:sans-serif;}
+    img{max-width:100%;height:auto;display:block;}
+    .print-bar{display:flex;gap:12px;margin:0 0 16px;padding-bottom:16px;}
+    .btn-print{padding:10px 20px;background:#7c4dff;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:1rem;}
+    .btn-close{padding:10px 20px;background:#eee;color:#333;border:none;border-radius:8px;cursor:pointer;font-size:1rem;text-decoration:none;}
+    @media print{.print-bar{display:none!important;}body{padding:0;}img{width:100%;max-height:100vh;object-fit:contain;}}
+  </style>
+</head>
+<body>
+  <div class="print-bar">
+    <button class="btn-print" onclick="window.print()">🖨️ Print</button>
+    <a class="btn-close" href="javascript:history.back()">← Back</a>
+  </div>
+  <img src="${entry.url}" alt="${subjectTitle} coloring page"/>
+  <script>window.addEventListener('load', () => window.print());</script>
+</body>
+</html>`;
+  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+  res.end(html);
+}
+
 // Build hreflangMap object (lang→absolute-URL) for the language picker in the nav.
 // Hub pages: each lang links to its own hub root.
 function hubHreflangMap() {
-  const m = { en: 'https://lalabuba.com/coloring-pages/', de: 'https://lalabuba.com/ausmalbilder/' };
+  const m = { en: 'https://lalabuba.com/en/coloring-pages/', de: 'https://lalabuba.com/de/ausmalbilder/' };
   for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
     m[lang] = `https://lalabuba.com/${cfg.root}/`;
   }
@@ -283,9 +523,9 @@ function hubHreflangMap() {
 }
 // Topic pages: each lang links to its own topic page (or hub if no topic slug exists).
 function topicHreflangMap(enTopic) {
-  const m = { en: `https://lalabuba.com/coloring-pages/${enTopic}/` };
+  const m = { en: `https://lalabuba.com/en/coloring-pages/${enTopic}/` };
   const deSlug = EN_TO_DE_SLUG[enTopic];
-  if (deSlug) m.de = `https://lalabuba.com/ausmalbilder/${deSlug}/`;
+  if (deSlug) m.de = `https://lalabuba.com/de/ausmalbilder/${deSlug}/`;
   for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
     const slug = cfg.topicSlugs[enTopic];
     m[lang] = slug ? `https://lalabuba.com/${cfg.root}/${slug}/` : `https://lalabuba.com/${cfg.root}/`;
@@ -317,28 +557,28 @@ const HEAD_COMMON = `  <meta name="theme-color" content="#7c4dff"/>
 // Build full hreflang block for coloring hub pages across all languages
 function hubHreflang(currentLang) {
   const lines = [
-    `  <link rel="alternate" hreflang="en" href="https://lalabuba.com/coloring-pages/"/>`,
-    `  <link rel="alternate" hreflang="de" href="https://lalabuba.com/ausmalbilder/"/>`,
+    `  <link rel="alternate" hreflang="en" href="https://lalabuba.com/en/coloring-pages/"/>`,
+    `  <link rel="alternate" hreflang="de" href="https://lalabuba.com/de/ausmalbilder/"/>`,
   ];
   for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
     lines.push(`  <link rel="alternate" hreflang="${cfg.htmlLang}" href="https://lalabuba.com/${cfg.root}/"/>`);
   }
-  lines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/coloring-pages/"/>`);
+  lines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/en/coloring-pages/"/>`);
   return lines.join('\n');
 }
 
 // Build full hreflang for a topic page across all languages
 function topicHreflang(enTopic) {
   const lines = [
-    `  <link rel="alternate" hreflang="en" href="https://lalabuba.com/coloring-pages/${enTopic}/"/>`,
+    `  <link rel="alternate" hreflang="en" href="https://lalabuba.com/en/coloring-pages/${enTopic}/"/>`,
   ];
   const deSlug = EN_TO_DE_SLUG[enTopic];
-  if (deSlug) lines.push(`  <link rel="alternate" hreflang="de" href="https://lalabuba.com/ausmalbilder/${deSlug}/"/>`);
+  if (deSlug) lines.push(`  <link rel="alternate" hreflang="de" href="https://lalabuba.com/de/ausmalbilder/${deSlug}/"/>`);
   for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
     const slug = cfg.topicSlugs[enTopic];
     if (slug) lines.push(`  <link rel="alternate" hreflang="${cfg.htmlLang}" href="https://lalabuba.com/${cfg.root}/${slug}/"/>`);
   }
-  lines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/coloring-pages/${enTopic}/"/>`);
+  lines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/en/coloring-pages/${enTopic}/"/>`);
   return lines.join('\n');
 }
 
@@ -430,7 +670,7 @@ async function serveI18nTopic(res, lang, enTopic) {
   let galSection = '';
   if (hasAny) {
     const topicMeta = { name: topicName };
-    galSection = gallerySection(topicImages, topicMeta, t);
+    galSection = gallerySection(topicImages, topicMeta, t, { basePath: `/${root}/${topicSlug}/` });
   }
 
   const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
@@ -1011,71 +1251,100 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // /today/ → 301 to dated archive URL so ranking power accumulates on dated URLs
+    // ── URL-3: Language-prefixed EN routes (/en/coloring-pages/...) ────────────
+    if (p === "/en/coloring-pages" || p === "/en/coloring-pages/") {
+      const hubPath = path.join(PUBLIC_DIR, "coloring-pages", "index.html");
+      try { return serveHtml(res, fs.readFileSync(hubPath, "utf8")); } catch { /* 404 below */ }
+    }
+    if (p === "/en/coloring-pages/today" || p === "/en/coloring-pages/today/") {
+      const { word, date } = gallery.getDailyWord();
+      res.writeHead(301, { Location: `/en/coloring-pages/daily/${date}-${word}/`, "Cache-Control": "no-store" });
+      return res.end();
+    }
+    const enDailyMatch = p.match(/^\/en\/coloring-pages\/daily\/(\d{4}-\d{2}-\d{2})-([a-z]+)\/?$/);
+    if (enDailyMatch) return serveDailyPage(res, enDailyMatch[1], enDailyMatch[2]);
+    const enPrintMatch = p.match(/^\/en\/coloring-pages\/([a-z]+)\/([a-z0-9-]+)\/print\/?$/);
+    if (enPrintMatch && gallery.TOPIC_META[enPrintMatch[1]]) {
+      return serveImagePrint(req, res, "en", enPrintMatch[1], enPrintMatch[2]);
+    }
+    const enImageMatch = p.match(/^\/en\/coloring-pages\/([a-z]+)\/([a-z0-9-]+)\/?$/);
+    if (enImageMatch && gallery.TOPIC_META[enImageMatch[1]]) {
+      return serveIndividualImagePage(res, "en", enImageMatch[1], enImageMatch[2]);
+    }
+    const enTopicMatch2 = p.match(/^\/en\/coloring-pages\/([a-z]+)\/?$/);
+    if (enTopicMatch2 && gallery.TOPIC_META[enTopicMatch2[1]]) {
+      return serveTopicPageWithGallery(res, enTopicMatch2[1]);
+    }
+
+    // ── URL-3: Language-prefixed DE routes (/de/ausmalbilder/...) ─────────────
+    if (p === "/de/ausmalbilder" || p === "/de/ausmalbilder/") {
+      const hubPath = path.join(PUBLIC_DIR, "ausmalbilder", "index.html");
+      try { return serveHtml(res, fs.readFileSync(hubPath, "utf8")); } catch { /* 404 below */ }
+    }
+    if (p === "/de/ausmalbilder/heute" || p === "/de/ausmalbilder/heute/") {
+      const { word: dw, date } = gallery.getDailyWordDE();
+      res.writeHead(301, { Location: `/de/ausmalbilder/taeglich/${date}-${dw}/`, "Cache-Control": "no-store" });
+      return res.end();
+    }
+    const deLangDailyMatch = p.match(/^\/de\/ausmalbilder\/taeglich\/(\d{4}-\d{2}-\d{2})-([a-z]+)\/?$/);
+    if (deLangDailyMatch) return serveGermanDailyPage(res, deLangDailyMatch[1], deLangDailyMatch[2]);
+    const dePrintMatch = p.match(/^\/de\/ausmalbilder\/([a-z]+)\/([a-z0-9-]+)\/print\/?$/);
+    if (dePrintMatch) {
+      const et = DE_TOPIC_MAP[dePrintMatch[1]];
+      if (et) return serveImagePrint(req, res, "de", et, dePrintMatch[2]);
+    }
+    const deLangImageMatch = p.match(/^\/de\/ausmalbilder\/([a-z]+)\/([a-z0-9-]+)\/?$/);
+    if (deLangImageMatch) {
+      const et = DE_TOPIC_MAP[deLangImageMatch[1]];
+      if (et) return serveIndividualImagePage(res, "de", et, deLangImageMatch[2]);
+    }
+    const deLangTopicMatch = p.match(/^\/de\/ausmalbilder\/([a-z]+)\/?$/);
+    if (deLangTopicMatch) return serveDeTopicPageBySlug(res, deLangTopicMatch[1]);
+
+    // ── URL-2: 301 redirects — old bare paths → language-prefixed canonicals ──
+    if (p === "/coloring-pages" || p === "/coloring-pages/") {
+      res.writeHead(301, { Location: "/en/coloring-pages/", "Cache-Control": "public, max-age=31536000" });
+      return res.end();
+    }
+    if (p === "/ausmalbilder" || p === "/ausmalbilder/") {
+      res.writeHead(301, { Location: "/de/ausmalbilder/", "Cache-Control": "public, max-age=31536000" });
+      return res.end();
+    }
+
+    // Old /coloring-pages/* → 301 to /en/coloring-pages/* (URL-2)
     if (p === "/coloring-pages/today" || p === "/coloring-pages/today/") {
       const { word, date } = gallery.getDailyWord();
-      res.writeHead(301, { Location: `/coloring-pages/daily/${date}-${word}/`, "Cache-Control": "no-store" });
-      res.end();
-      return;
+      res.writeHead(301, { Location: `/en/coloring-pages/daily/${date}-${word}/`, "Cache-Control": "no-store" });
+      return res.end();
     }
-    // Dynamic: /coloring-pages/daily/YYYY-MM-DD-word/ — dated archive page
     const dailyMatch = p.match(/^\/coloring-pages\/daily\/(\d{4}-\d{2}-\d{2})-([a-z]+)\/?$/);
     if (dailyMatch) {
-      return serveDailyPage(res, dailyMatch[1], dailyMatch[2]);
+      res.writeHead(301, { Location: `/en/coloring-pages/daily/${dailyMatch[1]}-${dailyMatch[2]}/`, "Cache-Control": "public, max-age=31536000" });
+      return res.end();
     }
-    // Dynamic: /coloring-pages/:topic/ — inject gallery into static HTML
     const topicMatch = p.match(/^\/coloring-pages\/([a-z]+)\/?$/);
     if (topicMatch && gallery.TOPIC_META[topicMatch[1]]) {
-      return serveTopicPageWithGallery(res, topicMatch[1]);
+      res.writeHead(301, { Location: `/en/coloring-pages/${topicMatch[1]}/`, "Cache-Control": "public, max-age=31536000" });
+      return res.end();
     }
-    // German daily: /ausmalbilder/heute/ → 301 to dated URL
+    // Old /ausmalbilder/* → 301 to /de/ausmalbilder/* (URL-2)
     if (p === "/ausmalbilder/heute" || p === "/ausmalbilder/heute/") {
       const { word: deWord, date } = gallery.getDailyWordDE();
-      res.writeHead(301, { Location: `/ausmalbilder/taeglich/${date}-${deWord}/`, "Cache-Control": "no-store" });
-      res.end(); return;
+      res.writeHead(301, { Location: `/de/ausmalbilder/taeglich/${date}-${deWord}/`, "Cache-Control": "no-store" });
+      return res.end();
     }
-    // German dated daily: /ausmalbilder/taeglich/YYYY-MM-DD-wort/
     const deDailyMatch = p.match(/^\/ausmalbilder\/taeglich\/(\d{4}-\d{2}-\d{2})-([a-z]+)\/?$/);
     if (deDailyMatch) {
-      return serveGermanDailyPage(res, deDailyMatch[1], deDailyMatch[2]);
+      res.writeHead(301, { Location: `/de/ausmalbilder/taeglich/${deDailyMatch[1]}-${deDailyMatch[2]}/`, "Cache-Control": "public, max-age=31536000" });
+      return res.end();
     }
-    // German pages: /ausmalbilder/:slug/ — static HTML + optional gallery injection from mapped English topic
     const deTopicMatch = p.match(/^\/ausmalbilder\/([a-z]+)\/?$/);
     if (deTopicMatch) {
-      const deSlug   = deTopicMatch[1];
-      const enTopic  = DE_TOPIC_MAP[deSlug];
-      const staticPath = path.join(PUBLIC_DIR, "ausmalbilder", deSlug, "index.html");
-      let baseHtml;
-      try { baseHtml = fs.readFileSync(staticPath, "utf8"); } catch { /* fall through to static serve */ }
-      if (baseHtml) {
-        const deTopicName = enTopic ? (DE_TOPIC_NAMES[enTopic] || deSlug) : deSlug;
-        const deNav = buildNav({
-          lang: 'de',
-          breadcrumbs: [{ href: '/ausmalbilder/', label: 'Ausmalbilder' }, { label: deTopicName }],
-          hreflangMap: enTopic ? topicHreflangMap(enTopic) : { de: `https://lalabuba.com/ausmalbilder/${deSlug}/` },
-          ctaHref: enTopic ? `/?s=1&q=${encodeURIComponent(enTopic)}&d=easy` : '/',
-        });
-        let enhanced = injectUnifiedNav(baseHtml, deNav);
-        if (enTopic) {
-          const topicImages = gallery.getAllForTopic(enTopic);
-          const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
-          const deMeta = { ...gallery.TOPIC_META[enTopic], name: deTopicName };
-          if (hasAny) enhanced = injectGalleryIntoHtml(enhanced, gallerySection(topicImages, deMeta, DE_GALLERY_T));
-          const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
-          if (firstImg) {
-            enhanced = enhanced.replace(/<meta property="og:image"[^>]*>/, `<meta property="og:image" content="https://lalabuba.com${firstImg.url}"/>`);
-          }
-        }
-        return serveHtml(res, enhanced);
+      const staticPath = path.join(PUBLIC_DIR, "ausmalbilder", deTopicMatch[1], "index.html");
+      if (fs.existsSync(staticPath)) {
+        res.writeHead(301, { Location: `/de/ausmalbilder/${deTopicMatch[1]}/`, "Cache-Control": "public, max-age=31536000" });
+        return res.end();
       }
-    }
-    // German hub /ausmalbilder/ — static file
-    if (p === "/ausmalbilder" || p === "/ausmalbilder/") {
-      const hubPath = path.join(PUBLIC_DIR, "ausmalbilder", "index.html");
-      try {
-        const html = fs.readFileSync(hubPath, "utf8");
-        return serveHtml(res, html);
-      } catch { /* fall through */ }
     }
 
     // ── Language root pages: /de/, /fr/, /es/, /pt/, /ru/, /it/, /nl/, /pl/, /tr/, /zh/, /hi/ ──
@@ -1121,6 +1390,7 @@ const server = http.createServer(async (req, res) => {
 
 (async () => {
   await db.runMigrations();
+  gallery.backfillSlugs();
   db.cleanupExpiredArtworks().catch(err => console.error("[cleanup]", err.message));
   setInterval(() => db.cleanupExpiredArtworks().catch(() => {}), 24 * 60 * 60 * 1000);
   server.listen(PORT, HOST, () => {
