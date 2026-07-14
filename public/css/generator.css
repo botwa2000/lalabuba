@@ -139,8 +139,9 @@
   touch-action: manipulation;
   transition: all .2s;
 }
-.diff-pill:hover           { border-color: var(--blue); color: var(--blue); transform: translateY(-1px); }
-.diff-pill.selected        { background: linear-gradient(135deg, var(--blue), var(--purple)); border-color: transparent; color: #fff; box-shadow: 0 3px 14px rgba(124,77,255,.3); }
+.diff-pill:hover:not(:disabled)  { border-color: var(--blue); color: var(--blue); transform: translateY(-1px); }
+.diff-pill.selected               { background: linear-gradient(135deg, var(--blue), var(--purple)); border-color: transparent; color: #fff; box-shadow: 0 3px 14px rgba(124,77,255,.3); }
+.diff-pill--locked, .diff-pill:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: auto; }
 
 /* Palette pills */
 .palette-pill {

@@ -3,7 +3,7 @@ import { PALETTES, EXAMPLE_SUGGESTIONS, randomCardSubject, getDailyChallenge, ge
 import { sanitizeSubject, isSafeSubject } from './data.js';
 import { CRAYON_PACKS, packById, isPackUnlocked, unlockedPaletteIds, packsUnlockedAt } from './data.js';
 import { saveArtwork, initGalleryHandlers, openGalleryModal } from './gallery.js';
-import { recordCompletion, recordShare, recordSave, recordChallengeCreated, getProgress } from './progress.js';
+import { recordCompletion, recordShare, recordSave, recordChallengeCreated, getProgress, isExtremeUnlocked } from './progress.js';
 import { awardForCompletion, addArtSticker, weekScene, SCENE_SUBJECTS } from './scenes.js';
 import { isSoundOn, toggleSound, playComplete, bounce, sparkleBurst } from './fx.js';
 import { isNarrateOn, toggleNarrate, narrateSupported, speak } from './narrate.js';
@@ -872,8 +872,19 @@ document.getElementById("celebration-print").addEventListener("click", () => {
 });
 
 // ─── Difficulty pills ─────────────────────────────────────────────────────────
+function syncExtremePill() {
+  const unlocked = isExtremeUnlocked(getProgress());
+  const pill = document.querySelector('.diff-pill[data-diff="extreme"]');
+  if (!pill) return;
+  pill.disabled = !unlocked;
+  pill.classList.toggle('diff-pill--locked', !unlocked);
+  pill.title = unlocked ? '' : '🔒 Complete Easy, Medium & Hard first';
+}
+syncExtremePill();
+
 document.querySelectorAll('.diff-pill').forEach(btn => {
   btn.addEventListener('click', () => {
+    if (btn.disabled) return;
     document.querySelectorAll('.diff-pill').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     difficultySelect.value = btn.dataset.diff;
@@ -1345,8 +1356,10 @@ if (chipMode) chipMode.addEventListener('click', () => {
 
 
 if (chipDiff) chipDiff.addEventListener('click', () => {
-  const cur = DIFF_CYCLE.indexOf(difficultySelect.value);
-  difficultySelect.value = DIFF_CYCLE[(cur + 1) % DIFF_CYCLE.length];
+  const unlocked = isExtremeUnlocked(getProgress());
+  const allowed  = unlocked ? DIFF_CYCLE : DIFF_CYCLE.filter(d => d !== 'extreme');
+  const cur = allowed.indexOf(difficultySelect.value);
+  difficultySelect.value = allowed[(cur + 1) % allowed.length];
   difficultySelect.dispatchEvent(new Event('change'));
   updateDiffChip();
 });

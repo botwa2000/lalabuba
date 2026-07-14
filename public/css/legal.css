@@ -511,6 +511,22 @@ nav.legal-nav.lp-branded {
   flex-shrink: 0;
 }
 
+.lp-nav-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--lp-card, #fff);
+  border: 1.5px solid var(--lp-border, #e5e7eb);
+  font-size: 1.1rem;
+  text-decoration: none;
+  transition: border-color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+.lp-nav-icon-btn:hover { border-color: var(--lp-purple); transform: translateY(-1px); }
+
 .lp-nav-cta {
   display: inline-flex;
   align-items: center;

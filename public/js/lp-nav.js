@@ -79,6 +79,8 @@ function upgradeNav() {
     </a>
     <div class="lp-nav-crumbs" aria-label="Breadcrumb">${crumbsHtml}</div>
     <div class="lp-nav-actions">
+      <a href="/" class="lp-nav-icon-btn" aria-label="My Journal" title="My Journal">🖼️</a>
+      <a href="/" class="lp-nav-icon-btn" aria-label="Settings" title="Settings">⚙️</a>
       <a href="${ctaHref}" class="lp-nav-cta">${CTA_LABEL}</a>
       <button id="lp-theme-btn" aria-label="${ARIA_THEME}">🌙</button>
     </div>`;

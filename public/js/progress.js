@@ -109,6 +109,8 @@ function fresh() {
     longestStreak: 0,
     lastColoredDay: null,    // YYYY-MM-DD of the last completed day
     daysColored: 0,          // distinct days a coloring was finished
+    easyCompleted: 0,        // Easy finished
+    mediumCompleted: 0,      // Medium finished
     hardCompleted: 0,        // Hard OR Extreme finished
     extremeCompleted: 0,     // Extreme only
     maxColorUses: 0,         // finished with the Max (99) colour count
@@ -193,8 +195,10 @@ export function recordCompletion({ subject, difficulty, palette, colorCount, isC
     p.longestStreak = Math.max(p.longestStreak, p.streak);
   }
 
+  if (difficulty === 'easy')                             p.easyCompleted++;
+  if (difficulty === 'medium')                           p.mediumCompleted++;
   if (difficulty === 'hard' || difficulty === 'extreme') p.hardCompleted++;
-  if (difficulty === 'extreme') p.extremeCompleted++;
+  if (difficulty === 'extreme')                          p.extremeCompleted++;
   if (colorCount === 99) p.maxColorUses++;
   if (isCustom) p.freeTextCreations++;
   if (isDaily) p.dailyWordsCompleted++;
@@ -224,6 +228,14 @@ function bump(mutate) {
   const newBadges = award(p);
   save(p);
   return { progress: p, newBadges };
+}
+
+// Extreme unlocks after completing Easy ≥1, Medium ≥1, and Hard (non-extreme) ≥1
+// (mirrors flutter_app/lib/features/progress/progress_service.dart isExtremeUnlocked)
+export function isExtremeUnlocked(p) {
+  return (p.easyCompleted   || 0) >= 1 &&
+         (p.mediumCompleted || 0) >= 1 &&
+         ((p.hardCompleted  || 0) - (p.extremeCompleted || 0)) >= 1;
 }
 
 export function recordShare()            { return bump((p) => { p.shares++; }); }

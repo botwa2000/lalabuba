@@ -173,6 +173,25 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
 
   if (provider === "backend" || provider === "direct") {
     const apiBase = '';
+
+    // Wait up to 15 s for Turnstile to complete silent (or interactive) verification.
+    // Without this, calls from loadFromShare() arrive ~80 ms after page load —
+    // before the widget has received its token — and the API rejects with "Bot check failed".
+    if (!state.turnstileToken && window.turnstile) {
+      const el = document.getElementById('turnstile-widget');
+      const existing = el ? window.turnstile.getResponse(el) : null;
+      if (existing) {
+        state.turnstileToken = existing;
+      } else {
+        await new Promise((resolve) => {
+          const poll = setInterval(() => {
+            if (state.turnstileToken) { clearInterval(poll); clearTimeout(timer); resolve(); }
+          }, 100);
+          const timer = setTimeout(() => { clearInterval(poll); resolve(); }, 15000);
+        });
+      }
+    }
+
     // 75-second hard timeout — prevents an infinite hang on slow connections.
     // Novel subjects take ~20-30s on the server (Novita); Pollinations cache
     // hits return in ~1-2s. Hard/extreme go straight to Novita (~20-30s).
