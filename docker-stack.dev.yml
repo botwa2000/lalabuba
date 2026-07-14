@@ -22,6 +22,7 @@ services:
       - lalabuba_dev_CF_API_TOKEN
       - lalabuba_dev_TURNSTILE_SECRET_KEY
       - lalabuba_dev_GALLERY_ADMIN_KEY
+      - lalabuba_dev_JWT_SECRET
     deploy:
       replicas: 1
       update_config:
@@ -49,3 +50,4 @@ secrets:
   lalabuba_dev_CF_API_TOKEN: { external: true }
   lalabuba_dev_TURNSTILE_SECRET_KEY: { external: true }
   lalabuba_dev_GALLERY_ADMIN_KEY: { external: true }
+  lalabuba_dev_JWT_SECRET: { external: true }
