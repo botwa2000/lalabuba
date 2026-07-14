@@ -44,6 +44,13 @@ const DE_TOPIC_MAP = {
 // English topic → German slug (inverse)
 const EN_TO_DE_SLUG = Object.fromEntries(Object.entries(DE_TOPIC_MAP).map(([de, en]) => [en, de]));
 
+// German display names for topics (used in gallery section titles on static DE pages)
+const DE_TOPIC_NAMES = {
+  dragon: 'Drachen', unicorn: 'Einhorn', butterfly: 'Schmetterling',
+  dinosaur: 'Dinosaurier', cat: 'Katze', princess: 'Prinzessin',
+  mermaid: 'Meerjungfrau', rocket: 'Rakete',
+};
+
 // Translations for gallery section injected into DE static pages
 const DE_GALLERY_T = {
   colorThis:      'Ausmalen →',
@@ -1024,7 +1031,8 @@ const server = http.createServer(async (req, res) => {
         if (enTopic) {
           const topicImages = gallery.getAllForTopic(enTopic);
           const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
-          let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, gallery.TOPIC_META[enTopic], DE_GALLERY_T)) : baseHtml;
+          const deMeta = { ...gallery.TOPIC_META[enTopic], name: DE_TOPIC_NAMES[enTopic] || gallery.TOPIC_META[enTopic].name };
+          let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, deMeta, DE_GALLERY_T)) : baseHtml;
           const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
           if (firstImg) {
             enhanced = enhanced.replace(/<meta property="og:image"[^>]*>/, `<meta property="og:image" content="https://lalabuba.com${firstImg.url}"/>`);
