@@ -44,6 +44,14 @@ const DE_TOPIC_MAP = {
 // English topic → German slug (inverse)
 const EN_TO_DE_SLUG = Object.fromEntries(Object.entries(DE_TOPIC_MAP).map(([de, en]) => [en, de]));
 
+// Translations for gallery section injected into DE static pages
+const DE_GALLERY_T = {
+  colorThis:      'Ausmalen →',
+  diffLabels:     { easy: 'Einfach 🌟', medium: 'Mittel 🌟🌟', hard: 'Schwer 🌟🌟🌟' },
+  readyMadeTitle: (name) => `${name} Ausmalbilder zum Sofort-Ausmalen`,
+  readyMadeSub:   (name, q) => `Gleich loslegen — oder <a href="/?s=1&q=${q}&d=easy">ein neues ${name} erstellen</a>.`,
+};
+
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -199,11 +207,13 @@ function gallerySection(topicImages, meta, t) {
 }
 
 function injectGalleryIntoHtml(staticHtml, galleryHtml) {
-  // Inject before the last </div> that closes .legal-content
-  return staticHtml.replace(
-    /(<section[^>]*style="text-align:center"[\s\S]*?<\/section>\s*<\/div>)/,
-    (m) => m.replace("</div>", galleryHtml + "\n</div>")
-  );
+  // Find <footer, then inject before the last </div> preceding it (closes .legal-content).
+  // The old regex approach broke on pages where .lp-related-grid's </div> appeared first.
+  const footerIdx = staticHtml.indexOf('<footer');
+  if (footerIdx === -1) return staticHtml;
+  const divCloseIdx = staticHtml.lastIndexOf('</div>', footerIdx);
+  if (divCloseIdx === -1) return staticHtml;
+  return staticHtml.slice(0, divCloseIdx) + '\n' + galleryHtml + '\n' + staticHtml.slice(divCloseIdx);
 }
 
 function serveHtml(res, html) {
@@ -441,7 +451,7 @@ ${lpBrandNav(`<a href="/${root}/">${t.hubH1 ? t.hubH1.split(' ').slice(0,3).join
     <a href="/?s=1&q=${q}&d=easy" class="lp-cta">${t.generateCta(topicName)}</a>
   </div>
 </div>
-<div class="legal-content">
+<div class="legal-content lp-wide">
   ${galSection}
   <section class="lp-section">
     <h2 class="section-heading">${t.topicsHeading}</h2>
@@ -1014,7 +1024,7 @@ const server = http.createServer(async (req, res) => {
         if (enTopic) {
           const topicImages = gallery.getAllForTopic(enTopic);
           const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
-          let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, gallery.TOPIC_META[enTopic], null)) : baseHtml;
+          let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, gallery.TOPIC_META[enTopic], DE_GALLERY_T)) : baseHtml;
           const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
           if (firstImg) {
             enhanced = enhanced.replace(/<meta property="og:image"[^>]*>/, `<meta property="og:image" content="https://lalabuba.com${firstImg.url}"/>`);

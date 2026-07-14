@@ -95,6 +95,10 @@ body {
   margin: 0 auto;
   padding: 32px 24px 48px;
 }
+/* Topic/gallery pages need more room for the image grid */
+.legal-content.lp-wide {
+  max-width: 1100px;
+}
 
 h1 { font-size: 2rem; color: var(--lp-purple); margin-bottom: 4px; line-height: 1.2; }
 h2 {
