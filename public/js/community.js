@@ -10,7 +10,7 @@ import { t } from './i18n.js';
 
 // ── Device identity ─────────────────────────────────────────────────────────
 
-function getCommunityId() {
+export function getCommunityId() {
   let id = localStorage.getItem("lalabuba-community-id");
   if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
     id = crypto.randomUUID();

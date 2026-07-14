@@ -68,6 +68,10 @@ function upgradeNav() {
   while (crumbs.length && crumbs[0].classList.contains('nav-sep')) crumbs.shift();
   const crumbsHtml = crumbs.map(el => el.outerHTML).join('');
 
+  // Use the first page CTA href so the nav button pre-fills subject + difficulty
+  const pageCtaEl = document.querySelector('.lp-cta');
+  const ctaHref = pageCtaEl ? pageCtaEl.getAttribute('href') : '/';
+
   nav.innerHTML = `
     <a href="/" class="lp-nav-brand" aria-label="Lalabuba">
       <img src="/logo.png" class="lp-nav-mascot" alt="" width="36" height="36" loading="lazy">
@@ -75,7 +79,7 @@ function upgradeNav() {
     </a>
     <div class="lp-nav-crumbs" aria-label="Breadcrumb">${crumbsHtml}</div>
     <div class="lp-nav-actions">
-      <a href="/" class="lp-nav-cta">${CTA_LABEL}</a>
+      <a href="${ctaHref}" class="lp-nav-cta">${CTA_LABEL}</a>
       <button id="lp-theme-btn" aria-label="${ARIA_THEME}">🌙</button>
     </div>`;
   nav.classList.add('lp-branded');

@@ -4336,9 +4336,10 @@ function updateTopicLinks(lang) {
     todayLink.textContent = COLORING_TODAY_LABELS[lang] || COLORING_TODAY_LABELS.en;
   }
   // Update URL bar to reflect language (enables link sharing in correct language)
+  // Preserve any share/query params (e.g. ?s=1&q=dinosaur&d=easy) so loadFromShare() can read them.
   const langPath = lang === 'en' ? '/' : `/${lang}/`;
   if (location.pathname === '/' || /^\/[a-z]{2,3}\/$/.test(location.pathname)) {
-    history.replaceState({}, '', langPath);
+    history.replaceState({}, '', langPath + location.search);
   }
 }
 
