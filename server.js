@@ -7,6 +7,7 @@ const i18n = require("./lib/coloring-i18n");
 const db = require("./lib/db");
 const communityRouter = require("./api/community/router");
 const authRouter      = require("./api/auth/router");
+const { buildNav }    = require("./lib/lp-nav-component");
 
 // Production + local server for Lalabuba on Hetzner (Docker Swarm).
 //
@@ -228,6 +229,16 @@ function serveHtml(res, html) {
   res.end(html);
 }
 
+// Replace the old <nav class="legal-nav">...</nav> block in static HTML with the
+// unified server-rendered nav from lp-nav-component.js.
+function injectUnifiedNav(html, navHtml) {
+  const start = html.indexOf('<nav class="legal-nav"');
+  if (start === -1) return html; // already branded or missing
+  const end = html.indexOf('</nav>', start);
+  if (end === -1) return html;
+  return html.slice(0, start) + navHtml + html.slice(end + 6);
+}
+
 async function serveTopicPageWithGallery(res, topic) {
   const meta = gallery.TOPIC_META[topic];
   const staticPath = path.join(PUBLIC_DIR, "coloring-pages", topic, "index.html");
@@ -249,37 +260,46 @@ async function serveTopicPageWithGallery(res, topic) {
     );
   }
 
+  // Inject unified nav (replaces old legal-nav block in static HTML)
+  const topicNav = buildNav({
+    lang: 'en',
+    breadcrumbs: [{ href: '/coloring-pages/', label: 'Coloring Pages' }, { label: meta.name }],
+    hreflangMap: topicHreflangMap(topic),
+    ctaHref: `/?s=1&q=${encodeURIComponent(topic)}&d=easy`,
+  });
+  enhanced = injectUnifiedNav(enhanced, topicNav);
+
   serveHtml(res, enhanced);
 }
 
-const LP_WORDMARK = ['#ff4757','#ff7043','#ffca28','#26c281','#1e90ff','#7c4dff','#f06292','#ff6b6b']
-  .map((c, i) => `<span style="color:${c}">${'Lalabuba'[i]}</span>`).join('');
-
-const LP_NAV_CTA = {
-  en: '✏️ Draw!', de: '✏️ Ausmalen!', fr: '✏️ Colorier!', es: '✏️ ¡Colorear!',
-  pt: '✏️ Colorir!', ru: '✏️ Раскрасить!', it: '✏️ Colorare!', nl: '✏️ Kleuren!',
-  pl: '✏️ Kolorować!', tr: '✏️ Boyama!', zh: '✏️ 涂色！', hi: '✏️ रंग भरें!',
-};
-const LP_NAV_ARIA = {
-  en: 'Toggle theme', de: 'Hell/Dunkel wechseln', fr: 'Changer le thème', es: 'Cambiar tema',
-  pt: 'Alterar tema', ru: 'Переключить тему', it: 'Cambia tema', nl: 'Thema wisselen',
-  pl: 'Zmień motyw', tr: 'Temayı değiştir', zh: '切换主题', hi: 'थीम बदलें',
-};
-
-function lpBrandNav(breadcrumbHtml, lang = 'en') {
-  const cta  = LP_NAV_CTA[lang] || LP_NAV_CTA.en;
-  const aria = LP_NAV_ARIA[lang] || LP_NAV_ARIA.en;
-  return `<nav class="legal-nav lp-branded">
-  <a href="/" class="lp-nav-brand" aria-label="Lalabuba">
-    <img src="/logo.png" class="lp-nav-mascot" alt="" width="36" height="36" loading="lazy">
-    <span class="lp-nav-wordmark">${LP_WORDMARK}</span>
-  </a>
-  <div class="lp-nav-crumbs">${breadcrumbHtml}</div>
-  <div class="lp-nav-actions">
-    <a href="/" class="lp-nav-cta">${cta}</a>
-    <button id="lp-theme-btn" aria-label="${aria}">🌙</button>
-  </div>
-</nav>`;
+// Build hreflangMap object (lang→absolute-URL) for the language picker in the nav.
+// Hub pages: each lang links to its own hub root.
+function hubHreflangMap() {
+  const m = { en: 'https://lalabuba.com/coloring-pages/', de: 'https://lalabuba.com/ausmalbilder/' };
+  for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
+    m[lang] = `https://lalabuba.com/${cfg.root}/`;
+  }
+  return m;
+}
+// Topic pages: each lang links to its own topic page (or hub if no topic slug exists).
+function topicHreflangMap(enTopic) {
+  const m = { en: `https://lalabuba.com/coloring-pages/${enTopic}/` };
+  const deSlug = EN_TO_DE_SLUG[enTopic];
+  if (deSlug) m.de = `https://lalabuba.com/ausmalbilder/${deSlug}/`;
+  for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
+    const slug = cfg.topicSlugs[enTopic];
+    m[lang] = slug ? `https://lalabuba.com/${cfg.root}/${slug}/` : `https://lalabuba.com/${cfg.root}/`;
+  }
+  return m;
+}
+// Daily pages only exist in EN + DE; other langs fall back to their hub.
+function dailyHreflangMap(enUrl, deUrl) {
+  const m = { en: enUrl };
+  if (deUrl) m.de = deUrl;
+  for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
+    m[lang] = `https://lalabuba.com/${cfg.root}/`;
+  }
+  return m;
 }
 
 // ── i18n coloring-page SSR ───────────────────────────────────────────────────
@@ -290,7 +310,7 @@ const HEAD_COMMON = `  <meta name="theme-color" content="#7c4dff"/>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css"/>
+  <link rel="stylesheet" href="/css/legal.css?v=272"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>`;
 
@@ -369,7 +389,7 @@ ${HEAD_COMMON}
   <script type="application/ld+json">${ldJson}</script>
 </head>
 <body>
-${lpBrandNav(`<span class="nav-current">${t.hubH1}</span>`, lang)}
+${buildNav({ lang, breadcrumbs: [{ label: t.hubH1 }], hreflangMap: hubHreflangMap(), ctaHref: '/' })}
 <div class="lp-hero">
   <div class="lp-hero-inner">
     <span class="lp-hero-emoji">🖍️</span>
@@ -449,7 +469,7 @@ ${HEAD_COMMON}
   })}</script>
 </head>
 <body>
-${lpBrandNav(`<a href="/${root}/">${t.hubH1 ? t.hubH1.split(' ').slice(0,3).join(' ') : 'Coloring'}</a><span class="nav-sep">›</span><span class="nav-current">${topicName}</span>`, lang)}
+${buildNav({ lang, breadcrumbs: [{ href: `/${root}/`, label: t.hubH1 ? t.hubH1.split(' ').slice(0,3).join(' ') : 'Coloring' }, { label: topicName }], hreflangMap: topicHreflangMap(enTopic), ctaHref: `/?s=1&q=${q}&d=easy` })}
 <div class="lp-hero">
   <div class="lp-hero-inner">
     <span class="lp-hero-emoji">${emoji}</span>
@@ -543,7 +563,7 @@ function serveTodayPage(res) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css"/>
+  <link rel="stylesheet" href="/css/legal.css?v=272"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
@@ -554,7 +574,7 @@ function serveTodayPage(res) {
   }</script>
 </head>
 <body>
-${lpBrandNav(`<a href="/coloring-pages/">Coloring Pages</a><span class="nav-sep">›</span><span class="nav-current">Today</span>`)}
+${buildNav({ lang: 'en', breadcrumbs: [{ href: '/coloring-pages/', label: 'Coloring Pages' }, { label: 'Today' }], hreflangMap: dailyHreflangMap('https://lalabuba.com/coloring-pages/today/', 'https://lalabuba.com/ausmalbilder/heute/') })}
 <div class="lp-hero">
   <div class="lp-hero-inner">
     <span class="lp-hero-emoji">📅</span>
@@ -648,7 +668,7 @@ function serveDailyPage(res, date, word) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css"/>
+  <link rel="stylesheet" href="/css/legal.css?v=272"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
@@ -659,7 +679,7 @@ function serveDailyPage(res, date, word) {
   }</script>
 </head>
 <body>
-${lpBrandNav(`<a href="/coloring-pages/">Coloring Pages</a><span class="nav-sep">›</span><span class="nav-current">${wordTitle} (${date})</span>`)}
+${buildNav({ lang: 'en', breadcrumbs: [{ href: '/coloring-pages/', label: 'Coloring Pages' }, { label: `${wordTitle} (${date})` }], hreflangMap: dailyHreflangMap(`https://lalabuba.com/coloring-pages/daily/${date}-${word}/`, deAltLink ? `https://lalabuba.com/ausmalbilder/taeglich/${date}-${deWord}/` : null) })}
 <div class="lp-hero">
   <div class="lp-hero-inner">
     <span class="lp-hero-emoji">🖌️</span>
@@ -759,7 +779,7 @@ function serveGermanDailyPage(res, date, deWord) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css"/>
+  <link rel="stylesheet" href="/css/legal.css?v=272"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
@@ -770,7 +790,7 @@ function serveGermanDailyPage(res, date, deWord) {
   }</script>
 </head>
 <body>
-${lpBrandNav(`<a href="/ausmalbilder/">Ausmalbilder</a><span class="nav-sep">›</span><span class="nav-current">${deDisplay} (${date})</span>`, 'de')}
+${buildNav({ lang: 'de', breadcrumbs: [{ href: '/ausmalbilder/', label: 'Ausmalbilder' }, { label: `${deDisplay} (${date})` }], hreflangMap: dailyHreflangMap(`https://lalabuba.com/coloring-pages/daily/${date}-${enWord}/`, `https://lalabuba.com/ausmalbilder/taeglich/${date}-${deWord}/`) })}
 <div class="lp-hero">
   <div class="lp-hero-inner">
     <span class="lp-hero-emoji">🖌️</span>
@@ -1028,18 +1048,25 @@ const server = http.createServer(async (req, res) => {
       let baseHtml;
       try { baseHtml = fs.readFileSync(staticPath, "utf8"); } catch { /* fall through to static serve */ }
       if (baseHtml) {
+        const deTopicName = enTopic ? (DE_TOPIC_NAMES[enTopic] || deSlug) : deSlug;
+        const deNav = buildNav({
+          lang: 'de',
+          breadcrumbs: [{ href: '/ausmalbilder/', label: 'Ausmalbilder' }, { label: deTopicName }],
+          hreflangMap: enTopic ? topicHreflangMap(enTopic) : { de: `https://lalabuba.com/ausmalbilder/${deSlug}/` },
+          ctaHref: enTopic ? `/?s=1&q=${encodeURIComponent(enTopic)}&d=easy` : '/',
+        });
+        let enhanced = injectUnifiedNav(baseHtml, deNav);
         if (enTopic) {
           const topicImages = gallery.getAllForTopic(enTopic);
           const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
-          const deMeta = { ...gallery.TOPIC_META[enTopic], name: DE_TOPIC_NAMES[enTopic] || gallery.TOPIC_META[enTopic].name };
-          let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, deMeta, DE_GALLERY_T)) : baseHtml;
+          const deMeta = { ...gallery.TOPIC_META[enTopic], name: deTopicName };
+          if (hasAny) enhanced = injectGalleryIntoHtml(enhanced, gallerySection(topicImages, deMeta, DE_GALLERY_T));
           const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
           if (firstImg) {
             enhanced = enhanced.replace(/<meta property="og:image"[^>]*>/, `<meta property="og:image" content="https://lalabuba.com${firstImg.url}"/>`);
           }
-          return serveHtml(res, enhanced);
         }
-        return serveHtml(res, baseHtml);
+        return serveHtml(res, enhanced);
       }
     }
     // German hub /ausmalbilder/ — static file

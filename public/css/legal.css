@@ -446,7 +446,8 @@ strong { color: var(--lp-ink); }
   .lp-hero h1 { color: var(--lp-ink); }
 }
 
-/* ─── Branded page header (upgraded by lp-nav.js) ───────────────────────── */
+/* ─── Branded page header — server-rendered (lp-nav-component.js) ───────── */
+nav.lp-nav.lp-branded,
 nav.legal-nav.lp-branded {
   max-width: 100%;
   margin: 0;
@@ -542,13 +543,67 @@ nav.legal-nav.lp-branded {
 }
 .lp-nav-cta:hover { opacity: 0.88; transform: translateY(-1px); color: #fff; text-decoration: none; }
 
+nav.lp-nav.lp-branded #lp-theme-btn,
 nav.legal-nav.lp-branded #lp-theme-btn { padding: 6px 8px; }
 
+/* ── Language picker ─────────────────────────────────────────────────────── */
+.lp-lang-picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.lp-lang-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--lp-card, #fff);
+  border: 1.5px solid var(--lp-border, #e5e7eb);
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+.lp-lang-btn:hover { border-color: var(--lp-purple); transform: translateY(-1px); }
+.lp-lang-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  background: var(--lp-card, #fff);
+  border: 1.5px solid var(--lp-border, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.10);
+  padding: 6px 0;
+  list-style: none;
+  margin: 0;
+  z-index: 200;
+}
+.lp-lang-menu li { margin: 0; }
+.lp-lang-menu a {
+  display: block;
+  padding: 7px 16px;
+  font-size: 0.875rem;
+  color: var(--lp-text, #1e1b2e);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+.lp-lang-menu a:hover,
+.lp-lang-menu a:focus { background: var(--lp-bg, #f9f9fb); outline: none; }
+.lp-lang-menu a.lp-lang-current { font-weight: 700; color: var(--lp-purple); }
+
 @media (max-width: 640px) {
+  nav.lp-nav.lp-branded,
   nav.legal-nav.lp-branded { padding: 0 14px; height: 52px; }
   .lp-nav-crumbs { display: none; }
   .lp-nav-wordmark { font-size: 1.25rem; }
   .lp-nav-cta { font-size: 0.8rem; padding: 6px 12px; }
+  /* Picker menu anchors right edge to prevent off-screen */
+  .lp-lang-menu { right: 0; left: auto; max-height: 60vh; overflow-y: auto; }
 }
 
 /* ─── Social icons injected into legal-footer by lp-nav.js ──────────────── */
