@@ -77,38 +77,38 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
 
 ### Tasks
 
-- [ ] **NAV-1** Create `lib/lp-nav-component.js`
+- [x] **NAV-1** Create `lib/lp-nav-component.js`
   - Exports `buildNav({ lang, breadcrumbs, hreflangMap, ctaHref })` → HTML string
   - Logo (colored wordmark), breadcrumbs, language picker dropdown (all 12 langs with correct cross-links), 🖼️ journal link, 👤 account icon button, theme toggle button
   - Language picker: native `<details><summary>` or `<div role="combobox">` with `<ul>` — no JS needed to open, JS adds keyboard nav
   - Account button: shows 👤 if not logged in; shows avatar emoji + nickname if session cookie present (server reads JWT)
   - Mark nav with `class="lp-nav lp-branded"` and `data-lang="{lang}"`
 
-- [ ] **NAV-2** Rewrite `public/js/lp-nav.js` to wiring-only
+- [x] **NAV-2** Rewrite `public/js/lp-nav.js` to wiring-only
   - Remove all DOM restructuring (the `upgradeNav()` function that rewrites `innerHTML`)
   - Keep: `wireTheme()` (theme toggle), `wireLangMenu()` (open/close dropdown keyboard), `wireAccountFlyout()` (fetch `/api/auth/me`, show sign-in or profile), `injectLegalFooterSocial()`
   - The HTML nav is already server-rendered; JS only adds interactivity
 
-- [ ] **NAV-3** Replace `lpBrandNav()` in `server.js` with `buildNav()` from NAV-1
+- [x] **NAV-3** Replace `lpBrandNav()` in `server.js` with `buildNav()` from NAV-1
   - Add language picker `<ul>` with correct cross-links per page (pass `hreflangMap` — already computed for every page)
   - Add 🖼️ journal link (href = `/{lang}/` with `#gallery` fragment or modal trigger)
   - Add 👤 account button (no server-side session reading needed; JS flyout does it client-side)
   - Apply to: today page, daily page, DE daily page, hub pages, topic pages
 
-- [ ] **NAV-4** Apply `buildNav()` to all static DE ausmalbilder pages
+- [x] **NAV-4** Apply `buildNav()` to all static DE ausmalbilder pages
   - The static HTML pages at `public/ausmalbilder/*/index.html` currently have `<nav class="legal-nav">` which `lp-nav.js` upgrades client-side
   - After NAV-2, `lp-nav.js` no longer restructures the DOM
   - Options: (a) server regenerate these files with the new nav pre-baked, or (b) keep the static files but have the server inject the new nav on the fly in `serveTopicPageWithGallery` (simplest: replace the `<nav>` block in the HTML string)
   - Chosen approach: server rewrites the `<nav class="legal-nav">...</nav>` block in `injectGalleryIntoHtml()` using `buildNav()` result
 
-- [ ] **NAV-5** Add language picker CSS to `public/css/legal.css`
+- [x] **NAV-5** Add language picker CSS to `public/css/legal.css`
   - `.lp-lang-picker`: position relative, inline-flex
   - `.lp-lang-btn`: same style as `.lp-nav-icon-btn`, shows current flag+code
   - `.lp-lang-menu`: absolute dropdown, `hidden` attr toggle, `z-index` above content
   - `.lp-lang-menu a`: full-width, hover highlight, current lang bolded
   - MUST work at 375px (mobile portrait): dropdown does not clip off-screen (use `right: 0` anchor)
 
-- [ ] **NAV-6** Playwright screenshots + manual browser verification
+- [x] **NAV-6** Playwright screenshots + manual browser verification
   - Desktop: language picker visible and functional, account button present
   - Mobile portrait: nav not clipped, picker opens without overflow
   - Mobile landscape: nav single row, no wrap
@@ -123,14 +123,14 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
 
 ### Tasks
 
-- [ ] **URL-1** Add slug field to `gallery.json` schema
+- [x] **URL-1** Add slug field to `gallery.json` schema
   - In `lib/gallery.js`, when a new image is saved to the manifest, compute and store `slug`
   - Slug formula: take first significant noun from `subject` (e.g. `"friendly triceratops"` → `"triceratops"`), append `-{difficulty}` in English (`-easy`, `-medium`, `-hard`)
   - Collision guard: if slug already exists in this topic, append `-2`, `-3`, etc.
   - Also store `slugs` map per language (DE: `triceratops-leicht`, FR: `triceratops-facile`, etc.) — difficulty label from each LANGS config
   - Backfill existing gallery entries (run over existing `gallery.json` on boot if `slug` missing)
 
-- [ ] **URL-2** Add 301 redirects for old bare paths
+- [x] **URL-2** Add 301 redirects for old bare paths
   - In `server.js` routing block, before serving any coloring page:
     - `/coloring-pages/*` → `/en/coloring-pages/*` (301)
     - `/ausmalbilder/*` → `/de/ausmalbilder/*` (301)
@@ -138,13 +138,13 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
     - etc. for all 10 non-EN non-DE languages
   - Exception: routes that are already language-prefixed pass through
 
-- [ ] **URL-3** Add language-prefixed routing in `server.js`
+- [x] **URL-3** Add language-prefixed routing in `server.js`
   - Current patterns: `/coloring-pages/:topic/` and `/ausmalbilder/:slug/`
   - New patterns: `/en/coloring-pages/:topic/`, `/de/ausmalbilder/:slug/`, `/{lang}/{root}/{topicSlug}/`
   - The logic already exists; extract path with `p.match(/^\/(en|de|fr|es|pt|ru|it|nl|pl|tr|zh|hi)\/(.+)/)` and route to existing handlers
   - Update `lpBrandNav()` / `buildNav()` links to use language-prefixed URLs
 
-- [ ] **URL-4** Individual image page template (server-rendered)
+- [x] **URL-4** Individual image page template (server-rendered)
   - Route: `GET /{lang}/coloring-pages/{topic}/{slug}/`
   - Look up entry in `gallery.json` by `topic` + `slug` (or language-specific slug)
   - Render full HTML page:
@@ -156,12 +156,12 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
     - Below fold: description, difficulty info, related images grid, "Generate your own" section
   - OG image = the actual coloring page PNG (not og-image.png)
 
-- [ ] **URL-5** Print / download route
+- [x] **URL-5** Print / download route
   - Route: `GET /{lang}/coloring-pages/{topic}/{slug}/print`
   - Response for `?download=1`: serve PNG with `Content-Disposition: attachment; filename="lalabuba-{slug}.png"`
   - Response without param: minimal HTML page with `<img>` + `window.print()` on load + `@media print { body { margin:0 } }`
 
-- [ ] **URL-6** Topic index pages updated to link to individual pages
+- [x] **URL-6** Topic index pages updated to link to individual pages
   - The gallery card links currently go to `/?s=1&img=...`
   - Change `galleryCardHtml()` to link to `/{lang}/coloring-pages/{topic}/{slug}/` instead
   - "Color this →" text on the card → clicking opens the individual page (which then has the "Color now →" CTA)
@@ -188,7 +188,7 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
 
 ### Tasks
 
-- [ ] **ACC-1** DB migration `004_email_otp_children.sql`
+- [x] **ACC-1** DB migration `004_email_otp_children.sql`
   ```sql
   ALTER TABLE accounts
     ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ,
@@ -222,14 +222,14 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
     ADD COLUMN IF NOT EXISTS child_profile_id INTEGER REFERENCES child_profiles(id) ON DELETE SET NULL;
   ```
 
-- [ ] **ACC-2** `lib/email.js` — Resend API wrapper
+- [x] **ACC-2** `lib/email.js` — Resend API wrapper
   - `sendOtp(email, code, lang)` — sends 6-digit code via `POST https://api.resend.com/emails`
   - Reads `RESEND_API_KEY` from env
   - Simple subject: "Your Lalabuba code: {code}"
   - Plain text + minimal HTML body (code in large bold)
   - Add `RESEND_API_KEY` to Swarm secrets: `scripts/deploy.sh secrets prod`
 
-- [ ] **ACC-3** `api/auth/send-otp.js`
+- [x] **ACC-3** `api/auth/send-otp.js`
   - `POST /api/auth/send-otp { email }`
   - Rate limit: 3 per hour per email (not per IP — emails are specific)
   - Generate 6-digit code: `Math.floor(100000 + Math.random() * 900000).toString()`
@@ -238,7 +238,7 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
   - Call `email.sendOtp()`
   - Return `{ ok: true }` — never reveal whether email exists (prevent enumeration)
 
-- [ ] **ACC-4** `api/auth/verify-email.js`
+- [x] **ACC-4** `api/auth/verify-email.js`
   - `POST /api/auth/verify-email { email, code }`
   - Find latest non-expired, non-used OTP for email
   - Increment `attempts`; if ≥ 5, mark `used_at = NOW()` and return 429 `{ code: 'MAX_ATTEMPTS' }`
@@ -247,22 +247,22 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
   - Issue access + refresh tokens (same as current login.js)
   - Return `{ ok: true, accessToken, refreshToken, expiresIn, accountId, email }`
 
-- [ ] **ACC-5** `api/auth/resend-otp.js`
+- [x] **ACC-5** `api/auth/resend-otp.js`
   - `POST /api/auth/resend-otp { email }`
   - Same rate limit bucket as `send-otp`
   - Invalidates prior codes, generates new one, sends email
   - Returns `{ ok: true, cooldownSeconds: 60 }`
 
-- [ ] **ACC-6** Modify `api/auth/register.js`
+- [x] **ACC-6** Modify `api/auth/register.js`
   - After creating account, call `send-otp` internally (don't issue tokens yet)
   - Return `{ ok: true, pendingVerification: true, email }` — no `accessToken` yet
   - Unverified accounts CANNOT log in (ACC-7)
 
-- [ ] **ACC-7** Modify `api/auth/login.js`
+- [x] **ACC-7** Modify `api/auth/login.js`
   - After credential check, if `email_verified_at IS NULL`: return 403 `{ code: 'EMAIL_NOT_VERIFIED', email }`
   - Client must then show "Check your email for the verification code" with resend button
 
-- [ ] **ACC-8** Child profile CRUD `api/auth/children.js`
+- [x] **ACC-8** Child profile CRUD `api/auth/children.js`
   - `GET /api/auth/children` — list all child profiles for authed account
   - `POST /api/auth/children { nickname, avatarIndex, ageGroup, pin? }` — create (requires verified email)
     - Max children = `max_child_profiles` config (default 6)
@@ -273,7 +273,7 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
   - `DELETE /api/auth/children/:id` — delete (cascades profiles/artworks)
   - `POST /api/auth/children/:id/verify-pin { pin }` — validates PIN; returns `{ ok: true }` or 401
 
-- [ ] **ACC-9** Add routes to `api/auth/router.js`
+- [x] **ACC-9** Add routes to `api/auth/router.js`
   - `/api/auth/send-otp`, `/api/auth/verify-email`, `/api/auth/resend-otp`
   - `/api/auth/children` (GET + POST)
   - `/api/auth/children/:id` (PATCH + DELETE) — regex match
