@@ -172,7 +172,7 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
   - Run in batches via `scripts/populate-gallery.js` (create this script)
   - Do NOT run simultaneously with live traffic spikes
 
-- [ ] **URL-8** Playwright + manual verification
+- [x] **URL-8** Playwright + manual verification
   - `/en/coloring-pages/dinosaur/triceratops-easy/` loads with image, both CTAs present
   - `/de/ausmalbilder/dinosaurier/triceratops-leicht/print` serves PNG
   - Old URL `/coloring-pages/dinosaur/` redirects 301 to `/en/coloring-pages/dinosaur/`
