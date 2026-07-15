@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
 
   const normalEmail = email.trim().toLowerCase();
   const { rows } = await db.query(
-    "SELECT id, email, password_hash FROM accounts WHERE email = $1",
+    "SELECT id, email, password_hash, email_verified_at FROM accounts WHERE email = $1",
     [normalEmail]
   );
   const account = rows[0];
@@ -35,6 +35,14 @@ module.exports = async (req, res) => {
 
   if (!valid || !account) {
     return res.status(401).json({ error: "Wrong email or password.", code: "BAD_CREDENTIALS" });
+  }
+
+  // Block login if email not yet verified (accounts without password_hash = OTP-only accounts — pass through).
+  if (account.password_hash && !account.email_verified_at) {
+    return res.status(403).json({
+      error: "Please verify your email first. Check your inbox for the 6-digit code.",
+      code: "EMAIL_NOT_VERIFIED",
+    });
   }
 
   // Update last login + optionally link device.
