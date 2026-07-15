@@ -459,10 +459,8 @@
   .settings-toggle-btn { width: 34px; height: 34px; font-size: 1rem; }
   .settings-wrap { top: 8px; right: 10px; }
   .days-colored-pill { display: none !important; }
-  /* The full-text teaser is too wide for the 390px header (it overlapped the
-     centred wordmark). On mobile the first-time announcement is a pulse ring on
-     the always-visible Journal icon instead. */
-  .rewards-teaser { display: none !important; }
+  /* Explore hub link is desktop-only — hides on mobile to avoid logo overlap */
+  .explore-nav-btn { display: none; }
   .top-action-btn.attention { animation: journalAttention 1.8s ease-in-out infinite; }
   @keyframes journalAttention {
     0%, 100% { box-shadow: 0 0 0 0 rgba(124,77,255,0.45); }
