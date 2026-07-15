@@ -279,46 +279,46 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
   - `/api/auth/children/:id` (PATCH + DELETE) — regex match
   - `/api/auth/children/:id/verify-pin` (POST) — regex match
 
-- [ ] **ACC-10** Web UI — OTP verification step
+- [x] **ACC-10** Web UI — OTP verification step
   - In account modal / registration flow: after email+password submit, show OTP screen
   - 6 individual digit inputs (auto-advance on each keypress)
   - Countdown timer for expiry (10 min from send time)
   - "Resend code" link (active after 60s cooldown)
   - On success: show "Email verified! Now set up who's coloring."
 
-- [ ] **ACC-11** Web UI — Child profile management
+- [x] **ACC-11** Web UI — Child profile management
   - Account settings modal: "Children" section
   - List of child profile cards (avatar emoji, nickname, age badge, edit/delete)
   - "+ Add child" button → inline form: nickname picker (from curated list), avatar grid, age group radio, optional PIN toggle
   - On app load (coloring state): if account has ≥1 child and no `active_child_id` in session → show "Who's coloring?" modal overlay (grid of child cards, tap to select, PIN prompt if child has one)
   - "I'm the parent" link at bottom of selector → closes selector, uses parent account directly
 
-- [ ] **ACC-12** Flutter — OtpVerificationScreen
+- [x] **ACC-12** Flutter — OtpVerificationScreen
   - Shown after registration, before issuing tokens
   - 6 `TextField` boxes in a row, auto-advance on each digit, backspace goes back
   - "Resend" button with 60s cooldown timer
   - Calls `POST /api/auth/verify-email`; on success navigates to ChildSelectorScreen or HomeScreen
 
-- [ ] **ACC-13** Flutter — ChildSelectorScreen
+- [x] **ACC-13** Flutter — ChildSelectorScreen
   - Full-screen grid of child profile cards
   - Each card: large avatar emoji, nickname, age badge
   - Tap → if PIN set: show `ChildPinScreen`; else set `activeChildId` in `SharedPreferences`, navigate to HomeScreen
   - "I'm the parent" TextButton at bottom
   - Shown on app start if `account != null && children.isNotEmpty && activeChildId == null`
 
-- [ ] **ACC-14** Flutter — AddChildScreen
+- [x] **ACC-14** Flutter — AddChildScreen
   - `CupertinoPicker` (iOS-style wheel) for nickname (curated list from `GET /api/community/nicknames`)
   - Emoji grid for avatar (20 options)
   - Age group chip selector: "3–5 years", "6–8 years", "9–12 years"
   - Optional PIN: toggle → 4-digit PIN keypad appears
   - Submit → `POST /api/auth/children`
 
-- [ ] **ACC-15** Flutter — Settings screen family section
+- [x] **ACC-15** Flutter — Settings screen family section
   - "Family" group in settings: list of children, "+ Add child" tile, "Switch child" tile
   - Each child tile: avatar + nickname + age + edit icon
   - Edit opens AddChildScreen in edit mode
 
-- [ ] **ACC-16** DB migration run on prod + dev
+- [x] **ACC-16** DB migration run on prod + dev
   - `scripts/deploy.sh dev` (migration runs on boot automatically via `runMigrations()`)
   - Verify: `psql $DATABASE_URL -c "\dt"` — all new tables present
   - `scripts/deploy.sh prod` (typed `deploy` confirmation)
@@ -335,20 +335,20 @@ Verify: hero screen, coloring screen (portrait + rotate to landscape for each de
 ## Deployment Checklist
 
 ### Web (Hetzner)
-- [ ] **DEPLOY-W1** All NAV tasks complete + Playwright green
-- [ ] **DEPLOY-W2** All URL tasks complete + Playwright green
-- [ ] **DEPLOY-W3** `RESEND_API_KEY` added to Swarm secrets (both dev + prod)
-- [ ] **DEPLOY-W4** All ACC tasks complete + manual OTP test passing
-- [ ] **DEPLOY-W5** `scripts/deploy.sh prod` — final production deploy
-- [ ] **DEPLOY-W6** Verify live: `curl https://lalabuba.com/en/coloring-pages/dinosaur/triceratops-easy/` returns 200
-- [ ] **DEPLOY-W7** Verify old redirect: `curl -I https://lalabuba.com/coloring-pages/dinosaur/` returns 301
+- [x] **DEPLOY-W1** All NAV tasks complete + Playwright green
+- [ ] **DEPLOY-W2** All URL tasks complete + Playwright green (blocked on URL-7 gallery depth)
+- [ ] **DEPLOY-W3** `RESEND_API_KEY` added to Swarm secrets (both dev + prod) — BLOCKING: key not in any secrets store; needs owner input
+- [ ] **DEPLOY-W4** All ACC tasks complete + manual OTP test passing (blocked on DEPLOY-W3)
+- [x] **DEPLOY-W5** `scripts/deploy.sh prod` — final production deploy (live on prod)
+- [x] **DEPLOY-W6** Verify live: `curl https://lalabuba.com/en/coloring-pages/dinosaur/triceratops-easy/` returns 200 ✓
+- [x] **DEPLOY-W7** Verify old redirect: `curl -I https://lalabuba.com/coloring-pages/dinosaur/` returns 301 ✓
 
 ### Android (Play Store)
-- [ ] **DEPLOY-A1** `flutter analyze` clean
-- [ ] **DEPLOY-A2** `flutter test` all pass
-- [ ] **DEPLOY-A3** ACC Flutter screens complete (ACC-12 through ACC-15)
+- [x] **DEPLOY-A1** `flutter analyze` clean ✓
+- [x] **DEPLOY-A2** `flutter test` all pass (107/107) ✓
+- [x] **DEPLOY-A3** ACC Flutter screens complete (ACC-12 through ACC-15) ✓
 - [ ] **DEPLOY-A4** Emulator portrait + landscape QA passes (when other instance idle)
-- [ ] **DEPLOY-A5** `flutter build appbundle --release` succeeds
+- [ ] **DEPLOY-A5** `flutter build appbundle --release` succeeds (triggered via flutter-release.yml)
 - [ ] **DEPLOY-A6** Save release APK to `C:\Users\Alexa\OneDrive\TEMP\`
 - [ ] **DEPLOY-A7** Upload AAB to Play Console → Internal Testing → promote to Production
 
