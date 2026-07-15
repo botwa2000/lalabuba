@@ -281,7 +281,7 @@ function renderEmailStep(prefill = '') {
           ${t('accountContinueBtn') || 'Continue →'}
         </button>
       </form>
-      <p class="account-hint">${t('accountOtpHint') || 'We'll send you a 6-digit code. No password needed.'}</p>
+      <p class="account-hint">${t('accountOtpHint') || "We'll send you a 6-digit code. No password needed."}</p>
     </div>
   `;
   $id('account-close').addEventListener('click', closeModal);
