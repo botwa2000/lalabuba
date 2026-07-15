@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/services/storage_service.dart';
+import '../../shared/services/device_id_service.dart';
+import '../../core/di/providers.dart';
 
 /// Sticker collections — the meaningful grouping shown in the Rewards album.
 enum BadgeGroup { milestones, streaks, explorer, creativity, sharing }
@@ -359,7 +362,12 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
   static const _key = 'progress_v1';
 
   @override
-  Future<Progress> build() => _load();
+  Future<Progress> build() async {
+    final p = await _load();
+    // Kick off server load in background to pick up cross-device progress.
+    Future.microtask(() => loadFromServer().ignore());
+    return p;
+  }
 
   Future<Progress> _load() async {
     final raw = await StorageService.read(_key);
@@ -474,6 +482,7 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
 
     final (awarded, newBadges) = _award(p);
     await _save(awarded);
+    _syncToServer(awarded).ignore(); // fire-and-forget; never blocks the UI
     return newBadges;
   }
 
@@ -498,6 +507,174 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
     final (awarded, newBadges) = _award(f(p));
     await _save(awarded);
     return newBadges;
+  }
+
+  // ── Server sync ─────────────────────────────────────────────────────────────
+
+  // Access token key must match account_service.dart _kAccess.
+  static const _kAccessToken = 'lalabuba_access_token';
+
+  /// POST this device's full progress to the server. Returns the account
+  /// aggregate from the response and merges it into local state.
+  /// Fire-and-forget: all errors are swallowed.
+  Future<void> _syncToServer(Progress p) async {
+    try {
+      final config   = await ref.read(appConfigProvider.future);
+      final deviceId = await DeviceIdService.getDeviceId();
+      final token    = await StorageService.read(_kAccessToken);
+
+      final headers = <String, dynamic>{
+        'Content-Type': 'application/json',
+        'X-Device-ID':  deviceId,
+      };
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final body = <String, dynamic>{
+        'totalCompleted':      p.totalCompleted,
+        'totalGenerated':      p.totalGenerated,
+        'currentStreak':       p.streak,
+        'longestStreak':       p.longestStreak,
+        'lastActiveDate':      p.lastColoredDay,
+        'daysColored':         p.daysColored,
+        'easyCompleted':       p.easyCompleted,
+        'mediumCompleted':     p.mediumCompleted,
+        'hardCompleted':       p.hardCompleted,
+        'extremeCompleted':    p.extremeCompleted,
+        'maxColorUses':        p.maxColorUses,
+        'numbersCompleted':    p.numbersCompleted,
+        'freeColorCompleted':  p.freeColorCompleted,
+        'freeTextCreations':   p.freeTextCreations,
+        'drawPenUses':         p.drawPenUses,
+        'saves':               p.saves,
+        'shares':              p.shares,
+        'challengesCreated':   p.challengesCreated,
+        'dailyWordsCompleted': p.dailyWordsCompleted,
+        'uniqueSubjects':      p.uniqueSubjects,
+        'badges':              p.badges,
+        'palettesUsed':        p.palettesUsed,
+        'themesColored':       p.themesColored,
+        'subjects':            p.subjects,
+      };
+
+      final dio = Dio(BaseOptions(
+        baseUrl: config.apiBaseUrl,
+        connectTimeout: const Duration(seconds: 5),
+        receiveTimeout: const Duration(seconds: 10),
+      ));
+      final resp = await dio.post<Map<String, dynamic>>(
+        '/api/community/progress',
+        data: body,
+        options: Options(headers: headers),
+      );
+      if (resp.data != null && resp.data!['progress'] != null) {
+        await _mergeFromServer(resp.data!['progress'] as Map<String, dynamic>);
+      }
+    } catch (_) {
+      // Fire-and-forget: never break the coloring experience.
+    }
+  }
+
+  /// GET the account aggregate from the server and merge into local state.
+  /// Called at app start when the user is signed in.
+  Future<void> loadFromServer() async {
+    try {
+      final config   = await ref.read(appConfigProvider.future);
+      final deviceId = await DeviceIdService.getDeviceId();
+      final token    = await StorageService.read(_kAccessToken);
+
+      final headers = <String, dynamic>{'X-Device-ID': deviceId};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final dio = Dio(BaseOptions(
+        baseUrl: config.apiBaseUrl,
+        connectTimeout: const Duration(seconds: 5),
+        receiveTimeout: const Duration(seconds: 10),
+      ));
+      final resp = await dio.get<Map<String, dynamic>>(
+        '/api/community/progress',
+        options: Options(headers: headers),
+      );
+      if (resp.data != null && resp.data!['progress'] != null) {
+        await _mergeFromServer(resp.data!['progress'] as Map<String, dynamic>);
+      }
+    } catch (_) {
+      // Best-effort.
+    }
+  }
+
+  /// Merge a server progress map into local state using MAX strategy for
+  /// integers and UNION for list/map fields. Saves and updates state if changed.
+  Future<void> _mergeFromServer(Map<String, dynamic> srv) async {
+    final local = state.valueOrNull ?? await _load();
+
+    int maxInt(int a, dynamic b) {
+      final bInt = b is num ? b.toInt() : 0;
+      return a > bInt ? a : bInt;
+    }
+
+    final easy    = maxInt(local.easyCompleted,       srv['easyCompleted']);
+    final medium  = maxInt(local.mediumCompleted,     srv['mediumCompleted']);
+    final hard    = maxInt(local.hardCompleted,       srv['hardCompleted']);
+    final extreme = maxInt(local.extremeCompleted,    srv['extremeCompleted']);
+
+    // If the aggregate gives us no new data, skip the write.
+    if (easy <= local.easyCompleted &&
+        medium <= local.mediumCompleted &&
+        hard <= local.hardCompleted &&
+        extreme <= local.extremeCompleted &&
+        maxInt(local.totalCompleted, srv['totalCompleted']) <= local.totalCompleted) {
+      return;
+    }
+
+    List<String> unionList(List<String> a, dynamic b) {
+      final set = {...a, ...((b as List?)?.map((e) => e as String) ?? const [])};
+      return set.toList();
+    }
+
+    final mergedSubjects = Map<String, int>.from(local.subjects);
+    final srvSubj = (srv['subjects'] as Map?)?.map((k, v) => MapEntry(k as String, (v as num).toInt())) ?? {};
+    for (final e in srvSubj.entries) {
+      mergedSubjects[e.key] = (mergedSubjects[e.key] ?? 0) > e.value
+          ? mergedSubjects[e.key]!
+          : e.value;
+    }
+
+    String? laterDay(String? a, String? b) {
+      if (a == null) return b;
+      if (b == null) return a;
+      return a.compareTo(b) >= 0 ? a : b;
+    }
+
+    final merged = local.copyWith(
+      totalCompleted:      maxInt(local.totalCompleted,      srv['totalCompleted']),
+      totalGenerated:      maxInt(local.totalGenerated,      srv['totalGenerated']),
+      streak:              maxInt(local.streak,              srv['currentStreak']),
+      longestStreak:       maxInt(local.longestStreak,       srv['longestStreak']),
+      lastColoredDay:      laterDay(local.lastColoredDay,    srv['lastColoredDay'] as String?),
+      daysColored:         maxInt(local.daysColored,         srv['daysColored']),
+      easyCompleted:       easy,
+      mediumCompleted:     medium,
+      hardCompleted:       hard,
+      extremeCompleted:    extreme,
+      maxColorUses:        maxInt(local.maxColorUses,        srv['maxColorUses']),
+      numbersCompleted:    maxInt(local.numbersCompleted,    srv['numbersCompleted']),
+      freeColorCompleted:  maxInt(local.freeColorCompleted,  srv['freeColorCompleted']),
+      freeTextCreations:   maxInt(local.freeTextCreations,   srv['freeTextCreations']),
+      drawPenUses:         maxInt(local.drawPenUses,         srv['drawPenUses']),
+      saves:               maxInt(local.saves,               srv['saves']),
+      shares:              maxInt(local.shares,              srv['shares']),
+      challengesCreated:   maxInt(local.challengesCreated,   srv['challengesCreated']),
+      dailyWordsCompleted: maxInt(local.dailyWordsCompleted, srv['dailyWordsCompleted']),
+      badges:              unionList(local.badges,           srv['badges']),
+      palettesUsed:        unionList(local.palettesUsed,     srv['palettesUsed']),
+      themesColored:       unionList(local.themesColored,    srv['themesColored']),
+      subjects:            mergedSubjects,
+    );
+    await _save(merged);
   }
 }
 

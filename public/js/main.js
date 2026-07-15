@@ -884,6 +884,13 @@ function syncExtremePill() {
 }
 syncExtremePill();
 
+// When community.js merges server progress (cross-device aggregate), refresh the
+// Extreme pill so that completions on other devices unlock it here immediately.
+window.addEventListener('lalabuba:progressMerged', () => {
+  syncExtremePill();
+  updateDiffChip();
+});
+
 document.querySelectorAll('.diff-pill').forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.disabled) return;

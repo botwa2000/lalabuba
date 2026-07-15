@@ -7,6 +7,7 @@
  */
 
 import { t } from './i18n.js';
+import { getProgress, mergeFromServer } from './progress.js';
 
 // ── Device identity ─────────────────────────────────────────────────────────
 
@@ -626,18 +627,99 @@ if (previewCanvas && communityShareBtn) {
 }
 
 // ── Progress sync to server ───────────────────────────────────────────────────
-// Called by main.js after recordCompletion so web users appear on the leaderboard.
+// Called by main.js after recordCompletion so users appear on the leaderboard
+// and progress is stored cross-device for logged-in accounts.
 // Fire-and-forget: never blocks the completion flow; all errors are swallowed.
+
+function getAuthHeaders() {
+  // Read access token directly from localStorage (same key as account.js K_ACCESS).
+  const token = localStorage.getItem('lalabuba-access-token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export async function syncProgressToServer(progress) {
   try {
-    await apiPost("/api/community/progress", {
-      totalCompleted: progress.totalCompleted || 0,
-      currentStreak:  progress.streak || 0,
-      longestStreak:  progress.longestStreak || 0,
-      lastActiveDate: progress.lastColoredDay || null,
-    });
+    const p = progress || getProgress();
+    const res = await apiPost("/api/community/progress", {
+      totalCompleted:      p.totalCompleted      || 0,
+      totalGenerated:      p.totalGenerated      || 0,
+      currentStreak:       p.streak              || 0,
+      longestStreak:       p.longestStreak       || 0,
+      lastActiveDate:      p.lastColoredDay      || null,
+      daysColored:         p.daysColored         || 0,
+      easyCompleted:       p.easyCompleted       || 0,
+      mediumCompleted:     p.mediumCompleted     || 0,
+      hardCompleted:       p.hardCompleted       || 0,
+      extremeCompleted:    p.extremeCompleted    || 0,
+      maxColorUses:        p.maxColorUses        || 0,
+      numbersCompleted:    0,
+      freeColorCompleted:  0,
+      freeTextCreations:   p.freeTextCreations   || 0,
+      drawPenUses:         p.drawPenUses         || 0,
+      saves:               p.saves               || 0,
+      shares:              p.shares              || 0,
+      challengesCreated:   p.challengesCreated   || 0,
+      dailyWordsCompleted: p.dailyWordsCompleted || 0,
+      uniqueSubjects:      p.uniqueSubjects      || 0,
+      badges:              p.badges              || [],
+      palettesUsed:        p.palettesUsed        || [],
+      themesColored:       p.themesColored       || [],
+      subjects:            p.subjects            || {},
+    }, getAuthHeaders());
+
+    // Merge the server aggregate (may include other devices for this account).
+    if (res && res.progress) {
+      const merged = mergeFromServer(res.progress);
+      if (merged) {
+        window.dispatchEvent(new CustomEvent('lalabuba:progressMerged', { detail: merged }));
+      }
+    }
+
+    // Suggest signing in to anonymous users after their first completion.
+    if (!localStorage.getItem('lalabuba-access-token') && (p.totalCompleted === 1)) {
+      _suggestSignIn();
+    }
   } catch {
     // Best-effort: leaderboard sync is not critical to the coloring experience.
   }
+}
+
+// Load the server-side aggregate (account-level or device-level) and merge into
+// local progress. Useful on page load for logged-in users to pick up progress from
+// other devices.
+export async function loadProgressFromServer() {
+  try {
+    const headers = { 'X-Device-ID': getCommunityId(), ...getAuthHeaders() };
+    const r = await fetch('/api/community/progress', { headers });
+    if (!r.ok) return;
+    const data = await r.json();
+    if (data.progress) {
+      const merged = mergeFromServer(data.progress);
+      if (merged) {
+        window.dispatchEvent(new CustomEvent('lalabuba:progressMerged', { detail: merged }));
+      }
+    }
+  } catch {
+    // Best-effort.
+  }
+}
+
+// Non-intrusive one-time prompt for anonymous users to sign in for cross-device sync.
+const _SYNC_SUGGESTED_KEY = 'lalabuba-sync-suggested';
+function _suggestSignIn() {
+  try {
+    if (localStorage.getItem(_SYNC_SUGGESTED_KEY)) return;
+    localStorage.setItem(_SYNC_SUGGESTED_KEY, '1');
+  } catch { return; }
+  showToast(t('progressSyncSignInPrompt') || '🔄 Sign in to keep your progress on all devices', 5000);
+}
+
+// Re-load aggregate whenever the user logs in during this page session.
+window.addEventListener('lalabuba:login', () => {
+  loadProgressFromServer().catch(() => {});
+});
+
+// On page load: if already signed in, fetch aggregate once to pick up other devices.
+if (localStorage.getItem('lalabuba-access-token')) {
+  loadProgressFromServer().catch(() => {});
 }

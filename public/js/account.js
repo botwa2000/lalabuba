@@ -35,6 +35,8 @@ function saveSession({ accessToken, refreshToken, email, accountId }) {
   localStorage.setItem(K_EMAIL,   email);
   localStorage.setItem(K_ACCOUNT, String(accountId));
   _session = { accessToken, email, accountId };
+  // Signal community.js to load the cross-device aggregate for this account.
+  window.dispatchEvent(new CustomEvent('lalabuba:login'));
 }
 
 function clearSession() {

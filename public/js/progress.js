@@ -261,3 +261,60 @@ export function badgesIn(group) {
 export function getDailyCount() {
   return getProgress().today.generated;
 }
+
+// Merge a server-side progress aggregate into local state (take MAX of each
+// integer field, UNION of array fields). Saves the merged result to localStorage
+// and returns it. Called by community.js after a successful server sync.
+export function mergeFromServer(serverProgress) {
+  if (!serverProgress) return null;
+  const local = getProgress();
+  const merged = { ...local };
+
+  // Integer fields: server key → local key (the API uses currentStreak, local uses streak)
+  const intMap = [
+    ['totalCompleted',      'totalCompleted'],
+    ['totalGenerated',      'totalGenerated'],
+    ['currentStreak',       'streak'],
+    ['longestStreak',       'longestStreak'],
+    ['daysColored',         'daysColored'],
+    ['easyCompleted',       'easyCompleted'],
+    ['mediumCompleted',     'mediumCompleted'],
+    ['hardCompleted',       'hardCompleted'],
+    ['extremeCompleted',    'extremeCompleted'],
+    ['maxColorUses',        'maxColorUses'],
+    ['freeTextCreations',   'freeTextCreations'],
+    ['drawPenUses',         'drawPenUses'],
+    ['saves',               'saves'],
+    ['shares',              'shares'],
+    ['challengesCreated',   'challengesCreated'],
+    ['dailyWordsCompleted', 'dailyWordsCompleted'],
+    ['uniqueSubjects',      'uniqueSubjects'],
+  ];
+  for (const [sKey, lKey] of intMap) {
+    merged[lKey] = Math.max(local[lKey] || 0, serverProgress[sKey] || 0);
+  }
+
+  // Date: take the later one
+  if (serverProgress.lastColoredDay) {
+    if (!local.lastColoredDay || serverProgress.lastColoredDay > local.lastColoredDay) {
+      merged.lastColoredDay = serverProgress.lastColoredDay;
+    }
+  }
+
+  // Arrays: union (de-dup, preserve order)
+  const unionArr = (a, b) => [...new Set([...(a || []), ...(b || [])])];
+  merged.badges        = unionArr(local.badges,        serverProgress.badges);
+  merged.palettesUsed  = unionArr(local.palettesUsed,  serverProgress.palettesUsed);
+  merged.themesColored = unionArr(local.themesColored, serverProgress.themesColored);
+
+  // Subjects map: MAX per key
+  const mergedSubjects = { ...(local.subjects || {}) };
+  for (const [subj, cnt] of Object.entries(serverProgress.subjects || {})) {
+    mergedSubjects[subj] = Math.max(mergedSubjects[subj] || 0, parseInt(cnt) || 0);
+  }
+  merged.subjects      = mergedSubjects;
+  merged.uniqueSubjects = Math.max(merged.uniqueSubjects, Object.keys(mergedSubjects).length);
+
+  save(merged);
+  return merged;
+}
