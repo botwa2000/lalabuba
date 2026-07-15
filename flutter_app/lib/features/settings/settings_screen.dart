@@ -13,6 +13,8 @@ import '../community/widgets/avatar_picker.dart';
 import '../community/screens/family_screen.dart';
 import '../community/widgets/community_artwork_card.dart' show avatarEmoji;
 import '../account/account_screen.dart';
+import '../account/child_selector_screen.dart';
+import '../account/add_child_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -28,42 +30,79 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildAccountSection(BuildContext context, L10n l10n) {
     final account = ref.watch(accountProvider);
     final cs      = Theme.of(context).colorScheme;
+    final activeChild = account.activeChild;
+    final avatarIdx   = activeChild?.avatarIndex
+        ?? (account.devices.isNotEmpty ? account.devices.first.avatarIndex : 0);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(l10n.t('accountSaveProgress')),
         Card(
-          child: ListTile(
-            leading: Text(
-              account.isSignedIn
-                  ? avatarEmoji(account.devices.isNotEmpty
-                      ? account.devices.first.avatarIndex : 0)
-                  : '👤',
-              style: const TextStyle(fontSize: 28),
-            ),
-            title: Text(
-              account.isSignedIn
-                  ? (account.email ?? l10n.t('accountTitle'))
-                  : l10n.t('accountSaveProgress'),
-              style: GoogleFonts.fredoka(
-                fontWeight: FontWeight.w700,
-                color: account.isSignedIn ? null
-                    : cs.onSurface.withValues(alpha: 0.6),
+          child: Column(
+            children: [
+              // Account row
+              ListTile(
+                leading: Text(
+                  account.isSignedIn ? avatarEmoji(avatarIdx) : '👤',
+                  style: const TextStyle(fontSize: 28),
+                ),
+                title: Text(
+                  account.isSignedIn
+                      ? (activeChild?.nickname ?? account.email ?? l10n.t('accountTitle'))
+                      : l10n.t('accountSaveProgress'),
+                  style: GoogleFonts.fredoka(
+                    fontWeight: FontWeight.w700,
+                    color: account.isSignedIn ? null
+                        : cs.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                subtitle: Text(
+                  account.isSignedIn
+                      ? '✓ ${l10n.t("accountProgressSaved")}'
+                      : l10n.t('accountSaveProgressSub'),
+                  style: GoogleFonts.nunito(
+                    fontSize: 12,
+                    color: account.isSignedIn ? cs.primary : null,
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AccountScreen()),
+                ),
               ),
-            ),
-            subtitle: Text(
-              account.isSignedIn
-                  ? '✓ ${l10n.t("accountProgressSaved")}'
-                  : l10n.t('accountSaveProgressSub'),
-              style: GoogleFonts.nunito(
-                fontSize: 12,
-                color: account.isSignedIn ? cs.primary : null,
-              ),
-            ),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AccountScreen()),
-            ),
+              // Children section (only when signed in with children)
+              if (account.isSignedIn && account.children.isNotEmpty) ...[
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Text('🧒', style: TextStyle(fontSize: 24)),
+                  title: Text(l10n.t('accountWhoIsColoring'),
+                      style: GoogleFonts.nunito(
+                          fontSize: 14, fontWeight: FontWeight.w700)),
+                  subtitle: Text(
+                    activeChild?.nickname ?? l10n.t('accountNoChildSelected'),
+                    style: GoogleFonts.nunito(fontSize: 12),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ChildSelectorScreen()),
+                  ),
+                ),
+              ],
+              // Add child tile (only when signed in)
+              if (account.isSignedIn) ...[
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.add_rounded),
+                  title: Text(l10n.t('accountAddChild'),
+                      style: GoogleFonts.nunito(
+                          fontSize: 14, fontWeight: FontWeight.w700)),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AddChildScreen()),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ],

@@ -6,42 +6,13 @@ import '../core/config/app_config.dart';
 import '../core/di/providers.dart';
 
 // ── Keys ─────────────────────────────────────────────────────────────────────
-const _kAccess   = 'lalabuba_access_token';
-const _kRefresh  = 'lalabuba_refresh_token';
-const _kEmail    = 'lalabuba_account_email';
-const _kAccount  = 'lalabuba_account_id';
+const _kAccess      = 'lalabuba_access_token';
+const _kRefresh     = 'lalabuba_refresh_token';
+const _kEmail       = 'lalabuba_account_email';
+const _kAccount     = 'lalabuba_account_id';
+const _kActiveChild = 'lalabuba_active_child_id';
 
-// ── Model ─────────────────────────────────────────────────────────────────────
-class AccountState {
-  final bool isSignedIn;
-  final String? email;
-  final int? accountId;
-  final String? accessToken;
-  final List<DeviceProfile> devices;
-
-  const AccountState({
-    this.isSignedIn = false,
-    this.email,
-    this.accountId,
-    this.accessToken,
-    this.devices = const [],
-  });
-
-  AccountState copyWith({
-    bool? isSignedIn,
-    String? email,
-    int? accountId,
-    String? accessToken,
-    List<DeviceProfile>? devices,
-  }) => AccountState(
-    isSignedIn:  isSignedIn  ?? this.isSignedIn,
-    email:       email       ?? this.email,
-    accountId:   accountId   ?? this.accountId,
-    accessToken: accessToken ?? this.accessToken,
-    devices:     devices     ?? this.devices,
-  );
-}
-
+// ── Models ────────────────────────────────────────────────────────────────────
 class DeviceProfile {
   final String deviceUuid;
   final String? nickname;
@@ -69,6 +40,80 @@ class DeviceProfile {
   );
 }
 
+class ChildProfile {
+  final int id;
+  final String nickname;
+  final int avatarIndex;
+  final String? ageGroup;
+  final bool hasPin;
+
+  const ChildProfile({
+    required this.id,
+    required this.nickname,
+    this.avatarIndex = 0,
+    this.ageGroup,
+    this.hasPin = false,
+  });
+
+  factory ChildProfile.fromJson(Map<String, dynamic> j) => ChildProfile(
+    id:          (j['id'] as num).toInt(),
+    nickname:    j['nickname'] as String,
+    avatarIndex: (j['avatar_index'] as num?)?.toInt() ?? 0,
+    ageGroup:    j['age_group'] as String?,
+    hasPin:      (j['access_pin_hash'] as String?)?.isNotEmpty ?? false,
+  );
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+class AccountState {
+  final bool isSignedIn;
+  final String? email;
+  final int? accountId;
+  final String? accessToken;
+  final List<DeviceProfile> devices;
+  final List<ChildProfile> children;
+  final int? activeChildId;
+  final String? pendingOtpEmail; // set during OTP flow, cleared on verify
+
+  const AccountState({
+    this.isSignedIn = false,
+    this.email,
+    this.accountId,
+    this.accessToken,
+    this.devices = const [],
+    this.children = const [],
+    this.activeChildId,
+    this.pendingOtpEmail,
+  });
+
+  ChildProfile? get activeChild =>
+      children.where((c) => c.id == activeChildId).firstOrNull;
+
+  AccountState copyWith({
+    bool? isSignedIn,
+    String? email,
+    int? accountId,
+    String? accessToken,
+    List<DeviceProfile>? devices,
+    List<ChildProfile>? children,
+    Object? activeChildId = _sentinel,
+    Object? pendingOtpEmail = _sentinel,
+  }) => AccountState(
+    isSignedIn:      isSignedIn      ?? this.isSignedIn,
+    email:           email           ?? this.email,
+    accountId:       accountId       ?? this.accountId,
+    accessToken:     accessToken     ?? this.accessToken,
+    devices:         devices         ?? this.devices,
+    children:        children        ?? this.children,
+    activeChildId:   activeChildId   == _sentinel
+        ? this.activeChildId   : activeChildId as int?,
+    pendingOtpEmail: pendingOtpEmail == _sentinel
+        ? this.pendingOtpEmail : pendingOtpEmail as String?,
+  );
+}
+
+const _sentinel = Object();
+
 // ── Notifier ──────────────────────────────────────────────────────────────────
 class AccountNotifier extends StateNotifier<AccountState> {
   AccountNotifier(this._storage, AppConfig config)
@@ -82,37 +127,157 @@ class AccountNotifier extends StateNotifier<AccountState> {
   final FlutterSecureStorage _storage;
   final Dio _dio;
 
-  // Fetched lazily per-call — same pattern as CommunityService.
   Future<String> get _deviceId => DeviceIdService.getDeviceId();
 
-  // Call once at app startup.
+  Options get _authHeaders {
+    final token = state.accessToken;
+    if (token == null) return Options();
+    return Options(headers: {'Authorization': 'Bearer $token'});
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
   Future<void> init() async {
-    final access  = await _storage.read(key: _kAccess);
-    final refresh = await _storage.read(key: _kRefresh);
-    final email   = await _storage.read(key: _kEmail);
-    final idStr   = await _storage.read(key: _kAccount);
+    final access    = await _storage.read(key: _kAccess);
+    final refresh   = await _storage.read(key: _kRefresh);
+    final email     = await _storage.read(key: _kEmail);
+    final idStr     = await _storage.read(key: _kAccount);
+    final childStr  = await _storage.read(key: _kActiveChild);
 
     if (access == null || email == null) return;
 
     state = AccountState(
-      isSignedIn:  true,
-      email:       email,
-      accountId:   idStr != null ? int.tryParse(idStr) : null,
-      accessToken: access,
+      isSignedIn:    true,
+      email:         email,
+      accountId:     idStr != null ? int.tryParse(idStr) : null,
+      accessToken:   access,
+      activeChildId: childStr != null ? int.tryParse(childStr) : null,
     );
 
-    // Silently refresh in background.
-    if (refresh != null) {
-      _silentRefresh(refresh);
+    if (refresh != null) _silentRefresh(refresh);
+    fetchChildren();
+  }
+
+  // ── OTP auth flow (passwordless) ──────────────────────────────────────────
+  Future<void> sendOtp(String email, String lang) async {
+    await _dio.post('/api/auth/send-otp', data: {
+      'email': email.trim().toLowerCase(),
+      'lang':  lang,
+    });
+    state = state.copyWith(pendingOtpEmail: email.trim().toLowerCase());
+  }
+
+  Future<void> verifyOtp(String email, String code) async {
+    final deviceUuid = await _deviceId;
+    final res = await _dio.post('/api/auth/verify-email', data: {
+      'email':      email.trim().toLowerCase(),
+      'code':       code,
+      'deviceUuid': deviceUuid,
+    });
+    final data = res.data as Map<String, dynamic>;
+    await _persistTokens(
+      accessToken:  data['accessToken'] as String,
+      refreshToken: data['refreshToken'] as String,
+      email:        data['email'] as String,
+      accountId:    (data['accountId'] as num).toInt(),
+    );
+    state = state.copyWith(pendingOtpEmail: null);
+    await fetchChildren();
+  }
+
+  Future<void> resendOtp(String email, String lang) async {
+    await _dio.post('/api/auth/resend-otp', data: {
+      'email': email.trim().toLowerCase(),
+      'lang':  lang,
+    });
+  }
+
+  // ── Children ───────────────────────────────────────────────────────────────
+  Future<void> fetchChildren() async {
+    try {
+      final res = await _dio.get('/api/auth/children', options: _authHeaders);
+      final list = ((res.data as Map<String, dynamic>)['children'] as List? ?? [])
+          .map((c) => ChildProfile.fromJson(c as Map<String, dynamic>))
+          .toList();
+      state = state.copyWith(children: list);
+    } catch (_) {}
+  }
+
+  Future<ChildProfile> addChild(String nickname, int avatarIndex, String? ageGroup) async {
+    final res = await _dio.post(
+      '/api/auth/children',
+      options: _authHeaders,
+      data: {
+        'nickname':    nickname,
+        'avatarIndex': avatarIndex,
+        if (ageGroup != null) 'ageGroup': ageGroup,
+      },
+    );
+    final child = ChildProfile.fromJson(
+        (res.data as Map<String, dynamic>)['child'] as Map<String, dynamic>);
+    state = state.copyWith(children: [...state.children, child]);
+    return child;
+  }
+
+  Future<void> setActiveChild(int? childId) async {
+    if (childId != null) {
+      await _storage.write(key: _kActiveChild, value: childId.toString());
+    } else {
+      await _storage.delete(key: _kActiveChild);
     }
+    state = state.copyWith(activeChildId: childId);
+  }
+
+  // ── Fetch me ───────────────────────────────────────────────────────────────
+  Future<void> fetchMe() async {
+    try {
+      final res = await _dio.get('/api/auth/me', options: _authHeaders);
+      final data = res.data as Map<String, dynamic>;
+      final devicesJson = (data['devices'] as List?) ?? [];
+      final devices = devicesJson
+          .map((d) => DeviceProfile.fromJson(d as Map<String, dynamic>))
+          .toList();
+      state = state.copyWith(devices: devices);
+    } catch (_) {}
+  }
+
+  // ── Logout ─────────────────────────────────────────────────────────────────
+  Future<void> logout() async {
+    final refresh = await _storage.read(key: _kRefresh);
+    try {
+      await _dio.post('/api/auth/logout', data: {'refreshToken': refresh},
+          options: _authHeaders);
+    } catch (_) {}
+    await _storage.delete(key: _kAccess);
+    await _storage.delete(key: _kRefresh);
+    await _storage.delete(key: _kEmail);
+    await _storage.delete(key: _kAccount);
+    await _storage.delete(key: _kActiveChild);
+    state = const AccountState();
+  }
+
+  // ── Token persistence ──────────────────────────────────────────────────────
+  Future<void> _persistTokens({
+    required String accessToken,
+    required String refreshToken,
+    required String email,
+    required int accountId,
+  }) async {
+    await _storage.write(key: _kAccess,  value: accessToken);
+    await _storage.write(key: _kRefresh, value: refreshToken);
+    await _storage.write(key: _kEmail,   value: email);
+    await _storage.write(key: _kAccount, value: accountId.toString());
+    state = state.copyWith(
+      isSignedIn:  true,
+      email:       email,
+      accountId:   accountId,
+      accessToken: accessToken,
+    );
   }
 
   Future<void> _silentRefresh(String refreshToken) async {
     try {
-      final res = await _dio.post(
-        '/api/auth/refresh',
-        data: {'refreshToken': refreshToken},
-      );
+      final res = await _dio.post('/api/auth/refresh',
+          data: {'refreshToken': refreshToken});
       if (res.statusCode == 200) {
         final data = res.data as Map<String, dynamic>;
         await _persistTokens(
@@ -122,105 +287,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
           accountId:    state.accountId ?? 0,
         );
       }
-    } catch (_) {
-      // Ignore silent refresh errors — user stays signed in with old token.
-    }
-  }
-
-  Future<void> register(String email, String password) async {
-    final deviceUuid = await _deviceId;
-    final res = await _dio.post(
-      '/api/auth/register',
-      data: {
-        'email':      email.trim().toLowerCase(),
-        'password':   password,
-        'deviceUuid': deviceUuid,
-      },
-    );
-    final data = res.data as Map<String, dynamic>;
-    await _persistTokens(
-      accessToken:  data['accessToken'] as String,
-      refreshToken: data['refreshToken'] as String,
-      email:        data['email'] as String,
-      accountId:    (data['accountId'] as num).toInt(),
-    );
-  }
-
-  Future<void> login(String email, String password) async {
-    final deviceUuid = await _deviceId;
-    final res = await _dio.post(
-      '/api/auth/login',
-      data: {
-        'email':      email.trim().toLowerCase(),
-        'password':   password,
-        'deviceUuid': deviceUuid,
-      },
-    );
-    final data = res.data as Map<String, dynamic>;
-    await _persistTokens(
-      accessToken:  data['accessToken'] as String,
-      refreshToken: data['refreshToken'] as String,
-      email:        data['email'] as String,
-      accountId:    (data['accountId'] as num).toInt(),
-    );
-    await fetchMe();
-  }
-
-  Future<void> fetchMe() async {
-    try {
-      final token = state.accessToken;
-      if (token == null) return;
-      final res = await _dio.get(
-        '/api/auth/me',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-      final data = res.data as Map<String, dynamic>;
-      final devicesJson = (data['devices'] as List?) ?? [];
-      final devices = devicesJson
-          .map((d) => DeviceProfile.fromJson(d as Map<String, dynamic>))
-          .toList();
-      state = state.copyWith(devices: devices);
-    } catch (_) {
-      // Non-fatal: profile data just won't refresh.
-    }
-  }
-
-  Future<void> logout() async {
-    final refresh = await _storage.read(key: _kRefresh);
-    final token   = state.accessToken;
-    try {
-      await _dio.post(
-        '/api/auth/logout',
-        data: {'refreshToken': refresh},
-        options: token != null
-            ? Options(headers: {'Authorization': 'Bearer $token'})
-            : null,
-      );
     } catch (_) {}
-
-    await _storage.delete(key: _kAccess);
-    await _storage.delete(key: _kRefresh);
-    await _storage.delete(key: _kEmail);
-    await _storage.delete(key: _kAccount);
-    state = const AccountState();
-  }
-
-  Future<void> _persistTokens({
-    required String accessToken,
-    required String refreshToken,
-    required String email,
-    required int accountId,
-  }) async {
-    await _storage.write(key: _kAccess,   value: accessToken);
-    await _storage.write(key: _kRefresh,  value: refreshToken);
-    await _storage.write(key: _kEmail,    value: email);
-    await _storage.write(key: _kAccount,  value: accountId.toString());
-    state = state.copyWith(
-      isSignedIn:  true,
-      email:       email,
-      accountId:   accountId,
-      accessToken: accessToken,
-    );
   }
 }
 
