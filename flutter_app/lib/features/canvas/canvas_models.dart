@@ -205,11 +205,23 @@ class CanvasState {
         filled.toARGB32() == assigned.toARGB32();
   }
 
+  /// Regions too small to reliably tap (< 0.05% of canvas pixels) are treated
+  /// as auto-completed — they match the web's auto-complete logic in checkCompletion.
+  bool _isTinyRegion(int id) {
+    final det = detection;
+    if (det == null) return false;
+    final tiny = (det.width * det.height * 0.0005).round();
+    for (final r in det.regions) {
+      if (r.id == id) return r.pixelCount < tiny;
+    }
+    return false;
+  }
+
   /// How many meaningful areas are coloured so far.
   int get colouredTargetCount {
     var n = 0;
     for (final id in regionColorMap.keys) {
-      if (_targetColoured(id)) n++;
+      if (_targetColoured(id) || _isTinyRegion(id)) n++;
     }
     return n;
   }

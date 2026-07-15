@@ -91,6 +91,7 @@ function _applyWorkerResult(result) {
   // the .finally() redraw uses proper worker-derived region IDs and colours.
   state.numberRegions = null;
   state.regionColorMap = null;
+  state.regionAreaMap = null;
 }
 
 // Module-level palette context, set by setPaletteContext() from ui.js
@@ -294,6 +295,7 @@ export function overlayNumbers() {
   // Colors can repeat across regions (like a real color-by-number book).
   if (!state.regionColorMap) {
     state.regionColorMap = new Map();
+    state.regionAreaMap = new Map();
 
     regions.forEach((region, index) => {
       let paletteIndex = index % palette.length;
@@ -335,7 +337,10 @@ export function overlayNumbers() {
       // Never assign a numbered badge to the background region — its vast white
       // area causes all brightness-based centroids to collapse onto the same mapId,
       // which lets drawnMapIds deduplicate away all but the first badge.
-      if (mapId > 0 && mapId !== state.backgroundRegionId) state.regionColorMap.set(mapId, paletteIndex);
+      if (mapId > 0 && mapId !== state.backgroundRegionId) {
+        state.regionColorMap.set(mapId, paletteIndex);
+        state.regionAreaMap.set(mapId, region.area);
+      }
     });
 
     // ── Graph coloring: ensure no two adjacent regions share a color ─────────
@@ -406,6 +411,7 @@ export function overlayNumbers() {
       });
       state.numberRegions = regions;
       state.regionColorMap = new Map();
+      state.regionAreaMap = new Map();
       regions.forEach((reg, idx) => {
         const pixels = state.regionPixels?.get(reg.id);
         let paletteIndex = idx % palette.length;
@@ -422,6 +428,7 @@ export function overlayNumbers() {
           if (avgBr < 240) paletteIndex = nearestPaletteIndex(sumR / count, sumG / count, sumB / count, palette);
         }
         state.regionColorMap.set(reg.id, paletteIndex);
+        state.regionAreaMap.set(reg.id, reg.area);
       });
     }
   }
@@ -961,6 +968,7 @@ export function drawBaseImage(image) {
   state.regionMap = null;
   state.regionPixels = null;
   state.regionColorMap = null;
+  state.regionAreaMap = null;
   state.numberRegions = null; // cached badge regions — recompute for the new image
   state.numberTargets = null; // cached free-mode completion targets — recompute too
   state.hasFreehand = false;  // fresh draw layer for the new image

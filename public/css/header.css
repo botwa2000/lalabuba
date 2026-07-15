@@ -283,7 +283,6 @@
   border-color: var(--yellow, #ffca28);
 }
 .rewards-teaser:hover { animation: none; border-color: var(--purple); }
-.app:not(.app-hero) .rewards-teaser { display: none !important; }
 @keyframes rewardsTeaserPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .rewards-teaser { animation: none; } }
 

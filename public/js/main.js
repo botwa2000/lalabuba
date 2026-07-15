@@ -170,8 +170,16 @@ function checkCompletion() {
 
   const numbersOn = showNumbersInput.checked && !state.isFreeMode;
   if (numbersOn) {
-    // Guided colour-by-number: strict — every numbered area in its assigned colour.
+    // Guided colour-by-number: every numbered area must be filled.
     if (!state.regionColorMap || state.regionColorMap.size === 0) return;
+    // Auto-complete regions too small to reliably tap (< 0.05% of canvas pixels).
+    // These are valid coloring areas but slivers a finger/cursor can't hit precisely.
+    if (state.regionAreaMap && previewCanvas) {
+      const tiny = previewCanvas.width * previewCanvas.height * 0.0005;
+      for (const [id, area] of state.regionAreaMap) {
+        if (area < tiny && !state.completedRegions.has(id)) state.completedRegions.add(id);
+      }
+    }
     if (![...state.regionColorMap.keys()].every((id) => state.completedRegions.has(id))) return;
   } else {
     // Free-colour: forgiving, self-scaling ~90% of the meaningful areas coloured
@@ -711,6 +719,11 @@ previewCanvas.addEventListener("click", (event) => {
 
   if (!state.coloringStartTime) state.coloringStartTime = Date.now();
 
+  // Mark region complete BEFORE fill so redrawCanvas (called inside fillRegion)
+  // already sees it as done — the number badge disappears immediately on tap.
+  const completedBefore = state.completedRegions.has(regionId);
+  if (regionId > 0) state.completedRegions.add(regionId);
+
   // Primary fill: use exact region pixels when worker has finished (accurate,
   // no MAX_FILL cap). fillRegion works for ANY region including the background —
   // it has the exact pixel list so it never overflows. Fall back to BFS only when
@@ -722,15 +735,12 @@ previewCanvas.addEventListener("click", (event) => {
     fillResult = floodFillAt(canvasX, canvasY, fillColor);
   }
   if (!fillResult.success) {
+    if (regionId > 0 && !completedBefore) state.completedRegions.delete(regionId);
     if (state.isSegmenting) setStatus(t('segmentingHint'), false);
     return;
   }
 
   state.anyFillApplied = true;
-
-  // If regionMap is ready, mark the corresponding region for completion tracking.
-  const completedBefore = state.completedRegions.has(regionId);
-  if (regionId > 0) state.completedRegions.add(regionId);
 
   pushUndo(regionId, fillResult, completedBefore);
 
@@ -1313,7 +1323,7 @@ function applyDrawMode(mode) {
 function updateModeChip() {
   if (!chipMode) return;
   const mode = getDrawMode();
-  const labels = { classic: `🖌️ ${t('modeClassic') || 'Classic'}`, numbers: `🔢 ${t('modeNumbers') || 'Numbers'}`, sketch: `✏️ ${t('modeSketch') || 'Sketch'}` };
+  const labels = { classic: t('modeClassic') || '🖌️ Classic', numbers: t('modeNumbers') || '🔢 Numbers', sketch: t('modeSketch') || '✏️ Sketch' };
   const hints  = { classic: t('artStyleClassicHint'), numbers: t('artStyleClassicHint'), sketch: t('artStyleSketchHint') };
   chipMode.textContent = labels[mode] || '🖌️ Classic';
   chipMode.classList.toggle('setting-chip--on', mode !== 'sketch');

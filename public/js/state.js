@@ -8,6 +8,7 @@ export const state = {
   regionPixels: null,
   backgroundRegionId: 0,
   regionColorMap: null,
+  regionAreaMap: null,
   eraseMode: false,
   completedRegions: new Set(),
   celebrationShown: false,
