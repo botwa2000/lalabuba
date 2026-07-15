@@ -22,6 +22,7 @@ services:
       - lalabuba_prod_TURNSTILE_SECRET_KEY
       - lalabuba_prod_GALLERY_ADMIN_KEY
       - lalabuba_prod_JWT_SECRET
+      - lalabuba_prod_BREVO_API_KEY
     deploy:
       replicas: 1
       update_config:
@@ -49,3 +50,4 @@ secrets:
   lalabuba_prod_TURNSTILE_SECRET_KEY: { external: true }
   lalabuba_prod_GALLERY_ADMIN_KEY: { external: true }
   lalabuba_prod_JWT_SECRET: { external: true }
+  lalabuba_prod_BREVO_API_KEY: { external: true }
