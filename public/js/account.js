@@ -1,20 +1,22 @@
-// Account management: sign in / register + session persistence.
+// Account management: passwordless OTP sign-in + child profile selector.
 // Imported by main.js. No framework — vanilla ES module.
 
 import { t } from './i18n.js';
 import { getCommunityId } from './community.js';
 
-const BASE = '';  // same origin
+const BASE = '';
 
-// ── Storage keys ────────────────────────────────────────────────────────────
-const K_ACCESS  = 'lalabuba-access-token';
-const K_REFRESH = 'lalabuba-refresh-token';
-const K_EMAIL   = 'lalabuba-account-email';
-const K_ACCOUNT = 'lalabuba-account-id';
+// ── Storage keys ─────────────────────────────────────────────────────────────
+const K_ACCESS       = 'lalabuba-access-token';
+const K_REFRESH      = 'lalabuba-refresh-token';
+const K_EMAIL        = 'lalabuba-account-email';
+const K_ACCOUNT      = 'lalabuba-account-id';
+const K_CHILD        = 'lalabuba-active-child-id';
 
-// ── State ────────────────────────────────────────────────────────────────────
-let _session = null; // { accountId, email, accessToken } or null
-let _me      = null; // full /api/auth/me response
+// ── State ─────────────────────────────────────────────────────────────────────
+let _session  = null; // { accountId, email, accessToken } or null
+let _me       = null; // full /api/auth/me response
+let _children = [];   // child profiles for this account
 
 function loadSession() {
   const accessToken = localStorage.getItem(K_ACCESS);
@@ -42,12 +44,14 @@ function clearSession() {
   localStorage.removeItem(K_ACCOUNT);
   _session = null;
   _me      = null;
+  _children = [];
 }
 
-export function isSignedIn() { return !!_session; }
-export function getSession()  { return _session; }
+export function isSignedIn()   { return !!_session; }
+export function getSession()   { return _session; }
+export function getActiveChildId() { return localStorage.getItem(K_CHILD); }
 
-// ── Token refresh ────────────────────────────────────────────────────────────
+// ── Token refresh ─────────────────────────────────────────────────────────────
 async function refreshAccessToken() {
   const refreshToken = localStorage.getItem(K_REFRESH);
   if (!refreshToken) return false;
@@ -59,7 +63,6 @@ async function refreshAccessToken() {
     });
     if (!r.ok) { clearSession(); return false; }
     const data = await r.json();
-    // Rotate tokens in-place, keep email + accountId.
     localStorage.setItem(K_ACCESS,  data.accessToken);
     localStorage.setItem(K_REFRESH, data.refreshToken);
     if (_session) _session.accessToken = data.accessToken;
@@ -69,15 +72,11 @@ async function refreshAccessToken() {
   }
 }
 
-// Fetch with automatic token refresh on 401.
-async function authFetch(url, options = {}) {
+export async function authFetch(url, options = {}) {
   if (!_session) return null;
   const go = (token) => fetch(url, {
     ...options,
-    headers: {
-      ...(options.headers || {}),
-      'Authorization': `Bearer ${token}`,
-    },
+    headers: { ...(options.headers || {}), 'Authorization': `Bearer ${token}` },
   });
   let res = await go(_session.accessToken);
   if (res.status === 401) {
@@ -88,33 +87,42 @@ async function authFetch(url, options = {}) {
   return res;
 }
 
-// ── API calls ────────────────────────────────────────────────────────────────
-async function register(email, password) {
-  const deviceUuid = getCommunityId();
-  const r = await fetch(`${BASE}/api/auth/register`, {
+// ── API calls ─────────────────────────────────────────────────────────────────
+async function sendOtp(emailAddr, lang) {
+  const r = await fetch(`${BASE}/api/auth/send-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, deviceUuid }),
+    body: JSON.stringify({ email: emailAddr, lang }),
   });
   const data = await r.json();
-  if (!r.ok) throw Object.assign(new Error(data.error || 'Registration failed'), { code: data.code });
-  saveSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, email: data.email, accountId: data.accountId });
+  if (!r.ok) throw Object.assign(new Error(data.error || 'Failed to send code'), { code: data.code });
+  return data;
 }
 
-async function login(email, password) {
+async function verifyOtp(emailAddr, code) {
   const deviceUuid = getCommunityId();
-  const r = await fetch(`${BASE}/api/auth/login`, {
+  const r = await fetch(`${BASE}/api/auth/verify-email`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, deviceUuid }),
+    body: JSON.stringify({ email: emailAddr, code, deviceUuid }),
   });
   const data = await r.json();
-  if (!r.ok) throw Object.assign(new Error(data.error || 'Login failed'), { code: data.code });
-  saveSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, email: data.email, accountId: data.accountId });
-  return data.profile;
+  if (!r.ok) throw Object.assign(new Error(data.error || 'Invalid code'), { code: data.code, attemptsLeft: data.attemptsLeft });
+  return data;
 }
 
-async function logout() {
+async function resendOtp(emailAddr, lang) {
+  const r = await fetch(`${BASE}/api/auth/resend-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: emailAddr, lang }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw Object.assign(new Error(data.error || 'Failed to resend code'), { code: data.code });
+  return data;
+}
+
+async function doLogout() {
   const refreshToken = localStorage.getItem(K_REFRESH);
   if (refreshToken) {
     await fetch(`${BASE}/api/auth/logout`, {
@@ -128,87 +136,116 @@ async function logout() {
 
 async function fetchMe() {
   const r = await authFetch(`${BASE}/api/auth/me`);
-  if (!r) return null;
-  if (!r.ok) return null;
+  if (!r || !r.ok) return null;
   _me = await r.json();
   return _me;
 }
 
-// ── Modal DOM ────────────────────────────────────────────────────────────────
-const $ = (id) => document.getElementById(id);
-
-function getAvatarEmoji(idx) {
-  const AVATARS = ['🐉','🐧','🐻','🦄','🐯','🦊','🐰','🐬','🦅','🐺','🐼','🐨','🐆','🦉','🦜','🐹','🦔','🦦','🐿️','🦘'];
-  return AVATARS[idx] || '🎨';
+async function fetchChildren() {
+  const r = await authFetch(`${BASE}/api/auth/children`);
+  if (!r || !r.ok) return [];
+  const data = await r.json();
+  _children = data.children || [];
+  return _children;
 }
 
-function getCurrentNickname() {
-  return localStorage.getItem('lalabuba-nickname') || null;
+async function addChild(nickname, avatarIndex, ageGroup) {
+  const r = await authFetch(`${BASE}/api/auth/children`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nickname, avatarIndex, ageGroup }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw Object.assign(new Error(data.error || 'Failed to add child'), { code: data.code });
+  return data.child;
 }
 
+async function deleteChild(childId) {
+  await authFetch(`${BASE}/api/auth/children/${childId}`, { method: 'DELETE' });
+}
+
+// ── Modal DOM ─────────────────────────────────────────────────────────────────
+const $id = (id) => document.getElementById(id);
+
+const AVATARS = ['🐉','🐧','🐻','🦄','🐯','🦊','🐰','🐬','🦅','🐺','🐼','🐨','🐆','🦉','🦜','🐹','🦔','🦦','🐿️','🦘'];
+function getAvatarEmoji(idx) { return AVATARS[idx % AVATARS.length] || '🎨'; }
+
+function getCurrentNickname()    { return localStorage.getItem('lalabuba-nickname') || null; }
 function getCurrentAvatarIndex() {
   const v = localStorage.getItem('lalabuba-avatar-index');
-  return v !== null ? parseInt(v) : 0;
+  return v !== null ? parseInt(v, 10) : 0;
 }
 
-// ── Settings menu integration ─────────────────────────────────────────────
+// ── Settings row ─────────────────────────────────────────────────────────────
 export function updateSettingsUI() {
-  const row = $('account-settings-row');
+  const row = $id('account-settings-row');
   if (!row) return;
+  const activeChildId = getActiveChildId();
+  const activeChild   = _children.find(c => String(c.id) === activeChildId);
+  const avatarEmoji   = activeChild ? getAvatarEmoji(activeChild.avatar_index)
+                                    : getAvatarEmoji(getCurrentAvatarIndex());
+  const name = activeChild ? activeChild.nickname
+                           : (_session ? getCurrentNickname() || _session.email.split('@')[0] : null);
+
   if (_session) {
-    const nickname = getCurrentNickname();
-    const avatarIdx = getCurrentAvatarIndex();
     row.innerHTML = `
       <div class="settings-account-row" id="account-open-btn" role="button" tabindex="0" aria-label="Account settings">
-        <span class="settings-account-avatar">${getAvatarEmoji(avatarIdx)}</span>
+        <span class="settings-account-avatar">${avatarEmoji}</span>
         <span class="settings-account-info">
-          <span class="settings-account-name">${nickname || _session.email.split('@')[0]}</span>
+          <span class="settings-account-name">${name || _session.email.split('@')[0]}</span>
           <span class="settings-account-status" data-i18n="accountSignedInStatus">✓ Progress saved</span>
         </span>
         <span class="settings-account-arrow">›</span>
       </div>
     `;
-    $('account-open-btn').addEventListener('click', openModal);
-    $('account-open-btn').addEventListener('keydown', (e) => { if (e.key === 'Enter') openModal(); });
   } else {
     row.innerHTML = `
-      <div class="settings-account-row" id="account-open-btn" role="button" tabindex="0" aria-label="${t('accountSaveProgress') || 'Save progress'}">
+      <div class="settings-account-row" id="account-open-btn" role="button" tabindex="0">
         <span class="settings-account-avatar">👤</span>
         <span class="settings-account-info">
           <span class="settings-account-name" data-i18n="accountSaveProgress">Save progress</span>
-          <span class="settings-account-status" data-i18n="accountSaveProgressSub">Free • Sync across devices</span>
+          <span class="settings-account-status" data-i18n="accountSaveProgressSub">Free · Sync across devices</span>
         </span>
         <span class="settings-account-arrow">›</span>
       </div>
     `;
-    $('account-open-btn').addEventListener('click', openModal);
-    $('account-open-btn').addEventListener('keydown', (e) => { if (e.key === 'Enter') openModal(); });
   }
+  $id('account-open-btn')?.addEventListener('click',   openModal);
+  $id('account-open-btn')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') openModal(); });
 }
 
-// ── Modal ─────────────────────────────────────────────────────────────────
-let _modal = null;
-let _activeTab = 'register'; // 'login' | 'register'
+// ── Modal ─────────────────────────────────────────────────────────────────────
+let _modal     = null;
+let _pendingEmail = ''; // email waiting for OTP confirmation
+let _otpCooldownTimer = null;
 
 function openModal() {
   ensureModal();
   _modal.hidden = false;
   document.body.style.overflow = 'hidden';
-  renderModal();
+  if (_session) {
+    renderSignedIn();
+  } else {
+    renderEmailStep();
+  }
   setTimeout(() => {
-    const first = _modal.querySelector('.account-input');
+    const first = _modal.querySelector('.account-input:not([disabled])');
     if (first) first.focus();
   }, 60);
 }
 
+export function openAccountModal() { openModal(); }
+
 function closeModal() {
   if (_modal) _modal.hidden = true;
   document.body.style.overflow = '';
+  _pendingEmail = '';
+  clearOtpCooldown();
 }
 
 function ensureModal() {
   if (_modal) return;
-  _modal = $('account-modal');
+  _modal = $id('account-modal');
   if (!_modal) {
     _modal = document.createElement('div');
     _modal.id = 'account-modal';
@@ -218,198 +255,424 @@ function ensureModal() {
     _modal.hidden = true;
     document.body.appendChild(_modal);
   }
-
-  // Close on backdrop click.
-  _modal.addEventListener('click', (e) => {
-    if (e.target === _modal) closeModal();
-  });
-  // Close on Escape.
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !_modal.hidden) closeModal();
-  });
+  _modal.addEventListener('click', (e) => { if (e.target === _modal) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !_modal.hidden) closeModal(); });
 }
 
-function renderModal() {
-  if (!_modal) return;
-  const nickname  = getCurrentNickname();
-  const avatarIdx = getCurrentAvatarIndex();
-  const avatarEmoji = getAvatarEmoji(avatarIdx);
-
-  if (_session) {
-    renderSignedIn(nickname, avatarEmoji);
-  } else {
-    renderAuthForm(nickname, avatarEmoji);
-  }
-}
-
-function renderAuthForm(nickname, avatarEmoji) {
+// ── Step 1: email entry ───────────────────────────────────────────────────────
+function renderEmailStep(prefill = '') {
+  const avatarEmoji = getAvatarEmoji(getCurrentAvatarIndex());
   _modal.innerHTML = `
     <div class="account-card">
       <button class="account-close-btn" id="account-close" aria-label="Close">✕</button>
-
       <div class="account-identity">
         <div class="account-identity-avatar">${avatarEmoji}</div>
-        ${nickname ? `<div class="account-identity-name">${nickname}</div>` : ''}
-        <div class="account-identity-sub" data-i18n="accountIdentitySub">Save your coloring adventure across devices! 🎨</div>
+        <div class="account-identity-sub">${t('accountIdentitySub') || 'Save your coloring adventure! 🎨'}</div>
       </div>
-
-      <div class="account-tabs" role="tablist">
-        <button class="account-tab ${_activeTab === 'register' ? 'active' : ''}" id="tab-register" role="tab" aria-selected="${_activeTab === 'register'}">
-          <span data-i18n="accountCreateTab">Create account</span>
-        </button>
-        <button class="account-tab ${_activeTab === 'login' ? 'active' : ''}" id="tab-login" role="tab" aria-selected="${_activeTab === 'login'}">
-          <span data-i18n="accountSignInTab">Sign in</span>
-        </button>
-      </div>
-
       <div class="account-global-error" id="account-global-error"></div>
-
       <form class="account-form" id="account-form" novalidate>
         <div class="account-field">
-          <label class="account-label" for="account-email" data-i18n="accountEmailLabel">Parent's email</label>
-          <input class="account-input" type="email" id="account-email" autocomplete="email" placeholder="parent@example.com" required/>
-          <div class="account-error-msg" id="account-email-error">⚠ <span data-i18n="accountEmailError">Please enter a valid email.</span></div>
-        </div>
-        <div class="account-field">
-          <label class="account-label" for="account-password" data-i18n="accountPasswordLabel">Password</label>
-          <input class="account-input" type="password" id="account-password" autocomplete="${_activeTab === 'register' ? 'new-password' : 'current-password'}" placeholder="${_activeTab === 'register' ? (t('accountPasswordPlaceholder') || '6+ characters') : ''}" required/>
-          <div class="account-error-msg" id="account-password-error">⚠ <span data-i18n="accountPasswordError">Password must be at least 6 characters.</span></div>
+          <label class="account-label" for="account-email">${t('accountEmailLabel') || "Parent's email"}</label>
+          <input class="account-input" type="email" id="account-email" autocomplete="email"
+                 placeholder="parent@example.com" value="${escHtml(prefill)}" required/>
+          <div class="account-error-msg" id="account-email-error">⚠ ${t('accountEmailError') || 'Please enter a valid email.'}</div>
         </div>
         <button class="account-submit-btn" type="submit" id="account-submit">
-          ${_activeTab === 'register' ? (t('accountRegisterBtn') || 'Create account →') : (t('accountSignInBtn') || 'Sign in →')}
+          ${t('accountContinueBtn') || 'Continue →'}
         </button>
       </form>
+      <p class="account-hint">${t('accountOtpHint') || 'We'll send you a 6-digit code. No password needed.'}</p>
     </div>
   `;
-
-  $('account-close').addEventListener('click', closeModal);
-  $('tab-register').addEventListener('click', () => { _activeTab = 'register'; renderModal(); });
-  $('tab-login').addEventListener('click',    () => { _activeTab = 'login';    renderModal(); });
-  $('account-form').addEventListener('submit', handleFormSubmit);
+  $id('account-close').addEventListener('click', closeModal);
+  $id('account-form').addEventListener('submit', handleEmailSubmit);
 }
 
-function renderSignedIn(nickname, avatarEmoji) {
-  const devices = _me?.devices || [];
-  const myUuid  = getCommunityId();
+async function handleEmailSubmit(e) {
+  e.preventDefault();
+  const emailEl  = $id('account-email');
+  const errorEl  = $id('account-global-error');
+  const emailErr = $id('account-email-error');
+  const btn      = $id('account-submit');
 
-  const devicesHtml = devices.length > 0 ? `
-    <ul class="account-devices-list">
-      ${devices.map(d => `
-        <li class="account-device-item">
-          <span class="account-device-avatar">${getAvatarEmoji(d.avatarIndex || 0)}</span>
-          <span class="account-device-info">
-            <span class="account-device-nick">${d.nickname || '—'}</span>
-            <span class="account-device-streak">🎨 ${d.totalCompleted || 0} · 🔥 ${d.currentStreak || 0} ${t('daysLabel') || 'days'}</span>
-          </span>
-          ${d.deviceUuid === myUuid ? `<span class="account-device-current">${t('thisDevice') || 'This device'}</span>` : ''}
-        </li>
-      `).join('')}
-    </ul>
-  ` : '';
+  emailErr.classList.remove('visible');
+  emailEl.classList.remove('error');
+  errorEl.classList.remove('visible');
+
+  const emailVal = emailEl.value.trim();
+  if (!emailVal || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+    emailEl.classList.add('error');
+    emailErr.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = `<span class="account-spinner"></span>${t('accountSendingCode') || 'Sending code…'}`;
+
+  const lang = document.documentElement.lang?.split('-')[0] || 'en';
+
+  try {
+    await sendOtp(emailVal, lang);
+    _pendingEmail = emailVal;
+    renderOtpStep(emailVal);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = t('accountContinueBtn') || 'Continue →';
+    errorEl.textContent = err.message;
+    errorEl.classList.add('visible');
+  }
+}
+
+// ── Step 2: OTP entry ─────────────────────────────────────────────────────────
+function renderOtpStep(emailAddr, errorMsg = '') {
+  _modal.innerHTML = `
+    <div class="account-card">
+      <button class="account-close-btn" id="account-close" aria-label="Close">✕</button>
+      <div class="account-identity">
+        <div class="account-identity-sub">📨 ${t('accountOtpSent') || 'Code sent to'} <strong>${escHtml(emailAddr)}</strong></div>
+      </div>
+      <div class="account-global-error ${errorMsg ? 'visible' : ''}" id="account-global-error">${escHtml(errorMsg)}</div>
+      <form class="account-form" id="otp-form" novalidate>
+        <div class="account-field">
+          <label class="account-label">${t('accountOtpLabel') || 'Enter 6-digit code'}</label>
+          <div class="otp-inputs" id="otp-inputs" role="group" aria-label="Verification code">
+            ${[0,1,2,3,4,5].map(i => `<input class="otp-digit" type="text" inputmode="numeric"
+              pattern="[0-9]" maxlength="1" id="otp-${i}" aria-label="Digit ${i+1}"/>`).join('')}
+          </div>
+        </div>
+        <button class="account-submit-btn" type="submit" id="otp-submit" disabled>
+          ${t('accountVerifyBtn') || 'Verify code →'}
+        </button>
+      </form>
+      <div class="account-resend-row">
+        <button class="account-link-btn" id="otp-resend" disabled>
+          <span id="otp-resend-label">${t('accountResendCode') || 'Resend code'}</span>
+        </button>
+        <span class="account-hint-sep">·</span>
+        <button class="account-link-btn" id="otp-change-email">${t('accountChangeEmail') || 'Change email'}</button>
+      </div>
+    </div>
+  `;
+  $id('account-close').addEventListener('click', closeModal);
+  $id('otp-form').addEventListener('submit',   handleOtpSubmit);
+  $id('otp-change-email').addEventListener('click', () => renderEmailStep(_pendingEmail));
+  $id('otp-resend').addEventListener('click',  handleResend);
+  wireOtpInputs();
+  startResendCooldown(60);
+  $id('otp-0')?.focus();
+}
+
+function wireOtpInputs() {
+  const inputs = Array.from({ length: 6 }, (_, i) => $id(`otp-${i}`));
+  const submitBtn = $id('otp-submit');
+
+  const getFullCode = () => inputs.map(el => el.value).join('');
+  const checkFull   = () => {
+    const full = getFullCode().length === 6;
+    if (submitBtn) submitBtn.disabled = !full;
+  };
+
+  inputs.forEach((input, i) => {
+    input.addEventListener('input', (e) => {
+      // Allow paste into any cell
+      const val = e.target.value.replace(/\D/g, '');
+      if (val.length > 1) {
+        // Distribute pasted digits across cells
+        [...val].forEach((d, j) => { if (inputs[i + j]) inputs[i + j].value = d; });
+        const nextFocus = Math.min(i + val.length, 5);
+        inputs[nextFocus]?.focus();
+        e.target.value = val[0] || '';
+        checkFull(); return;
+      }
+      e.target.value = val;
+      if (val && i < 5) inputs[i + 1].focus();
+      checkFull();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !input.value && i > 0) {
+        inputs[i - 1].focus();
+        inputs[i - 1].value = '';
+        checkFull();
+      }
+    });
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const pasted = (e.clipboardData.getData('text') || '').replace(/\D/g, '');
+      [...pasted].forEach((d, j) => { if (inputs[j]) inputs[j].value = d; });
+      inputs[Math.min(pasted.length, 5)]?.focus();
+      checkFull();
+    });
+  });
+}
+
+async function handleOtpSubmit(e) {
+  e.preventDefault();
+  const inputs = Array.from({ length: 6 }, (_, i) => $id(`otp-${i}`));
+  const code   = inputs.map(el => el.value).join('');
+  const btn    = $id('otp-submit');
+  const errorEl = $id('account-global-error');
+
+  if (code.length !== 6) return;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="account-spinner"></span>${t('accountVerifying') || 'Verifying…'}`;
+  errorEl.classList.remove('visible');
+
+  try {
+    const data = await verifyOtp(_pendingEmail, code);
+    saveSession({
+      accessToken:  data.accessToken,
+      refreshToken: data.refreshToken,
+      email:        data.email,
+      accountId:    data.accountId,
+    });
+    await Promise.all([fetchMe(), fetchChildren()]);
+    updateSettingsUI();
+    if (_children.length === 0) {
+      renderAddChildPrompt(); // first-time setup: add a child profile
+    } else {
+      renderChildSelector();  // pick who's coloring today
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = t('accountVerifyBtn') || 'Verify code →';
+    let msg = err.message;
+    if (err.attemptsLeft !== undefined) msg += ` (${err.attemptsLeft} ${t('accountAttemptsLeft') || 'attempts left'})`;
+    if (err.code === 'MAX_ATTEMPTS') {
+      renderOtpStep(_pendingEmail, t('accountMaxAttempts') || 'Too many attempts. Please request a new code.');
+      return;
+    }
+    errorEl.textContent = msg;
+    errorEl.classList.add('visible');
+    inputs.forEach(el => { el.value = ''; });
+    $id('otp-0')?.focus();
+  }
+}
+
+async function handleResend() {
+  const btn   = $id('otp-resend');
+  const label = $id('otp-resend-label');
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  if (label) label.textContent = t('accountSendingCode') || 'Sending…';
+  const lang = document.documentElement.lang?.split('-')[0] || 'en';
+  try {
+    const data = await resendOtp(_pendingEmail, lang);
+    startResendCooldown(data.cooldownSeconds || 60);
+    $id('account-global-error')?.classList.remove('visible');
+  } catch (err) {
+    if (label) label.textContent = t('accountResendCode') || 'Resend code';
+    btn.disabled = false;
+    const errorEl = $id('account-global-error');
+    if (errorEl) { errorEl.textContent = err.message; errorEl.classList.add('visible'); }
+  }
+}
+
+function startResendCooldown(seconds) {
+  clearOtpCooldown();
+  const btn   = $id('otp-resend');
+  const label = $id('otp-resend-label');
+  if (!btn || !label) return;
+  let remaining = seconds;
+  const update = () => {
+    if (!$id('otp-resend')) { clearOtpCooldown(); return; }
+    if (remaining <= 0) {
+      btn.disabled = false;
+      label.textContent = t('accountResendCode') || 'Resend code';
+    } else {
+      btn.disabled = true;
+      label.textContent = `${t('accountResendIn') || 'Resend in'} ${remaining}s`;
+      remaining--;
+      _otpCooldownTimer = setTimeout(update, 1000);
+    }
+  };
+  update();
+}
+
+function clearOtpCooldown() {
+  if (_otpCooldownTimer) { clearTimeout(_otpCooldownTimer); _otpCooldownTimer = null; }
+}
+
+// ── Child selector screen ─────────────────────────────────────────────────────
+function renderChildSelector() {
+  const cards = _children.map(c => `
+    <button class="child-card ${String(c.id) === getActiveChildId() ? 'active' : ''}"
+            data-id="${c.id}" aria-pressed="${String(c.id) === getActiveChildId()}">
+      <span class="child-card-avatar">${getAvatarEmoji(c.avatar_index)}</span>
+      <span class="child-card-name">${escHtml(c.nickname)}</span>
+    </button>
+  `).join('');
 
   _modal.innerHTML = `
     <div class="account-card">
       <button class="account-close-btn" id="account-close" aria-label="Close">✕</button>
-
       <div class="account-identity">
-        <div class="account-identity-avatar">${avatarEmoji}</div>
-        ${nickname ? `<div class="account-identity-name">${nickname}</div>` : ''}
-        <div class="account-identity-sub account-success-banner">✓ <span data-i18n="accountProgressSaved">Your adventure is saved!</span> 🎉</div>
+        <div class="account-identity-sub">${t('accountWhoIsColoring') || "Who's coloring today? 🖍️"}</div>
       </div>
-
-      <div class="account-signed-in">
-        <div class="account-email-row">
-          <span class="account-email-label" data-i18n="accountEmailRowLabel">Account:</span>
-          <span class="account-email-value">${_session.email}</span>
-        </div>
-        ${devicesHtml}
-        <button class="account-signout-btn" id="account-signout" data-i18n="accountSignOutBtn">Sign out</button>
+      <div class="child-grid" id="child-grid">
+        ${cards}
+        <button class="child-card child-add-btn" id="child-add-btn">
+          <span class="child-card-avatar">➕</span>
+          <span class="child-card-name">${t('accountAddChild') || 'Add'}</span>
+        </button>
+      </div>
+      <div class="account-signed-in-footer">
+        <span class="account-email-value">${escHtml(_session.email)}</span>
+        <button class="account-link-btn" id="account-signout" style="margin-left:auto">${t('accountSignOutBtn') || 'Sign out'}</button>
       </div>
     </div>
   `;
-
-  $('account-close').addEventListener('click', closeModal);
-  $('account-signout').addEventListener('click', handleSignOut);
+  $id('account-close').addEventListener('click', closeModal);
+  $id('account-signout').addEventListener('click', handleSignOut);
+  $id('child-add-btn').addEventListener('click', renderAddChildPrompt);
+  $id('child-grid').querySelectorAll('.child-card[data-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      localStorage.setItem(K_CHILD, id);
+      updateSettingsUI();
+      closeModal();
+    });
+  });
 }
 
-async function handleFormSubmit(e) {
-  e.preventDefault();
-  const emailEl    = $('account-email');
-  const passwordEl = $('account-password');
-  const errorEl    = $('account-global-error');
-  const btn        = $('account-submit');
+// ── Add child screen ──────────────────────────────────────────────────────────
+function renderAddChildPrompt(isFirst = false) {
+  let pickedAvatar = Math.floor(Math.random() * AVATARS.length);
+  const isFirstTime = isFirst || _children.length === 0;
 
-  // Clear errors.
-  [$('account-email-error'), $('account-password-error')].forEach(el => el.classList.remove('visible'));
-  [emailEl, passwordEl].forEach(el => el.classList.remove('error'));
-  errorEl.classList.remove('visible');
+  const render = () => {
+    _modal.innerHTML = `
+      <div class="account-card">
+        <button class="account-close-btn" id="account-close" aria-label="Close">✕</button>
+        <div class="account-identity">
+          <div class="account-identity-sub">${t('accountAddChildTitle') || 'Add a child profile 🧒'}</div>
+        </div>
+        <div class="account-global-error" id="account-global-error"></div>
+        <div class="child-avatar-picker" id="child-avatar-picker" role="radiogroup" aria-label="Choose avatar">
+          ${AVATARS.map((em, i) => `
+            <button class="child-avatar-option ${i === pickedAvatar ? 'selected' : ''}"
+                    data-idx="${i}" aria-pressed="${i === pickedAvatar}" type="button">${em}</button>
+          `).join('')}
+        </div>
+        <form class="account-form" id="add-child-form" novalidate>
+          <div class="account-field">
+            <label class="account-label" for="child-nickname">${t('accountChildName') || "Child's name or nickname"}</label>
+            <input class="account-input" type="text" id="child-nickname" maxlength="60"
+                   placeholder="${t('accountChildNamePlaceholder') || 'e.g. Emma'}" required/>
+            <div class="account-error-msg" id="child-name-error">⚠ ${t('accountChildNameError') || 'Please enter a nickname.'}</div>
+          </div>
+          <div class="account-field">
+            <label class="account-label">${t('accountAgeGroup') || 'Age group'}</label>
+            <div class="age-group-pills" id="age-group-pills" role="radiogroup">
+              ${['3-5','6-8','9-12','13+'].map(ag => `
+                <button class="age-pill" data-age="${ag}" type="button" aria-pressed="false">${ag}</button>
+              `).join('')}
+            </div>
+          </div>
+          <button class="account-submit-btn" type="submit" id="add-child-submit">
+            ${t('accountSaveChild') || 'Save profile →'}
+          </button>
+          ${!isFirstTime ? `<button class="account-link-btn" id="back-to-children" type="button">${t('accountBackToChildren') || '← Back'}</button>` : ''}
+        </form>
+      </div>
+    `;
+    $id('account-close').addEventListener('click', closeModal);
+    if (!isFirstTime) $id('back-to-children')?.addEventListener('click', renderChildSelector);
 
-  const email    = emailEl.value.trim();
-  const password = passwordEl.value;
+    $id('child-avatar-picker').querySelectorAll('.child-avatar-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pickedAvatar = parseInt(btn.dataset.idx, 10);
+        $id('child-avatar-picker').querySelectorAll('.child-avatar-option').forEach(b => {
+          b.classList.toggle('selected', b === btn);
+          b.setAttribute('aria-pressed', String(b === btn));
+        });
+      });
+    });
 
-  let valid = true;
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    emailEl.classList.add('error');
-    $('account-email-error').classList.add('visible');
-    valid = false;
-  }
-  if (_activeTab === 'register' && password.length < 6) {
-    passwordEl.classList.add('error');
-    $('account-password-error').classList.add('visible');
-    valid = false;
-  }
-  if (!valid) return;
+    let pickedAge = null;
+    $id('age-group-pills').querySelectorAll('.age-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pickedAge = btn.dataset.age;
+        $id('age-group-pills').querySelectorAll('.age-pill').forEach(b => {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-pressed', String(b === btn));
+        });
+      });
+    });
 
-  btn.disabled = true;
-  btn.innerHTML = `<span class="account-spinner"></span>${_activeTab === 'register' ? (t('accountCreating') || 'Creating…') : (t('accountSigningIn') || 'Signing in…')}`;
+    $id('add-child-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nicknameEl = $id('child-nickname');
+      const nameErr    = $id('child-name-error');
+      const errorEl    = $id('account-global-error');
+      const submitBtn  = $id('add-child-submit');
+      nameErr.classList.remove('visible');
+      errorEl.classList.remove('visible');
 
-  try {
-    if (_activeTab === 'register') {
-      await register(email, password);
-    } else {
-      await login(email, password);
-    }
-    // Fetch full profile.
-    await fetchMe();
-    updateSettingsUI();
-    renderModal(); // re-render as signed-in view
-  } catch (err) {
-    let msg = err.message;
-    if (err.code === 'EMAIL_TAKEN')      msg = t('accountEmailTaken')    || 'That email is already registered. Try signing in instead.';
-    if (err.code === 'BAD_CREDENTIALS')  msg = t('accountWrongPassword') || 'Wrong email or password. Please try again.';
-    errorEl.textContent = msg;
-    errorEl.classList.add('visible');
-    btn.disabled = false;
-    btn.textContent = _activeTab === 'register' ? (t('accountRegisterBtn') || 'Create account →') : (t('accountSignInBtn') || 'Sign in →');
+      const nickname = nicknameEl.value.trim();
+      if (!nickname) { nameErr.classList.add('visible'); nicknameEl.classList.add('error'); return; }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span class="account-spinner"></span>${t('accountSaving') || 'Saving…'}`;
+      try {
+        const child = await addChild(nickname, pickedAvatar, pickedAge);
+        _children.push(child);
+        localStorage.setItem(K_CHILD, String(child.id));
+        updateSettingsUI();
+        closeModal();
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = t('accountSaveChild') || 'Save profile →';
+        errorEl.textContent = err.message;
+        errorEl.classList.add('visible');
+      }
+    });
+  };
+  render();
+}
+
+// ── Signed-in view (no children set) ─────────────────────────────────────────
+function renderSignedIn() {
+  if (_children.length === 0) {
+    renderAddChildPrompt(true);
+  } else {
+    renderChildSelector();
   }
 }
 
 async function handleSignOut() {
-  const btn = $('account-signout');
+  const btn = $id('account-signout');
   if (btn) { btn.disabled = true; btn.textContent = t('accountSigningOut') || 'Signing out…'; }
-  await logout();
+  await doLogout();
+  localStorage.removeItem(K_CHILD);
   updateSettingsUI();
   closeModal();
+  renderEmailStep();
 }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 export async function initAccount() {
   loadSession();
   updateSettingsUI();
-
-  // Silently try to refresh token and load profile on boot.
   if (_session) {
     const ok = await refreshAccessToken();
     if (ok) {
-      fetchMe().then(() => updateSettingsUI()).catch(() => {});
+      await Promise.all([fetchMe(), fetchChildren()]).catch(() => {});
+      updateSettingsUI();
     } else {
       clearSession();
       updateSettingsUI();
     }
   }
+  // Auto-open modal if redirected here with ?openAccount=1
+  if (new URLSearchParams(window.location.search).get('openAccount') === '1') {
+    history.replaceState(null, '', window.location.pathname + window.location.hash);
+    setTimeout(openModal, 300);
+  }
 }
 
-export { openModal as openAccountModal };
-
-// Auto-init: ES module scripts are deferred so DOM is ready.
 initAccount();

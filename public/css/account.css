@@ -306,7 +306,201 @@
 }
 @keyframes acct-spin { to { transform: rotate(360deg); } }
 
+/* ── OTP digit inputs ────────────────────────────────────────────────────── */
+.otp-inputs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px 0;
+}
+.otp-digit {
+  width: 46px;
+  height: 56px;
+  border: 2px solid var(--border, #ddd);
+  border-radius: 10px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  text-align: center;
+  background: var(--surface, #fff);
+  color: var(--text-primary, #1a1a1a);
+  outline: none;
+  caret-color: transparent;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  font-family: 'Courier New', monospace;
+}
+.otp-digit:focus {
+  border-color: var(--color-primary, #8B5CF6);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+}
+.otp-digit:not(:placeholder-shown) {
+  border-color: var(--color-primary, #8B5CF6);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+/* Resend + change-email row */
+.account-resend-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: .78rem;
+  color: var(--text-secondary, #888);
+}
+.account-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: .78rem;
+  font-family: inherit;
+  color: var(--color-primary, #8B5CF6);
+  font-weight: 600;
+  transition: opacity 0.1s;
+}
+.account-link-btn:disabled {
+  opacity: .5;
+  cursor: default;
+  color: var(--text-secondary, #aaa);
+}
+.account-link-btn:not(:disabled):hover { opacity: .8; }
+.account-hint-sep { color: var(--border, #ccc); }
+
+/* Hint text below form */
+.account-hint {
+  margin-top: 12px;
+  font-size: .73rem;
+  color: var(--text-secondary, #aaa);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ── Child selector grid ─────────────────────────────────────────────────── */
+.child-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+  padding: 4px 0 16px;
+}
+.child-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border: 2px solid var(--border, #e5e5e5);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, transform 0.1s;
+  font-family: inherit;
+}
+.child-card:hover {
+  border-color: var(--color-primary, #8B5CF6);
+  background: rgba(139, 92, 246, 0.04);
+}
+.child-card.active {
+  border-color: var(--color-primary, #8B5CF6);
+  background: rgba(139, 92, 246, 0.08);
+}
+.child-card:active { transform: scale(0.96); }
+.child-card-avatar {
+  font-size: 2rem;
+  line-height: 1;
+}
+.child-card-name {
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--text-primary, #222);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+  text-align: center;
+}
+.child-add-btn {
+  border-style: dashed;
+  opacity: .7;
+}
+.child-add-btn:hover { opacity: 1; }
+
+/* Signed-in footer: email + signout */
+.account-signed-in-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--border, #e5e5e5);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+.account-signed-in-footer .account-email-value {
+  font-size: .73rem;
+  color: var(--text-secondary, #aaa);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.account-signed-in-footer .account-link-btn {
+  flex-shrink: 0;
+  color: #ef4444;
+}
+
+/* ── Avatar picker ───────────────────────────────────────────────────────── */
+.child-avatar-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+  gap: 6px;
+  padding: 4px 0 16px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+.child-avatar-option {
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 6px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--bg-secondary, #f5f5f5);
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s;
+  text-align: center;
+  font-family: inherit;
+}
+.child-avatar-option:hover { background: rgba(139, 92, 246, 0.1); }
+.child-avatar-option.selected {
+  border-color: var(--color-primary, #8B5CF6);
+  background: rgba(139, 92, 246, 0.12);
+}
+
+/* ── Age group pills ─────────────────────────────────────────────────────── */
+.age-group-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.age-pill {
+  padding: 6px 16px;
+  border: 1.5px solid var(--border, #ddd);
+  border-radius: 20px;
+  background: none;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+  font-family: inherit;
+}
+.age-pill:hover { border-color: var(--color-primary, #8B5CF6); color: var(--color-primary, #8B5CF6); }
+.age-pill.active {
+  border-color: var(--color-primary, #8B5CF6);
+  background: var(--color-primary, #8B5CF6);
+  color: #fff;
+}
+
 /* Small devices */
 @media (max-width: 400px) {
   .account-card { padding: 22px 18px 20px; }
+  .otp-digit { width: 40px; height: 50px; font-size: 1.3rem; }
+  .otp-inputs { gap: 6px; }
 }
