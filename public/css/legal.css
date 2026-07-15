@@ -519,8 +519,8 @@ nav.legal-nav.lp-branded {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--lp-card, #fff);
-  border: 1.5px solid var(--lp-border, #e5e7eb);
+  background: var(--lp-surface);
+  border: 1.5px solid var(--lp-border);
   font-size: 1.1rem;
   text-decoration: none;
   transition: border-color 0.15s, transform 0.15s;
@@ -556,8 +556,8 @@ nav.legal-nav.lp-branded {
   top: calc(100% + 8px);
   right: 0;
   min-width: 180px;
-  background: var(--lp-card, #fff);
-  border: 1.5px solid var(--lp-border, #e5e7eb);
+  background: var(--lp-surface);
+  border: 1.5px solid var(--lp-border);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0,0,0,.12);
   padding: 6px 0;
@@ -565,6 +565,7 @@ nav.legal-nav.lp-branded {
   display: flex;
   flex-direction: column;
 }
+#lp-settings-menu[hidden] { display: none !important; }
 
 .lp-settings-item {
   display: flex;
@@ -575,14 +576,14 @@ nav.legal-nav.lp-branded {
   background: none;
   border: none;
   font-size: 0.875rem;
-  color: var(--lp-text, #1e1b2e);
+  color: var(--lp-ink);
   text-align: left;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.1s;
 }
 .lp-settings-item:hover,
-.lp-settings-item:focus { background: var(--lp-bg, #f9f9fb); outline: none; }
+.lp-settings-item:focus { background: var(--lp-bg); outline: none; }
 
 .lp-settings-div {
   border: none;
@@ -594,13 +595,13 @@ nav.legal-nav.lp-branded {
   display: block;
   padding: 7px 16px;
   font-size: 0.875rem;
-  color: var(--lp-text, #1e1b2e);
+  color: var(--lp-ink);
   text-decoration: none;
   white-space: nowrap;
   transition: background 0.1s;
 }
 .lp-settings-lang-item:hover,
-.lp-settings-lang-item:focus { background: var(--lp-bg, #f9f9fb); outline: none; }
+.lp-settings-lang-item:focus { background: var(--lp-bg); outline: none; }
 .lp-settings-lang-item.lp-lang-current { font-weight: 700; color: var(--lp-purple); }
 
 @media (max-width: 640px) {

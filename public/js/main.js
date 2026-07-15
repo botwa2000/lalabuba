@@ -1894,6 +1894,10 @@ initGalleryHandlers(continueArtwork);
   }
   refreshDaysColoredPill();
   refreshJournalCount();
+  if (new URLSearchParams(location.search).get('open') === 'gallery') {
+    clearJournalDirty();
+    openGalleryModal(continueArtwork);
+  }
 })();
 
 // ─── Hero suggestion cards ────────────────────────────────────────────────────
