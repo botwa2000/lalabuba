@@ -459,8 +459,10 @@
   .settings-toggle-btn { width: 34px; height: 34px; font-size: 1rem; }
   .settings-wrap { top: 8px; right: 10px; }
   .days-colored-pill { display: none !important; }
-  /* Explore hub link is desktop-only — hides on mobile to avoid logo overlap */
+  /* Desktop-only elements: explore and rewards buttons overlap the centered logo
+     on 390px portrait. On mobile, journal's attention ring handles first-run cue. */
   .explore-nav-btn { display: none; }
+  .rewards-teaser  { display: none !important; }
   .top-action-btn.attention { animation: journalAttention 1.8s ease-in-out infinite; }
   @keyframes journalAttention {
     0%, 100% { box-shadow: 0 0 0 0 rgba(124,77,255,0.45); }
