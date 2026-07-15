@@ -5,6 +5,7 @@ import { setStatus, showLoading, hideLoading, activePalette, showCanvasError } f
 import { renderGeneratedImage } from './canvas.js';
 import { SIZE_DIMS } from './data.js';
 import { recordGeneration } from './progress.js';
+import { maybeShowChildSelector } from './account.js';
 
 export function svgDataUrl(svg) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
@@ -137,6 +138,7 @@ export async function generatePage(subject, seedOverride = null, isPreDefined = 
     const undoBtn = document.getElementById('undo-button');
     if (undoBtn) undoBtn.disabled = true;
     setStatus(t('done'));
+    maybeShowChildSelector();
     // Show coloring hint and challenge strip
     const coloringHint = document.getElementById('coloring-hint');
     if (coloringHint) coloringHint.hidden = false;

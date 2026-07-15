@@ -493,7 +493,7 @@ function clearOtpCooldown() {
 }
 
 // ── Child selector screen ─────────────────────────────────────────────────────
-function renderChildSelector() {
+function renderChildSelector(isDismissible = true) {
   const cards = _children.map(c => `
     <button class="child-card ${String(c.id) === getActiveChildId() ? 'active' : ''}"
             data-id="${c.id}" aria-pressed="${String(c.id) === getActiveChildId()}">
@@ -504,7 +504,7 @@ function renderChildSelector() {
 
   _modal.innerHTML = `
     <div class="account-card">
-      <button class="account-close-btn" id="account-close" aria-label="Close">✕</button>
+      ${isDismissible ? '<button class="account-close-btn" id="account-close" aria-label="Close">✕</button>' : ''}
       <div class="account-identity">
         <div class="account-identity-sub">${t('accountWhoIsColoring') || "Who's coloring today? 🖍️"}</div>
       </div>
@@ -516,14 +516,22 @@ function renderChildSelector() {
         </button>
       </div>
       <div class="account-signed-in-footer">
-        <span class="account-email-value">${escHtml(_session.email)}</span>
-        <button class="account-link-btn" id="account-signout" style="margin-left:auto">${t('accountSignOutBtn') || 'Sign out'}</button>
+        <button class="account-link-btn" id="account-im-parent" style="font-size:.8rem">
+          ${t('accountImParent') || "I'm the parent"}
+        </button>
+        <span class="account-email-value" style="margin-left:auto;text-align:right">${escHtml(_session.email)}</span>
+        <button class="account-link-btn" id="account-signout" style="color:#ef4444;margin-left:8px">${t('accountSignOutBtn') || 'Sign out'}</button>
       </div>
     </div>
   `;
-  $id('account-close').addEventListener('click', closeModal);
+  if (isDismissible) $id('account-close')?.addEventListener('click', closeModal);
   $id('account-signout').addEventListener('click', handleSignOut);
-  $id('child-add-btn').addEventListener('click', renderAddChildPrompt);
+  $id('account-im-parent').addEventListener('click', () => {
+    localStorage.removeItem(K_CHILD);
+    updateSettingsUI();
+    closeModal();
+  });
+  $id('child-add-btn').addEventListener('click', () => renderAddChildPrompt(false));
   $id('child-grid').querySelectorAll('.child-card[data-id]').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.id;
@@ -532,6 +540,16 @@ function renderChildSelector() {
       closeModal();
     });
   });
+}
+
+// Called from coloring mode (main.js) to auto-show selector if needed
+export function maybeShowChildSelector() {
+  if (!_session || _children.length === 0) return;
+  if (getActiveChildId()) return; // already selected
+  ensureModal();
+  _modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  renderChildSelector(false); // non-dismissible: must pick or tap "I'm the parent"
 }
 
 // ── Add child screen ──────────────────────────────────────────────────────────
