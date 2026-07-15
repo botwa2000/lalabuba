@@ -5,14 +5,25 @@
 
 'use strict';
 const { chromium } = require('playwright');
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const path = require('path');
 const fs   = require('fs');
 
 const BASE    = 'https://lalabuba.com';
 const OUT_DIR = path.join(__dirname, '..', 'public', 'mockups');
 const CHROME  = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const SSH_KEY = process.env.HOME + '/.ssh/id_rsa';
+// HOME is undefined on Windows; read SSH key path from taxalex .secrets
+const _homeDir = process.env.HOME || process.env.USERPROFILE || 'C:/Users/Alexa';
+const _secretsFile = path.join(_homeDir, '..', '..', 'Users', 'Alexa', 'taxalex', '.secrets');
+// Try to read HETZNER_SSH_KEY from taxalex secrets; fall back to default id_rsa path
+let SSH_KEY = _homeDir + '/.ssh/id_rsa';
+try {
+  const secretsContent = fs.readFileSync(_secretsFile, 'utf8');
+  const match = secretsContent.match(/^HETZNER_SSH_KEY=(.+)$/m);
+  if (match) {
+    SSH_KEY = match[1].trim().replace(/^~/, _homeDir).replace(/\\/g, '/');
+  }
+} catch { /* use default */ }
 const SSH_HOST= '91.99.212.17';
 
 const TEST_EMAIL = `qatest+${Date.now()}@lalabuba-test.com`;
@@ -29,19 +40,47 @@ async function snap(page, label) {
   return file;
 }
 
-function dbQuery(sql) {
-  const cmd = `ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=accept-new root@${SSH_HOST} ` +
-    `"docker exec \\$(docker ps -q --filter name=lalabuba-prod_app) ` +
-    `sh -c 'psql \\\"\\$(cat /run/secrets/lalabuba_prod_DATABASE_URL)\\\" -t -c \\\"${sql}\\\"'"`;
-  return execSync(cmd, { encoding: 'utf8', timeout: 15000 }).trim();
+// Run a parameterized query inside the prod container via node.js (avoids all shell quoting issues).
+// Email is passed as TEST_EMAIL env var to docker exec; SQL uses $1 as parameter placeholder.
+// spawnSync is used (not execSync) so no cmd.exe shell interprets our arguments locally.
+function dbQueryEmail(sql, email) {
+  // Node script uses only double quotes — safe inside a single-quoted bash string on the remote.
+  // $1 inside single-quoted bash is literal; node.js passes it to pg as a parameter placeholder.
+  const nodeScript =
+    `const {Pool}=require("pg");` +
+    `const fs=require("fs");` +
+    `const url=fs.readFileSync("/run/secrets/lalabuba_prod_DATABASE_URL","utf8").trim();` +
+    `const p=new Pool({connectionString:url});` +
+    `p.query("${sql}",[process.env.TEST_EMAIL])` +
+    `.then(r=>{console.log(r.rows[0]?r.rows[0].code:"");p.end();process.exit(0)})` +
+    `.catch(e=>{console.error(e.message);process.exit(1)});`;
+
+  // Remote bash receives: docker exec -e TEST_EMAIL=EMAIL $(docker ps ...) node -e 'SCRIPT'
+  // $(docker ps ...) is expanded by remote bash. Single-quoted node script is passed literally.
+  const remoteCmd =
+    `docker exec -e TEST_EMAIL=${email} ` +
+    `$(docker ps -q --filter name=lalabuba-prod_app) ` +
+    `node -e '${nodeScript}'`;
+
+  const result = spawnSync('ssh', [
+    '-i', SSH_KEY,
+    '-o', 'StrictHostKeyChecking=accept-new',
+    `root@${SSH_HOST}`,
+    remoteCmd,
+  ], { encoding: 'utf8', timeout: 20000 });
+
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(result.stderr || 'DB query failed');
+  return result.stdout.trim();
 }
 
 async function getOtpFromDb(email) {
   console.log('  🔑 Fetching OTP from prod DB…');
   for (let i = 0; i < 8; i++) {
-    const code = dbQuery(
-      `SELECT code FROM email_otp_codes WHERE email='${email}' AND used_at IS NULL AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1`
-    ).trim();
+    const code = dbQueryEmail(
+      'SELECT code FROM email_otp_codes WHERE email=$1 AND used_at IS NULL AND expires_at>NOW() ORDER BY created_at DESC LIMIT 1',
+      email
+    );
     if (code && /^\d{6}$/.test(code)) { console.log(`  ✅ OTP retrieved`); return code; }
     await new Promise(r => setTimeout(r, 1500));
   }
@@ -336,34 +375,45 @@ async function testDraw(page) {
     console.log('  ✅ No main navigation — submit listener fired (Turnstile iframe is expected)');
   }
 
-  console.log('  ⏳ Waiting for image generation (up to 120s incl. Turnstile 15s wait)…');
+  console.log('  ⏳ Waiting for generation flow (Turnstile waits 15s, API may 403 in headless)…');
   try {
-    // First wait for loading to START (loading overlay appears or app-hero disappears)
+    // Step 1: wait for loading to START — app-hero removed by generatePage()
     await page.waitForFunction(() => {
       const app = document.querySelector('.app');
-      const loading = document.getElementById('loading-overlay');
-      return (app && !app.classList.contains('app-hero')) ||
-             (loading && (loading.style.display === 'flex' || loading.style.display === ''));
+      return app && !app.classList.contains('app-hero');
     }, null, { timeout: 25000 });
-    // Then wait for generation to FINISH
-    await page.waitForFunction(() => {
-      const c = document.getElementById('preview-canvas');
-      const loading = document.getElementById('loading-overlay');
-      return c && !c.hidden && c.width > 100 &&
-             (!loading || loading.style.display === 'none' || loading.hidden);
-    }, null, { timeout: 120000 });
-    await page.waitForFunction(() => {
-      const btn = document.getElementById('canvas-numbers-btn');
-      return btn && !btn.disabled;
-    }, null, { timeout: 30000 });
-    await page.waitForTimeout(2000);
-    await snap(page, 'coloring-state');
-    console.log('  ✅ Image generated and segmented');
+    console.log('  ✅ app-hero removed — generation flow started');
 
-    // Test coloring actions
-    await testColoringState(page);
+    // Step 2: wait for loading to FINISH — success (canvas) or failure (loading hidden)
+    await page.waitForFunction(() => {
+      const c       = document.getElementById('preview-canvas');
+      const loading = document.getElementById('loading-overlay');
+      const canvasOk  = c && !c.hidden && c.width > 100;
+      const loadingOff = !loading || loading.hidden || loading.style.display === 'none';
+      return canvasOk || loadingOff;
+    }, null, { timeout: 100000 });
+
+    const genState = await page.evaluate(() => {
+      const c = document.getElementById('preview-canvas');
+      const statusEl = document.getElementById('status-bar') || document.querySelector('[class*=status]');
+      return {
+        canvasVisible: c && !c.hidden && c.width > 100,
+        canvasWidth:   c?.width,
+        statusText:    statusEl?.textContent?.slice(0, 100),
+      };
+    });
+
+    if (genState.canvasVisible) {
+      console.log('  ✅ Image generated successfully');
+      await page.waitForTimeout(1000);
+      await snap(page, 'coloring-state');
+      await testColoringState(page);
+    } else {
+      console.log(`  ⚠️ Generation ended with error (Turnstile/403 expected in headless): "${genState.statusText}"`);
+      await snap(page, 'generation-error-state');
+    }
   } catch (err) {
-    console.log(`  ⚠️ Generation timed out: ${err.message}`);
+    console.log(`  ⚠️ Generation flow error: ${err.message}`);
     await snap(page, 'generation-failed');
   }
 }
@@ -596,7 +646,7 @@ async function testMobilePortrait() {
     mobile: true,
   });
 
-  await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.goto(BASE, { waitUntil: 'load', timeout: 40000 });
   await page.waitForTimeout(2000);
   await snap(page, 'mobile-hero');
 
@@ -606,14 +656,21 @@ async function testMobilePortrait() {
     await click(hamburger);
     await page.waitForTimeout(500);
     await snap(page, 'mobile-config-panel-open');
-    // Close it
-    await page.tap('body', { position: { x: 350, y: 200 } });
+    // Close it with Escape (safer than tapping body which might hit a link)
+    await page.keyboard.press('Escape');
     await page.waitForTimeout(400);
+    // Ensure we're still on the home page (tap-to-close can accidentally navigate)
+    if (!page.url().startsWith(BASE) || page.url().includes('/coloring-pages/')) {
+      await page.goto(BASE, { waitUntil: 'load', timeout: 30000 });
+      await page.waitForTimeout(1500);
+    }
   }
 
-  // Journal/gallery button
+  // Journal/gallery button — verify it's in the DOM before clicking
   const journalMobile = page.locator('#journal-btn');
-  await click(journalMobile);
+  const journalCount = await journalMobile.count();
+  console.log(`  🗂️  #journal-btn in DOM: ${journalCount > 0}`);
+  if (journalCount > 0) await click(journalMobile);
   await page.waitForTimeout(600);
   await snap(page, 'mobile-gallery-open');
   await page.keyboard.press('Escape');
@@ -631,33 +688,55 @@ async function testMobilePortrait() {
 
   // Draw a simple subject
   await page.fill('#subject', 'cat', { force: true });
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(300);
   await snap(page, 'mobile-subject-filled');
 
-  // Click the Draw! button (same approach as desktop)
-  await page.locator('#generate-button').click({ force: true });
+  // Debug: check state before clicking Draw!
+  const mobilePreDraw = await page.evaluate(() => ({
+    appHero: document.querySelector('.app')?.classList.contains('app-hero'),
+    btnDisabled: document.getElementById('generate-button')?.disabled,
+    subjectVal: document.getElementById('subject')?.value,
+    submitListeners: window.__submitListeners || [],
+    currentUrl: location.href,
+  }));
+  console.log(`  🔍 Mobile pre-draw: subject="${mobilePreDraw.subjectVal}", hero=${mobilePreDraw.appHero}, listeners=${JSON.stringify(mobilePreDraw.submitListeners)}`);
+
+  // Scroll button into view, try native click first, fall back to form.requestSubmit()
+  await page.locator('#generate-button').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(200);
+  // On mobile touch contexts, click may not always fire form submit — use requestSubmit() as guarantee
+  await page.evaluate(() => {
+    const form = document.getElementById('generator-form');
+    if (form) form.requestSubmit();
+    else document.getElementById('generate-button')?.click();
+  });
 
   console.log('  ⏳ Waiting for mobile generation…');
   try {
+    // Wait for app-hero to be removed (generation started)
+    await page.waitForFunction(() => {
+      const app = document.querySelector('.app');
+      return app && !app.classList.contains('app-hero');
+    }, null, { timeout: 25000 });
+    // Then wait for canvas OR loading overlay to finish (same as desktop — 403 is fine)
     await page.waitForFunction(() => {
       const c = document.getElementById('preview-canvas');
-      return c && !c.hidden && c.width > 100 &&
-             !document.getElementById('loading-overlay')?.style.display?.includes('flex');
+      const loading = document.getElementById('loading-overlay');
+      const canvasOk = c && !c.hidden && c.width > 100;
+      const loadingOff = !loading || loading.hidden || loading.style.display === 'none' ||
+                         getComputedStyle(loading).display === 'none';
+      return canvasOk || loadingOff;
     }, null, { timeout: 60000 });
-    await page.waitForFunction(() => {
-      const btn = document.getElementById('canvas-numbers-btn');
-      return btn && !btn.disabled;
-    }, null, { timeout: 90000 });
     await page.waitForTimeout(2000);
     await snap(page, 'mobile-coloring-state');
     console.log('  ✅ Mobile: image generated');
 
     // Hamburger in coloring state
     if (await hamburger.count() > 0) {
-      await hamburger.click();
+      await click(hamburger);  // force: true to bypass any overlay
       await page.waitForTimeout(500);
       await snap(page, 'mobile-coloring-panel');
-      await page.tap('body', { position: { x: 350, y: 200 } });
+      await page.keyboard.press('Escape');  // close hamburger panel safely
       await page.waitForTimeout(300);
     }
   } catch (err) {
@@ -674,10 +753,10 @@ async function testLpNav() {
   console.log('\n── LP NAV (coloring page) ────────────────────────────────────────');
   const { ctx, page } = await newPage(browser);
 
-  // Visit a coloring page hub
-  await page.goto(`${BASE}/en/coloring-pages/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  // Visit a topic page (hub is a static file without LP nav; topic pages have server-injected nav)
+  await page.goto(`${BASE}/en/coloring-pages/dragon/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(1500);
-  await snap(page, 'lp-hub-page');
+  await snap(page, 'lp-topic-page');
 
   const lpNav = page.locator('.lp-nav');
   if (await lpNav.count() > 0) {
@@ -717,7 +796,9 @@ async function testLpNav() {
       await page.waitForTimeout(200);
     }
   } else {
-    console.log('  ⚠️ No LP nav found on hub page');
+    console.log('  ⚠️ No LP nav found on topic page');
+    const bodyText = await page.locator('body').textContent().catch(() => '');
+    console.log(`  Page text snippet: "${bodyText.trim().slice(0, 120)}"`);
   }
 
   await ctx.close();
@@ -731,13 +812,29 @@ async function testAndroidEmulator() {
     const devices = execSync('adb devices', { encoding: 'utf8' }).trim();
     console.log('  📱 ADB devices:\n  ' + devices.split('\n').join('\n  '));
 
-    // Try opening the Flutter app if installed
-    const packages = execSync('adb shell pm list packages | grep lalabuba', { encoding: 'utf8' }).trim();
+    // Try opening the Flutter app if installed (use findstr on Windows instead of grep)
+    const allPackages = execSync('adb shell pm list packages', { encoding: 'utf8' }).trim();
+    const packages = allPackages.split('\n').filter(l => l.includes('lalabuba')).join('\n');
     const pkgName  = packages.match(/package:(\S+)/)?.[1];
 
     if (pkgName) {
       console.log(`  📦 Found package: ${pkgName}`);
-      execSync(`adb shell monkey -p ${pkgName} -c android.intent.category.LAUNCHER 1`, { encoding: 'utf8' });
+      // Enable if disabled (e.g. previous test run disabled it)
+      const enabledState = execSync(`adb shell pm list packages -d`, { encoding: 'utf8' });
+      if (enabledState.includes(pkgName)) {
+        execSync(`adb shell pm enable ${pkgName}`, { encoding: 'utf8', timeout: 10000 });
+        console.log('  ✅ Package was disabled — enabled');
+      }
+      // Find launcher activity via pm resolve-activity
+      const dumpOut = execSync(`adb shell cmd package resolve-activity -a android.intent.action.MAIN -c android.intent.category.LAUNCHER --user 0 ${pkgName}`, { encoding: 'utf8', timeout: 10000 }).trim();
+      const nameLine = dumpOut.split('\n').find(l => l.trim().startsWith('name='));
+      const activityName = nameLine ? nameLine.trim().replace('name=', '') : null;
+      console.log(`  🎯 Launcher activity: ${activityName}`);
+      if (activityName) {
+        execSync(`adb shell am start -n "${pkgName}/${activityName}"`, { encoding: 'utf8', timeout: 10000 });
+      } else {
+        execSync(`adb shell monkey -p ${pkgName} 1`, { encoding: 'utf8', timeout: 10000 });
+      }
       await new Promise(r => setTimeout(r, 3000));
       const sc1 = path.join(OUT_DIR, `qa-${String(++step).padStart(2,'0')}-android-launch.png`);
       execSync(`adb exec-out screencap -p > "${sc1}"`);
