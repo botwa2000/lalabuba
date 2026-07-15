@@ -95,15 +95,8 @@ function refreshJournalCount() {
       badge.hidden = true;
     }
   }
-  // First-time announcement: before any picture is finished, a "🏆 Earn stickers!"
-  // teaser sits beside the Journal icon so it's clear from the very first screen
-  // that rewards/progress exist. It disappears once the child has a masterpiece
-  // (the count badge takes over). CSS restricts it to the hero state.
-  const teaser = document.getElementById('rewards-teaser');
-  if (teaser) teaser.hidden = n > 0;
-  // Mobile (where the wide teaser is hidden): pulse the Journal icon for first-
-  // time users so the rewards entry is still noticeable. CSS scopes the pulse to
-  // the mobile breakpoint, so adding the class on desktop is harmless.
+  // rewards-teaser stays visible in hero state always (CSS hides it in coloring state).
+  // The journal dot/pulse draws attention on first visit.
   const jbtn = document.getElementById('journal-btn');
   if (jbtn) jbtn.classList.toggle('attention', n === 0);
 }
@@ -878,7 +871,16 @@ function syncExtremePill() {
   if (!pill) return;
   pill.disabled = !unlocked;
   pill.classList.toggle('diff-pill--locked', !unlocked);
-  pill.title = unlocked ? '' : '🔒 Complete Easy, Medium & Hard first';
+  if (!unlocked) {
+    pill.dataset.i18n = '';   // suppress applyTranslations overwrite while locked
+    pill.textContent = '🔒 ' + t('diffExtreme');
+    pill.title = '🔒 Complete Easy, Medium & Hard first';
+  } else {
+    delete pill.dataset.i18n;
+    pill.setAttribute('data-i18n', 'diffExtreme');
+    pill.textContent = t('diffExtreme');
+    pill.title = '';
+  }
 }
 syncExtremePill();
 

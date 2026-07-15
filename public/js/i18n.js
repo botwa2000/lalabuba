@@ -166,6 +166,7 @@ const TRANSLATIONS = {
     journalLocked: "Keep coloring to unlock!",
     journalNext: (remaining, emoji) => `🎯 ${remaining} more to unlock ${emoji}`,
     rewardsTeaser: "🏆 Earn stickers!",
+    navExplore: "Explore coloring pages",
     // Badge / sticker names + descriptions (id-keyed)
     badgeFirstTitle: "First Masterpiece", badgeFirstDesc: "You colored your very first picture!",
     badgeFiveTitle: "High Five", badgeFiveDesc: "5 pictures colored!",
@@ -387,6 +388,7 @@ const TRANSLATIONS = {
   de: {
     // -- Rewards system (parity with Flutter, auto-added) --
     rewardsTeaser: "🏆 Sticker verdienen!",
+    navExplore: "Ausmalbilder entdecken",
     badgeFirstTitle: "Erstes Meisterwerk",
     badgeFirstDesc: "Du hast dein allererstes Bild ausgemalt!",
     badgeFiveTitle: "High Five",
@@ -741,6 +743,7 @@ const TRANSLATIONS = {
   ru: {
     // -- Rewards system (parity with Flutter, auto-added) --
     rewardsTeaser: "🏆 Зарабатывай наклейки!",
+    navExplore: "Обзор раскрасок",
     badgeFirstTitle: "Первый шедевр",
     badgeFirstDesc: "Ты раскрасил свою самую первую картинку!",
     badgeFiveTitle: "Дай пять",
@@ -1095,6 +1098,7 @@ const TRANSLATIONS = {
   fr: {
     // -- Rewards system (parity with Flutter, auto-added) --
     rewardsTeaser: "🏆 Gagne des autocollants !",
+    navExplore: "Explorer les coloriages",
     badgeFirstTitle: "Premier chef-d'œuvre",
     badgeFirstDesc: "Tu as colorié ton tout premier dessin !",
     badgeFiveTitle: "Tope là",
@@ -1449,6 +1453,7 @@ const TRANSLATIONS = {
   es: {
     // -- Rewards system (parity with Flutter, auto-added) --
     rewardsTeaser: "🏆 ¡Gana pegatinas!",
+    navExplore: "Explorar páginas para colorear",
     badgeFirstTitle: "Primera obra maestra",
     badgeFirstDesc: "¡Coloreaste tu primer dibujo!",
     badgeFiveTitle: "Choca esos cinco",
@@ -1803,6 +1808,7 @@ const TRANSLATIONS = {
   pt: {
     // -- Rewards system (parity with Flutter, auto-added) --
     rewardsTeaser: "🏆 Ganhe adesivos!",
+    navExplore: "Explorar páginas de colorir",
     badgeFirstTitle: "Primeira obra-prima",
     badgeFirstDesc: "Você coloriu seu primeiro desenho!",
     badgeFiveTitle: "Toca aqui",
@@ -2157,6 +2163,7 @@ const TRANSLATIONS = {
   it: {
     // -- Rewards system (parity with Flutter, auto-added) --
     rewardsTeaser: "🏆 Guadagna adesivi!",
+    navExplore: "Esplora disegni da colorare",
     badgeFirstTitle: "Primo capolavoro",
     badgeFirstDesc: "Hai colorato il tuo primo disegno!",
     badgeFiveTitle: "Batti il cinque",
@@ -2511,6 +2518,7 @@ const TRANSLATIONS = {
   nl: {
     // -- Rewards system (parity with Flutter, auto-added) --
     rewardsTeaser: "🏆 Verdien stickers!",
+    navExplore: "Kleurplaten verkennen",
     badgeFirstTitle: "Eerste meesterwerk",
     badgeFirstDesc: "Je hebt je allereerste tekening ingekleurd!",
     badgeFiveTitle: "High Five",
@@ -2865,6 +2873,7 @@ const TRANSLATIONS = {
   pl: {
     // -- Rewards system (parity with Flutter, auto-added) --
     rewardsTeaser: "🏆 Zdobywaj naklejki!",
+    navExplore: "Przeglądaj kolorowanki",
     badgeFirstTitle: "Pierwsze arcydzieło",
     badgeFirstDesc: "Pokolorowałeś swój pierwszy obrazek!",
     badgeFiveTitle: "Przybij piątkę",
@@ -3219,6 +3228,7 @@ const TRANSLATIONS = {
   tr: {
     // -- Rewards system (parity with Flutter, auto-added) --
     rewardsTeaser: "🏆 Çıkartma kazan!",
+    navExplore: "Boyama sayfalarını keşfet",
     badgeFirstTitle: "İlk Başyapıt",
     badgeFirstDesc: "İlk resmini boyadın!",
     badgeFiveTitle: "Çak Beşlik",
@@ -3573,6 +3583,7 @@ const TRANSLATIONS = {
   zh: {
     // -- Rewards system (parity with Flutter, auto-added) --
     rewardsTeaser: "🏆 赢取贴纸！",
+    navExplore: "探索图画",
     badgeFirstTitle: "第一幅杰作",
     badgeFirstDesc: "你涂完了第一张图！",
     badgeFiveTitle: "击掌五次",
@@ -3927,6 +3938,7 @@ const TRANSLATIONS = {
   hi: {
     // -- Rewards system (parity with Flutter, auto-added) --
     rewardsTeaser: "🏆 स्टिकर कमाओ!",
+    navExplore: "रंग पेज देखें",
     badgeFirstTitle: "पहली उत्कृष्ट कृति",
     badgeFirstDesc: "तुमने अपनी पहली तस्वीर रंगी!",
     badgeFiveTitle: "हाई फाइव",
@@ -4323,6 +4335,12 @@ const COLORING_TODAY_LABELS = {
 
 function updateTopicLinks(lang) {
   const root = COLORING_ROOTS[lang] || 'coloring-pages';
+  // Update explore nav button href to the correct language hub
+  const exploreBtn = document.getElementById('explore-nav-btn');
+  if (exploreBtn) {
+    const enHub = lang === 'en' ? '/en/coloring-pages/' : `/${root}/`;
+    exploreBtn.href = enHub;
+  }
   document.querySelectorAll('[data-topic]').forEach(el => {
     const topic = el.dataset.topic;
     const slug  = COLORING_TOPIC_SLUGS[topic]?.[lang] || topic;

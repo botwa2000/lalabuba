@@ -143,21 +143,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=274" />
-  <link rel="stylesheet" href="/css/header.css?v=274" />
-  <link rel="stylesheet" href="/css/hero.css?v=274" />
-  <link rel="stylesheet" href="/css/generator.css?v=274" />
-  <link rel="stylesheet" href="/css/layout.css?v=274" />
-  <link rel="stylesheet" href="/css/workspace.css?v=274" />
-  <link rel="stylesheet" href="/css/palette.css?v=274" />
-  <link rel="stylesheet" href="/css/modals.css?v=274" />
-  <link rel="stylesheet" href="/css/footer.css?v=274" />
-  <link rel="stylesheet" href="/css/print.css?v=274" />
-  <link rel="stylesheet" href="/css/cookies.css?v=274" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=274" />
-  <link rel="stylesheet" href="/css/community.css?v=274" />
-  <link rel="stylesheet" href="/css/account.css?v=274" />
-  <script src="/js/cookies.js?v=274"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=275" />
+  <link rel="stylesheet" href="/css/header.css?v=275" />
+  <link rel="stylesheet" href="/css/hero.css?v=275" />
+  <link rel="stylesheet" href="/css/generator.css?v=275" />
+  <link rel="stylesheet" href="/css/layout.css?v=275" />
+  <link rel="stylesheet" href="/css/workspace.css?v=275" />
+  <link rel="stylesheet" href="/css/palette.css?v=275" />
+  <link rel="stylesheet" href="/css/modals.css?v=275" />
+  <link rel="stylesheet" href="/css/footer.css?v=275" />
+  <link rel="stylesheet" href="/css/print.css?v=275" />
+  <link rel="stylesheet" href="/css/cookies.css?v=275" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=275" />
+  <link rel="stylesheet" href="/css/community.css?v=275" />
+  <link rel="stylesheet" href="/css/account.css?v=275" />
+  <script src="/js/cookies.js?v=275"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -214,9 +214,10 @@
         </div><!-- /settings-menu -->
       </div><!-- /settings-wrap -->
 
-      <!-- Always-visible right cluster: Journal (collection) + days-colored streak -->
+      <!-- Always-visible right cluster: Explore + Rewards + Journal + days-colored -->
       <div class="top-actions">
-        <button id="rewards-teaser" class="rewards-teaser" type="button" hidden data-i18n="rewardsTeaser">🏆 Earn stickers!</button>
+        <a id="explore-nav-btn" class="top-action-btn explore-nav-btn" href="/en/coloring-pages/" aria-label="Explore coloring pages" data-i18n-aria-label="navExplore" title="Explore">🎨</a>
+        <button id="rewards-teaser" class="rewards-teaser top-action-btn" type="button" aria-label="Rewards" data-i18n-aria-label="rewardsTeaser" data-i18n-title="rewardsTeaser" title="🏆 Earn stickers!">🏆</button>
         <span id="days-colored-pill" class="days-colored-pill" hidden aria-label="Days colored"></span>
         <button id="journal-btn" class="top-action-btn" type="button" aria-label="My Journal" title="My Journal">
           🖼️<span id="journal-count" class="journal-count" hidden aria-hidden="true"></span><span id="journal-dot" class="journal-dot" hidden aria-hidden="true"></span>
@@ -794,8 +795,8 @@
 
   <!-- Safety net: if the main module throws before it can hide the splash screen,
        hide it here so the app never appears permanently frozen on native. -->
-  <script type="module" src="/js/main.js?v=274"></script>
-  <script type="module" src="/js/community.js?v=274"></script>
+  <script type="module" src="/js/main.js?v=275"></script>
+  <script type="module" src="/js/community.js?v=275"></script>
 
   <!-- Leaderboard modal -->
   <div id="leaderboard-modal" class="leaderboard-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="leaderboard-title">
@@ -893,7 +894,7 @@
   <!-- Account modal (content rendered by account.js) -->
   <div id="account-modal" role="dialog" aria-modal="true" aria-label="Account" hidden></div>
 
-  <script type="module" src="/js/account.js?v=274"></script>
+  <script type="module" src="/js/account.js?v=275"></script>
 </body>
 </html>
 

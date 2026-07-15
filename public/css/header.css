@@ -276,26 +276,20 @@
 }
 .days-colored-pill[hidden] { display: none; }
 
-/* First-time "Earn stickers!" announcement pill — hero state only, fades once a
-   masterpiece exists (refreshJournalCount hides it). */
+/* ─── Rewards + Explore nav buttons ─────────────────────────────────────────── */
+/* Rewards: circle button (matches top-action-btn) with gold pulse — hero only. */
 .rewards-teaser {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 10px;
-  border-radius: 999px;
-  border: 1.5px solid var(--purple);
-  background: linear-gradient(135deg, #fff4d6, #ffe0ef);
-  color: #5b3a8c;
-  font-size: 0.72rem;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
   animation: rewardsTeaserPulse 2.2s ease-in-out infinite;
+  border-color: var(--yellow, #ffca28);
 }
-.rewards-teaser[hidden] { display: none; }
+.rewards-teaser:hover { animation: none; border-color: var(--purple); }
 .app:not(.app-hero) .rewards-teaser { display: none !important; }
-@keyframes rewardsTeaserPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@keyframes rewardsTeaserPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .rewards-teaser { animation: none; } }
+
+/* Explore: circle nav button — desktop only to avoid logo overlap on small screens. */
+.explore-nav-btn { text-decoration: none; }
+@media (max-width: 767px) { .explore-nav-btn { display: none; } }
 
 @media (prefers-reduced-motion: reduce) { .journal-dot { animation: none; } }
 .settings-toggle-btn {
