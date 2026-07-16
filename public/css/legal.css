@@ -1,14 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap');
 
 /* ─── Shared styles for all Lalabuba static & landing pages ──────────── */
 :root {
   --lp-purple:  #7c4dff;
-  --lp-bg:      #fef9ef;
+  --lp-bg:      #f4f0ff;
   --lp-surface: #ffffff;
   --lp-ink:     #1e1b2e;
-  --lp-muted:   #6b7280;
-  --lp-border:  #e8e0f0;
-  --lp-radius:  14px;
+  --lp-muted:   #7a7090;
+  --lp-border:  rgba(124,77,255,0.12);
+  --lp-radius:  20px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -18,7 +18,7 @@
     --lp-surface: #2a2040;
     --lp-ink:     #f0eaff;
     --lp-muted:   #a3a3c0;
-    --lp-border:  rgba(255,255,255,0.1);
+    --lp-border:  rgba(255,255,255,0.08);
   }
 }
 
@@ -29,21 +29,22 @@
   --lp-surface: #2a2040;
   --lp-ink:     #f0eaff;
   --lp-muted:   #a3a3c0;
-  --lp-border:  rgba(255,255,255,0.1);
+  --lp-border:  rgba(255,255,255,0.08);
 }
 :root[data-theme="light"] {
   --lp-purple:  #7c4dff;
-  --lp-bg:      #fef9ef;
+  --lp-bg:      #f4f0ff;
   --lp-surface: #ffffff;
   --lp-ink:     #1e1b2e;
-  --lp-muted:   #6b7280;
-  --lp-border:  #e8e0f0;
+  --lp-muted:   #7a7090;
+  --lp-border:  rgba(124,77,255,0.12);
+  --lp-radius:  20px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Nunito", sans-serif;
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--lp-bg);
   color: var(--lp-ink);
   line-height: 1.75;
@@ -100,8 +101,9 @@ body {
   max-width: 1100px;
 }
 
-h1 { font-size: 2rem; color: var(--lp-purple); margin-bottom: 4px; line-height: 1.2; }
+h1 { font-family: 'Fredoka', sans-serif; font-size: 2rem; color: var(--lp-purple); margin-bottom: 4px; line-height: 1.2; }
 h2 {
+  font-family: 'Fredoka', sans-serif;
   font-size: 1.15rem;
   color: var(--lp-muted);
   margin-top: 2rem;
@@ -178,8 +180,9 @@ strong { color: var(--lp-ink); }
 .lp-hero-inner { max-width: 700px; margin: 0 auto; }
 .lp-hero-emoji { font-size: 5rem; line-height: 1; margin-bottom: 16px; display: block; }
 .lp-hero h1 {
+  font-family: 'Fredoka', sans-serif;
   font-size: 2.4rem;
-  font-weight: 800;
+  font-weight: 700;
   margin-bottom: 14px;
   color: #fff;
   line-height: 1.15;
@@ -226,7 +229,7 @@ strong { color: var(--lp-ink); }
   text-align: center;
 }
 .lp-diff-emoji { font-size: 2.2rem; margin-bottom: 8px; display: block; }
-.lp-diff-card h3 { font-size: 1.05rem; color: var(--lp-purple); margin-bottom: 6px; font-weight: 700; }
+.lp-diff-card h3 { font-family: 'Fredoka', sans-serif; font-size: 1.05rem; color: var(--lp-purple); margin-bottom: 6px; font-weight: 700; }
 .lp-diff-card p { font-size: 0.87rem; color: var(--lp-muted); margin-bottom: 14px; line-height: 1.5; }
 .lp-diff-link {
   display: inline-block;
@@ -255,7 +258,7 @@ strong { color: var(--lp-ink); }
   border-radius: var(--lp-radius);
 }
 .lp-why-icon { font-size: 1.6rem; margin-bottom: 8px; display: block; }
-.lp-why-card h3 { font-size: 0.95rem; color: var(--lp-ink); margin-bottom: 5px; font-weight: 700; }
+.lp-why-card h3 { font-family: 'Fredoka', sans-serif; font-size: 0.95rem; color: var(--lp-ink); margin-bottom: 5px; font-weight: 700; }
 .lp-why-card p { font-size: 0.85rem; color: var(--lp-muted); line-height: 1.5; }
 
 /* ─── Related topics grid ────────────────────────────────────────────────── */
@@ -315,10 +318,11 @@ strong { color: var(--lp-ink); }
 
 /* ─── Section headings ───────────────────────────────────────────────────── */
 .section-heading {
+  font-family: 'Fredoka', sans-serif;
   font-size: 1.45rem;
   color: var(--lp-ink);
   margin-bottom: 6px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .section-sub {
   font-size: 0.97rem;
@@ -341,7 +345,7 @@ strong { color: var(--lp-ink); }
   border-radius: var(--lp-radius);
 }
 .feat-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
-.feat-card h3 { font-size: 1rem; color: var(--lp-purple); margin-bottom: 6px; font-weight: 700; }
+.feat-card h3 { font-family: 'Fredoka', sans-serif; font-size: 1rem; color: var(--lp-purple); margin-bottom: 6px; font-weight: 700; }
 .feat-card p { font-size: 0.87rem; color: var(--lp-muted); line-height: 1.55; }
 
 /* ─── Step/HowTo list ────────────────────────────────────────────────────── */
@@ -368,7 +372,7 @@ strong { color: var(--lp-ink); }
   font-size: 0.95rem;
   flex-shrink: 0;
 }
-.step-body h3 { font-size: 1.02rem; color: var(--lp-ink); margin-bottom: 4px; }
+.step-body h3 { font-family: 'Fredoka', sans-serif; font-size: 1.02rem; color: var(--lp-ink); margin-bottom: 4px; }
 .step-body p { font-size: 0.88rem; color: var(--lp-muted); line-height: 1.5; }
 
 /* ─── About stats row ────────────────────────────────────────────────────── */
@@ -386,8 +390,9 @@ strong { color: var(--lp-ink); }
   border-radius: var(--lp-radius);
 }
 .stat-num {
+  font-family: 'Fredoka', sans-serif;
   font-size: 2.2rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--lp-purple);
   line-height: 1;
   margin-bottom: 4px;

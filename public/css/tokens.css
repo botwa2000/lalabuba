@@ -3,15 +3,17 @@
   --ff-brand: 'Fredoka', sans-serif;
   --ff-body:  'Nunito', sans-serif;
 
-  --bg:      #eef6ff;
-  --card:    #ffffff;
-  --ink:     #1e1b2e;
-  --muted:   #7a7a9a;
-  --border:  rgba(0,0,0,0.07);
-  --radius:  22px;
-  --sh-sm:   0 2px 8px rgba(0,0,0,0.07);
-  --sh-md:   0 8px 28px rgba(0,0,0,0.11);
-  --sh-lg:   0 20px 60px rgba(0,0,0,0.15);
+  --bg:        #f4f0ff;
+  --card:      #ffffff;
+  --surface:   #ffffff;
+  --ink:       #1e1b2e;
+  --muted:     #7a7090;
+  --border:    rgba(124,77,255,0.12);
+  --radius:    20px;
+  --radius-sm: 12px;
+  --sh-sm:     0 2px 8px rgba(0,0,0,0.06);
+  --sh-md:     0 8px 28px rgba(0,0,0,0.10);
+  --sh-lg:     0 20px 60px rgba(0,0,0,0.14);
 
   --red:    #ff4757;
   --orange: #ff7043;
@@ -73,15 +75,16 @@ body {
 /* System preference — skipped when user has manually chosen light mode */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg:     #1a1625;
-    --card:   #2a2040;
-    --ink:    #f0eaff;
-    --muted:  #a3a3c0;
-    --border: rgba(255,255,255,0.08);
-    --purple: #a78bfa;
-    --sh-sm:  0 2px 8px rgba(0,0,0,0.35);
-    --sh-md:  0 8px 28px rgba(0,0,0,0.45);
-    --sh-lg:  0 20px 60px rgba(0,0,0,0.55);
+    --bg:      #1a1625;
+    --card:    #2a2040;
+    --surface: #2a2040;
+    --ink:     #f0eaff;
+    --muted:   #a3a3c0;
+    --border:  rgba(255,255,255,0.08);
+    --purple:  #a78bfa;
+    --sh-sm:   0 2px 8px rgba(0,0,0,0.35);
+    --sh-md:   0 8px 28px rgba(0,0,0,0.45);
+    --sh-lg:   0 20px 60px rgba(0,0,0,0.55);
   }
   :root:not([data-theme="light"]) #preview-canvas,
   :root:not([data-theme="light"]) #draw-canvas { background: #fff; }
@@ -90,15 +93,16 @@ body {
 
 /* Manually forced dark mode */
 :root[data-theme="dark"] {
-  --bg:     #1a1625;
-  --card:   #2a2040;
-  --ink:    #f0eaff;
-  --muted:  #a3a3c0;
-  --border: rgba(255,255,255,0.08);
-  --purple: #a78bfa;
-  --sh-sm:  0 2px 8px rgba(0,0,0,0.35);
-  --sh-md:  0 8px 28px rgba(0,0,0,0.45);
-  --sh-lg:  0 20px 60px rgba(0,0,0,0.55);
+  --bg:      #1a1625;
+  --card:    #2a2040;
+  --surface: #2a2040;
+  --ink:     #f0eaff;
+  --muted:   #a3a3c0;
+  --border:  rgba(255,255,255,0.08);
+  --purple:  #a78bfa;
+  --sh-sm:   0 2px 8px rgba(0,0,0,0.35);
+  --sh-md:   0 8px 28px rgba(0,0,0,0.45);
+  --sh-lg:   0 20px 60px rgba(0,0,0,0.55);
 }
 :root[data-theme="dark"] #preview-canvas,
 :root[data-theme="dark"] #draw-canvas { background: #fff; }
