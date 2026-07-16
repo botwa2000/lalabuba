@@ -128,7 +128,7 @@ export function renderLegend() {
 }
 
 // Module-level loading timer state
-let loadingTimer1 = null, loadingTimer2 = null, loadingShownAt = 0;
+let loadingTimer1 = null, loadingTimer2 = null, loadingHideTimer = null, loadingShownAt = 0;
 const MIN_LOADING_MS = 900;
 
 // Visible error inside the canvas area — the #status bar lives in the config panel,
@@ -152,6 +152,8 @@ export function clearCanvasError() {
 }
 
 export function showLoading() {
+  clearTimeout(loadingHideTimer); // cancel any pending deferred hide from prior generation
+  loadingHideTimer = null;
   const loadingOverlay = document.getElementById('loading-overlay');
   const emptyHint = document.querySelector('.empty-hint');
   const text = document.getElementById('loading-text');
@@ -175,7 +177,7 @@ export function hideLoading() {
     clearTimeout(loadingTimer2);
   };
   if (elapsed < MIN_LOADING_MS) {
-    setTimeout(doHide, MIN_LOADING_MS - elapsed);
+    loadingHideTimer = setTimeout(doHide, MIN_LOADING_MS - elapsed);
   } else {
     doHide();
   }

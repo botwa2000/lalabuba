@@ -472,6 +472,7 @@ form.addEventListener("submit", async (event) => {
 
   const submitButton = document.getElementById("generate-button");
   submitButton.disabled = true;
+  showLoading(); // show immediately — don't wait for Turnstile (can take up to 15s)
 
   try {
     state.turnstileToken = await getTurnstileToken();
@@ -488,6 +489,7 @@ form.addEventListener("submit", async (event) => {
     await generatePage(subject, seedOverride, !!pendingEnglish);
     updateFinishBtnVisibility();
   } catch (error) {
+    hideLoading();
     setStatus(error.message || "Something went wrong.", true);
   } finally {
     submitButton.disabled = false;

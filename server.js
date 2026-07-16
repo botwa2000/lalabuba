@@ -931,7 +931,7 @@ function serveDailyPage(res, date, word) {
   }</script>
 </head>
 <body>
-${buildNav({ lang: 'en', breadcrumbs: [{ href: '/coloring-pages/', label: 'Coloring Pages' }, { label: `${wordTitle} (${date})` }], hreflangMap: dailyHreflangMap(`https://lalabuba.com/coloring-pages/daily/${date}-${word}/`, deAltLink ? `https://lalabuba.com/ausmalbilder/taeglich/${date}-${deWord}/` : null) })}
+${buildNav({ lang: 'en', breadcrumbs: [{ href: '/coloring-pages/', label: 'Coloring Pages' }, { label: `${wordTitle} (${date})` }], hreflangMap: dailyHreflangMap(`https://lalabuba.com/coloring-pages/daily/${date}-${word}/`, deSlugDe ? `https://lalabuba.com/ausmalbilder/taeglich/${date}-${deSlugDe}/` : null) })}
 <div class="lp-hero">
   <div class="lp-hero-inner">
     <span class="lp-hero-emoji">🖌️</span>
