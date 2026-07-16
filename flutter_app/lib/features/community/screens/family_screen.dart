@@ -151,7 +151,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+              child: Text(l10n.t('cancel'),
+                  style: GoogleFonts.fredoka(fontWeight: FontWeight.w700))),
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
               child: Text(l10n.t('familyLeaveBtn'),
