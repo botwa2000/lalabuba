@@ -317,7 +317,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               if (home != null)
                 _buildCardGrid(context, home, l10n, _currentLocale,
                     columns: cardColumns,
-                    cardScale: isLandscape ? 1.3 : 1.6),
+                    cardScale: isLandscape ? 3.5 : 4.0),
             ],
           ),
         );
@@ -330,13 +330,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               promptRow(),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               if (home?.dailyChallenge != null) ...[
+                _panelLabel('☀️', l10n.t('dailyWord'), cs),
                 Center(
                     child: _buildDailyPill(
                         context, cs, l10n, home!, _currentLocale)),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
               ],
+              _panelLabel('🌈', l10n.t('weekLabel'), cs),
               Center(child: _buildWeekScenePill(context, cs, l10n)),
               SizedBox(height: isLandscape ? 12 : 20),
               _buildDrawButton(context, l10n,
@@ -880,7 +882,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String locale, {
     bool compact = false,
     int columns = 2,
-    double cardScale = 1.0,
+    double cardScale = 1.0,   // passed as emojiScale; labels always stay at 1.0
   }) {
     final cs = Theme.of(context).colorScheme;
     const cardColors = [
@@ -910,7 +912,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               label: card.label(locale),
               gradient: cardColors[i % cardColors.length],
               animationIndex: i,
-              scale: cardScale,
+              scale: 1.0,
+              emojiScale: cardScale,
               onTap: () {
                 HapticFeedback.lightImpact();
                 // Show localized label in the text field; send English to API
@@ -1085,6 +1088,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // Fun section label — Fredoka + primary purple + emoji prefix.
+  // Used in tablet right panel above the daily pill, week pill, and settings.
+  Widget _panelLabel(String emoji, String text, ColorScheme cs) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(
+          '$emoji $text',
+          style: GoogleFonts.fredoka(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: cs.primary.withValues(alpha: 0.85),
+          ),
+        ),
+      );
+
   Widget _buildSettingsChips(
     BuildContext context,
     ColorScheme cs,
@@ -1147,6 +1164,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       l10n.t('colorsLabel'),
       l10n.t('numbersLabel'),
     ];
+    const settingEmojis = ['🌟', '🎨', '🖍️', '🔢'];
     final settingChips = [diffChip, palChip, cntChip, modeChip];
 
     return Padding(
@@ -1158,13 +1176,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Row(
             children: [
               SizedBox(
-                width: 84,
+                width: 108,
                 child: Text(
-                  settingLabels[i],
-                  style: GoogleFonts.nunito(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface.withValues(alpha: 0.55),
+                  '${settingEmojis[i]} ${settingLabels[i]}',
+                  style: GoogleFonts.fredoka(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: cs.primary.withValues(alpha: 0.85),
                   ),
                 ),
               ),
