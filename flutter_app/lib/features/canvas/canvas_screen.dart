@@ -396,7 +396,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             ),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF7C4DFF),
+                backgroundColor: Theme.of(ctx).colorScheme.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
               ),
               onPressed: () => Navigator.pop(ctx, true),
@@ -715,13 +715,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF7C4DFF), Color(0xFF448AFF)],
+                  gradient: LinearGradient(
+                    colors: [Theme.of(context).colorScheme.primary, const Color(0xFF448AFF)],
                   ),
                   borderRadius: BorderRadius.circular(50),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF7C4DFF).withValues(alpha: 0.3),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
