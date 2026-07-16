@@ -225,7 +225,7 @@
   "badgePeoplePalDesc": "Раскрасил(а) человека!",
   "badgeFantasyFanTitle": "Создатель грёз",
   "badgeFantasyFanDesc": "Раскрасил(а) что-то волшебное!",
-    "badgeExtremeUnlockTitle": "Экстрим разблокирован!",
+  "badgeExtremeUnlockTitle": "Экстрим разблокирован!",
   "badgeExtremeUnlockDesc": "Завершены Лёгкий, Средний и Сложный — Экстрим теперь открыт!",
   "badgeChampionTitle": "Супер-чемпион",
   "badgeChampionDesc": "Закончил(а) экстремальную картинку!",
@@ -457,5 +457,12 @@
   "accountChildNameError": "Please enter a nickname.",
   "accountAgeGroup": "Age group",
   "accountSaveChild": "Save profile →",
-  "accountSaving": "Saving…"
+  "accountSaving": "Saving…",
+  "mascotTitle": "Твой компаньон",
+  "mascotChooseTitle": "Выбери своего компаньона!",
+  "mascotChooseSubtitle": "Выбери талисмана для раскраски",
+  "mascotStudioTitle": "Студия Талисмана",
+  "mascotHats": "🎩 Hats",
+  "mascotAccessories": "💎 Accessories",
+  "mascotExpressions": "😊 Expressions"
 }

@@ -9,6 +9,8 @@ import '../settings/settings_controller.dart';
 import 'daily_mission.dart';
 import 'crayon_packs.dart';
 import 'scenes.dart';
+import '../mascot/mascot.dart';
+import '../mascot/mascot_service.dart';
 
 /// The Rewards home — the child's collection hub. Holds the sticker album
 /// (grouped collections), and is the destination of the pulsing 🏆 icon on the
@@ -33,6 +35,8 @@ class RewardsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
+          _MascotCard(l10n: l10n, totalCompleted: progress.totalCompleted),
+          const SizedBox(height: 16),
           _DailyMissionCard(progress: progress, l10n: l10n),
           const SizedBox(height: 16),
           _ScenesCard(l10n: l10n, totalCompleted: progress.totalCompleted),
@@ -42,6 +46,143 @@ class RewardsScreen extends ConsumerWidget {
           _StickerAlbum(progress: progress, l10n: l10n),
         ],
       ),
+    );
+  }
+}
+
+// ─── Mascot card ─────────────────────────────────────────────────────────────
+
+class _MascotCard extends ConsumerWidget {
+  final L10n l10n;
+  final int totalCompleted;
+  const _MascotCard({required this.l10n, required this.totalCompleted});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final ms = ref.watch(mascotProvider).valueOrNull ?? const MascotState();
+
+    return GestureDetector(
+      onTap: () => context.pushNamed('mascotStudio'),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              cs.primaryContainer.withValues(alpha: 0.6),
+              cs.secondaryContainer.withValues(alpha: 0.6),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: cs.primary.withValues(alpha: 0.25)),
+        ),
+        child: ms.isSetUp ? _buildSetUp(context, cs, ms) : _buildNotSetUp(context, cs),
+      ),
+    );
+  }
+
+  Widget _buildSetUp(BuildContext context, ColorScheme cs, MascotState ms) {
+    final mascot     = ms.mascot!;
+    final hat        = ms.hat;
+    final accessory  = ms.accessory;
+    final expression = ms.expression;
+    // Next unlock hint
+    final nextItem = kMascotItems
+        .where((i) => !isItemUnlocked(i, totalCompleted))
+        .fold<MascotItem?>(null, (best, i) =>
+            best == null || i.unlockAt < best.unlockAt ? i : best);
+
+    return Row(
+      children: [
+        // ── Mascot display ──
+        SizedBox(
+          width: 90, height: 90,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Center(
+                child: Text(mascot.emoji,
+                    style: const TextStyle(fontSize: 56, height: 1)),
+              ),
+              if (hat != null)
+                Positioned(top: -4, right: 8,
+                    child: Text(hat.emoji,
+                        style: const TextStyle(fontSize: 24, height: 1))),
+              if (accessory != null)
+                Positioned(bottom: 0, right: 0,
+                    child: Text(accessory.emoji,
+                        style: const TextStyle(fontSize: 20, height: 1))),
+              if (expression != null)
+                Positioned(bottom: 0, left: 0,
+                    child: Text(expression.emoji,
+                        style: const TextStyle(fontSize: 18, height: 1))),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        // ── Text info ──
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(mascot.name,
+                  style: GoogleFonts.fredoka(
+                      fontSize: 20, fontWeight: FontWeight.w700,
+                      color: cs.primary)),
+              const SizedBox(height: 4),
+              Text(l10n.t('mascotTitle'),
+                  style: GoogleFonts.nunito(
+                      fontSize: 13,
+                      color: cs.onSurface.withValues(alpha: 0.65))),
+              if (nextItem != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  child: Text(
+                    '${nextItem.emoji} ${nextItem.name} at ${nextItem.unlockAt} colorings',
+                    style: GoogleFonts.nunito(
+                        fontSize: 11, fontWeight: FontWeight.w700,
+                        color: cs.onSurface.withValues(alpha: 0.55)),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const Icon(Icons.chevron_right_rounded),
+      ],
+    );
+  }
+
+  Widget _buildNotSetUp(BuildContext context, ColorScheme cs) {
+    return Row(
+      children: [
+        Text('🐧🐰🐻', style: const TextStyle(fontSize: 36)),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.t('mascotChooseTitle'),
+                  style: GoogleFonts.fredoka(
+                      fontSize: 18, fontWeight: FontWeight.w700,
+                      color: cs.primary)),
+              const SizedBox(height: 4),
+              Text(l10n.t('mascotChooseSubtitle'),
+                  style: GoogleFonts.nunito(
+                      fontSize: 13,
+                      color: cs.onSurface.withValues(alpha: 0.65))),
+            ],
+          ),
+        ),
+        const Icon(Icons.chevron_right_rounded),
+      ],
     );
   }
 }
@@ -336,7 +477,7 @@ class _CrayonPackTile extends StatelessWidget {
                     Container(
                       width: 18,
                       height: 18,
-                      margin: const EdgeInsets.only(right: 4),
+                      margin: const EdgeInsets.only(right: 3),
                       decoration: BoxDecoration(
                         color: c,
                         shape: BoxShape.circle,

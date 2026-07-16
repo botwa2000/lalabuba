@@ -24,6 +24,7 @@ import '../account/account_screen.dart';
 import '../rewards/daily_mission.dart';
 import '../rewards/crayon_packs.dart';
 import '../rewards/scenes.dart';
+import '../mascot/mascot_studio_screen.dart';
 import 'voice_input_button.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -427,24 +428,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           );
         }),
-        // Pulsing 🏆 Rewards entry — always present so the sticker album,
-        // missions, crayon packs and mascot are one tap away (this is the fix
-        // for "tapping a sticker did nothing — I had to open the gallery"). It
-        // gently pulses to invite kids, and shows the earned-sticker count once
-        // any are unlocked.
-        Builder(builder: (_) {
-          final p = ref.watch(progressProvider).valueOrNull ?? const Progress();
-          final earnedCount =
-              kBadges.where((b) => p.badges.contains(b.id)).length;
-          return _PulsingRewardsIcon(
-            count: earnedCount,
-            tooltip: l10n.t('rewardsBtn'),
+        // Mascot avatar — taps into Rewards (which shows the mascot at top).
+        // Replaces the pulsing trophy; the mascot IS the rewards entry point.
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: MascotAvatar(
+            size: 36,
             onTap: () {
               HapticFeedback.lightImpact();
               context.pushNamed('rewards');
             },
-          );
-        }),
+          ),
+        ),
         // Journal/Gallery icon with a masterpiece-count badge (parity with web):
         // shows totalCompleted once > 0, hidden at 0 (teaser above covers that).
         Builder(builder: (_) {

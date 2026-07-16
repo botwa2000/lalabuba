@@ -457,5 +457,12 @@
   "accountChildNameError": "Please enter a nickname.",
   "accountAgeGroup": "Age group",
   "accountSaveChild": "Save profile →",
-  "accountSaving": "Saving…"
+  "accountSaving": "Saving…",
+  "mascotTitle": "Your companion",
+  "mascotChooseTitle": "Choose your companion!",
+  "mascotChooseSubtitle": "Pick a mascot to color with you",
+  "mascotStudioTitle": "Mascot Studio",
+  "mascotHats": "🎩 Hats",
+  "mascotAccessories": "💎 Accessories",
+  "mascotExpressions": "😊 Expressions"
 }

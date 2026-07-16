@@ -225,7 +225,7 @@
   "badgePeoplePalDesc": "एक व्यक्ति रंगा!",
   "badgeFantasyFanTitle": "सपनों का जादूगर",
   "badgeFantasyFanDesc": "कुछ जादुई रंगा!",
-    "badgeExtremeUnlockTitle": "एक्सट्रीम अनलॉक!",
+  "badgeExtremeUnlockTitle": "एक्सट्रीम अनलॉक!",
   "badgeExtremeUnlockDesc": "आसान, मध्यम और कठिन पूरे किए — अब एक्सट्रीम खुला है!",
   "badgeChampionTitle": "सुपर चैंपियन",
   "badgeChampionDesc": "एक बहुत कठिन तस्वीर पूरी की!",
@@ -457,5 +457,12 @@
   "accountChildNameError": "Please enter a nickname.",
   "accountAgeGroup": "Age group",
   "accountSaveChild": "Save profile →",
-  "accountSaving": "Saving…"
+  "accountSaving": "Saving…",
+  "mascotTitle": "आपका साथी",
+  "mascotChooseTitle": "अपना साथी चुनें!",
+  "mascotChooseSubtitle": "रंग भरने के लिए एक शुभंकर चुनें",
+  "mascotStudioTitle": "मैस्कट स्टूडियो",
+  "mascotHats": "🎩 Hats",
+  "mascotAccessories": "💎 Accessories",
+  "mascotExpressions": "😊 Expressions"
 }

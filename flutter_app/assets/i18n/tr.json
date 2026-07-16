@@ -225,7 +225,7 @@
   "badgePeoplePalDesc": "Bir insan boyadın!",
   "badgeFantasyFanTitle": "Hayal Ustası",
   "badgeFantasyFanDesc": "Sihirli bir şey boyadın!",
-    "badgeExtremeUnlockTitle": "Aşırı Kilidi Açıldı!",
+  "badgeExtremeUnlockTitle": "Aşırı Kilidi Açıldı!",
   "badgeExtremeUnlockDesc": "Kolay, Orta ve Zor tamamlandı — Aşırı artık açık!",
   "badgeChampionTitle": "Süper Şampiyon",
   "badgeChampionDesc": "Çok zor bir resmi bitirdin!",
@@ -457,5 +457,12 @@
   "accountChildNameError": "Please enter a nickname.",
   "accountAgeGroup": "Age group",
   "accountSaveChild": "Save profile →",
-  "accountSaving": "Saving…"
+  "accountSaving": "Saving…",
+  "mascotTitle": "Arkadaşın",
+  "mascotChooseTitle": "Arkadaşını seç!",
+  "mascotChooseSubtitle": "Seninle boyayacak bir maskot seç",
+  "mascotStudioTitle": "Maskot Stüdyosu",
+  "mascotHats": "🎩 Hats",
+  "mascotAccessories": "💎 Accessories",
+  "mascotExpressions": "😊 Expressions"
 }

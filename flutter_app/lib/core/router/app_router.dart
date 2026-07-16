@@ -7,6 +7,7 @@ import '../../features/gallery/gallery_screen.dart';
 import '../../features/rewards/rewards_screen.dart';
 import '../../features/rewards/scenes_screen.dart';
 import '../../features/settings/settings_screen.dart';
+import '../../features/mascot/mascot_studio_screen.dart';
 
 export '../../features/canvas/canvas_screen.dart' show CanvasScreenArgs;
 
@@ -18,6 +19,7 @@ class Routes {
   static const gallery = '/gallery';
   static const rewards = '/rewards';
   static const scenes = '/scenes';
+  static const mascotStudio = '/mascot-studio';
   static const settings = '/settings';
   static const challenge = '/challenge';
 }
@@ -102,6 +104,16 @@ final appRouter = GoRouter(
       pageBuilder: (ctx, state) => CustomTransitionPage(
         key: state.pageKey,
         child: const ScenesScreen(),
+        transitionsBuilder: (ctx, anim, _, child) =>
+            FadeTransition(opacity: anim, child: child),
+      ),
+    ),
+    GoRoute(
+      path: Routes.mascotStudio,
+      name: 'mascotStudio',
+      pageBuilder: (ctx, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const MascotStudioScreen(),
         transitionsBuilder: (ctx, anim, _, child) =>
             FadeTransition(opacity: anim, child: child),
       ),

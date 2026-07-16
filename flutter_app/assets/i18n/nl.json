@@ -225,7 +225,7 @@
   "badgePeoplePalDesc": "Een persoon ingekleurd!",
   "badgeFantasyFanTitle": "Droommaker",
   "badgeFantasyFanDesc": "Iets magisch ingekleurd!",
-    "badgeExtremeUnlockTitle": "Extreem Ontgrendeld!",
+  "badgeExtremeUnlockTitle": "Extreem Ontgrendeld!",
   "badgeExtremeUnlockDesc": "Makkelijk, Gemiddeld en Moeilijk voltooid — Extreem is nu open!",
   "badgeChampionTitle": "Superkampioen",
   "badgeChampionDesc": "Een extreme plaat afgemaakt!",
@@ -457,5 +457,12 @@
   "accountChildNameError": "Please enter a nickname.",
   "accountAgeGroup": "Age group",
   "accountSaveChild": "Save profile →",
-  "accountSaving": "Saving…"
+  "accountSaving": "Saving…",
+  "mascotTitle": "Jouw metgezel",
+  "mascotChooseTitle": "Kies jouw metgezel!",
+  "mascotChooseSubtitle": "Kies een mascotte om mee te kleuren",
+  "mascotStudioTitle": "Mascotte Studio",
+  "mascotHats": "🎩 Hats",
+  "mascotAccessories": "💎 Accessories",
+  "mascotExpressions": "😊 Expressions"
 }

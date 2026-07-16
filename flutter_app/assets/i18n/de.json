@@ -225,7 +225,7 @@
   "badgePeoplePalDesc": "Eine Person ausgemalt!",
   "badgeFantasyFanTitle": "Traum-Macher",
   "badgeFantasyFanDesc": "Etwas Magisches ausgemalt!",
-    "badgeExtremeUnlockTitle": "Extrem Freigeschaltet!",
+  "badgeExtremeUnlockTitle": "Extrem Freigeschaltet!",
   "badgeExtremeUnlockDesc": "Easy, Medium und Hard geschafft — Extrem ist jetzt offen!",
   "badgeChampionTitle": "Super-Champion",
   "badgeChampionDesc": "Ein extremes Bild geschafft!",
@@ -457,5 +457,12 @@
   "accountChildNameError": "Please enter a nickname.",
   "accountAgeGroup": "Age group",
   "accountSaveChild": "Save profile →",
-  "accountSaving": "Saving…"
+  "accountSaving": "Saving…",
+  "mascotTitle": "Dein Begleiter",
+  "mascotChooseTitle": "Wähle deinen Begleiter!",
+  "mascotChooseSubtitle": "Such dir ein Maskottchen aus",
+  "mascotStudioTitle": "Maskottchen-Studio",
+  "mascotHats": "🎩 Hats",
+  "mascotAccessories": "💎 Accessories",
+  "mascotExpressions": "😊 Expressions"
 }

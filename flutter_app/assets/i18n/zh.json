@@ -225,7 +225,7 @@
   "badgePeoplePalDesc": "涂了一个人！",
   "badgeFantasyFanTitle": "造梦师",
   "badgeFantasyFanDesc": "涂了神奇的东西！",
-    "badgeExtremeUnlockTitle": "极限已解锁！",
+  "badgeExtremeUnlockTitle": "极限已解锁！",
   "badgeExtremeUnlockDesc": "完成了简单、中等和困难关卡——极限现已开放！",
   "badgeChampionTitle": "超级冠军",
   "badgeChampionDesc": "完成了超难的图！",
@@ -457,5 +457,12 @@
   "accountChildNameError": "Please enter a nickname.",
   "accountAgeGroup": "Age group",
   "accountSaveChild": "Save profile →",
-  "accountSaving": "Saving…"
+  "accountSaving": "Saving…",
+  "mascotTitle": "你的伙伴",
+  "mascotChooseTitle": "选择你的伙伴！",
+  "mascotChooseSubtitle": "选一个吉祥物陪你涂色",
+  "mascotStudioTitle": "吉祥物工作室",
+  "mascotHats": "🎩 Hats",
+  "mascotAccessories": "💎 Accessories",
+  "mascotExpressions": "😊 Expressions"
 }

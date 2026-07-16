@@ -225,7 +225,7 @@
   "badgePeoplePalDesc": "Une personne coloriée !",
   "badgeFantasyFanTitle": "Faiseur de Rêves",
   "badgeFantasyFanDesc": "Quelque chose de magique colorié !",
-    "badgeExtremeUnlockTitle": "Extrême Débloqué !",
+  "badgeExtremeUnlockTitle": "Extrême Débloqué !",
   "badgeExtremeUnlockDesc": "Facile, Moyen et Difficile terminés — Extrême est maintenant ouvert !",
   "badgeChampionTitle": "Super Champion",
   "badgeChampionDesc": "Une image extrême terminée !",
@@ -457,5 +457,12 @@
   "accountChildNameError": "Please enter a nickname.",
   "accountAgeGroup": "Age group",
   "accountSaveChild": "Save profile →",
-  "accountSaving": "Saving…"
+  "accountSaving": "Saving…",
+  "mascotTitle": "Ton compagnon",
+  "mascotChooseTitle": "Choisis ton compagnon !",
+  "mascotChooseSubtitle": "Choisis une mascotte pour colorier avec toi",
+  "mascotStudioTitle": "Studio Mascotte",
+  "mascotHats": "🎩 Hats",
+  "mascotAccessories": "💎 Accessories",
+  "mascotExpressions": "😊 Expressions"
 }
