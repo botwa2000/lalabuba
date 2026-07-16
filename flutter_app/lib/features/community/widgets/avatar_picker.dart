@@ -76,7 +76,7 @@ class _AvatarPickerDialogState extends State<_AvatarPickerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancel',
+          child: Text(l10n.t('cancel'),
               style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
         ),
         FilledButton(

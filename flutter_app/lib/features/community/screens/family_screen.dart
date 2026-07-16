@@ -60,7 +60,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
     } catch (e) {
       if (mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text(l10n.t('familyJoinError'))),
         );
       }
     } finally {
@@ -101,14 +101,14 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Cancel',
+              child: Text(l10n.t('cancel'),
                   style: GoogleFonts.fredoka(fontWeight: FontWeight.w700))),
           FilledButton(
               onPressed: () {
                 final v = ctrl.text.trim().toUpperCase();
                 if (v.length == 6) Navigator.of(ctx).pop(v);
               },
-              child: Text('Join',
+              child: Text(l10n.t('familyJoinBtn'),
                   style: GoogleFonts.fredoka(fontWeight: FontWeight.w700))),
         ],
       ),

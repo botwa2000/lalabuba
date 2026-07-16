@@ -82,10 +82,11 @@ void main() {
     });
 
     test('an isolated weak speck with no strong line is NOT promoted', () {
-      // One slightly-grey pixel in a white field: weak, but joined to no strong
-      // line, so hysteresis must leave it free (the flat-shading safety case).
+      // One faint pixel (br=200) in a white field: above adaptiveCeil(190) so
+      // classified WEAK, not strong. Hysteresis must leave it free because no
+      // strong neighbour ever seeds it.
       final g = List<int>.filled(w * h, 255);
-      g[idx(10, 10)] = 150; // lone faint speck, no surrounding ink
+      g[idx(10, 10)] = 200; // lone faint speck above adaptiveCeil — weak, no strong seed
       final mask = buildOutlineMask(rgbaFromBrightness(g, w, h), w, h);
       expect(mask[idx(10, 10)], 0,
           reason: 'a weak speck unconnected to any strong line must stay free');
