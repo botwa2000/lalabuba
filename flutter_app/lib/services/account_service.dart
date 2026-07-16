@@ -114,6 +114,12 @@ class AccountState {
 
 const _sentinel = Object();
 
+// ── Typed exception ───────────────────────────────────────────────────────────
+class AccountException implements Exception {
+  const AccountException(this.code);
+  final String code; // RATE_LIMIT | EMAIL_FAILED | INVALID_CODE | EXPIRED | NETWORK | UNKNOWN
+}
+
 // ── Notifier ──────────────────────────────────────────────────────────────────
 class AccountNotifier extends StateNotifier<AccountState> {
   AccountNotifier(this._storage, AppConfig config)
@@ -128,6 +134,26 @@ class AccountNotifier extends StateNotifier<AccountState> {
   final Dio _dio;
 
   Future<String> get _deviceId => DeviceIdService.getDeviceId();
+
+  AccountException _fromDio(DioException e) {
+    final t = e.type;
+    if (t == DioExceptionType.connectionTimeout ||
+        t == DioExceptionType.receiveTimeout ||
+        t == DioExceptionType.connectionError) {
+      return const AccountException('NETWORK');
+    }
+    final status = e.response?.statusCode;
+    String serverCode = '';
+    try {
+      final data = e.response?.data;
+      if (data is Map) serverCode = (data['code'] as String?) ?? '';
+    } catch (_) {}
+    if (status == 429 || serverCode == 'RATE_LIMIT') return const AccountException('RATE_LIMIT');
+    if (status == 503 || serverCode == 'EMAIL_FAILED') return const AccountException('EMAIL_FAILED');
+    if (serverCode == 'INVALID_CODE') return const AccountException('INVALID_CODE');
+    if (serverCode == 'EXPIRED') return const AccountException('EXPIRED');
+    return const AccountException('UNKNOWN');
+  }
 
   Options get _authHeaders {
     final token = state.accessToken;
@@ -159,36 +185,48 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
   // ── OTP auth flow (passwordless) ──────────────────────────────────────────
   Future<void> sendOtp(String email, String lang) async {
-    await _dio.post('/api/auth/send-otp', data: {
-      'email': email.trim().toLowerCase(),
-      'lang':  lang,
-    });
-    state = state.copyWith(pendingOtpEmail: email.trim().toLowerCase());
+    try {
+      await _dio.post('/api/auth/send-otp', data: {
+        'email': email.trim().toLowerCase(),
+        'lang':  lang,
+      });
+      state = state.copyWith(pendingOtpEmail: email.trim().toLowerCase());
+    } on DioException catch (e) {
+      throw _fromDio(e);
+    }
   }
 
   Future<void> verifyOtp(String email, String code) async {
-    final deviceUuid = await _deviceId;
-    final res = await _dio.post('/api/auth/verify-email', data: {
-      'email':      email.trim().toLowerCase(),
-      'code':       code,
-      'deviceUuid': deviceUuid,
-    });
-    final data = res.data as Map<String, dynamic>;
-    await _persistTokens(
-      accessToken:  data['accessToken'] as String,
-      refreshToken: data['refreshToken'] as String,
-      email:        data['email'] as String,
-      accountId:    (data['accountId'] as num).toInt(),
-    );
-    state = state.copyWith(pendingOtpEmail: null);
-    await fetchChildren();
+    try {
+      final deviceUuid = await _deviceId;
+      final res = await _dio.post('/api/auth/verify-email', data: {
+        'email':      email.trim().toLowerCase(),
+        'code':       code,
+        'deviceUuid': deviceUuid,
+      });
+      final data = res.data as Map<String, dynamic>;
+      await _persistTokens(
+        accessToken:  data['accessToken'] as String,
+        refreshToken: data['refreshToken'] as String,
+        email:        data['email'] as String,
+        accountId:    (data['accountId'] as num).toInt(),
+      );
+      state = state.copyWith(pendingOtpEmail: null);
+      await fetchChildren();
+    } on DioException catch (e) {
+      throw _fromDio(e);
+    }
   }
 
   Future<void> resendOtp(String email, String lang) async {
-    await _dio.post('/api/auth/resend-otp', data: {
-      'email': email.trim().toLowerCase(),
-      'lang':  lang,
-    });
+    try {
+      await _dio.post('/api/auth/resend-otp', data: {
+        'email': email.trim().toLowerCase(),
+        'lang':  lang,
+      });
+    } on DioException catch (e) {
+      throw _fromDio(e);
+    }
   }
 
   // ── Children ───────────────────────────────────────────────────────────────

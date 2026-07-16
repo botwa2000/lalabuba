@@ -442,6 +442,7 @@
   "accountCodeExpired": "Code expired. Please request a new one.",
   "accountAttemptsLeft": "attempts left",
   "accountMaxAttempts": "Too many attempts. Please request a new code.",
+  "accountRateLimitError": "请求过多，请几分钟后再试。",
   "accountWhoIsColoring": "Who's coloring today? 🖍️",
   "accountImParent": "I'm the parent",
   "accountAddChild": "Add child",

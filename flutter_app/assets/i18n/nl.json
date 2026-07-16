@@ -442,6 +442,7 @@
   "accountCodeExpired": "Code expired. Please request a new one.",
   "accountAttemptsLeft": "attempts left",
   "accountMaxAttempts": "Too many attempts. Please request a new code.",
+  "accountRateLimitError": "Te veel verzoeken. Probeer het over een paar minuten opnieuw.",
   "accountWhoIsColoring": "Who's coloring today? 🖍️",
   "accountImParent": "I'm the parent",
   "accountAddChild": "Add child",

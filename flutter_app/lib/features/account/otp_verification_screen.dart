@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/l10n/l10n_service.dart';
-import '../../services/account_service.dart';
+import '../../services/account_service.dart' show accountProvider, AccountException;
 
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   const OtpVerificationScreen({super.key, required this.email});
@@ -88,22 +88,24 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   Future<void> _submit() async {
     if (!_isFull || _loading) return;
     setState(() { _loading = true; _error = null; });
+    final l10n = ref.read(l10nProvider);
     try {
       await ref.read(accountProvider.notifier).verifyOtp(widget.email, _code);
       if (mounted) Navigator.of(context).pop(true);
-    } on Exception catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      // DioException wraps the body — extract the error field
-      final errorMsg = msg.contains('attemptsLeft') || msg.contains('INVALID_CODE')
-          ? ref.read(l10nProvider).t('accountInvalidCode')
-          : msg.contains('EXPIRED') || msg.contains('404')
-              ? ref.read(l10nProvider).t('accountCodeExpired')
-              : msg;
+    } on AccountException catch (e) {
+      final errorMsg = switch (e.code) {
+        'INVALID_CODE' => l10n.t('accountInvalidCode'),
+        'EXPIRED'      => l10n.t('accountCodeExpired'),
+        'RATE_LIMIT'   => l10n.t('accountMaxAttempts'),
+        _              => l10n.t('networkError'),
+      };
       if (mounted) {
         setState(() { _error = errorMsg; _loading = false; });
         for (final c in _ctrls) { c.text = ''; }
         _nodes[0].requestFocus();
       }
+    } catch (_) {
+      if (mounted) setState(() { _error = l10n.t('networkError'); _loading = false; });
     }
   }
 
@@ -114,8 +116,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     try {
       await ref.read(accountProvider.notifier).resendOtp(widget.email, l10n.locale);
       _startCooldown(60);
-    } on Exception catch (e) {
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+    } on AccountException catch (e) {
+      final msg = e.code == 'RATE_LIMIT'
+          ? l10n.t('accountRateLimitError')
+          : l10n.t('networkError');
+      if (mounted) setState(() => _error = msg);
+    } catch (_) {
+      if (mounted) setState(() => _error = l10n.t('networkError'));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

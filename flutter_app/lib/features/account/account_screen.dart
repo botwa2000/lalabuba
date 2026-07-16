@@ -71,9 +71,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       );
       if (!mounted) return;
       if (done == true) _afterVerified();
-    } on Exception catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '');
+    } on AccountException catch (e) {
+      final msg = e.code == 'RATE_LIMIT'
+          ? l10n.t('accountRateLimitError')
+          : l10n.t('networkError');
       if (mounted) setState(() { _error = msg; _loading = false; });
+    } catch (_) {
+      if (mounted) setState(() { _error = l10n.t('networkError'); _loading = false; });
     } finally {
       if (mounted && _loading) setState(() => _loading = false);
     }
