@@ -560,9 +560,9 @@ Uint8List buildOutlineMask(Uint8List pixels, int w, int h) {
   final radRaw = (w < h ? w : h) ~/ 64;
   final radius = radRaw < 4 ? 4 : (radRaw > 24 ? 24 : radRaw);
   const localMargin = 22;   // strong: this much darker than local mean → definite line
-  const adaptiveCeil = 150; // strong local test ignores pixels at/above this
+  const adaptiveCeil = 190; // strong local test ignores pixels at/above this (raised: catches grey anti-aliased edges)
   const weakMargin = 8;     // weak: even this little darker than local mean is a candidate
-  const weakCeil = 205;     // weak test ignores near-white pixels
+  const weakCeil = 220;     // weak test ignores near-white pixels (raised: catches faint JPEG compression edges)
 
   // Classify: 2 = strong wall, 1 = weak candidate, 0 = free.
   final cls = Uint8List(n);

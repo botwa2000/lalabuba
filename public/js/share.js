@@ -76,7 +76,16 @@ export function loadFromShare() {
     showLoading();
     try {
       if (imgUrl) {
-        // Exact shared image — fetch directly from CDN, no AI call.
+        // Switch from hero (landing) to coloring layout — same as generatePage()
+        document.querySelector('.app')?.classList.remove('app-hero');
+        const cp = document.querySelector('.config-panel');
+        if (cp) {
+          cp.classList.add('collapsed');
+          cp.classList.remove('mobile-open');
+          const toggleBtn = document.getElementById('panel-toggle');
+          if (toggleBtn) toggleBtn.textContent = '▶';
+        }
+        // Load the pre-drawn image directly — no AI call.
         await renderGeneratedImage(imgUrl);
         state.lastImageUrl = imgUrl;
         setStatus(t('done'));

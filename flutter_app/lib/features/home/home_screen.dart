@@ -244,9 +244,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     final cs = Theme.of(context).colorScheme;
     final settings = settingsAsync.valueOrNull;
-    // Landscape tablets are shorter — fit more cards per row so the grid stays
-    // compact; portrait tablets can afford 2 rows.
-    final cardColumns = isLandscape ? 3 : 2;
+    // Always 2 columns so cards are big enough for the emoji to be clearly visible.
+    const cardColumns = 2;
 
     Widget promptRow() => Row(
           children: [
@@ -317,34 +316,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 16),
               if (home != null)
                 _buildCardGrid(context, home, l10n, _currentLocale,
-                    columns: cardColumns, cardScale: 1.0),
+                    columns: cardColumns,
+                    cardScale: isLandscape ? 1.3 : 1.6),
             ],
           ),
         );
 
-    // ── Right: inspiration pills + action controls ──
+    // ── Right: action controls (prompt first, then inspiration pills below) ──
     Widget rightPanel(HomeState? home) => SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
               16, isLandscape ? 14 : 28, 28, isLandscape ? 14 : 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              promptRow(),
+              const SizedBox(height: 12),
               if (home?.dailyChallenge != null) ...[
                 Center(
                     child: _buildDailyPill(
                         context, cs, l10n, home!, _currentLocale)),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
               ],
               Center(child: _buildWeekScenePill(context, cs, l10n)),
-              SizedBox(height: isLandscape ? 16 : 32),
-              promptRow(),
-              const SizedBox(height: 14),
+              SizedBox(height: isLandscape ? 12 : 20),
               _buildDrawButton(context, l10n,
                   height: isLandscape ? 52 : 58, fontSize: 20),
               const SizedBox(height: 14),
-              Center(
-                  child:
-                      _buildSettingsChips(context, cs, l10n, settings, sub)),
+              _buildSettingsChips(context, cs, l10n, settings, sub,
+                  labeled: true),
             ],
           ),
         );
@@ -1091,55 +1090,88 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ColorScheme cs,
     L10n l10n,
     SettingsState? settings,
-    SubscriptionState? sub,
-  ) {
+    SubscriptionState? sub, {
+    bool labeled = false,
+  }) {
+    final diffChip = LalaChip(
+      label: _diffLabel(settings?.difficulty ?? 'medium', l10n),
+      onTap: () {
+        final p = ref.read(progressProvider).valueOrNull ?? const Progress();
+        ref.read(settingsProvider.notifier).cycleDifficulty(
+              isExtremeUnlocked(p)
+                  ? const ['easy', 'medium', 'hard', 'extreme']
+                  : const ['easy', 'medium', 'hard'],
+            );
+      },
+    );
+
+    final palChip = LalaChip(
+      label: _palLabel(settings?.palette ?? 'classic', l10n),
+      onTap: () {
+        final p = ref.read(progressProvider).valueOrNull ?? const Progress();
+        ref.read(settingsProvider.notifier).cyclePalette(unlockedPaletteIds(p));
+      },
+    );
+
+    final cntChip = LalaChip(
+      label: _cntLabel(settings?.colorCount ?? 12, l10n),
+      onTap: () => ref
+          .read(settingsProvider.notifier)
+          .cycleColorCount([6, 12, 18, 24, 99]),
+    );
+
+    // Coloring-MODE switch: name the mode so its purpose is obvious.
+    final modeChip = LalaChip(
+      label: settings?.showNumbers == true
+          ? '🔢 ${l10n.t('modeByNumber')}'
+          : '🎨 ${l10n.t('modeFreeColor')}',
+      selected: settings?.showNumbers ?? false,
+      onTap: () => ref.read(settingsProvider.notifier).toggleNumbers(),
+    );
+
+    if (!labeled) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        child: Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [diffChip, palChip, cntChip, modeChip],
+        ),
+      );
+    }
+
+    // Labeled vertical layout for tablet right panel — one row per setting.
+    final settingLabels = [
+      l10n.t('diffLabel'),
+      l10n.t('paletteLabel'),
+      l10n.t('colorsLabel'),
+      l10n.t('numbersLabel'),
+    ];
+    final settingChips = [diffChip, palChip, cntChip, modeChip];
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children: [
-          LalaChip(
-            label: _diffLabel(settings?.difficulty ?? 'medium', l10n),
-            onTap: () {
-              final p = ref.read(progressProvider).valueOrNull ?? const Progress();
-              ref.read(settingsProvider.notifier).cycleDifficulty(
-                    isExtremeUnlocked(p)
-                        ? const ['easy', 'medium', 'hard', 'extreme']
-                        : const ['easy', 'medium', 'hard'],
-                  );
-            },
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: List.generate(4, (i) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 84,
+                child: Text(
+                  settingLabels[i],
+                  style: GoogleFonts.nunito(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface.withValues(alpha: 0.55),
+                  ),
+                ),
+              ),
+              settingChips[i],
+            ],
           ),
-          LalaChip(
-            label: _palLabel(settings?.palette ?? 'classic', l10n),
-            // Cycle only the crayon packs the child has unlocked.
-            onTap: () {
-              final p =
-                  ref.read(progressProvider).valueOrNull ?? const Progress();
-              ref
-                  .read(settingsProvider.notifier)
-                  .cyclePalette(unlockedPaletteIds(p));
-            },
-          ),
-          LalaChip(
-            label: _cntLabel(settings?.colorCount ?? 12, l10n),
-            onTap: () => ref
-                .read(settingsProvider.notifier)
-                .cycleColorCount([6, 12, 18, 24, 99]),
-          ),
-          // Coloring-MODE switch (was a cryptic "Numbers ON/OFF"): name the mode
-          // it puts you in so its purpose is obvious — guided colour-by-number
-          // vs. free colouring.
-          LalaChip(
-            label: settings?.showNumbers == true
-                ? '🔢 ${l10n.t('modeByNumber')}'
-                : '🎨 ${l10n.t('modeFreeColor')}',
-            selected: settings?.showNumbers ?? false,
-            onTap: () =>
-                ref.read(settingsProvider.notifier).toggleNumbers(),
-          ),
-          // "How to play" moved into the consolidated gear settings sheet.
-        ],
+        )),
       ),
     );
   }

@@ -418,9 +418,9 @@ ${hreflangLines.join('\n')}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=283"/>
-  <link rel="stylesheet" href="/css/gallery.css?v=283"/>
-  <link rel="stylesheet" href="/css/image-page.css?v=283"/>
+  <link rel="stylesheet" href="/css/legal.css?v=284"/>
+  <link rel="stylesheet" href="/css/gallery.css?v=284"/>
+  <link rel="stylesheet" href="/css/image-page.css?v=284"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">${jsonLd}</script>
 </head>
@@ -562,7 +562,7 @@ const HEAD_COMMON = `  <meta name="theme-color" content="#7c4dff"/>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=283"/>
+  <link rel="stylesheet" href="/css/legal.css?v=284"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>`;
 
@@ -815,7 +815,7 @@ function serveTodayPage(res) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=283"/>
+  <link rel="stylesheet" href="/css/legal.css?v=284"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
@@ -920,7 +920,7 @@ function serveDailyPage(res, date, word) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=283"/>
+  <link rel="stylesheet" href="/css/legal.css?v=284"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
@@ -1031,7 +1031,7 @@ function serveGermanDailyPage(res, date, deWord) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=283"/>
+  <link rel="stylesheet" href="/css/legal.css?v=284"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{

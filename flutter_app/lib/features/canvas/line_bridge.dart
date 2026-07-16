@@ -27,7 +27,7 @@ void bridgeLineGaps(
   int tangentSteps = 4, // pixels walked back along a tip to estimate its heading
 }) {
   final short = w < h ? w : h;
-  final gap = maxGap ?? (short ~/ 100).clamp(4, 16);
+  final gap = maxGap ?? (short ~/ 100).clamp(4, 24);
   if (gap < 2) return;
 
   final skel = zhangSuenThin(mask, w, h);

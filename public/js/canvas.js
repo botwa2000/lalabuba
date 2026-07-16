@@ -1006,7 +1006,7 @@ export async function renderGeneratedImage(imageBase64) {
       blobImage.onerror = () => reject(new Error("Failed to decode generated image."));
       blobImage.src = imageBase64;
     });
-  } else if (imageBase64.startsWith("http")) {
+  } else if (imageBase64.startsWith("http") || imageBase64.startsWith('/')) {
     image = await imageFromUrl(imageBase64);
   } else {
     image = await imageFromBase64(imageBase64);

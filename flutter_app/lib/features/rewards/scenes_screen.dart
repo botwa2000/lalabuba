@@ -158,6 +158,11 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
               borderRadius: BorderRadius.circular(24),
               child: Stack(
                 children: [
+                  // Scene environment: rendered behind stickers.
+                  CustomPaint(
+                    size: Size(w, h),
+                    painter: _ScenePainter(scene.id),
+                  ),
                   for (var i = 0; i < placed.length; i++)
                     _PlacedItem(
                       key: ValueKey('$_current-$i'),
@@ -430,4 +435,194 @@ class _PlacedItemState extends State<_PlacedItem> {
       ),
     );
   }
+}
+
+// ─── Scene environment painter ───────────────────────────────────────────────
+// Draws ground/sky elements on top of the gradient but behind stickers, so each
+// scene has recognisable visual context before the child adds any decorations.
+
+class _ScenePainter extends CustomPainter {
+  final String sceneId;
+  const _ScenePainter(this.sceneId);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    switch (sceneId) {
+      case 'meadow':
+        _paintMeadow(canvas, size);
+      case 'iceberg':
+        _paintIceberg(canvas, size);
+      case 'ocean':
+        _paintOcean(canvas, size);
+      case 'city':
+        _paintCity(canvas, size);
+      case 'space':
+        _paintSpace(canvas, size);
+    }
+  }
+
+  void _paintMeadow(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    // Grass ground strip with wavy top edge
+    final groundPaint = Paint()..color = const Color(0xFF6DC46C);
+    final grassY = h * 0.74;
+    final groundPath = Path()
+      ..moveTo(0, grassY + 8)
+      ..quadraticBezierTo(w * 0.2, grassY - 14, w * 0.5, grassY + 4)
+      ..quadraticBezierTo(w * 0.8, grassY + 20, w, grassY - 4)
+      ..lineTo(w, h)
+      ..lineTo(0, h)
+      ..close();
+    canvas.drawPath(groundPath, groundPaint);
+
+    // Grass blades
+    final bladePaint = Paint()
+      ..color = const Color(0xFF4AA84A)
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    for (final xf in [0.1, 0.22, 0.36, 0.52, 0.67, 0.8, 0.9]) {
+      final x = w * xf;
+      canvas.drawLine(Offset(x - 4, grassY + 6), Offset(x, grassY - 12), bladePaint);
+      canvas.drawLine(Offset(x + 4, grassY + 6), Offset(x, grassY - 12), bladePaint);
+    }
+
+    // Sun
+    canvas.drawCircle(Offset(w * 0.84, h * 0.14), 20,
+        Paint()..color = const Color(0xFFFDD835));
+  }
+
+  void _paintIceberg(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    // Ice shelf with jagged edge
+    final icePaint = Paint()..color = const Color(0xFFADD8EC);
+    final iceY = h * 0.72;
+    final icePath = Path()..moveTo(0, iceY + 4)
+      ..lineTo(w * 0.08, iceY - 18)
+      ..lineTo(w * 0.18, iceY - 6)
+      ..lineTo(w * 0.32, iceY - 24)
+      ..lineTo(w * 0.48, iceY - 10)
+      ..lineTo(w * 0.62, iceY - 20)
+      ..lineTo(w * 0.78, iceY - 4)
+      ..lineTo(w * 0.9, iceY - 22)
+      ..lineTo(w, iceY - 8)
+      ..lineTo(w, h)
+      ..lineTo(0, h)
+      ..close();
+    canvas.drawPath(icePath, icePaint);
+
+    // Snowflakes
+    final snowPaint = Paint()..color = Colors.white.withValues(alpha: 0.75);
+    for (final pos in [
+      [0.14, 0.18], [0.34, 0.1], [0.56, 0.22], [0.72, 0.12], [0.88, 0.2]
+    ]) {
+      canvas.drawCircle(Offset(w * pos[0], h * pos[1]), 3, snowPaint);
+    }
+  }
+
+  void _paintOcean(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    // Sandy ocean floor
+    canvas.drawRect(
+      Rect.fromLTWH(0, h * 0.76, w, h * 0.24),
+      Paint()..color = const Color(0xFFF9D8A0),
+    );
+    // Wave line at waterline
+    final wavePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.55)
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final waveY = h * 0.76;
+    final wavePath = Path()..moveTo(0, waveY);
+    var x = 0.0;
+    while (x < w) {
+      wavePath.quadraticBezierTo(x + 18, waveY - 16, x + 36, waveY);
+      x += 36;
+    }
+    canvas.drawPath(wavePath, wavePaint);
+    // Bubbles
+    final bubblePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8;
+    canvas.drawCircle(Offset(w * 0.25, h * 0.5), 9, bubblePaint);
+    canvas.drawCircle(Offset(w * 0.62, h * 0.4), 6, bubblePaint);
+    canvas.drawCircle(Offset(w * 0.8, h * 0.58), 11, bubblePaint);
+  }
+
+  void _paintCity(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    // Building silhouettes
+    final buildPaint = Paint()..color = const Color(0xFFE08070);
+    final winPaint = Paint()..color = const Color(0xFFFFEE58);
+    // Each entry: [xStart, yTopFrac, widthFrac, heightFrac]
+    final buildings = [
+      [0.0, 0.55, 0.18, 0.45],
+      [0.16, 0.4, 0.13, 0.6],
+      [0.27, 0.52, 0.14, 0.48],
+      [0.39, 0.35, 0.14, 0.65],
+      [0.51, 0.48, 0.13, 0.52],
+      [0.62, 0.42, 0.12, 0.58],
+      [0.72, 0.5, 0.14, 0.5],
+      [0.84, 0.45, 0.16, 0.55],
+    ];
+    for (final b in buildings) {
+      final bx = w * b[0];
+      final by = h * b[1];
+      final bw = w * b[2];
+      final bh = h * b[3];
+      canvas.drawRect(Rect.fromLTWH(bx, by, bw, bh), buildPaint);
+      // 2×3 grid of windows
+      for (var row = 0; row < 3; row++) {
+        for (var col = 0; col < 2; col++) {
+          canvas.drawRect(
+            Rect.fromLTWH(
+              bx + bw * (0.2 + col * 0.45),
+              by + bh * (0.12 + row * 0.22),
+              bw * 0.22,
+              bh * 0.1,
+            ),
+            winPaint,
+          );
+        }
+      }
+    }
+  }
+
+  void _paintSpace(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    // Stars
+    final starPaint = Paint()..color = Colors.white.withValues(alpha: 0.9);
+    for (final s in [
+      [0.1, 0.08, 2.0], [0.24, 0.16, 1.5], [0.39, 0.06, 2.5],
+      [0.55, 0.13, 1.5], [0.7, 0.07, 2.0], [0.85, 0.19, 1.5],
+      [0.08, 0.28, 1.0], [0.44, 0.32, 1.5], [0.63, 0.22, 1.0],
+      [0.91, 0.3, 2.0], [0.17, 0.44, 1.5], [0.76, 0.38, 1.0],
+    ]) {
+      canvas.drawCircle(Offset(w * s[0], h * s[1]), s[2], starPaint);
+    }
+    // Planet with ring
+    canvas.drawCircle(Offset(w * 0.22, h * 0.66), 30,
+        Paint()..color = const Color(0xFF9C6FFF).withValues(alpha: 0.85));
+    canvas.drawOval(
+      Rect.fromCenter(
+          center: Offset(w * 0.22, h * 0.66), width: 76, height: 22),
+      Paint()
+        ..color = const Color(0xFF9C6FFF).withValues(alpha: 0.45)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 5,
+    );
+    // Moon
+    canvas.drawCircle(Offset(w * 0.8, h * 0.18), 24,
+        Paint()..color = const Color(0xFFFFE082).withValues(alpha: 0.65));
+  }
+
+  @override
+  bool shouldRepaint(_ScenePainter old) => old.sceneId != sceneId;
 }
