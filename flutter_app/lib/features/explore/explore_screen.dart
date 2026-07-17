@@ -500,9 +500,21 @@ class _GalleryCard extends ConsumerWidget {
           ? '$baseUrl${entry.url}'
           : entry.url;
       final resp = await Dio().get<List<int>>(url,
-          options: Options(responseType: ResponseType.bytes));
+          options: Options(
+            responseType: ResponseType.bytes,
+            sendTimeout: const Duration(seconds: 15),
+            receiveTimeout: const Duration(seconds: 20),
+          ));
       final bytes = Uint8List.fromList(resp.data ?? []);
-      if (bytes.isEmpty || !context.mounted) return;
+      if (bytes.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not load image — please try again')),
+          );
+        }
+        return;
+      }
+      if (!context.mounted) return;
       context.pushNamed('canvas',
           extra: CanvasScreenArgs(
             subject: entry.subject,
@@ -512,14 +524,10 @@ class _GalleryCard extends ConsumerWidget {
             preloadedDifficulty: difficulty,
           ));
     } catch (_) {
-      // Fallback: generate fresh from subject if fetch fails.
       if (context.mounted) {
-        context.pushNamed('canvas',
-            extra: CanvasScreenArgs(
-              subject: entry.subject,
-              displayLabel: entry.subject,
-              source: 'explore',
-            ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not load image — please try again')),
+        );
       }
     }
   }

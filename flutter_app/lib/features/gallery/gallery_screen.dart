@@ -10,13 +10,16 @@ import '../../core/l10n/l10n_service.dart';
 import '../progress/progress_service.dart';
 import '../community/screens/community_gallery_screen.dart';
 import 'print_book.dart';
+import '../../services/account_service.dart';
 
 final galleryImagesProvider = FutureProvider<List<File>>((ref) async {
+  final childId = ref.watch(accountProvider.select((s) => s.activeChildId));
+  final prefix = childId != null ? 'lalabuba_child${childId}_' : 'lalabuba_';
   final dir = await getApplicationDocumentsDirectory();
   final files = dir
       .listSync()
       .whereType<File>()
-      .where((f) => f.path.endsWith('.png') && f.path.contains('lalabuba_'))
+      .where((f) => f.path.endsWith('.png') && f.uri.pathSegments.last.startsWith(prefix))
       .toList()
     ..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
   return files;

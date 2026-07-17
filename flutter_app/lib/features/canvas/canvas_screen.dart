@@ -22,6 +22,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:showcaseview/showcaseview.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../../core/di/providers.dart';
+import '../../services/account_service.dart';
 import '../../features/generate/generate_service.dart';
 import '../../features/gallery/gallery_screen.dart';
 import '../../features/community/community_service.dart';
@@ -1796,8 +1797,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       final bytes = await _captureCanvas(canvas);
       if (bytes != null) {
         final dir = await getApplicationDocumentsDirectory();
+        final account = ref.read(accountProvider);
+        final childId = account.activeChildId;
+        final prefix = childId != null ? 'lalabuba_child${childId}_' : 'lalabuba_';
         final file = File(
-            '${dir.path}/lalabuba_${DateTime.now().millisecondsSinceEpoch}.png');
+            '${dir.path}/$prefix${DateTime.now().millisecondsSinceEpoch}.png');
         await file.writeAsBytes(bytes);
         ref.invalidate(galleryImagesProvider);
       }

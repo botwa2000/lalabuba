@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/services/storage_service.dart';
 import '../../shared/services/device_id_service.dart';
 import '../../core/di/providers.dart';
+import '../../services/account_service.dart';
 
 /// Sticker collections — the meaningful grouping shown in the Rewards album.
 enum BadgeGroup { milestones, streaks, explorer, creativity, sharing }
@@ -358,11 +359,25 @@ int _dayDiff(String a, String b) {
   return db.difference(da).inDays;
 }
 
+// Wraps accountProvider.activeChildId with a safe fallback so consumers
+// (e.g. ProgressNotifier) don't require AppConfig to be loaded in tests.
+final _activeChildIdProvider = Provider<int?>((ref) {
+  try {
+    return ref.watch(accountProvider).activeChildId;
+  } catch (_) {
+    return null;
+  }
+});
+
 class ProgressNotifier extends AsyncNotifier<Progress> {
-  static const _key = 'progress_v1';
+  String get _key {
+    final childId = ref.read(_activeChildIdProvider);
+    return childId != null ? 'progress_v1_child_$childId' : 'progress_v1';
+  }
 
   @override
   Future<Progress> build() async {
+    ref.watch(_activeChildIdProvider); // rebuilds when active child changes; never throws
     final p = await _load();
     // Kick off server load in background to pick up cross-device progress.
     Future.microtask(() => loadFromServer().ignore());
