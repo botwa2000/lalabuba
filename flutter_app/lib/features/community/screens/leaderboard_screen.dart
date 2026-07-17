@@ -21,6 +21,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   bool _loadingWeekly = false;
   bool _loadingAlltime = false;
   String? _error;
+  String? _ownNickname;
 
   @override
   void initState() {
@@ -29,13 +30,26 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     _tabCtrl.addListener(() {
       if (!_tabCtrl.indexIsChanging) _ensureLoaded();
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureLoaded());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureLoaded();
+      _loadOwnNickname();
+    });
   }
 
   @override
   void dispose() {
     _tabCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadOwnNickname() async {
+    try {
+      final svc = ref.read(communityServiceProvider);
+      final profile = await svc.getProfile();
+      if (mounted && profile.hasNickname) {
+        setState(() => _ownNickname = profile.nickname);
+      }
+    } catch (_) {}
   }
 
   Future<void> _ensureLoaded() async {
@@ -131,7 +145,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: data.entries.length,
-      itemBuilder: (_, i) => LeaderboardEntryWidget(entry: data.entries[i]),
+      itemBuilder: (_, i) => LeaderboardEntryWidget(
+        entry: data.entries[i],
+        isOwn: _ownNickname != null &&
+            data.entries[i].nickname == _ownNickname,
+      ),
     );
   }
 }

@@ -1201,7 +1201,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             ),
             const SizedBox(width: 8),
             _ActionBtn(
-              label: '🌟 Community',
+              label: l10n.t('communityShareBtn'),
               onTap: canvas.isReady ? () => _shareToCommunity(canvas) : null,
             ),
             const SizedBox(width: 8),
@@ -1827,6 +1827,17 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final progress =
         ref.read(progressProvider).valueOrNull ?? const Progress();
 
+    // Fire-and-forget: sync completion to server so leaderboard stays current.
+    try {
+      final svc = ref.read(communityServiceProvider);
+      unawaited(svc.syncProgress(
+        totalCompleted: progress.totalCompleted,
+        currentStreak: progress.streak,
+        longestStreak: progress.longestStreak,
+        lastActiveDate: progress.lastColoredDay,
+      ));
+    } catch (_) {}
+
     // 2b. Sticker Scenes: capture this finished page as a reusable "My Art"
     //     sticker, then run the theme-matched decoration drip + scene unlocks
     //     (parity with web scenes.js). Done before the celebration so the new
@@ -2029,7 +2040,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not connect to community')),
+        SnackBar(content: Text(l10n.t('communityShareError'))),
       );
       return;
     }
@@ -2064,7 +2075,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not save nickname: $e')),
+          SnackBar(content: Text(l10n.t('communityShareError'))),
         );
         return;
       }
@@ -2087,9 +2098,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     // Show uploading snackbar
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
-      ..showSnackBar(const SnackBar(
-        content: Text('Uploading… 🌟'),
-        duration: Duration(seconds: 30),
+      ..showSnackBar(SnackBar(
+        content: Text(l10n.t('communitySharing')),
+        duration: const Duration(seconds: 30),
       ));
 
     // 6. Upload
@@ -2112,19 +2123,18 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🌟 Shared! It\'s in the community gallery'),
-          duration: Duration(seconds: 3),
+        SnackBar(
+          content: Text(l10n.t('communitySharedToast')),
+          duration: const Duration(seconds: 3),
         ),
       );
     } on DioException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars();
       final msg = switch (e.response?.statusCode) {
-        429 => 'Weekly share limit reached — try again next week',
-        403 => 'Sharing requires parent permission first',
-        413 => 'Image too large — please try again',
-        _ => 'Could not share — please try again',
+        429 => l10n.t('communityShareLimitReached'),
+        403 => l10n.t('communityParentalNeeded'),
+        _ => l10n.t('communityShareError'),
       };
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(msg)));
@@ -2132,7 +2142,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not share — please try again')),
+        SnackBar(content: Text(l10n.t('communityShareError'))),
       );
     }
   }

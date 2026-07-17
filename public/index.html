@@ -143,21 +143,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=290" />
-  <link rel="stylesheet" href="/css/header.css?v=290" />
-  <link rel="stylesheet" href="/css/hero.css?v=290" />
-  <link rel="stylesheet" href="/css/generator.css?v=290" />
-  <link rel="stylesheet" href="/css/layout.css?v=290" />
-  <link rel="stylesheet" href="/css/workspace.css?v=290" />
-  <link rel="stylesheet" href="/css/palette.css?v=290" />
-  <link rel="stylesheet" href="/css/modals.css?v=290" />
-  <link rel="stylesheet" href="/css/footer.css?v=290" />
-  <link rel="stylesheet" href="/css/print.css?v=290" />
-  <link rel="stylesheet" href="/css/cookies.css?v=290" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=290" />
-  <link rel="stylesheet" href="/css/community.css?v=290" />
-  <link rel="stylesheet" href="/css/account.css?v=290" />
-  <script src="/js/cookies.js?v=290"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=291" />
+  <link rel="stylesheet" href="/css/header.css?v=291" />
+  <link rel="stylesheet" href="/css/hero.css?v=291" />
+  <link rel="stylesheet" href="/css/generator.css?v=291" />
+  <link rel="stylesheet" href="/css/layout.css?v=291" />
+  <link rel="stylesheet" href="/css/workspace.css?v=291" />
+  <link rel="stylesheet" href="/css/palette.css?v=291" />
+  <link rel="stylesheet" href="/css/modals.css?v=291" />
+  <link rel="stylesheet" href="/css/footer.css?v=291" />
+  <link rel="stylesheet" href="/css/print.css?v=291" />
+  <link rel="stylesheet" href="/css/cookies.css?v=291" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=291" />
+  <link rel="stylesheet" href="/css/community.css?v=291" />
+  <link rel="stylesheet" href="/css/account.css?v=291" />
+  <script src="/js/cookies.js?v=291"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -395,6 +395,47 @@
                 <button type="button" class="canvas-frame-btn" data-frame="classic" title="Classic frame (free)">🖼️</button>
                 <button type="button" class="canvas-frame-btn canvas-frame-btn--locked" data-frame="wooden" title="Wooden 🔒">🪵</button>
                 <button type="button" class="canvas-frame-btn canvas-frame-btn--locked" data-frame="gold" title="Gold 🔒">✨</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Family group panel ──────────────────────────────── -->
+          <section class="family-panel-section" id="family-panel-section" aria-label="Family group">
+            <button class="family-panel-toggle" id="family-panel-toggle" aria-expanded="false">
+              <span class="family-panel-toggle-icon">👨‍👩‍👧</span>
+              <span class="family-panel-toggle-label" data-i18n="familyTitle">Family Group</span>
+              <span class="family-panel-toggle-caret">▶</span>
+            </button>
+            <div class="family-panel-body" id="family-panel-body" hidden>
+              <div id="family-loading" class="family-loading" hidden>
+                <span></span><span></span><span></span>
+              </div>
+              <!-- No family -->
+              <div id="family-no-family" class="family-no-family" hidden>
+                <p class="family-hint" data-i18n="familyNoFamily">No family group yet</p>
+                <div class="family-actions">
+                  <button type="button" id="family-create-btn" class="family-btn family-btn--primary" data-i18n="familyCreateBtn">Create Family Code</button>
+                  <button type="button" id="family-join-open-btn" class="family-btn family-btn--secondary" data-i18n="familyJoinBtn">Join with Code</button>
+                </div>
+                <div id="family-join-form" class="family-join-form" hidden>
+                  <input type="text" id="family-code-input" class="family-code-input" maxlength="6" autocapitalize="characters" autocomplete="off" data-i18n-placeholder="familyJoinPlaceholder" placeholder="ABC123" />
+                  <button type="button" id="family-join-submit-btn" class="family-btn family-btn--primary" data-i18n="familyJoinBtn">Join</button>
+                </div>
+              </div>
+              <!-- In family -->
+              <div id="family-in-family" class="family-in-family" hidden>
+                <div class="family-code-row">
+                  <span class="family-code-label" data-i18n="familyCodeLabel">Your Family Code:</span>
+                  <button type="button" id="family-code-copy-btn" class="family-code-copy-btn" aria-label="Copy code">
+                    <span id="family-code-value" class="family-code-value"></span>
+                    <span class="family-copy-icon">📋</span>
+                  </button>
+                </div>
+                <p id="family-member-count" class="family-member-count"></p>
+                <div class="family-in-actions">
+                  <button type="button" id="family-view-btn" class="family-btn family-btn--secondary" data-i18n="familyViewBtn">View Family</button>
+                  <button type="button" id="family-leave-btn" class="family-btn family-btn--danger" data-i18n="familyLeaveBtn">Leave</button>
+                </div>
               </div>
             </div>
           </section>
@@ -795,8 +836,19 @@
 
   <!-- Safety net: if the main module throws before it can hide the splash screen,
        hide it here so the app never appears permanently frozen on native. -->
-  <script type="module" src="/js/main.js?v=290"></script>
-  <script type="module" src="/js/community.js?v=290"></script>
+  <script type="module" src="/js/main.js?v=291"></script>
+  <script type="module" src="/js/community.js?v=291"></script>
+
+  <!-- Family members modal -->
+  <div id="family-modal" class="family-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="family-modal-title">
+    <div class="family-modal-card">
+      <div class="family-modal-header">
+        <h3 id="family-modal-title" data-i18n="familyTitle">Family Group</h3>
+        <button type="button" id="close-family-modal-btn" class="gallery-close" aria-label="Close">✕</button>
+      </div>
+      <div id="family-members-list" class="family-members-list"></div>
+    </div>
+  </div>
 
   <!-- Leaderboard modal -->
   <div id="leaderboard-modal" class="leaderboard-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="leaderboard-title">
@@ -894,7 +946,7 @@
   <!-- Account modal (content rendered by account.js) -->
   <div id="account-modal" role="dialog" aria-modal="true" aria-label="Account" hidden></div>
 
-  <script type="module" src="/js/account.js?v=290"></script>
+  <script type="module" src="/js/account.js?v=291"></script>
 </body>
 </html>
 

@@ -726,3 +726,199 @@ window.addEventListener('lalabuba:login', () => {
 if (localStorage.getItem('lalabuba-access-token')) {
   loadProgressFromServer().catch(() => {});
 }
+
+// ── Family panel ──────────────────────────────────────────────────────────────
+
+const familyToggleBtn    = document.getElementById('family-panel-toggle');
+const familyPanelBody    = document.getElementById('family-panel-body');
+const familyLoadingEl    = document.getElementById('family-loading');
+const familyNoFamilyEl   = document.getElementById('family-no-family');
+const familyInFamilyEl   = document.getElementById('family-in-family');
+const familyCreateBtn    = document.getElementById('family-create-btn');
+const familyJoinOpenBtn  = document.getElementById('family-join-open-btn');
+const familyJoinForm     = document.getElementById('family-join-form');
+const familyCodeInput    = document.getElementById('family-code-input');
+const familyJoinSubmit   = document.getElementById('family-join-submit-btn');
+const familyCodeCopyBtn  = document.getElementById('family-code-copy-btn');
+const familyCodeValue    = document.getElementById('family-code-value');
+const familyMemberCount  = document.getElementById('family-member-count');
+const familyViewBtn      = document.getElementById('family-view-btn');
+const familyLeaveBtn     = document.getElementById('family-leave-btn');
+const familyModal        = document.getElementById('family-modal');
+const familyMembersList  = document.getElementById('family-members-list');
+const closeFamilyModal   = document.getElementById('close-family-modal-btn');
+
+let _familyData = null; // null = unknown, false = no family, object = family data
+
+function _showFamilyState(loading, noFamily, inFamily) {
+  if (familyLoadingEl)  { familyLoadingEl.hidden  = !loading; }
+  if (familyNoFamilyEl) { familyNoFamilyEl.hidden  = !noFamily; }
+  if (familyInFamilyEl) { familyInFamilyEl.hidden  = !inFamily; }
+}
+
+async function _loadFamilyState() {
+  _showFamilyState(true, false, false);
+  try {
+    const data = await apiGet('/api/community/family');
+    if (data.inFamily) {
+      _familyData = data;
+      if (familyCodeValue) familyCodeValue.textContent = data.familyCode || '';
+      if (familyMemberCount) {
+        const n = data.memberCount || 0;
+        familyMemberCount.textContent = typeof t('familyMembersCount') === 'function'
+          ? t('familyMembersCount')(n)
+          : `${n}`;
+      }
+      _showFamilyState(false, false, true);
+    } else {
+      _familyData = false;
+      _showFamilyState(false, true, false);
+    }
+  } catch {
+    _showFamilyState(false, true, false);
+  }
+}
+
+// Toggle panel open/close
+familyToggleBtn?.addEventListener('click', () => {
+  const isOpen = familyPanelBody && !familyPanelBody.hidden;
+  if (familyPanelBody) familyPanelBody.hidden = isOpen;
+  if (familyToggleBtn) familyToggleBtn.setAttribute('aria-expanded', String(!isOpen));
+  if (!isOpen && _familyData === null) {
+    _loadFamilyState();
+  }
+});
+
+// Create family
+familyCreateBtn?.addEventListener('click', async () => {
+  try {
+    await requireParentalConsent();
+  } catch { return; }
+  familyCreateBtn.disabled = true;
+  try {
+    const res = await apiPost('/api/community/family', { action: 'create' }, { 'X-Parental-Consent': 'yes' });
+    _familyData = res;
+    if (familyCodeValue) familyCodeValue.textContent = res.familyCode || '';
+    if (familyMemberCount) {
+      const n = 1;
+      familyMemberCount.textContent = typeof t('familyMembersCount') === 'function'
+        ? t('familyMembersCount')(n) : `${n}`;
+    }
+    _showFamilyState(false, false, true);
+    showToast(t('familyCreated') + ' ' + res.familyCode);
+  } catch (e) {
+    showToast(t('familyLoadError'));
+  } finally {
+    familyCreateBtn.disabled = false;
+  }
+});
+
+// Toggle join form visibility
+familyJoinOpenBtn?.addEventListener('click', () => {
+  if (familyJoinForm) familyJoinForm.hidden = !familyJoinForm.hidden;
+  if (!familyJoinForm?.hidden) familyCodeInput?.focus();
+});
+
+// Force uppercase in code input
+familyCodeInput?.addEventListener('input', (e) => {
+  const el = /** @type {HTMLInputElement} */ (e.target);
+  el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+});
+
+// Submit join
+familyJoinSubmit?.addEventListener('click', async () => {
+  const code = familyCodeInput?.value?.trim().toUpperCase();
+  if (!code || code.length !== 6) { showToast(t('familyJoinPlaceholder')); return; }
+  try {
+    await requireParentalConsent();
+  } catch { return; }
+  familyJoinSubmit.disabled = true;
+  try {
+    const res = await apiPost('/api/community/family', { action: 'join', familyCode: code }, { 'X-Parental-Consent': 'yes' });
+    _familyData = res;
+    if (familyCodeValue) familyCodeValue.textContent = code;
+    if (familyMemberCount) {
+      const n = res.memberCount || 0;
+      familyMemberCount.textContent = typeof t('familyMembersCount') === 'function'
+        ? t('familyMembersCount')(n) : `${n}`;
+    }
+    _showFamilyState(false, false, true);
+    showToast(t('familyJoined'));
+  } catch (e) {
+    showToast(t('familyLoadError'));
+  } finally {
+    familyJoinSubmit.disabled = false;
+  }
+});
+
+// Copy family code to clipboard
+familyCodeCopyBtn?.addEventListener('click', async () => {
+  const code = familyCodeValue?.textContent?.trim();
+  if (!code) return;
+  try {
+    await navigator.clipboard.writeText(code);
+    showToast(t('familyCopied'));
+  } catch {
+    showToast(code);
+  }
+});
+
+// Leave family
+familyLeaveBtn?.addEventListener('click', async () => {
+  if (!confirm(t('familyLeaveConfirm'))) return;
+  familyLeaveBtn.disabled = true;
+  try {
+    await apiPost('/api/community/family', { action: 'leave' });
+    _familyData = false;
+    _showFamilyState(false, true, false);
+  } catch {
+    showToast(t('familyLoadError'));
+  } finally {
+    familyLeaveBtn.disabled = false;
+  }
+});
+
+// View family members modal
+familyViewBtn?.addEventListener('click', async () => {
+  if (!familyModal || !familyMembersList) return;
+  familyModal.classList.remove('hidden');
+  familyModal.setAttribute('aria-hidden', 'false');
+  familyMembersList.innerHTML = '<p style="text-align:center;padding:20px">⏳</p>';
+  try {
+    const data = await apiGet('/api/community/family');
+    if (!data.inFamily || !data.members?.length) {
+      familyMembersList.innerHTML = '<p style="text-align:center;color:var(--muted)">No members yet</p>';
+      return;
+    }
+    familyMembersList.innerHTML = data.members.map(m => {
+      const avatarEmoji = ['🐉','🐧','🐻','🦄','🐯','🦊','🐰','🐬','🦅','🐺',
+                           '🐼','🐨','🐆','🦉','🦜','🐹','🦔','🦦','🐿️','🦘'][m.avatarIndex ?? 0] || '🐧';
+      const artThumbs = (m.recentArtworks || []).map(a =>
+        `<img class="family-member-art-thumb" src="${escHtml(a.imageUrl)}" alt="artwork" loading="lazy" />`
+      ).join('');
+      return `<div class="family-member-card">
+        <span class="family-member-avatar">${avatarEmoji}</span>
+        <div class="family-member-info">
+          <p class="family-member-name">${escHtml(m.nickname || '?')}</p>
+          <p class="family-member-stats">🎨 ${m.totalCompleted || 0} · 🔥 ${m.currentStreak || 0}</p>
+          ${artThumbs ? `<div class="family-member-artworks">${artThumbs}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch {
+    familyMembersList.innerHTML = `<p style="text-align:center;color:var(--muted)">${escHtml(t('familyLoadError'))}</p>`;
+  }
+});
+
+closeFamilyModal?.addEventListener('click', () => {
+  if (familyModal) {
+    familyModal.classList.add('hidden');
+    familyModal.setAttribute('aria-hidden', 'true');
+  }
+});
+familyModal?.addEventListener('click', (e) => {
+  if (e.target === familyModal) {
+    familyModal.classList.add('hidden');
+    familyModal.setAttribute('aria-hidden', 'true');
+  }
+});

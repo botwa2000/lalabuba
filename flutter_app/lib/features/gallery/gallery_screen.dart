@@ -77,13 +77,13 @@ class GalleryScreen extends ConsumerWidget {
             tabs: [
               Tab(
                 child: Text(
-                  '📓 My Journal',
+                  l10n.t('galleryTabJournal'),
                   style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
                 ),
               ),
               Tab(
                 child: Text(
-                  '🌟 Community',
+                  l10n.t('galleryTabCommunity'),
                   style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
                 ),
               ),
