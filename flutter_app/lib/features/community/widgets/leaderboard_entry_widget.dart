@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/di/providers.dart';
 import '../models/leaderboard_model.dart';
 import 'community_artwork_card.dart' show avatarEmoji;
 
-class LeaderboardEntryWidget extends StatelessWidget {
+class LeaderboardEntryWidget extends ConsumerWidget {
   final LeaderboardEntry entry;
   final bool isOwn;
 
@@ -14,8 +16,9 @@ class LeaderboardEntryWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = ref.watch(l10nProvider);
     final rankEmoji = switch (entry.rank) {
       1 => '🥇',
       2 => '🥈',
@@ -66,7 +69,10 @@ class LeaderboardEntryWidget extends StatelessWidget {
                 ),
                 if (entry.weeklyCompleted != null)
                   Text(
-                    '🎨 ${entry.weeklyCompleted} · ⭐ ${entry.weeklyStars ?? 0}',
+                    l10n.t('communityLbScoreWeekly', {
+                      'count': '${entry.weeklyCompleted}',
+                      'stars': '${entry.weeklyStars ?? 0}',
+                    }),
                     style: GoogleFonts.nunito(
                       fontSize: 11,
                       color: (isOwn ? cs.onPrimaryContainer : cs.onSurface)
