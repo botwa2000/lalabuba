@@ -618,27 +618,29 @@
 }
 
 /* ─── Hero controls rearranged for phones ──────────────────────────────────
-   Prompt input gets its own full-width row; Surprise + Draw share the next
-   row; difficulty pills follow. We dissolve the .search-bar and .hero-quick-row
-   wrappers with display:contents so their children flow into one flex context
-   on the form, then place them with order/flex. Desktop keeps the unified
-   pill (this block is phone-only). */
+   Row 1: full-screen-width input (breaks out of 12px panel padding).
+   Row 2: compact helper pills (Today / Surprise / Voice) centered.
+   Row 3: Draw! button — full-screen-width, edge-to-edge.
+   Row 4: difficulty pills (horizontal single row).
+   Row 5: settings chips.
+   Voice/week-scene get explicit order so they don't float above the input. */
 @media (max-width: 767px) {
   .app.app-hero .config-panel .generator-form {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
     justify-content: center;
   }
   .app.app-hero .config-panel .search-bar,
   .app.app-hero .config-panel .hero-quick-row { display: contents; }
 
-  /* Row 1: prompt input, styled as its own pill */
+  /* Row 1: input — edge-to-edge, breaks out of 12px panel padding */
   .app.app-hero .config-panel .search-bar input {
     order: 1;
     flex: 1 1 100%;
-    width: 100%;
+    width: calc(100% + 24px);
+    margin: 0 -12px;
     border: 3px solid var(--purple);
     border-radius: 100px;
     background: var(--card);
@@ -646,53 +648,61 @@
     font-size: 1.05rem;
     box-shadow: 0 8px 32px rgba(124,77,255,.18);
   }
-  /* Daily-word pill (only present some days): its own row under the input */
-  .app.app-hero .config-panel .hero-quick-pill.hero-daily-proxy {
+  /* Row 2: all helper pills on one centred row */
+  .app.app-hero .config-panel .hero-quick-pill.hero-daily-proxy,
+  .app.app-hero .config-panel .surprise-btn,
+  .app.app-hero .config-panel .voice-btn,
+  .app.app-hero .config-panel .week-scene-pill {
     order: 2;
-    flex: 1 1 100%;
+    flex: 0 0 auto;
   }
-  /* Row 2: Surprise + Draw share a row, Draw wider */
-  .app.app-hero .config-panel .surprise-btn {
-    order: 3;
-    flex: 1 1 0;
-    min-width: 0;
-  }
+  /* Row 3: Draw! button — edge-to-edge */
   .app.app-hero .config-panel .go-btn {
-    order: 4;
-    flex: 2 1 0;
+    order: 3;
+    flex: 1 1 100%;
+    width: calc(100% + 24px);
+    margin: 0 -12px;
     min-width: 0;
     justify-content: center;
   }
   .app.app-hero .config-panel .regen-btn { display: none; }
-  /* Row 3: difficulty pills */
+  /* Row 4: difficulty pills */
   .app.app-hero .config-panel .hero-controls {
-    order: 5;
+    order: 4;
     flex: 1 1 100%;
   }
-  /* Row 4: settings chips (count, palette, numbers, etc.) */
+  /* Row 5: settings chips */
   .app.app-hero .config-panel .settings-chips {
-    order: 6;
+    order: 5;
     flex: 1 1 100%;
     justify-content: center;
+  }
+  /* Quick pills slightly more compact on phones */
+  .app.app-hero .config-panel .hero-quick-pill {
+    padding: 7px 14px;
+    font-size: .82rem;
   }
 }
 
-/* Difficulty: the four pills (with their star labels) don't fit one row on a
-   phone, so lay them out as a symmetric 2×2 grid. */
+/* Difficulty: single horizontal row on phones — 4 equal pills. */
 @media (max-width: 540px) {
   .app.app-hero .hero-diff-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
     width: 100%;
-    max-width: 340px;
-    margin: 0 auto;
+    overflow: hidden;
   }
   .app.app-hero .hero-diff-row .diff-pill {
-    padding: 9px 10px;
-    font-size: .85rem;
+    flex: 1;
+    padding: 8px 4px;
+    font-size: .76rem;
     text-align: center;
     justify-content: center;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 }
 

@@ -385,13 +385,20 @@
   border-color: #7c4dff;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 767px) {
   .hero-topic-grid {
-    grid-template-columns: repeat(4, 1fr);
-    max-width: 360px;
+    grid-template-columns: repeat(8, 1fr);
+    max-width: 100%;
+    gap: 4px;
   }
-  .hero-topic-card { padding: 8px 4px 6px; font-size: 1.3rem; }
+  .hero-topic-card { padding: 5px 2px 4px; font-size: 1.1rem; border-radius: 8px; border-width: 1.5px; gap: 2px; }
+  .hero-topic-card span { display: none; }
+}
+/* Landscape phone: panel is 200px wide, 4-col fits better */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hero-topic-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; }
 }
 @media (max-width: 360px) {
-  .hero-topic-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .hero-topic-grid { gap: 3px; }
+  .hero-topic-card { font-size: .95rem; padding: 4px 1px 3px; }
 }
