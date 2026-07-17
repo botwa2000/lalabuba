@@ -264,6 +264,16 @@
   .config-panel .hero-section       { padding: 3px 0 2px; }
   /* Hide regen-btn so Draw! button gets full width and isn't clipped at 200px panel */
   .config-panel .regen-btn          { display: none !important; }
+
+  /* ── Hero mode in landscape: undo the sidebar, restore full-width scrollable form ── */
+  .app.app-hero                     { height: auto; overflow: visible; }
+  .app.app-hero .app-body           { flex-direction: column; overflow-y: auto; height: auto; }
+  .app.app-hero .config-panel       { width: 100%; min-width: 0; max-width: 100%; border-right: none; overflow-y: visible; overflow-x: hidden; }
+  .app.app-hero .panel-inner        { width: 100%; min-width: 0; }
+  .app.app-hero .canvas-area        { display: none; }
+  /* Restore hero headings hidden by landscape rule above */
+  .app.app-hero .config-panel .hero-draw-heading,
+  .app.app-hero .config-panel .hero-sub-heading { display: block !important; }
 }
 
 /* Tablet landscape: taller than a phone but height-constrained (501px–900px, 768px+ wide).
@@ -307,6 +317,7 @@
 }
 .app.app-hero .panel-inner {
   min-width: 0;
+  width: 100%;
   padding: 0 28px 32px;
   overflow: visible;
   display: flex;
