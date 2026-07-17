@@ -434,7 +434,9 @@ ${buildNav({ lang: htmlLang, breadcrumbs: [
    ctaHref: colorHref })}
 <main class="lp-main lp-image-page">
   <div class="lp-image-hero">
-    <img src="${entry.url}" alt="${subjectTitle} coloring page — ${diffLabel}" class="lp-coloring-img" width="800" height="800" loading="eager"/>
+    <a href="${colorHref}" class="lp-coloring-img-link" title="${colorLabel}">
+      <img src="${entry.url}" alt="${subjectTitle} coloring page — ${diffLabel}" class="lp-coloring-img" width="800" height="800" loading="eager"/>
+    </a>
     <div class="lp-image-actions">
       <a href="${colorHref}" class="lp-btn lp-btn-primary">✏️ ${colorLabel}</a>
       <a href="${printHref}" class="lp-btn lp-btn-secondary" target="_blank" rel="noopener">🖨️ ${printLabel}</a>

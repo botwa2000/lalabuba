@@ -328,9 +328,12 @@ lightboxReportBtn?.addEventListener("click", async () => {
 
 lightboxColorBtn?.addEventListener("click", () => {
   if (!lightboxArtwork) return;
-  const seed    = lightboxArtwork.seed;
-  const subject = lightboxArtwork.subject;
-  const url = `/?s=1&seed=${encodeURIComponent(seed || "")}&q=${encodeURIComponent(subject || "")}`;
+  // Use the stored imageUrl so loadFromShare() loads the existing image
+  // directly instead of regenerating via the seed.
+  const imgUrl  = lightboxArtwork.imageUrl || "";
+  const subject = lightboxArtwork.subject  || "";
+  const diff    = lightboxArtwork.difficulty || "medium";
+  const url = `/?s=1&img=${encodeURIComponent(imgUrl)}&q=${encodeURIComponent(subject)}&d=${diff}`;
   window.location.href = url;
 });
 

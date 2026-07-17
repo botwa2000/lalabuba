@@ -21,8 +21,27 @@ class ScenesScreen extends ConsumerStatefulWidget {
 class _ScenesScreenState extends ConsumerState<ScenesScreen> {
   String _current = 'meadow';
 
+  // Stage-level gesture state — all placed-item manipulation lives here so that
+  // the second finger of a pinch/rotate can land anywhere on the stage, not just
+  // on the sticker's small visual footprint.
+  int?   _activeIdx;
+  double _gs = 1.0;          // baseline scale captured at onScaleStart
+  double _gr = 0.0;          // baseline rotation captured at onScaleStart
+  Offset _gc = Offset.zero;  // running centre in stage logical pixels
+  Offset _doubleTapPos = Offset.zero;
+
   String _cap(String id) => '${id[0].toUpperCase()}${id.substring(1)}';
   String _sceneName(L10n l10n, String id) => l10n.t('scene${_cap(id)}Name');
+
+  /// True when [pos] (stage-local logical pixels) is within the circular hit
+  /// area of [p]. Minimum radius 24 px so tiny stickers remain tappable.
+  bool _hitIn(Placement p, double w, double h, Offset pos) {
+    final cx = p.x * w;
+    final cy = p.y * h;
+    final base = p.art != null ? 60.0 : 44.0;
+    final radius = ((base * p.scale) / 2).clamp(24.0, 80.0);
+    return (pos - Offset(cx, cy)).distance <= radius;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -143,49 +162,94 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
         builder: (context, constraints) {
           final w = constraints.maxWidth;
           final h = constraints.maxHeight;
-          return DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(scene.bg[0]), Color(scene.bg[1])],
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            // Double-tap removes the topmost sticker under the finger.
+            onDoubleTapDown: (d) => _doubleTapPos = d.localPosition,
+            onDoubleTap: () {
+              final ps = ref.read(scenesProvider).valueOrNull
+                      ?.placedIn(_current) ??
+                  const [];
+              for (int i = ps.length - 1; i >= 0; i--) {
+                if (_hitIn(ps[i], w, h, _doubleTapPos)) {
+                  HapticFeedback.lightImpact();
+                  ref.read(scenesProvider.notifier).removeAt(_current, i);
+                  break;
+                }
+              }
+            },
+            // Scale handles 1-finger drag AND 2-finger pinch+rotate in one
+            // recogniser. Placed at the stage level so the second finger can
+            // land anywhere on the stage, not just on the sticker's own bounds.
+            onScaleStart: (d) {
+              final ps = ref.read(scenesProvider).valueOrNull
+                      ?.placedIn(_current) ??
+                  const [];
+              _activeIdx = null;
+              for (int i = ps.length - 1; i >= 0; i--) {
+                if (_hitIn(ps[i], w, h, d.localFocalPoint)) {
+                  final p = ps[i];
+                  _activeIdx = i;
+                  _gs = p.scale;
+                  _gr = p.rotation;
+                  _gc = Offset(p.x * w, p.y * h);
+                  break;
+                }
+              }
+            },
+            onScaleUpdate: (d) {
+              final i = _activeIdx;
+              if (i == null) return;
+              // focalPointDelta is in global logical pixels; since the stage
+              // has no transform, this equals the local-coordinate delta.
+              _gc += d.focalPointDelta;
+              ref.read(scenesProvider.notifier).setLocalTransform(
+                _current, i,
+                nx: (_gc.dx / w).clamp(0.04, 0.96),
+                ny: (_gc.dy / h).clamp(0.04, 0.96),
+                scale: _gs * d.scale,
+                rotation: _gr + d.rotation,
+              );
+            },
+            onScaleEnd: (_) {
+              if (_activeIdx != null) {
+                ref.read(scenesProvider.notifier).commit();
+              }
+              _activeIdx = null;
+            },
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(scene.bg[0]), Color(scene.bg[1])],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border:
+                    Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
               ),
-              borderRadius: BorderRadius.circular(24),
-              border:
-                  Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Stack(
-                children: [
-                  // Scene environment: rendered behind stickers.
-                  CustomPaint(
-                    size: Size(w, h),
-                    painter: _ScenePainter(scene.id),
-                  ),
-                  for (var i = 0; i < placed.length; i++)
-                    _PlacedItem(
-                      key: ValueKey('$_current-$i'),
-                      placement: placed[i],
-                      art: placed[i].art != null
-                          ? scenes.artById(placed[i].art!)
-                          : null,
-                      stageW: w,
-                      stageH: h,
-                      onTransform: (nx, ny, scale, rotation) => ref
-                          .read(scenesProvider.notifier)
-                          .setLocalTransform(_current, i,
-                              nx: nx, ny: ny, scale: scale, rotation: rotation),
-                      onEnd: () => ref.read(scenesProvider.notifier).commit(),
-                      onRemove: () {
-                        HapticFeedback.lightImpact();
-                        ref.read(scenesProvider.notifier).removeAt(_current, i);
-                      },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Stack(
+                  children: [
+                    CustomPaint(
+                      size: Size(w, h),
+                      painter: _ScenePainter(scene.id),
                     ),
-                  if (placed.isEmpty && hasItems)
-                    _hint(l10n.t('sceneHint')),
-                  if (!hasItems) _hint(l10n.t('sceneEarnHint')),
-                ],
+                    for (var i = 0; i < placed.length; i++)
+                      _PlacedItem(
+                        key: ValueKey('$_current-$i'),
+                        placement: placed[i],
+                        art: placed[i].art != null
+                            ? scenes.artById(placed[i].art!)
+                            : null,
+                        stageW: w,
+                        stageH: h,
+                      ),
+                    if (placed.isEmpty && hasItems) _hint(l10n.t('sceneHint')),
+                    if (!hasItems) _hint(l10n.t('sceneEarnHint')),
+                  ],
+                ),
               ),
             ),
           );
@@ -319,19 +383,15 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
       );
 }
 
-/// A placed decoration (emoji) or art sticker (image). One-finger drag moves it;
-/// a two-finger pinch resizes and a twist rotates (all via a single scale
-/// recognizer so they compose); double-tap removes. Position is normalized
-/// 0..1 within the stage; scale/rotation come from the [Placement].
-class _PlacedItem extends StatefulWidget {
+/// A placed decoration (emoji) or art sticker (image). Pure display widget —
+/// all gesture handling (drag, pinch-resize, twist-rotate, double-tap-remove)
+/// is at the parent stage level so the second finger can land anywhere on the
+/// stage, not just within this widget's visual footprint.
+class _PlacedItem extends StatelessWidget {
   final Placement placement;
   final ArtSticker? art;
   final double stageW;
   final double stageH;
-  final void Function(double nx, double ny, double scale, double rotation)
-      onTransform;
-  final VoidCallback onEnd;
-  final VoidCallback onRemove;
 
   const _PlacedItem({
     super.key,
@@ -339,97 +399,54 @@ class _PlacedItem extends StatefulWidget {
     required this.art,
     required this.stageW,
     required this.stageH,
-    required this.onTransform,
-    required this.onEnd,
-    required this.onRemove,
   });
 
   @override
-  State<_PlacedItem> createState() => _PlacedItemState();
-}
-
-class _PlacedItemState extends State<_PlacedItem> {
-  // Baselines captured at gesture start so updates are relative to the start.
-  late double _startScale;
-  late double _startRotation;
-  late double _centerX; // running centre in stage pixels
-  late double _centerY;
-
-  void _onScaleStart(ScaleStartDetails d) {
-    _startScale = widget.placement.scale;
-    _startRotation = widget.placement.rotation;
-    _centerX = widget.placement.x * widget.stageW;
-    _centerY = widget.placement.y * widget.stageH;
-  }
-
-  void _onScaleUpdate(ScaleUpdateDetails d) {
-    // focalPointDelta is the move since the last update (works for 1 or 2
-    // fingers); scale/rotation are cumulative since the gesture start.
-    _centerX += d.focalPointDelta.dx;
-    _centerY += d.focalPointDelta.dy;
-    final nx = (_centerX / widget.stageW);
-    final ny = (_centerY / widget.stageH);
-    widget.onTransform(
-      nx,
-      ny,
-      _startScale * d.scale,
-      _startRotation + d.rotation,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final p = widget.placement;
+    final p = placement;
     final isArt = p.art != null;
     final base = isArt ? 60.0 : 44.0;
-    final size = (base * p.scale).clamp(base * Placement.minScale, base * Placement.maxScale);
-    final left = (p.x * widget.stageW) - size / 2;
-    final top = (p.y * widget.stageH) - size / 2;
+    final size = (base * p.scale)
+        .clamp(base * Placement.minScale, base * Placement.maxScale);
+    final left = (p.x * stageW) - size / 2;
+    final top  = (p.y * stageH) - size / 2;
     return Positioned(
-      left: left.clamp(0.0, (widget.stageW - size).clamp(0.0, widget.stageW)),
-      top: top.clamp(0.0, (widget.stageH - size).clamp(0.0, widget.stageH)),
-      child: GestureDetector(
-        onScaleStart: _onScaleStart,
-        onScaleUpdate: _onScaleUpdate,
-        onScaleEnd: (_) => widget.onEnd(),
-        onDoubleTap: widget.onRemove,
-        child: Transform.rotate(
-          angle: p.rotation,
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: Center(
-              child: isArt && widget.art != null
-                  ? Container(
-                      width: size,
-                      height: size,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white, width: 3),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              blurRadius: 5,
-                              offset: const Offset(0, 2)),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(File(widget.art!.file),
-                            fit: BoxFit.cover,
-                            filterQuality: FilterQuality.medium,
-                            errorBuilder: (_, __, ___) =>
-                                const Center(child: Text('🎨'))),
-                      ),
-                    )
-                  : Text(
-                      isArt
-                          ? '🎨'
-                          : (decoById(p.deco ?? '')?.emoji ?? '⭐'),
-                      style: TextStyle(fontSize: size * 0.78),
+      left: left.clamp(0.0, (stageW - size).clamp(0.0, stageW)),
+      top:  top.clamp(0.0,  (stageH - size).clamp(0.0, stageH)),
+      child: Transform.rotate(
+        angle: p.rotation,
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Center(
+            child: isArt && art != null
+                ? Container(
+                    width: size,
+                    height: size,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 5,
+                            offset: const Offset(0, 2)),
+                      ],
                     ),
-            ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(File(art!.file),
+                          fit: BoxFit.cover,
+                          filterQuality: FilterQuality.medium,
+                          errorBuilder: (_, __, ___) =>
+                              const Center(child: Text('🎨'))),
+                    ),
+                  )
+                : Text(
+                    isArt ? '🎨' : (decoById(p.deco ?? '')?.emoji ?? '⭐'),
+                    style: TextStyle(fontSize: size * 0.78),
+                  ),
           ),
         ),
       ),
