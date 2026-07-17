@@ -13,11 +13,14 @@ class VoiceInputButton extends StatefulWidget {
   final L10n l10n;
   final String locale; // app language code, e.g. 'en'
   final ValueChanged<String> onResult; // final recognized text
+  // Renders as a bare icon suitable for embedding inside a text field suffix.
+  final bool compact;
   const VoiceInputButton({
     super.key,
     required this.l10n,
     required this.locale,
     required this.onResult,
+    this.compact = false,
   });
 
   @override
@@ -146,6 +149,28 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
         : _error
             ? widget.l10n.t('voiceError')
             : widget.l10n.t('voiceBtnLabel');
+
+    // Compact mode: bare icon for embedding inside a TextField suffix area.
+    if (widget.compact) {
+      return Tooltip(
+        message: tooltip,
+        child: GestureDetector(
+          onTap: _toggle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: Text(
+                _listening ? '🔴' : (_error ? '❌' : '🎤'),
+                key: ValueKey(_listening ? 'l' : _error ? 'e' : 'i'),
+                style: GoogleFonts.fredoka(fontSize: 19),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Tooltip(
       message: tooltip,
       child: GestureDetector(

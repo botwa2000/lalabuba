@@ -9,6 +9,9 @@ class LalaTextField extends StatefulWidget {
   final int maxLength;
   final bool enabled;
   final FocusNode? focusNode;
+  // Shown as the suffix icon when the field is empty (e.g. a compact mic button).
+  // Replaced by the clear button the moment the user types anything.
+  final Widget? trailingIcon;
 
   const LalaTextField({
     super.key,
@@ -19,6 +22,7 @@ class LalaTextField extends StatefulWidget {
     this.maxLength = 80,
     this.enabled = true,
     this.focusNode,
+    this.trailingIcon,
   });
 
   @override
@@ -83,7 +87,7 @@ class _LalaTextFieldState extends State<LalaTextField> {
                 child: Icon(Icons.cancel_rounded,
                     color: cs.onSurface.withValues(alpha: 0.4), size: 20),
               )
-            : null,
+            : widget.trailingIcon,
       ),
     );
   }

@@ -973,35 +973,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Row 1: prompt input + surprise-me
+          // Row 1: prompt input edge-to-edge; mic lives inside the field suffix.
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+            child: LalaShowcase(
+              showcaseKey: _scPrompt,
+              title: l10n.t('tipPromptTitle'),
+              description: l10n.t('tipPromptBody'),
+              targetBorderRadius: BorderRadius.circular(14),
+              child: LalaTextField(
+                placeholder: l10n.t('placeholder'),
+                controller: _textCtrl,
+                focusNode: _focusNode,
+                onSubmitted: _canDraw ? _onDraw : null,
+                trailingIcon: VoiceInputButton(
+                  l10n: l10n,
+                  locale: _currentLocale,
+                  onResult: (text) => _fillSubject(text, source: 'voice'),
+                  compact: true,
+                ),
+              ),
+            ),
+          ),
+          // Row 2: Surprise me (left) + Draw! (right, flex-expanded).
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(
-                  child: LalaShowcase(
-                    showcaseKey: _scPrompt,
-                    title: l10n.t('tipPromptTitle'),
-                    description: l10n.t('tipPromptBody'),
-                    targetBorderRadius: BorderRadius.circular(14),
-                    child: LalaTextField(
-                      placeholder: l10n.t('placeholder'),
-                      controller: _textCtrl,
-                      focusNode: _focusNode,
-                      onSubmitted: _canDraw ? _onDraw : null,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                VoiceInputButton(
-                  l10n: l10n,
-                  locale: _currentLocale,
-                  // Spoken words are sent verbatim as the subject; the API takes
-                  // the recognized phrase as both display + prompt.
-                  onResult: (text) => _fillSubject(text, source: 'voice'),
-                ),
-                const SizedBox(width: 6),
                 _buildSurprisePill(
                   context,
                   l10n,
@@ -1009,7 +1008,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     HapticFeedback.lightImpact();
                     final card = ref.read(homeProvider.notifier).surpriseMe();
                     if (card != null) {
-                      // Show the localized label; send the English prompt to the API.
                       _fillSubject(
                         card.label(_currentLocale),
                         englishOverride: card.englishPrompt,
@@ -1018,13 +1016,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     }
                   },
                 ),
+                const SizedBox(width: 8),
+                Expanded(child: _buildDrawButton(context, l10n)),
               ],
             ),
-          ),
-          // Row 2: Draw! button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: _buildDrawButton(context, l10n),
           ),
           // Row 3: Settings chips (portrait only — landscape has inline settings)
           if (showChips)
@@ -1198,8 +1193,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 42,
-        constraints: const BoxConstraints(maxWidth: 150),
+        height: 52,
+        constraints: const BoxConstraints(maxWidth: 160),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: cs.secondaryContainer,

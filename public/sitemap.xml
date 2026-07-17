@@ -104,6 +104,27 @@
     <priority>0.85</priority>
   </url>
 
+  <!-- ── FAQ ──────────────────────────────────────────────────────────────── -->
+  <url>
+    <loc>https://lalabuba.com/faq</loc>
+    <lastmod>2026-07-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"      href="https://lalabuba.com/faq"/>
+    <xhtml:link rel="alternate" hreflang="de"      href="https://lalabuba.com/faq?lang=de"/>
+    <xhtml:link rel="alternate" hreflang="fr"      href="https://lalabuba.com/faq?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="es"      href="https://lalabuba.com/faq?lang=es"/>
+    <xhtml:link rel="alternate" hreflang="pt"      href="https://lalabuba.com/faq?lang=pt"/>
+    <xhtml:link rel="alternate" hreflang="it"      href="https://lalabuba.com/faq?lang=it"/>
+    <xhtml:link rel="alternate" hreflang="nl"      href="https://lalabuba.com/faq?lang=nl"/>
+    <xhtml:link rel="alternate" hreflang="pl"      href="https://lalabuba.com/faq?lang=pl"/>
+    <xhtml:link rel="alternate" hreflang="ru"      href="https://lalabuba.com/faq?lang=ru"/>
+    <xhtml:link rel="alternate" hreflang="tr"      href="https://lalabuba.com/faq?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://lalabuba.com/faq?lang=zh"/>
+    <xhtml:link rel="alternate" hreflang="hi"      href="https://lalabuba.com/faq?lang=hi"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lalabuba.com/faq"/>
+  </url>
+
   <!-- ── Legal / Support pages ─────────────────────────────────────────── -->
   <url>
     <loc>https://lalabuba.com/privacy</loc>
