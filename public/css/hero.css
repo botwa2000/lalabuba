@@ -394,9 +394,16 @@
   .hero-topic-card { padding: 5px 2px 4px; font-size: 1.1rem; border-radius: 8px; border-width: 1.5px; gap: 2px; }
   .hero-topic-card span { display: none; }
 }
-/* Landscape phone: panel is 200px wide, 4-col fits better */
+/* Landscape phone: hero panel is full-width — 8 compact tiles in one row */
 @media (orientation: landscape) and (max-height: 500px) {
-  .hero-topic-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .app.app-hero .hero-topic-grid {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    max-width: 100%;
+  }
+  .app.app-hero .hero-topic-card { padding: 4px 2px 3px; font-size: 1rem; border-radius: 8px; border-width: 1.5px; gap: 2px; }
+  .app.app-hero .hero-topic-card span { display: none; }
+  .app.app-hero .hero-browse-section { padding: 4px 0 8px; gap: 6px; }
 }
 @media (max-width: 360px) {
   .hero-topic-grid { gap: 3px; }
