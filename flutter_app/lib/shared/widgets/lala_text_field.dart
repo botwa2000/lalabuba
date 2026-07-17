@@ -68,7 +68,7 @@ class _LalaTextFieldState extends State<LalaTextField> {
       onSubmitted: (_) => widget.onSubmitted?.call(),
       style: GoogleFonts.nunito(
         fontSize: 15,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: cs.onSurface,
       ),
       decoration: InputDecoration(

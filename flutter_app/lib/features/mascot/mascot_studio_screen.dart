@@ -86,7 +86,7 @@ class MascotChooser extends ConsumerWidget {
                 fontSize: 14, color: cs.onSurface.withValues(alpha: 0.7))),
         const SizedBox(height: 16),
         Text('Your companions',
-            style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.w600,
+            style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.w700,
                 color: cs.onSurface.withValues(alpha: 0.6))),
         const SizedBox(height: 8),
         Wrap(
@@ -97,7 +97,7 @@ class MascotChooser extends ConsumerWidget {
         if (locked.isNotEmpty) ...[
           const SizedBox(height: 20),
           Text('Coming soon',
-              style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.w600,
+              style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.w700,
                   color: cs.onSurface.withValues(alpha: 0.4))),
           const SizedBox(height: 8),
           Wrap(
@@ -328,7 +328,7 @@ class _CompanionSelector extends ConsumerWidget {
                   const SizedBox(width: 6),
                   Text(m.name, style: GoogleFonts.fredoka(
                     fontSize: 13,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w700,
                     color: selected ? cs.primary : cs.onSurface,
                   )),
                 ],
@@ -477,7 +477,7 @@ class _ItemGrid extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.fredoka(
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: unlocked
                         ? (equipped ? cs.primary : cs.onSurface)
                         : cs.onSurface.withValues(alpha: 0.35),

@@ -244,7 +244,7 @@ class GalleryScreen extends ConsumerWidget {
                 nextHint,
                 style: GoogleFonts.nunito(
                   fontSize: 13,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: cs.onSurface.withValues(alpha: 0.65),
                 ),
               ),

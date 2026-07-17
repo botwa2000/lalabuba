@@ -1125,7 +1125,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               hex,
               style: GoogleFonts.nunito(
                 color: Colors.white,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 fontSize: 13,
               ),
             ),

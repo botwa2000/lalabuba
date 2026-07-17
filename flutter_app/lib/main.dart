@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,15 +27,18 @@ void main() async {
     systemNavigationBarColor: Colors.transparent,
   ));
 
-  // Analytics must init before runApp so the Crashlytics FlutterError handler
-  // is in place before any widget tree errors can occur.
-  try {
-    final config = await AppConfig.load();
-    await AnalyticsService.init(enabled: config.analyticsEnabled);
-  } catch (_) {
-    // If config fails to load, start analytics enabled (safe default).
-    await AnalyticsService.init();
-  }
+  // Fire-and-forget: analytics (Firebase + PostHog) init is heavy on first
+  // launch and blocks the main thread long enough to ANR on slower devices.
+  // runApp must not be gated on it. Dart errors before Crashlytics is ready
+  // are an acceptable tradeoff vs a black-screen ANR on every cold start.
+  unawaited(() async {
+    try {
+      final config = await AppConfig.load();
+      await AnalyticsService.init(enabled: config.analyticsEnabled);
+    } catch (_) {
+      await AnalyticsService.init();
+    }
+  }());
 
   runApp(const ProviderScope(child: LalabubaApp()));
 }

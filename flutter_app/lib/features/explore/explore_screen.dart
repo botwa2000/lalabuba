@@ -184,7 +184,7 @@ class _ExploreHeader extends StatelessWidget {
                   'Pick a topic, tap a picture, and start coloring right away — no waiting, just fun!',
                   style: GoogleFonts.nunito(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: cs.onPrimaryContainer.withValues(alpha: 0.8),
                     height: 1.4,
                   ),
@@ -396,7 +396,7 @@ class _DiffHeading extends StatelessWidget {
       child: Text(label,
           style: GoogleFonts.fredoka(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               color: cs.onSurfaceVariant)),
     );
   }

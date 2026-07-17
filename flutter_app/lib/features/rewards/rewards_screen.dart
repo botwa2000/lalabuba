@@ -254,7 +254,7 @@ class _DailyMissionCard extends ConsumerWidget {
                   l10n.t('mission${cap}Text'),
                   style: GoogleFonts.nunito(
                       fontSize: 15,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       color: const Color(0xFF103024)),
                 ),
                 if (mission.def.amount > 1 && !done) ...[
@@ -264,7 +264,7 @@ class _DailyMissionCard extends ConsumerWidget {
                         {'done': '$count', 'total': '${mission.def.amount}'}),
                     style: GoogleFonts.nunito(
                         fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: const Color(0xFF1F4D3A)),
                   ),
                 ],
@@ -282,7 +282,7 @@ class _DailyMissionCard extends ConsumerWidget {
                 l10n.t('missionDoneBadge'),
                 style: GoogleFonts.fredoka(
                     fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: const Color(0xFF1F8A4C)),
               ),
             ),
@@ -342,7 +342,7 @@ class _ScenesCard extends StatelessWidget {
                         {'open': '$open', 'total': '$total'}),
                     style: GoogleFonts.nunito(
                         fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: const Color(0xFF3A6B57)),
                   ),
                 ],
@@ -495,7 +495,7 @@ class _CrayonPackTile extends StatelessWidget {
                     {'count': '${remaining < 1 ? 1 : remaining}'}),
                 style: GoogleFonts.nunito(
                     fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: cs.onSurface.withValues(alpha: 0.55)),
               )
             else
@@ -510,7 +510,7 @@ class _CrayonPackTile extends StatelessWidget {
                   l10n.t(inUse ? 'crayonInUse' : 'crayonUse'),
                   style: GoogleFonts.nunito(
                     fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: inUse ? cs.onPrimary : cs.onPrimaryContainer,
                   ),
                 ),
@@ -566,7 +566,7 @@ class _StickerAlbum extends StatelessWidget {
               l10n.t('rewardsEmptyHint'),
               style: GoogleFonts.nunito(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: cs.onSurface.withValues(alpha: 0.6)),
             ),
           ),
@@ -629,7 +629,7 @@ class _GroupSection extends StatelessWidget {
                     {'earned': '$got', 'total': '${badges.length}'}),
                 style: GoogleFonts.nunito(
                     fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: cs.onSurface.withValues(alpha: 0.5)),
               ),
             ],
@@ -785,7 +785,7 @@ void _showStickerDetail(
                 textAlign: TextAlign.center,
                 style: GoogleFonts.nunito(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: cs.onSurface.withValues(alpha: 0.75)),
               ),
               const SizedBox(height: 14),
@@ -802,7 +802,7 @@ void _showStickerDetail(
                   l10n.t(earned ? 'stickerEarnedLabel' : 'stickerLockedLabel'),
                   style: GoogleFonts.nunito(
                     fontSize: 13,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: earned
                         ? const Color(0xFF1F8A4C)
                         : cs.onSurface.withValues(alpha: 0.6),
@@ -843,7 +843,7 @@ class _CountPill extends StatelessWidget {
         l10n.t('stickerCount', {'earned': '$earned', 'total': '$total'}),
         style: GoogleFonts.fredoka(
             fontSize: 14,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: const Color(0xFF7A4F00)),
       ),
     );

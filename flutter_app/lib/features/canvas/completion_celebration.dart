@@ -203,7 +203,7 @@ class _StickerReveal extends StatelessWidget {
                     l10n.t('celebNewSticker').toUpperCase(),
                     style: GoogleFonts.nunito(
                         fontSize: 10,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: 0.6,
                         color: const Color(0xFFD97706)),
                   ),

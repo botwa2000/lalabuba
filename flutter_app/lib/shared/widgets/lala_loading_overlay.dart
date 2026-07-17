@@ -99,7 +99,7 @@ class _LalaLoadingOverlayState extends State<LalaLoadingOverlay>
               style: GoogleFonts.fredoka(
                 color: cs.onSurface.withValues(alpha: 0.6),
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),

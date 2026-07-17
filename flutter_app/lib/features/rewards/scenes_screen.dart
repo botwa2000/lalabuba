@@ -378,7 +378,7 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
         child: Text(text,
             style: GoogleFonts.nunito(
                 fontSize: 12,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: cs.onSurface.withValues(alpha: 0.6))),
       );
 }

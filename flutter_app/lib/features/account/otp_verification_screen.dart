@@ -148,7 +148,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             Text(
               l10n.t('accountOtpSent'),
               textAlign: TextAlign.center,
-              style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.w600),
+              style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             Text(

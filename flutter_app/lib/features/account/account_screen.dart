@@ -138,7 +138,7 @@ class _EmailBody extends StatelessWidget {
             l10n.t('accountIdentitySub'),
             textAlign: TextAlign.center,
             style: GoogleFonts.fredoka(
-              fontSize: 18, fontWeight: FontWeight.w600,
+              fontSize: 18, fontWeight: FontWeight.w700,
               color: cs.onSurface.withValues(alpha: 0.7),
             ),
           ),
@@ -264,7 +264,7 @@ class _SignedInBody extends StatelessWidget {
               child: Text(
                 '✓ ${l10n.t("accountProgressSaved")}',
                 style: GoogleFonts.fredoka(
-                    fontSize: 13, color: cs.primary, fontWeight: FontWeight.w600),
+                    fontSize: 13, color: cs.primary, fontWeight: FontWeight.w700),
               ),
             ),
           ]),

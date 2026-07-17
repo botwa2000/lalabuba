@@ -308,7 +308,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 l10n.t('tagline'),
                 style: GoogleFonts.nunito(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: cs.onSurface.withValues(alpha: 0.55),
                 ),
               ),
@@ -422,7 +422,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 l10n.t('daysColoredPill', {'days': '${p.daysColored}'}),
                 style: GoogleFonts.fredoka(
                     fontSize: 13,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: const Color(0xFF1F6F43)),
               ),
             ),
@@ -472,7 +472,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       done > 99 ? '99+' : '$done',
                       style: GoogleFonts.fredoka(
                           fontSize: 10,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: cs.onPrimary,
                           height: 1.1),
                     ),
@@ -528,7 +528,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   l10n.t('tagline'),
                   style: GoogleFonts.nunito(
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: cs.onSurface.withValues(alpha: 0.55),
                   ),
                 ),
@@ -813,7 +813,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 l10n.t('weekScenePill', {'name': sceneName}),
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.nunito(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   fontSize: 13,
                   color: cs.onSecondaryContainer,
                 ),
@@ -859,7 +859,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text(
               '${l10n.t('dailyWord')}: $label',
               style: GoogleFonts.nunito(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 fontSize: 13,
                 color: cs.onPrimaryContainer,
               ),
@@ -939,7 +939,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 '🎲',
                 style: GoogleFonts.fredoka(
                     fontSize: 20,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: cs.onSurface),
               ),
             ),
@@ -1021,9 +1021,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
-          // Row 3: Settings chips (portrait only — landscape has inline settings)
+          // Row 3: Settings chips with labels (portrait only — landscape has inline settings)
           if (showChips)
-            _buildSettingsChips(context, cs, l10n, settings, sub),
+            _buildSettingsChips(context, cs, l10n, settings, sub, labeled: true, compact: true),
         ],
       ),
     );
@@ -1086,7 +1086,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           '$emoji $text',
           style: GoogleFonts.fredoka(
             fontSize: 15,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: cs.primary.withValues(alpha: 0.85),
           ),
         ),
@@ -1099,6 +1099,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     SettingsState? settings,
     SubscriptionState? sub, {
     bool labeled = false,
+    bool compact = false,
   }) {
     final diffChip = LalaChip(
       label: _diffLabel(settings?.difficulty ?? 'medium', l10n),
@@ -1147,7 +1148,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    // Labeled vertical layout for tablet right panel — one row per setting.
+    // Labeled vertical layout — one row per setting.
+    // compact=true (mobile): smaller font + label width + tighter spacing.
+    // compact=false (tablet): full-size tablet right-panel layout.
     final settingLabels = [
       l10n.t('diffLabel'),
       l10n.t('paletteLabel'),
@@ -1157,21 +1160,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     const settingEmojis = ['🌟', '🎨', '🖍️', '🔢'];
     final settingChips = [diffChip, palChip, cntChip, modeChip];
 
+    final labelWidth = compact ? 90.0 : 108.0;
+    final labelFontSize = compact ? 13.0 : 15.0;
+    final rowSpacing = compact ? 5.0 : 8.0;
+    final outerPadding = compact
+        ? const EdgeInsets.fromLTRB(12, 2, 12, 8)
+        : const EdgeInsets.fromLTRB(0, 0, 0, 10);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
+      padding: outerPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: List.generate(4, (i) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
+          padding: EdgeInsets.only(bottom: rowSpacing),
           child: Row(
             children: [
               SizedBox(
-                width: 108,
+                width: labelWidth,
                 child: Text(
                   '${settingEmojis[i]} ${settingLabels[i]}',
                   style: GoogleFonts.fredoka(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
+                    fontSize: labelFontSize,
+                    fontWeight: FontWeight.w700,
                     color: cs.primary.withValues(alpha: 0.85),
                   ),
                 ),
@@ -1603,7 +1613,7 @@ class _PulsingRewardsIconState extends State<_PulsingRewardsIcon>
                           widget.count > 99 ? '99+' : '${widget.count}',
                           style: GoogleFonts.fredoka(
                               fontSize: 9,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: cs.onPrimary,
                               height: 1.1),
                         ),
@@ -1680,7 +1690,7 @@ class _SettingRow extends StatelessWidget {
                 value,
                 style: GoogleFonts.nunito(
                   fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: cs.onPrimaryContainer,
                 ),
               ),

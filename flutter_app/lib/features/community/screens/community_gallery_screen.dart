@@ -321,7 +321,7 @@ class _ArtworkLightboxState extends State<_ArtworkLightbox> {
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel')),
+              child: Text(l10n.t('cancel'))),
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
               child: Text(l10n.t('communityReportBtn'),

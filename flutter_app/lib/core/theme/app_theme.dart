@@ -141,7 +141,7 @@ class AppTheme {
         bodyLarge: TextStyle(color: c.ink),
         bodyMedium: TextStyle(color: c.ink),
         bodySmall: TextStyle(color: c.muted),
-        labelLarge: TextStyle(color: c.ink, fontWeight: FontWeight.w800),
+        labelLarge: TextStyle(color: c.ink, fontWeight: FontWeight.w700),
         labelMedium: TextStyle(color: c.muted),
         labelSmall: TextStyle(color: c.muted),
       ),

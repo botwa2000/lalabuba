@@ -62,7 +62,7 @@ class LalaShowcase extends StatelessWidget {
       ),
       descTextStyle: GoogleFonts.nunito(
         fontSize: 14,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: fg.withValues(alpha: 0.9),
         height: 1.3,
       ),

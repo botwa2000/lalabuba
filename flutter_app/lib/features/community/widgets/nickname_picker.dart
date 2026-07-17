@@ -147,8 +147,8 @@ class _NicknamePickerSheetState extends State<_NicknamePickerSheet> {
                               style: GoogleFonts.nunito(
                                 fontSize: 14,
                                 fontWeight: isSelected
-                                    ? FontWeight.w800
-                                    : FontWeight.w600,
+                                    ? FontWeight.w700
+                                    : FontWeight.w700,
                                 color: isSelected ? cs.primary : null,
                               ),
                             ),

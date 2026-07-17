@@ -52,7 +52,7 @@ class LalaChip extends StatelessWidget {
               style: GoogleFonts.nunito(
                 color: selected ? Colors.white : cs.onSurface.withValues(alpha: 0.8),
                 fontSize: 13,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
             if (locked) ...[
