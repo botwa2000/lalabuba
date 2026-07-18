@@ -316,26 +316,15 @@ class ExploreTopicScreen extends ConsumerWidget {
                   children: [
                     Text(emoji, style: const TextStyle(fontSize: 56)),
                     const SizedBox(height: 16),
-                    Text('No pre-made pages yet — generate your own!',
+                    Text('More $name pages coming soon — check back!',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.nunito(
                             fontSize: 16, color: cs.onSurfaceVariant)),
-                    const SizedBox(height: 20),
-                    FilledButton(
-                      onPressed: () {
-                        context.pop();
-                        context.pop();
-                        // Navigate home and pre-fill subject
-                        context.pushNamed('canvas',
-                            extra: CanvasScreenArgs(
-                              subject: name.toLowerCase(),
-                              displayLabel: name,
-                              source: 'explore',
-                            ));
-                      },
-                      child: Text('Draw a $name now →',
-                          style: GoogleFonts.fredoka(fontSize: 16)),
-                    ),
+                    const SizedBox(height: 12),
+                    Text('In the meantime, use the Draw screen to create your own!',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.nunito(
+                            fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.7))),
                   ],
                 ),
               ),
@@ -359,23 +348,6 @@ class ExploreTopicScreen extends ConsumerWidget {
                 _ImageGrid(entries: images.hard, difficulty: 'hard'),
                 const SizedBox(height: 8),
               ],
-              const SizedBox(height: 24),
-              Center(
-                child: OutlinedButton(
-                  onPressed: () {
-                    context.pop();
-                    context.pop();
-                    context.pushNamed('canvas',
-                        extra: CanvasScreenArgs(
-                          subject: name.toLowerCase(),
-                          displayLabel: name,
-                          source: 'explore',
-                        ));
-                  },
-                  child: Text('Generate a new $name page →',
-                      style: GoogleFonts.fredoka(fontSize: 15)),
-                ),
-              ),
               const SizedBox(height: 32),
             ],
           );
