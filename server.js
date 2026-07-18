@@ -642,6 +642,7 @@ ${hubHreflang(lang)}
   <meta property="og:site_name" content="Lalabuba"/>
 ${HEAD_COMMON}
   <script type="application/ld+json">${ldJson}</script>
+  <script type="application/ld+json">${JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Lalabuba","item":"https://lalabuba.com/"},{"@type":"ListItem","position":2,"name":t.hubH1,"item":canon}]})}</script>
 </head>
 <body>
 ${buildNav({ lang, breadcrumbs: [{ label: t.hubH1 }], hreflangMap: hubHreflangMap(), ctaHref: '/' })}
@@ -722,6 +723,7 @@ ${HEAD_COMMON}
     "description": t.topicPageDesc(topicName),
     "url": canon,
   })}</script>
+  <script type="application/ld+json">${JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Lalabuba","item":"https://lalabuba.com/"},{"@type":"ListItem","position":2,"name":(t.hubH1||"Coloring Pages"),"item":"https://lalabuba.com/"+root+"/"},{"@type":"ListItem","position":3,"name":topicName,"item":canon}]})}</script>
 </head>
 <body>
 ${buildNav({ lang, breadcrumbs: [{ href: `/${root}/`, label: t.hubH1 ? t.hubH1.split(' ').slice(0,3).join(' ') : 'Coloring' }, { label: topicName }], hreflangMap: topicHreflangMap(enTopic), ctaHref: `/?s=1&q=${q}&d=easy` })}
