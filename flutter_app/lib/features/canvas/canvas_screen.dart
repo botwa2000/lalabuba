@@ -137,6 +137,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
   // Render an image that was pre-fetched by the Explore screen (no API call).
   Future<void> _renderPreloaded() async {
+    debugPrint('LALABUBA_PATH: _renderPreloaded called (source=${widget.args.source})');
     final bytes = widget.args.preloadedBytes;
     if (bytes == null) return;
     setState(() { _isGenerating = true; _errorMsg = null; });
@@ -167,6 +168,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   }
 
   Future<void> _generate({int? seed}) async {
+    debugPrint('LALABUBA_PATH: _generate called (source=${widget.args.source}, seed=$seed)');
     // FIX 3: re-entrancy guard. The celebration "Again" callback and the
     // error-retry button can both fire _generate while one is already running,
     // racing the detection isolate (fix 2). Bail out if a generation is already
