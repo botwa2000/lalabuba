@@ -8,6 +8,7 @@ const db = require("./lib/db");
 const communityRouter = require("./api/community/router");
 const authRouter      = require("./api/auth/router");
 const { buildNav }    = require("./lib/lp-nav-component");
+const { renderFeaturesPage } = require("./lib/render-features-page");
 
 // Production + local server for Lalabuba on Hetzner (Docker Swarm).
 //
@@ -1407,10 +1408,7 @@ const server = http.createServer(async (req, res) => {
         const featLang = featMatch[1];
         const FEAT_LANGS = ['en','de','fr','es','pt','ru','it','nl','pl','tr','zh','hi'];
         if (FEAT_LANGS.includes(featLang)) {
-          const featHtml = fs.readFileSync(path.join(PUBLIC_DIR, 'features.html'), 'utf8');
-          const featHreflang = Object.fromEntries(FEAT_LANGS.map(l => [l, `https://lalabuba.com/${l}/features`]));
-          const featNav = buildNav({ lang: featLang, breadcrumbs: [{ label: 'Features' }], hreflangMap: featHreflang });
-          return serveHtml(res, injectUnifiedNav(featHtml, featNav));
+          return serveHtml(res, renderFeaturesPage(featLang));
         }
       }
     }
