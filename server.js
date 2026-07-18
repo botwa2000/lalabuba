@@ -1396,6 +1396,44 @@ const server = http.createServer(async (req, res) => {
       if (enTopic) return serveI18nTopic(res, lang, enTopic);
     }
 
+    // ── Features page: /features → 301; /{lang}/features → serve ─────────────
+    if (p === '/features') {
+      res.writeHead(301, { Location: '/en/features', 'Cache-Control': 'public, max-age=31536000' });
+      return res.end();
+    }
+    {
+      const featMatch = p.match(/^\/([a-z]{2,3})\/features\/?$/);
+      if (featMatch) {
+        const featLang = featMatch[1];
+        const FEAT_LANGS = ['en','de','fr','es','pt','ru','it','nl','pl','tr','zh','hi'];
+        if (FEAT_LANGS.includes(featLang)) {
+          const featHtml = fs.readFileSync(path.join(PUBLIC_DIR, 'features.html'), 'utf8');
+          const featHreflang = Object.fromEntries(FEAT_LANGS.map(l => [l, `https://lalabuba.com/${l}/features`]));
+          const featNav = buildNav({ lang: featLang, breadcrumbs: [{ label: 'Features' }], hreflangMap: featHreflang });
+          return serveHtml(res, injectUnifiedNav(featHtml, featNav));
+        }
+      }
+    }
+
+    // ── FAQ page: /faq → 301; /{lang}/faq → serve ────────────────────────────
+    if (p === '/faq') {
+      res.writeHead(301, { Location: '/en/faq', 'Cache-Control': 'public, max-age=31536000' });
+      return res.end();
+    }
+    {
+      const faqMatch = p.match(/^\/([a-z]{2,3})\/faq\/?$/);
+      if (faqMatch) {
+        const faqLang = faqMatch[1];
+        const FAQ_LANGS = ['en','de','fr','es','pt','ru','it','nl','pl','tr','zh','hi'];
+        if (FAQ_LANGS.includes(faqLang)) {
+          const faqHtml = fs.readFileSync(path.join(PUBLIC_DIR, 'faq.html'), 'utf8');
+          const faqHreflang = Object.fromEntries(FAQ_LANGS.map(l => [l, `https://lalabuba.com/${l}/faq`]));
+          const faqNav = buildNav({ lang: faqLang, breadcrumbs: [{ label: 'FAQ' }], hreflangMap: faqHreflang });
+          return serveHtml(res, injectUnifiedNav(faqHtml, faqNav));
+        }
+      }
+    }
+
     return serveStaticFile(req, res, p);
   }
 
