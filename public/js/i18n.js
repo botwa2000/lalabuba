@@ -4568,6 +4568,9 @@ function updateTopicLinks(lang) {
     todayLink.href = lang === 'de' ? '/ausmalbilder/heute/' : '/coloring-pages/today/';
     todayLink.textContent = COLORING_TODAY_LABELS[lang] || COLORING_TODAY_LABELS.en;
   }
+  document.querySelectorAll('[data-lang-page]').forEach(el => {
+    el.href = `/${lang}/${el.dataset.langPage}`;
+  });
   // Update URL bar to reflect language (enables link sharing in correct language)
   // Preserve any share/query params (e.g. ?s=1&q=dinosaur&d=easy) so loadFromShare() can read them.
   const langPath = lang === 'en' ? '/' : `/${lang}/`;
