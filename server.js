@@ -9,6 +9,7 @@ const communityRouter = require("./api/community/router");
 const authRouter      = require("./api/auth/router");
 const { buildNav }    = require("./lib/lp-nav-component");
 const { renderFeaturesPage } = require("./lib/render-features-page");
+const { renderFaqPage }      = require("./lib/render-faq-page");
 
 // Production + local server for Lalabuba on Hetzner (Docker Swarm).
 //
@@ -1426,10 +1427,7 @@ const server = http.createServer(async (req, res) => {
         const faqLang = faqMatch[1];
         const FAQ_LANGS = ['en','de','fr','es','pt','ru','it','nl','pl','tr','zh','hi'];
         if (FAQ_LANGS.includes(faqLang)) {
-          const faqHtml = fs.readFileSync(path.join(PUBLIC_DIR, 'faq.html'), 'utf8');
-          const faqHreflang = Object.fromEntries(FAQ_LANGS.map(l => [l, `https://lalabuba.com/${l}/faq`]));
-          const faqNav = buildNav({ lang: faqLang, breadcrumbs: [{ label: 'FAQ' }], hreflangMap: faqHreflang });
-          return serveHtml(res, injectUnifiedNav(faqHtml, faqNav));
+          return serveHtml(res, renderFaqPage(faqLang));
         }
       }
     }
