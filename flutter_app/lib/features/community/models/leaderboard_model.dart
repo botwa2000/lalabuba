@@ -5,6 +5,8 @@ class LeaderboardEntry {
   final int score;
   final int? weeklyCompleted;
   final int? weeklyStars;
+  final int? totalShared;
+  final int? totalLove;
 
   const LeaderboardEntry({
     required this.rank,
@@ -13,6 +15,8 @@ class LeaderboardEntry {
     required this.score,
     this.weeklyCompleted,
     this.weeklyStars,
+    this.totalShared,
+    this.totalLove,
   });
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> j) => LeaderboardEntry(
@@ -26,6 +30,12 @@ class LeaderboardEntry {
         weeklyStars: j['weeklyStars'] == null
             ? null
             : (j['weeklyStars'] as num).toInt(),
+        totalShared: j['totalShared'] == null
+            ? null
+            : (j['totalShared'] as num).toInt(),
+        totalLove: j['totalLove'] == null
+            ? null
+            : (j['totalLove'] as num).toInt(),
       );
 }
 

@@ -5,6 +5,8 @@ const db   = require("../../lib/db");
 const auth = require("../../lib/community-auth");
 const { sanitizeSubject, isSafeSubject } = require("../../lib/content-safety");
 
+const gallery = require("../../lib/gallery");
+
 const browseLimiter  = auth.makeRateLimiter(60,  auth.HOUR);
 const uploadLimiter  = auth.makeRateLimiter(10,  auth.HOUR);
 const deleteLimiter  = auth.makeRateLimiter(20,  auth.HOUR);
@@ -35,6 +37,8 @@ async function handleGallery(req, res, ip) {
   const rawType  = (q.type  || "").toLowerCase();
   const rawDiff  = (q.difficulty || "").toLowerCase();
   const rawSearch = (q.q || "").trim().slice(0, 100);
+  const rawDaily  = q.daily === "1" || q.daily === "true";
+  const rawTheme  = q.theme === "1" || q.theme === "true";
   const pageSize = await db.getConfigInt("gallery_page_size", 20);
   const offset   = page * pageSize;
 
@@ -54,6 +58,22 @@ async function handleGallery(req, res, ip) {
     conditions.push(`a.subject ILIKE $${idx++}`);
     params.push(`%${rawSearch}%`);
   }
+  if (rawDaily) {
+    const { word: dailyWord } = gallery.getDailyWord();
+    if (dailyWord) {
+      conditions.push(`a.subject ILIKE $${idx++}`);
+      params.push(`%${dailyWord}%`);
+    }
+  }
+  if (rawTheme) {
+    const { rows: themeRows } = await db.query(
+      "SELECT theme_word FROM weekly_themes WHERE starts_at <= NOW() AND ends_at > NOW() ORDER BY starts_at DESC LIMIT 1"
+    );
+    if (themeRows.length) {
+      conditions.push(`a.subject ILIKE $${idx++}`);
+      params.push(`%${themeRows[0].theme_word}%`);
+    }
+  }
 
   params.push(pageSize + 1, offset); // fetch one extra to detect next page
   const WHERE = conditions.join(" AND ");
@@ -61,6 +81,8 @@ async function handleGallery(req, res, ip) {
   const { rows } = await db.query(
     `SELECT a.id, a.share_type, a.subject, a.difficulty, a.seed,
             a.image_path, a.star_count, a.view_count, a.shared_at,
+            a.fire_count, a.heart_count, a.laugh_count, a.celebrate_count,
+            a.parent_artwork_id, a.recolor_count,
             p.nickname, p.avatar_index
      FROM artworks a
      JOIN profiles p ON p.device_uuid = a.device_uuid
@@ -83,17 +105,23 @@ async function handleGallery(req, res, ip) {
   }
 
   const artworks = items.map(r => ({
-    id:         r.id,
-    shareType:  r.share_type,
-    subject:    r.subject,
-    difficulty: r.difficulty,
-    seed:       r.seed ? String(r.seed) : null,
-    imageUrl:   r.image_path,
-    starCount:  r.star_count,
-    viewCount:  r.view_count,
-    sharedAt:   r.shared_at,
-    nickname:   r.nickname || "Colorist",
-    avatarIndex: r.avatar_index,
+    id:             r.id,
+    shareType:      r.share_type,
+    subject:        r.subject,
+    difficulty:     r.difficulty,
+    seed:           r.seed ? String(r.seed) : null,
+    imageUrl:       r.image_path,
+    starCount:      r.star_count,
+    viewCount:      r.view_count,
+    sharedAt:       r.shared_at,
+    fireCount:      r.fire_count      || 0,
+    heartCount:     r.heart_count     || 0,
+    laughCount:     r.laugh_count     || 0,
+    celebrateCount: r.celebrate_count || 0,
+    parentArtworkId: r.parent_artwork_id || null,
+    recolorCount:   r.recolor_count   || 0,
+    nickname:       r.nickname        || "Colorist",
+    avatarIndex:    r.avatar_index,
   }));
 
   return res.status(200).json({ artworks, nextPage: hasMore ? page + 1 : null });
@@ -173,18 +201,40 @@ async function handleUpload(req, res, ip, uuid) {
   const imagePath  = auth.saveUploadedImage(imageResult.buffer, imageResult.ext);
   const expiresAt  = await auth.computeExpiresAt();
 
+  // Optional parent artwork for template recoloring chain.
+  let parentArtworkId = null;
+  if (body.parentArtworkId) {
+    const pid = parseInt(body.parentArtworkId);
+    if (Number.isFinite(pid) && pid > 0) {
+      const { rows: pRows } = await db.query(
+        "SELECT id FROM artworks WHERE id = $1 AND moderation_status = 'approved'",
+        [pid]
+      );
+      if (pRows.length) parentArtworkId = pid;
+    }
+  }
+
   const { rows: insertRows } = await db.query(
-    `INSERT INTO artworks (device_uuid, share_type, subject, difficulty, seed, image_path, expires_at)
-     VALUES ($1, $2, $3, $4, $5::bigint, $6, $7)
+    `INSERT INTO artworks (device_uuid, share_type, subject, difficulty, seed, image_path, expires_at, parent_artwork_id)
+     VALUES ($1, $2, $3, $4, $5::bigint, $6, $7, $8)
      RETURNING id, image_path, expires_at`,
-    [uuid, shareType, subject, difficulty, seed, imagePath, expiresAt]
+    [uuid, shareType, subject, difficulty, seed, imagePath, expiresAt, parentArtworkId]
   );
+
+  // Increment parent's recolor_count.
+  if (parentArtworkId) {
+    db.query(
+      "UPDATE artworks SET recolor_count = recolor_count + 1 WHERE id = $1",
+      [parentArtworkId]
+    ).catch(() => {});
+  }
 
   const row = insertRows[0];
   return res.status(201).json({
-    id:        String(row.id),
-    imageUrl:  row.image_path,
-    expiresAt: row.expires_at,
+    id:             String(row.id),
+    imageUrl:       row.image_path,
+    expiresAt:      row.expires_at,
+    parentArtworkId: parentArtworkId,
   });
 }
 

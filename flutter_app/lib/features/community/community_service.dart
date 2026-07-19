@@ -74,9 +74,17 @@ class CommunityService {
     int page = 0,
     String? type,
     String? difficulty,
+    bool daily = false,
+    bool theme = false,
   }) async {
     final params = <String, dynamic>{'page': page};
-    if (type != null && type != 'all') params['type'] = type;
+    if (daily) {
+      params['daily'] = '1';
+    } else if (theme) {
+      params['theme'] = '1';
+    } else if (type != null && type != 'all') {
+      params['type'] = type;
+    }
     if (difficulty != null) params['difficulty'] = difficulty;
 
     final r = await _dio.get<Map<String, dynamic>>(
@@ -99,26 +107,28 @@ class CommunityService {
     required int? seed,
     required Uint8List jpegBytes,
     required bool withParentalConsent,
+    int? parentArtworkId,
   }) async {
     final b64 = base64Encode(jpegBytes);
+    final data = <String, dynamic>{
+      'shareType': shareType,
+      'subject': subject ?? '',
+      'difficulty': difficulty ?? 'medium',
+      if (seed != null) 'seed': seed,
+      'imageData': 'data:image/jpeg;base64,$b64',
+      if (parentArtworkId != null) 'parentArtworkId': parentArtworkId,
+    };
     final r = await _dio.post<Map<String, dynamic>>(
       '/api/community/artwork',
-      data: {
-        'shareType': shareType,
-        'subject': subject ?? '',
-        'difficulty': difficulty ?? 'medium',
-        if (seed != null) 'seed': seed,
-        'imageData': 'data:image/jpeg;base64,$b64',
-      },
+      data: data,
       options: Options(
         headers: await _headers(withConsent: withParentalConsent),
-        // 900KB image ~1.2MB base64 in JSON — allow up to 2MB response time
         receiveTimeout: const Duration(seconds: 60),
       ),
     );
     final d = r.data ?? {};
     return (
-      id: (d['id'] as num).toInt(),
+      id: int.tryParse(d['id'].toString()) ?? 0,
       imageUrl: d['imageUrl'] as String,
     );
   }
@@ -132,6 +142,68 @@ class CommunityService {
     return (
       starred: d['starred'] as bool? ?? false,
       starCount: (d['starCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  /// React to an artwork with an emoji. Returns updated counts.
+  Future<({bool reacted, String? reaction, int fireCount, int heartCount, int laughCount, int celebrateCount, int totalCount})>
+      react(int artworkId, String reaction) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/api/community/react/$artworkId',
+      data: {'reaction': reaction},
+      options: Options(headers: await _headers()),
+    );
+    final d = r.data ?? {};
+    return (
+      reacted: d['reacted'] as bool? ?? false,
+      reaction: d['reaction'] as String?,
+      fireCount: (d['fireCount'] as num?)?.toInt() ?? 0,
+      heartCount: (d['heartCount'] as num?)?.toInt() ?? 0,
+      laughCount: (d['laughCount'] as num?)?.toInt() ?? 0,
+      celebrateCount: (d['celebrateCount'] as num?)?.toInt() ?? 0,
+      totalCount: (d['totalCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  /// Get new reactions on user's artworks since last check.
+  Future<({int newReactions, List<Map<String, dynamic>> details})> getNotifications() async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      '/api/community/notifications',
+      options: Options(headers: await _headers()),
+    );
+    final d = r.data ?? {};
+    return (
+      newReactions: (d['newReactions'] as num?)?.toInt() ?? 0,
+      details: (d['details'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>(),
+    );
+  }
+
+  /// Get colorings of a template artwork.
+  Future<({List<CommunityArtwork> variations, int recolorCount, int? nextPage})>
+      getVariations(int artworkId, {int page = 0}) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      '/api/community/artwork/$artworkId/variations',
+      queryParameters: {'page': page},
+    );
+    final d = r.data ?? {};
+    final items = (d['variations'] as List<dynamic>? ?? [])
+        .map((e) => CommunityArtwork.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return (
+      variations: items,
+      recolorCount: (d['recolorCount'] as num?)?.toInt() ?? 0,
+      nextPage: d['nextPage'] == null ? null : (d['nextPage'] as num).toInt(),
+    );
+  }
+
+  /// Get current weekly theme (if active).
+  Future<({bool active, String? themeWord, String? themeEmoji})> getWeeklyTheme() async {
+    final r = await _dio.get<Map<String, dynamic>>('/api/community/weekly-theme');
+    final d = r.data ?? {};
+    return (
+      active: d['active'] as bool? ?? false,
+      themeWord: d['themeWord'] as String?,
+      themeEmoji: d['themeEmoji'] as String?,
     );
   }
 

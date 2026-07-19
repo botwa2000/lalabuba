@@ -29,6 +29,11 @@ class _CommunityGalleryScreenState
   int _page = 0;
   String? _error;
   String _baseUrl = 'https://lalabuba.com';
+  int _newReactions = 0;
+  bool _notificationsChecked = false;
+  bool? _weeklyThemeActive;
+  String? _weeklyThemeWord;
+  String? _weeklyThemeEmoji;
 
   @override
   bool get wantKeepAlive => true;
@@ -37,7 +42,11 @@ class _CommunityGalleryScreenState
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _load();
+      _checkNotifications();
+      _loadWeeklyTheme();
+    });
   }
 
   @override
@@ -52,6 +61,33 @@ class _CommunityGalleryScreenState
         _hasMore) {
       _load();
     }
+  }
+
+  Future<void> _checkNotifications() async {
+    if (_notificationsChecked) return;
+    _notificationsChecked = true;
+    try {
+      final svc = ref.read(communityServiceProvider);
+      final r = await svc.getNotifications();
+      if (r.newReactions > 0 && mounted) {
+        setState(() => _newReactions = r.newReactions);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _loadWeeklyTheme() async {
+    if (_weeklyThemeActive != null) return;
+    try {
+      final svc = ref.read(communityServiceProvider);
+      final t = await svc.getWeeklyTheme();
+      if (mounted) {
+        setState(() {
+          _weeklyThemeActive = t.active;
+          _weeklyThemeWord = t.themeWord;
+          _weeklyThemeEmoji = t.themeEmoji;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _load({bool reset = false}) async {
@@ -73,7 +109,9 @@ class _CommunityGalleryScreenState
 
       final result = await svc.getGallery(
         page: _page,
-        type: _filterType == 'all' ? null : _filterType,
+        type: (_filterType == 'all' || _filterType == 'daily' || _filterType == 'theme') ? null : _filterType,
+        daily: _filterType == 'daily',
+        theme: _filterType == 'theme',
       );
       if (mounted) {
         setState(() {
@@ -110,10 +148,81 @@ class _CommunityGalleryScreenState
       ('colored', l10n.t('communityFilterColorings')),
       ('template', l10n.t('communityFilterTemplates')),
       ('freehand', l10n.t('communityFilterDrawings')),
+      ('daily', '🎯 Daily'),
+      if (_weeklyThemeActive == true && _weeklyThemeWord != null)
+        ('theme', '${_weeklyThemeEmoji ?? '🎨'} $_weeklyThemeWord'),
     ];
 
     return Column(
       children: [
+        if (_newReactions > 0)
+          Container(
+            margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Text('💖', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '$_newReactions new reaction${_newReactions > 1 ? 's' : ''} on your art!',
+                    style: GoogleFonts.nunito(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => setState(() => _newReactions = 0),
+                  child: Icon(Icons.close, size: 16, color: cs.onPrimaryContainer),
+                ),
+              ],
+            ),
+          ),
+        if (_weeklyThemeActive == true && _weeklyThemeWord != null)
+          Container(
+            margin: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: cs.tertiaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Text(_weeklyThemeEmoji ?? '🎨', style: const TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'This week\'s theme: $_weeklyThemeWord',
+                    style: GoogleFonts.nunito(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onTertiaryContainer,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: () => _setFilter('theme'),
+                  child: Text('See all',
+                    style: GoogleFonts.fredoka(
+                      fontSize: 12,
+                      color: cs.onTertiaryContainer,
+                      fontWeight: FontWeight.w700,
+                    )),
+                ),
+              ],
+            ),
+          ),
         SizedBox(
           height: 44,
           child: ListView(
@@ -240,14 +349,6 @@ class _CommunityGalleryScreenState
           baseUrl: _baseUrl,
           svc: ref.read(communityServiceProvider),
           l10n: l10n,
-          onStarChanged: (newCount, starred) {
-            final idx = _artworks.indexWhere((a) => a.id == artwork.id);
-            if (idx >= 0 && mounted) {
-              setState(() {
-                _artworks[idx].starred = starred;
-              });
-            }
-          },
           onReported: () {
             setState(() => _artworks.removeWhere((a) => a.id == artwork.id));
           },
@@ -264,7 +365,6 @@ class _ArtworkLightbox extends StatefulWidget {
   final String baseUrl;
   final CommunityService svc;
   final L10n l10n;
-  final void Function(int newCount, bool starred) onStarChanged;
   final VoidCallback onReported;
 
   const _ArtworkLightbox({
@@ -272,7 +372,6 @@ class _ArtworkLightbox extends StatefulWidget {
     required this.baseUrl,
     required this.svc,
     required this.l10n,
-    required this.onStarChanged,
     required this.onReported,
   });
 
@@ -281,35 +380,58 @@ class _ArtworkLightbox extends StatefulWidget {
 }
 
 class _ArtworkLightboxState extends State<_ArtworkLightbox> {
-  late bool _starred;
-  late int _starCount;
+  String? _activeReaction;
+  late int _fireCount;
+  late int _heartCount;
+  late int _laughCount;
+  late int _celebrateCount;
   bool _acting = false;
+
+  static const _reactions = [
+    ('fire', '🔥'),
+    ('heart', '❤️'),
+    ('laugh', '😂'),
+    ('celebrate', '🎉'),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _starred = widget.artwork.starred;
-    _starCount = widget.artwork.starCount;
+    _activeReaction = widget.artwork.activeReaction;
+    _fireCount = widget.artwork.fireCount;
+    _heartCount = widget.artwork.heartCount;
+    _laughCount = widget.artwork.laughCount;
+    _celebrateCount = widget.artwork.celebrateCount;
   }
 
-  Future<void> _toggleStar() async {
+  Future<void> _react(String reaction) async {
     if (_acting) return;
     setState(() => _acting = true);
     HapticFeedback.lightImpact();
     try {
-      final result = await widget.svc.toggleStar(widget.artwork.id);
+      final result = await widget.svc.react(widget.artwork.id, reaction);
       if (mounted) {
         setState(() {
-          _starred = result.starred;
-          _starCount = result.starCount;
+          _activeReaction = result.reacted ? result.reaction : null;
+          _fireCount = result.fireCount;
+          _heartCount = result.heartCount;
+          _laughCount = result.laughCount;
+          _celebrateCount = result.celebrateCount;
         });
-        widget.onStarChanged(_starCount, _starred);
       }
     } catch (_) {
     } finally {
       if (mounted) setState(() => _acting = false);
     }
   }
+
+  int _countFor(String reaction) => switch (reaction) {
+    'fire' => _fireCount,
+    'heart' => _heartCount,
+    'laugh' => _laughCount,
+    'celebrate' => _celebrateCount,
+    _ => 0,
+  };
 
   Future<void> _report() async {
     final l10n = widget.l10n;
@@ -396,72 +518,98 @@ class _ArtworkLightboxState extends State<_ArtworkLightbox> {
           ),
           SafeArea(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
               color: Colors.black,
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   if (widget.artwork.subject != null) ...[
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.artwork.subject ?? '',
-                            style: GoogleFonts.fredoka(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (widget.artwork.difficulty != null)
-                            Text(
-                              widget.artwork.difficulty!,
-                              style: GoogleFonts.nunito(
-                                color: Colors.white60,
-                                fontSize: 12,
-                              ),
-                            ),
-                        ],
-                      ),
+                    Text(
+                      widget.artwork.subject ?? '',
+                      style: GoogleFonts.fredoka(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ] else
-                    const Spacer(),
-                  GestureDetector(
-                    onTap: _toggleStar,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: _starred
-                            ? const Color(0xFFFFB300)
-                            : cs.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(50),
+                    if (widget.artwork.difficulty != null)
+                      Text(
+                        widget.artwork.difficulty!,
+                        style: GoogleFonts.nunito(
+                          color: Colors.white60,
+                          fontSize: 12,
+                        ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _starred ? '⭐' : '☆',
-                            style: const TextStyle(fontSize: 20),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '$_starCount',
-                            style: GoogleFonts.fredoka(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: _starred ? Colors.white : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      for (final (key, emoji) in _reactions)
+                        _ReactionButton(
+                          emoji: emoji,
+                          count: _countFor(key),
+                          active: _activeReaction == key,
+                          onTap: () => _react(key),
+                          cs: cs,
+                        ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ReactionButton extends StatelessWidget {
+  final String emoji;
+  final int count;
+  final bool active;
+  final VoidCallback onTap;
+  final ColorScheme cs;
+
+  const _ReactionButton({
+    required this.emoji,
+    required this.count,
+    required this.active,
+    required this.onTap,
+    required this.cs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? cs.primaryContainer : Colors.white12,
+          borderRadius: BorderRadius.circular(50),
+          border: active ? Border.all(color: cs.primary, width: 1.5) : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 20)),
+            if (count > 0) ...[
+              const SizedBox(width: 4),
+              Text(
+                '$count',
+                style: GoogleFonts.fredoka(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: active ? cs.onPrimaryContainer : Colors.white,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

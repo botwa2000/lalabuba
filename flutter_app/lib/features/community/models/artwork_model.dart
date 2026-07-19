@@ -10,7 +10,14 @@ class CommunityArtwork {
   final String sharedAt;
   final String nickname;
   final int avatarIndex;
-  bool starred; // mutable: toggled locally after star action
+  final int fireCount;
+  final int heartCount;
+  final int laughCount;
+  final int celebrateCount;
+  final int recolorCount;
+  final int? parentArtworkId;
+  bool starred; // legacy compat (true if any reaction)
+  String? activeReaction; // mutable: 'fire'|'heart'|'laugh'|'celebrate'|null
 
   CommunityArtwork({
     required this.id,
@@ -24,20 +31,35 @@ class CommunityArtwork {
     required this.sharedAt,
     required this.nickname,
     required this.avatarIndex,
+    this.fireCount = 0,
+    this.heartCount = 0,
+    this.laughCount = 0,
+    this.celebrateCount = 0,
+    this.recolorCount = 0,
+    this.parentArtworkId,
     this.starred = false,
+    this.activeReaction,
   });
+
+  int get totalReactions => fireCount + heartCount + laughCount + celebrateCount;
 
   factory CommunityArtwork.fromJson(Map<String, dynamic> j) => CommunityArtwork(
         id: (j['id'] as num).toInt(),
         shareType: j['shareType'] as String? ?? 'colored',
         subject: j['subject'] as String?,
         difficulty: j['difficulty'] as String?,
-        seed: j['seed'] == null ? null : (j['seed'] as num).toInt(),
+        seed: j['seed'] == null ? null : int.tryParse(j['seed'].toString()),
         imageUrl: j['imageUrl'] as String,
         starCount: (j['starCount'] as num?)?.toInt() ?? 0,
         viewCount: (j['viewCount'] as num?)?.toInt() ?? 0,
         sharedAt: j['sharedAt'] as String? ?? '',
         nickname: j['nickname'] as String? ?? 'Artist',
         avatarIndex: (j['avatarIndex'] as num?)?.toInt() ?? 0,
+        fireCount: (j['fireCount'] as num?)?.toInt() ?? 0,
+        heartCount: (j['heartCount'] as num?)?.toInt() ?? 0,
+        laughCount: (j['laughCount'] as num?)?.toInt() ?? 0,
+        celebrateCount: (j['celebrateCount'] as num?)?.toInt() ?? 0,
+        recolorCount: (j['recolorCount'] as num?)?.toInt() ?? 0,
+        parentArtworkId: j['parentArtworkId'] == null ? null : (j['parentArtworkId'] as num).toInt(),
       );
 }

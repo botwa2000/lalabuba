@@ -67,7 +67,16 @@ class LeaderboardEntryWidget extends ConsumerWidget {
                     color: isOwn ? cs.onPrimaryContainer : cs.onSurface,
                   ),
                 ),
-                if (entry.weeklyCompleted != null)
+                if (entry.totalLove != null)
+                  Text(
+                    '💖 ${entry.totalLove} reactions · 🖼️ ${entry.totalShared ?? 0}',
+                    style: GoogleFonts.nunito(
+                      fontSize: 11,
+                      color: (isOwn ? cs.onPrimaryContainer : cs.onSurface)
+                          .withValues(alpha: 0.7),
+                    ),
+                  )
+                else if (entry.weeklyCompleted != null)
                   Text(
                     l10n.t('communityLbScoreWeekly', {
                       'count': '${entry.weeklyCompleted}',

@@ -65,6 +65,32 @@ async function refreshWeeklyLeaderboard(weekStart, size) {
   }));
 }
 
+async function refreshMostLovedLeaderboard(size) {
+  const { rows } = await db.query(
+    `SELECT p.nickname, p.avatar_index,
+            COALESCE(SUM(a.fire_count + a.heart_count + a.laugh_count + a.celebrate_count), 0)::int AS total_love,
+            COUNT(a.id)::int AS total_shared
+     FROM profiles p
+     LEFT JOIN artworks a
+       ON a.device_uuid = p.device_uuid
+       AND a.moderation_status = 'approved'
+     WHERE p.nickname IS NOT NULL
+     GROUP BY p.device_uuid, p.nickname, p.avatar_index
+     HAVING COALESCE(SUM(a.fire_count + a.heart_count + a.laugh_count + a.celebrate_count), 0) > 0
+     ORDER BY total_love DESC
+     LIMIT $1`,
+    [size]
+  );
+  return rows.map((r, i) => ({
+    rank:        i + 1,
+    nickname:    r.nickname,
+    avatarIndex: r.avatar_index,
+    totalLove:   r.total_love,
+    totalShared: r.total_shared,
+    score:       r.total_love,
+  }));
+}
+
 async function refreshAllTimeLeaderboard(size) {
   const { rows } = await db.query(
     `SELECT p.nickname, p.avatar_index,
@@ -113,6 +139,11 @@ module.exports = async (req, res) => {
   if (type === "alltime") {
     const entries = await refreshAllTimeLeaderboard(size);
     return res.status(200).json({ type: "alltime", entries, refreshedAt: new Date().toISOString() });
+  }
+
+  if (type === "mostloved") {
+    const entries = await refreshMostLovedLeaderboard(size);
+    return res.status(200).json({ type: "mostloved", entries, refreshedAt: new Date().toISOString() });
   }
 
   // Weekly — use cache; refresh if stale.

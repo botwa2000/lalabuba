@@ -18,15 +18,17 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   late TabController _tabCtrl;
   Leaderboard? _weeklyData;
   Leaderboard? _alltimeData;
+  Leaderboard? _mostlovedData;
   bool _loadingWeekly = false;
   bool _loadingAlltime = false;
+  bool _loadingMostloved = false;
   String? _error;
   String? _ownNickname;
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl = TabController(length: 3, vsync: this);
     _tabCtrl.addListener(() {
       if (!_tabCtrl.indexIsChanging) _ensureLoaded();
     });
@@ -70,6 +72,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       } catch (e) {
         if (mounted) setState(() { _error = e.toString(); _loadingAlltime = false; });
       }
+    } else if (_tabCtrl.index == 2 && _mostlovedData == null && !_loadingMostloved) {
+      setState(() => _loadingMostloved = true);
+      try {
+        final d = await svc.getLeaderboard(type: 'mostloved');
+        if (mounted) setState(() { _mostlovedData = d; _loadingMostloved = false; });
+      } catch (e) {
+        if (mounted) setState(() { _error = e.toString(); _loadingMostloved = false; });
+      }
     }
   }
 
@@ -93,6 +103,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               child: Text(l10n.t('leaderboardAllTimeTab'),
                   style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
             ),
+            Tab(
+              child: Text('💖 Most Loved',
+                  style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
+            ),
           ],
         ),
       ),
@@ -101,6 +115,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         children: [
           _buildList(_weeklyData, _loadingWeekly),
           _buildList(_alltimeData, _loadingAlltime),
+          _buildList(_mostlovedData, _loadingMostloved),
         ],
       ),
     );

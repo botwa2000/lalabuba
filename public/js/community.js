@@ -1,13 +1,44 @@
 /**
  * Community features — device identity, API client, gallery tab, leaderboard,
- * parental consent gate, community share flow, nickname/avatar picker.
+ * parental consent gate, community share flow, emoji reactions, notifications,
+ * template variations, post-completion share prompt, weekly theme, daily filter.
  *
  * Loaded as a standalone ES module from index.html; does not depend on main.js.
- * Interacts with the DOM via getElementById / querySelector.
  */
 
 import { t } from './i18n.js';
 import { getProgress, mergeFromServer } from './progress.js';
+
+// ── Inline styles for dynamic community UI elements ──────────────────────────
+
+(function injectStyles() {
+  const s = document.createElement('style');
+  s.textContent = `
+    .lightbox-reaction-bar{display:flex;gap:8px;padding:8px 0 4px;flex-wrap:wrap}
+    .reaction-btn{display:flex;align-items:center;gap:4px;padding:6px 12px;border:1.5px solid var(--border,#ddd);border-radius:20px;background:var(--bg,#fff);cursor:pointer;font-size:1rem;color:inherit;transition:all .15s;min-width:52px;justify-content:center}
+    .reaction-btn.active{border-color:#7c4dff;background:#ede9ff;color:#7c4dff}
+    .reaction-count{font-size:.78rem;font-weight:600;min-width:14px;text-align:center}
+    .community-notif-banner{display:flex;align-items:center;gap:10px;padding:10px 14px;margin:0 0 10px;background:#ede9ff;border-radius:10px;font-size:.88rem;color:#4a148c;animation:slideDown .25s ease}
+    .community-notif-banner button{margin-left:auto;background:none;border:none;cursor:pointer;font-size:1.1rem;color:#4a148c;padding:0 4px}
+    .weekly-theme-banner{display:flex;align-items:center;gap:10px;padding:10px 14px;margin:0 0 12px;background:linear-gradient(135deg,#7c4dff22,#ea80fc22);border:1.5px solid #7c4dff44;border-radius:10px;font-size:.88rem;color:var(--text)}
+    .weekly-theme-banner strong{color:#7c4dff}
+    .community-variations-row{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:.84rem;color:var(--muted)}
+    .community-variations-row button{background:none;border:none;cursor:pointer;color:#7c4dff;font-size:.84rem;text-decoration:underline;padding:0}
+    .post-completion-prompt{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:1200;background:var(--surface,#fff);border:2px solid #7c4dff;border-radius:16px;padding:16px 20px;box-shadow:0 8px 32px rgba(0,0,0,.18);display:flex;flex-direction:column;align-items:center;gap:10px;max-width:320px;width:90%;animation:slideUp .3s ease}
+    .post-completion-prompt .pcp-emoji{font-size:2rem}
+    .post-completion-prompt .pcp-msg{font-size:.95rem;font-weight:600;text-align:center;color:var(--text)}
+    .post-completion-prompt .pcp-btns{display:flex;gap:8px;width:100%}
+    .post-completion-prompt .pcp-share{flex:1;padding:8px 12px;background:#7c4dff;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600}
+    .post-completion-prompt .pcp-dismiss{padding:8px 12px;background:none;border:1.5px solid var(--border,#ddd);border-radius:8px;cursor:pointer;font-size:.9rem;color:var(--muted)}
+    .lightbox-variations-view{display:none;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;margin-top:10px}
+    .lightbox-variations-view.open{display:flex}
+    .var-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px}
+    .var-thumb{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer}
+    @keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideUp{from{opacity:0;transform:translate(-50%,20px)}to{opacity:1;transform:translate(-50%,0)}}
+  `;
+  document.head.appendChild(s);
+})();
 
 // ── Device identity ─────────────────────────────────────────────────────────
 
@@ -78,11 +109,12 @@ const galleryTabBtns     = document.querySelectorAll(".gallery-tab");
 const galleryGrid        = document.getElementById("gallery-grid");
 const communityPanel     = document.getElementById("community-gallery-panel");
 
-// Elements below the tab line that belong to the journal tab only (need show/hide).
 const journalOnlyEls     = [
   "journal-stats", "daily-mission-card", "mascot-card", "crayon-packs",
   "sticker-shelf", "journal-next", "print-book-btn",
 ].map(id => document.getElementById(id)).filter(Boolean);
+
+let _notificationsChecked = false;
 
 function showJournalTab() {
   if (galleryGrid) galleryGrid.style.display = "";
@@ -95,6 +127,12 @@ function showCommunityTab() {
   journalOnlyEls.forEach(el => { el.style.display = "none"; });
   if (communityPanel) communityPanel.hidden = false;
   initCommunityGalleryOnce();
+
+  // Check notifications once per page session.
+  if (!_notificationsChecked) {
+    _notificationsChecked = true;
+    checkNotifications();
+  }
 }
 
 galleryTabBtns.forEach(btn => {
@@ -105,19 +143,14 @@ galleryTabBtns.forEach(btn => {
     });
     btn.classList.add("active");
     btn.setAttribute("aria-selected", "true");
-    if (btn.dataset.tab === "journal") {
-      showJournalTab();
-    } else {
-      showCommunityTab();
-    }
+    if (btn.dataset.tab === "journal") showJournalTab();
+    else showCommunityTab();
   });
 });
 
-// Re-show journal tab whenever gallery modal opens (reset state).
 const galleryModal = document.getElementById("gallery-modal");
 const galleryModalObserver = new MutationObserver(() => {
   if (!galleryModal?.classList.contains("hidden")) {
-    // Modal just opened — ensure journal tab is active.
     galleryTabBtns.forEach(b => {
       const isJournal = b.dataset.tab === "journal";
       b.classList.toggle("active", isJournal);
@@ -130,9 +163,90 @@ if (galleryModal) {
   galleryModalObserver.observe(galleryModal, { attributes: true, attributeFilter: ["class"] });
 }
 
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+async function checkNotifications() {
+  try {
+    const data = await apiGet("/api/community/notifications");
+    if (data.newReactions > 0 && communityPanel) {
+      showNotificationBanner(data.newReactions, data.details || []);
+    }
+  } catch { /* offline */ }
+}
+
+function showNotificationBanner(count, details) {
+  // Remove any existing banner first.
+  communityPanel?.querySelector(".community-notif-banner")?.remove();
+
+  const subject = details[0]?.subject || "";
+  const msg = subject
+    ? `🌟 ${count} new reaction${count > 1 ? "s" : ""} on "${subject}" and more!`
+    : `🌟 ${count} new reaction${count > 1 ? "s" : ""} on your artwork${count > 1 ? "s" : ""}!`;
+
+  const banner = document.createElement("div");
+  banner.className = "community-notif-banner";
+  banner.innerHTML = `<span>${escHtml(msg)}</span><button aria-label="Dismiss">✕</button>`;
+  banner.querySelector("button").addEventListener("click", () => banner.remove());
+
+  // Insert before the grid (or at the top of the community panel content).
+  const communityGrid = document.getElementById("community-grid");
+  if (communityGrid) {
+    communityPanel.insertBefore(banner, communityGrid.previousElementSibling || communityGrid);
+  } else {
+    communityPanel.prepend(banner);
+  }
+}
+
+// ── Weekly theme banner ───────────────────────────────────────────────────────
+
+let _weeklyTheme = null;
+
+async function loadWeeklyTheme() {
+  if (_weeklyTheme !== null) return _weeklyTheme;
+  try {
+    const data = await fetch("/api/community/weekly-theme").then(r => r.json());
+    _weeklyTheme = data;
+    return data;
+  } catch {
+    _weeklyTheme = { active: false };
+    return _weeklyTheme;
+  }
+}
+
+async function showWeeklyThemeBanner() {
+  const theme = await loadWeeklyTheme();
+  if (!theme?.active || !communityPanel) return;
+
+  // Don't show twice.
+  if (communityPanel.querySelector(".weekly-theme-banner")) return;
+
+  const banner = document.createElement("div");
+  banner.className = "weekly-theme-banner";
+  banner.innerHTML = `<span>${escHtml(theme.themeEmoji || "🎨")}</span> <span>This week's theme: <strong>${escHtml(theme.themeWord)}</strong></span><button class="cf-btn" style="margin-left:auto;padding:4px 10px;font-size:.8rem" data-type="theme">Show all →</button>`;
+
+  const themeFilterBtn = banner.querySelector("button");
+  themeFilterBtn?.addEventListener("click", () => {
+    filterBtns.forEach(b => b.classList.remove("active"));
+    themeFilterBtn.classList.add("active");
+    currentFilter = "theme";
+    nextPage = 0;
+    allPagesLoaded = false;
+    if (communityGridEl) communityGridEl.innerHTML = "";
+    if (communityEmpty) communityEmpty.hidden = true;
+    loadNextPage();
+  });
+
+  const communityGridEl = document.getElementById("community-grid");
+  if (communityGridEl) {
+    communityPanel.insertBefore(banner, communityGridEl.previousElementSibling || communityGridEl);
+  } else {
+    communityPanel.prepend(banner);
+  }
+}
+
 // ── Community gallery ─────────────────────────────────────────────────────────
 
-const communityGrid     = document.getElementById("community-grid");
+const communityGridEl   = document.getElementById("community-grid");
 const communitySentinel = document.getElementById("community-sentinel");
 const communityEmpty    = document.getElementById("community-empty");
 const filterBtns        = document.querySelectorAll(".cf-btn");
@@ -143,15 +257,18 @@ let isLoading        = false;
 let allPagesLoaded   = false;
 let galleryInitDone  = false;
 
-// Track the currently-open lightbox artwork for star/report actions.
 let lightboxArtwork = null;
 
 function initCommunityGalleryOnce() {
   if (galleryInitDone) return;
   galleryInitDone = true;
-  loadNextPage();
 
-  // Infinite scroll — load when sentinel enters viewport.
+  // Inject "Daily 🎯" filter chip into the filter bar.
+  injectDailyFilterChip();
+
+  loadNextPage();
+  showWeeklyThemeBanner();
+
   if (communitySentinel && "IntersectionObserver" in window) {
     new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && !isLoading && !allPagesLoaded) loadNextPage();
@@ -159,15 +276,39 @@ function initCommunityGalleryOnce() {
   }
 }
 
+function injectDailyFilterChip() {
+  if (!filterBtns.length) return;
+  const container = filterBtns[0]?.parentElement;
+  if (!container || container.querySelector('[data-type="daily"]')) return;
+
+  const btn = document.createElement("button");
+  btn.className = "cf-btn";
+  btn.dataset.type = "daily";
+  btn.textContent = "🎯 Daily";
+  container.appendChild(btn);
+
+  btn.addEventListener("click", () => {
+    if (btn.dataset.type === currentFilter) return;
+    document.querySelectorAll(".cf-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter  = "daily";
+    nextPage       = 0;
+    allPagesLoaded = false;
+    if (communityGridEl) communityGridEl.innerHTML = "";
+    if (communityEmpty) communityEmpty.hidden = true;
+    loadNextPage();
+  });
+}
+
 filterBtns.forEach(btn => {
   btn.addEventListener("click", () => {
     if (btn.dataset.type === currentFilter) return;
-    filterBtns.forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".cf-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     currentFilter   = btn.dataset.type;
     nextPage        = 0;
     allPagesLoaded  = false;
-    if (communityGrid) communityGrid.innerHTML = "";
+    if (communityGridEl) communityGridEl.innerHTML = "";
     if (communityEmpty) communityEmpty.hidden = true;
     loadNextPage();
   });
@@ -177,21 +318,28 @@ async function loadNextPage() {
   if (isLoading || allPagesLoaded) return;
   isLoading = true;
 
-  // Show skeletons on first load.
-  if (nextPage === 0 && communityGrid) {
-    communityGrid.innerHTML = Array(4).fill(0)
+  if (nextPage === 0 && communityGridEl) {
+    communityGridEl.innerHTML = Array(4).fill(0)
       .map(() => `<div class="community-card-skeleton"></div>`).join("");
   }
 
   try {
-    const qs  = new URLSearchParams({ page: nextPage, type: currentFilter });
+    const qs  = new URLSearchParams({ page: nextPage });
+    if (currentFilter === "daily") {
+      qs.set("daily", "1");
+    } else if (currentFilter === "theme") {
+      qs.set("theme", "1");
+    } else if (currentFilter !== "all") {
+      qs.set("type", currentFilter);
+    }
+
     const res = await fetch(`/api/community/gallery?${qs}`, {
       headers: { "X-Device-ID": getCommunityId() },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    if (nextPage === 0 && communityGrid) communityGrid.innerHTML = "";
+    if (nextPage === 0 && communityGridEl) communityGridEl.innerHTML = "";
 
     if (data.artworks.length === 0 && nextPage === 0) {
       if (communityEmpty) communityEmpty.hidden = false;
@@ -203,16 +351,26 @@ async function loadNextPage() {
     allPagesLoaded = data.nextPage === null;
     nextPage = data.nextPage ?? nextPage;
   } catch (e) {
-    if (nextPage === 0 && communityGrid) {
-      communityGrid.innerHTML = `<p class="community-empty" style="display:block">${t('communityGalleryLoadErrorWeb')}</p>`;
+    if (nextPage === 0 && communityGridEl) {
+      communityGridEl.innerHTML = `<p class="community-empty" style="display:block">${t('communityGalleryLoadErrorWeb')}</p>`;
     }
   } finally {
     isLoading = false;
   }
 }
 
+function emojiReactionSummary(aw) {
+  const parts = [];
+  if (aw.fireCount)      parts.push(`🔥${aw.fireCount}`);
+  if (aw.heartCount)     parts.push(`❤️${aw.heartCount}`);
+  if (aw.laughCount)     parts.push(`😂${aw.laughCount}`);
+  if (aw.celebrateCount) parts.push(`🎉${aw.celebrateCount}`);
+  if (!parts.length) return "✨";
+  return parts.slice(0, 2).join(" ");
+}
+
 function appendArtworks(artworks) {
-  if (!communityGrid) return;
+  if (!communityGridEl) return;
   for (const aw of artworks) {
     const card = document.createElement("div");
     card.className = "community-card";
@@ -222,6 +380,7 @@ function appendArtworks(artworks) {
     const subject = aw.subject || "Artwork";
     const nick    = aw.nickname || "Colorist";
     const avatar  = aw.avatarIndex ?? 1;
+    const emojiSummary = emojiReactionSummary(aw);
 
     card.innerHTML = `
       <img src="${aw.imageUrl}" alt="${escHtml(subject)} coloring" loading="lazy" />
@@ -231,11 +390,18 @@ function appendArtworks(artworks) {
           <span class="community-card-avatar">${AVATAR_LIST[avatar] || "🐧"}</span>
           <span class="community-card-nick">${escHtml(nick)}</span>
         </div>
-        <div class="community-card-stars">⭐ ${aw.starCount || 0}</div>
+        <div class="community-card-stars">${emojiSummary}</div>
       </div>`;
 
+    if (aw.recolorCount > 0) {
+      const badge = document.createElement("div");
+      badge.className = "community-card-badge";
+      badge.textContent = `👥 ${aw.recolorCount}`;
+      card.querySelector(".community-card-info").appendChild(badge);
+    }
+
     card.addEventListener("click", () => openLightbox(aw));
-    communityGrid.appendChild(card);
+    communityGridEl.appendChild(card);
   }
 }
 
@@ -243,7 +409,6 @@ function escHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// Avatar emoji list (matches lib/avatar.js).
 const AVATAR_LIST = [
   "🐉","🐧","🐻","🦄","🐯","🦊","🐰","🐬",
   "🦅","🐺","🐼","🐨","🐆","🦉","🦜","🐹",
@@ -259,19 +424,145 @@ const lightboxColorBtn   = document.getElementById("lightbox-color-btn");
 const lightboxReportBtn  = document.getElementById("lightbox-report-btn");
 const closeLightboxBtn   = document.getElementById("close-lightbox-btn");
 
-let lightboxStarred = false;
+let lightboxCurrentReaction = null;
+let _pendingParentArtworkId = null;
+
+// Inject reaction buttons (run once after DOM is ready).
+let _reactionBar = null;
+let _variationsRow = null;
+let _variationsView = null;
+
+function ensureReactionUI() {
+  if (_reactionBar) return;
+
+  // Hide the legacy star button — we replace it with emoji reactions.
+  if (lightboxStarBtn) lightboxStarBtn.style.display = "none";
+
+  _reactionBar = document.createElement("div");
+  _reactionBar.id = "lightbox-reaction-bar";
+  _reactionBar.className = "lightbox-reaction-bar";
+  _reactionBar.innerHTML = [
+    { emoji: "🔥", key: "fire",      id: "react-fire"      },
+    { emoji: "❤️", key: "heart",     id: "react-heart"     },
+    { emoji: "😂",  key: "laugh",     id: "react-laugh"     },
+    { emoji: "🎉", key: "celebrate", id: "react-celebrate" },
+  ].map(r =>
+    `<button class="reaction-btn" data-reaction="${r.key}" aria-label="${r.key}">${r.emoji}<span class="reaction-count" id="${r.id}">0</span></button>`
+  ).join("");
+
+  if (lightboxStarBtn) {
+    lightboxStarBtn.parentNode.insertBefore(_reactionBar, lightboxStarBtn);
+  } else if (communityLightbox) {
+    const card = communityLightbox.querySelector(".modal-card") || communityLightbox;
+    card.appendChild(_reactionBar);
+  }
+
+  // Wire reaction button clicks.
+  _reactionBar.querySelectorAll(".reaction-btn").forEach(btn => {
+    btn.addEventListener("click", () => handleReactionClick(btn.dataset.reaction));
+  });
+
+  // Variations row (template artworks).
+  _variationsRow = document.createElement("div");
+  _variationsRow.className = "community-variations-row";
+  _variationsRow.hidden = true;
+  _variationsRow.innerHTML = `<span id="lightbox-recolor-count">👥 0 people colored this</span><button id="lightbox-see-versions">See their versions →</button>`;
+
+  _variationsView = document.createElement("div");
+  _variationsView.className = "lightbox-variations-view";
+  _variationsView.innerHTML = '<div class="var-grid" id="variations-grid"></div>';
+
+  if (_reactionBar?.parentNode) {
+    _reactionBar.parentNode.insertBefore(_variationsRow, _reactionBar.nextSibling);
+    _reactionBar.parentNode.insertBefore(_variationsView, _variationsRow.nextSibling);
+  }
+
+  document.getElementById("lightbox-see-versions")?.addEventListener("click", async () => {
+    if (!lightboxArtwork) return;
+    const view = _variationsView;
+    if (!view) return;
+    const isOpen = view.classList.contains("open");
+    if (isOpen) { view.classList.remove("open"); return; }
+    view.classList.add("open");
+    const grid = document.getElementById("variations-grid");
+    if (!grid) return;
+    grid.innerHTML = "<p style='text-align:center;padding:10px'>⏳</p>";
+    try {
+      const data = await fetch(`/api/community/artwork/${lightboxArtwork.id}/variations`).then(r => r.json());
+      if (!data.variations?.length) {
+        grid.innerHTML = "<p style='text-align:center;color:var(--muted);font-size:.85rem'>No colorings shared yet</p>";
+        return;
+      }
+      grid.innerHTML = data.variations.map(v =>
+        `<img class="var-thumb" src="${escHtml(v.imageUrl)}" alt="variation" loading="lazy" title="${escHtml(v.nickname || 'Colorist')}" />`
+      ).join("");
+    } catch {
+      grid.innerHTML = "<p style='text-align:center;color:var(--muted);font-size:.85rem'>Could not load</p>";
+    }
+  });
+}
+
+async function handleReactionClick(reaction) {
+  if (!lightboxArtwork || !reaction) return;
+  try {
+    const res = await apiPost(`/api/community/react/${lightboxArtwork.id}`, { reaction });
+    lightboxCurrentReaction = res.reacted ? reaction : null;
+    lightboxArtwork = { ...lightboxArtwork, fireCount: res.fireCount, heartCount: res.heartCount, laughCount: res.laughCount, celebrateCount: res.celebrateCount, starCount: res.totalCount };
+    updateReactionDisplay(res);
+
+    // Update card in grid.
+    const card = communityGridEl?.querySelector(`[data-id="${lightboxArtwork.id}"]`);
+    if (card) {
+      const starsEl = card.querySelector(".community-card-stars");
+      if (starsEl) starsEl.textContent = emojiReactionSummary(lightboxArtwork);
+    }
+  } catch (e) {
+    showToast(t('communityStarError'));
+  }
+}
+
+function updateReactionDisplay(counts) {
+  if (!_reactionBar) return;
+  const map = { fire: counts.fireCount, heart: counts.heartCount, laugh: counts.laughCount, celebrate: counts.celebrateCount };
+  _reactionBar.querySelectorAll(".reaction-btn").forEach(btn => {
+    const key = btn.dataset.reaction;
+    const countEl = btn.querySelector(".reaction-count");
+    if (countEl) countEl.textContent = map[key] || 0;
+    btn.classList.toggle("active", lightboxCurrentReaction === key);
+  });
+}
 
 function openLightbox(artwork) {
+  ensureReactionUI();
   lightboxArtwork = artwork;
-  lightboxStarred = false;
+  lightboxCurrentReaction = null;
+  _variationsView?.classList.remove("open");
 
   if (lightboxImg) lightboxImg.src = artwork.imageUrl;
-  if (lightboxStarBtn) lightboxStarBtn.textContent = `⭐ ${artwork.starCount || 0}`;
+
+  // Reaction counts from artwork data (reactions already loaded in gallery response).
+  updateReactionDisplay({
+    fireCount:      artwork.fireCount      || 0,
+    heartCount:     artwork.heartCount     || 0,
+    laughCount:     artwork.laughCount     || 0,
+    celebrateCount: artwork.celebrateCount || 0,
+  });
+
+  // Color button (template artworks).
   if (lightboxColorBtn) {
     const isTemplate = artwork.shareType === "template";
     lightboxColorBtn.hidden = !isTemplate;
-    lightboxColorBtn.dataset.seed = artwork.seed || "";
+    lightboxColorBtn.dataset.seed    = artwork.seed    || "";
     lightboxColorBtn.dataset.subject = artwork.subject || "";
+    lightboxColorBtn.dataset.artworkId = artwork.id;
+  }
+
+  // Variations counter for templates.
+  if (_variationsRow) {
+    const isTemplate = artwork.shareType === "template";
+    _variationsRow.hidden = !isTemplate;
+    const countEl = document.getElementById("lightbox-recolor-count");
+    if (countEl) countEl.textContent = `👥 ${artwork.recolorCount || 0} ${(artwork.recolorCount || 0) === 1 ? "person" : "people"} colored this`;
   }
 
   if (communityLightbox) {
@@ -282,6 +573,8 @@ function openLightbox(artwork) {
 
 function closeLightbox() {
   lightboxArtwork = null;
+  _pendingParentArtworkId = null;
+  _variationsView?.classList.remove("open");
   if (communityLightbox) {
     communityLightbox.hidden = true;
     communityLightbox.setAttribute("aria-hidden", "true");
@@ -290,26 +583,6 @@ function closeLightbox() {
 
 closeLightboxBtn?.addEventListener("click", closeLightbox);
 communityLightbox?.addEventListener("click", e => { if (e.target === communityLightbox) closeLightbox(); });
-
-lightboxStarBtn?.addEventListener("click", async () => {
-  if (!lightboxArtwork) return;
-  try {
-    const res = await apiPost(`/api/community/star/${lightboxArtwork.id}`, {});
-    lightboxStarred = res.starred;
-    if (lightboxStarBtn) {
-      lightboxStarBtn.textContent = `⭐ ${res.starCount}`;
-      lightboxStarBtn.classList.toggle("starred", res.starred);
-    }
-    // Update count in grid card.
-    const card = communityGrid?.querySelector(`[data-id="${lightboxArtwork.id}"]`);
-    if (card) {
-      const starsEl = card.querySelector(".community-card-stars");
-      if (starsEl) starsEl.textContent = `⭐ ${res.starCount}`;
-    }
-  } catch (e) {
-    showToast(t('communityStarError'));
-  }
-});
 
 lightboxReportBtn?.addEventListener("click", async () => {
   if (!lightboxArtwork) return;
@@ -324,25 +597,48 @@ lightboxReportBtn?.addEventListener("click", async () => {
 
 lightboxColorBtn?.addEventListener("click", () => {
   if (!lightboxArtwork) return;
-  // Use the stored imageUrl so loadFromShare() loads the existing image
-  // directly instead of regenerating via the seed.
+  _pendingParentArtworkId = lightboxArtwork.id;
   const imgUrl  = lightboxArtwork.imageUrl || "";
   const subject = lightboxArtwork.subject  || "";
   const diff    = lightboxArtwork.difficulty || "medium";
-  const url = `/?s=1&img=${encodeURIComponent(imgUrl)}&q=${encodeURIComponent(subject)}&d=${diff}`;
+  const url = `/?s=1&img=${encodeURIComponent(imgUrl)}&q=${encodeURIComponent(subject)}&d=${diff}&parentId=${lightboxArtwork.id}`;
   window.location.href = url;
 });
 
+// Restore parentArtworkId from URL on page load (set by "Color it!" button above).
+(function restorePendingParent() {
+  const sp = new URLSearchParams(window.location.search);
+  const pid = sp.get("parentId");
+  if (pid) _pendingParentArtworkId = parseInt(pid) || null;
+})();
+
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 
-const leaderboardModal   = document.getElementById("leaderboard-modal");
+const leaderboardModal    = document.getElementById("leaderboard-modal");
 const closeLeaderboardBtn = document.getElementById("close-leaderboard-btn");
-const leaderboardList    = document.getElementById("leaderboard-list");
-const leaderboardEmpty   = document.getElementById("leaderboard-empty");
-const lbTabBtns          = document.querySelectorAll(".lb-tab");
-const communityLbBtn     = document.getElementById("community-lb-btn");
+const leaderboardList     = document.getElementById("leaderboard-list");
+const leaderboardEmpty    = document.getElementById("leaderboard-empty");
+const communityLbBtn      = document.getElementById("community-lb-btn");
 
 let currentLbType = "weekly";
+
+// Inject "Most Loved" tab into the leaderboard tab bar.
+(function injectMostLovedTab() {
+  const lbTabBtns = document.querySelectorAll(".lb-tab");
+  const container = lbTabBtns[0]?.parentElement;
+  if (!container || container.querySelector('[data-type="mostloved"]')) return;
+  const btn = document.createElement("button");
+  btn.className = "lb-tab";
+  btn.dataset.type = "mostloved";
+  btn.textContent = "💖 Most Loved";
+  btn.setAttribute("role", "tab");
+  btn.setAttribute("aria-selected", "false");
+  container.appendChild(btn);
+})();
+
+function getLbTabBtns() {
+  return Array.from(document.querySelectorAll(".lb-tab"));
+}
 
 function openLeaderboard() {
   if (!leaderboardModal) return;
@@ -361,14 +657,14 @@ communityLbBtn?.addEventListener("click", openLeaderboard);
 closeLeaderboardBtn?.addEventListener("click", closeLeaderboard);
 leaderboardModal?.addEventListener("click", e => { if (e.target === leaderboardModal) closeLeaderboard(); });
 
-lbTabBtns.forEach(btn => {
-  btn.addEventListener("click", () => {
-    lbTabBtns.forEach(b => { b.classList.remove("active"); b.setAttribute("aria-selected", "false"); });
-    btn.classList.add("active");
-    btn.setAttribute("aria-selected", "true");
-    currentLbType = btn.dataset.type;
-    loadLeaderboard(currentLbType);
-  });
+leaderboardModal?.addEventListener("click", e => {
+  const btn = e.target.closest(".lb-tab");
+  if (!btn) return;
+  getLbTabBtns().forEach(b => { b.classList.remove("active"); b.setAttribute("aria-selected", "false"); });
+  btn.classList.add("active");
+  btn.setAttribute("aria-selected", "true");
+  currentLbType = btn.dataset.type;
+  loadLeaderboard(currentLbType);
 });
 
 async function loadLeaderboard(type) {
@@ -382,14 +678,18 @@ async function loadLeaderboard(type) {
       if (leaderboardEmpty) leaderboardEmpty.hidden = false;
       return;
     }
-    const myUuid = getCommunityId();
     for (const entry of data.entries) {
       const li = document.createElement("li");
       li.className = "lb-entry";
       const rankMedal = entry.rank === 1 ? "🥇" : entry.rank === 2 ? "🥈" : entry.rank === 3 ? "🥉" : entry.rank;
-      const scoreLabel = type === "weekly"
-        ? t('communityLbScoreWeekly', entry.weeklyCompleted || 0, entry.weeklyStars || 0)
-        : t('communityLbScoreAllTime', entry.totalShared || 0);
+      let scoreLabel;
+      if (type === "weekly") {
+        scoreLabel = t('communityLbScoreWeekly', entry.weeklyCompleted || 0, entry.weeklyStars || 0);
+      } else if (type === "mostloved") {
+        scoreLabel = `💖 ${entry.totalLove || 0} reactions · 🖼️ ${entry.totalShared || 0}`;
+      } else {
+        scoreLabel = t('communityLbScoreAllTime', entry.totalShared || 0);
+      }
 
       li.innerHTML = `
         <span class="lb-rank">${rankMedal}</span>
@@ -470,7 +770,7 @@ async function populateNicknameModal() {
         });
       });
     }
-  } catch { /* offline — user can retry */ }
+  } catch { /* offline */ }
 }
 
 nicknameCancelBtn?.addEventListener("click", () => {
@@ -495,6 +795,8 @@ function requireNickname() {
 
 // ── Share type picker ─────────────────────────────────────────────────────────
 
+const LAST_SHARE_TYPE_KEY = "lalabuba-last-share-type";
+
 const shareTypeModal   = document.getElementById("share-type-modal");
 const shareTypeOptions = document.querySelectorAll(".share-type-option");
 const shareTypeCancelEl = document.getElementById("share-type-cancel");
@@ -504,8 +806,10 @@ let _shareTypeReject  = null;
 
 shareTypeOptions.forEach(btn => {
   btn.addEventListener("click", () => {
+    const type = btn.dataset.type;
+    localStorage.setItem(LAST_SHARE_TYPE_KEY, type);
     if (shareTypeModal) { shareTypeModal.classList.add("hidden"); shareTypeModal.setAttribute("aria-hidden", "true"); }
-    _shareTypeResolve?.(btn.dataset.type);
+    _shareTypeResolve?.(type);
   });
 });
 shareTypeCancelEl?.addEventListener("click", () => {
@@ -513,7 +817,15 @@ shareTypeCancelEl?.addEventListener("click", () => {
   _shareTypeReject?.(new Error("cancelled"));
 });
 
-function pickShareType(hasDrawCanvas) {
+function pickShareType(hasDrawCanvas, forceShow = false) {
+  // If user has a remembered share type and this isn't a forced picker, use it.
+  const lastType = localStorage.getItem(LAST_SHARE_TYPE_KEY);
+  if (lastType && !forceShow) {
+    // Validate: freehand only if draw canvas exists.
+    if (lastType !== "freehand" || hasDrawCanvas) {
+      return Promise.resolve(lastType);
+    }
+  }
   return new Promise((resolve, reject) => {
     _shareTypeResolve = resolve;
     _shareTypeReject  = reject;
@@ -523,49 +835,102 @@ function pickShareType(hasDrawCanvas) {
   });
 }
 
+// ── Post-completion share prompt ──────────────────────────────────────────────
+
+let _pcpShown = false;
+let _pcpEl = null;
+let _pcpTimer = null;
+
+function showPostCompletionPrompt() {
+  if (_pcpShown) return;
+  _pcpShown = true;
+
+  if (_pcpEl) _pcpEl.remove();
+
+  const prompt = document.createElement("div");
+  prompt.className = "post-completion-prompt";
+  prompt.innerHTML = `
+    <span class="pcp-emoji">🌟</span>
+    <span class="pcp-msg">Your coloring is ready! Share it with the community?</span>
+    <div class="pcp-btns">
+      <button class="pcp-share">Share to Community</button>
+      <button class="pcp-dismiss">Not now</button>
+    </div>`;
+
+  document.body.appendChild(prompt);
+  _pcpEl = prompt;
+
+  prompt.querySelector(".pcp-share").addEventListener("click", () => {
+    dismissPrompt();
+    communityShareBtn?.click();
+  });
+  prompt.querySelector(".pcp-dismiss").addEventListener("click", dismissPrompt);
+
+  _pcpTimer = setTimeout(dismissPrompt, 10_000);
+}
+
+function dismissPrompt() {
+  clearTimeout(_pcpTimer);
+  if (_pcpEl) { _pcpEl.remove(); _pcpEl = null; }
+}
+
+// Reset on each new image generation so the prompt can show again.
+const _previewCanvasForPrompt = document.getElementById("preview-canvas");
+if (_previewCanvasForPrompt) {
+  let _prevHidden = _previewCanvasForPrompt.hidden;
+  new MutationObserver(() => {
+    const nowHidden = _previewCanvasForPrompt.hidden;
+    if (_prevHidden && !nowHidden) {
+      // New image appeared — allow the prompt to show again on next completion.
+      _pcpShown = false;
+    }
+    _prevHidden = nowHidden;
+  }).observe(_previewCanvasForPrompt, { attributes: true, attributeFilter: ["hidden"] });
+}
+
 // ── Community share button ────────────────────────────────────────────────────
 
 const communityShareBtn = document.getElementById("community-share-btn");
 
-communityShareBtn?.addEventListener("click", async () => {
+communityShareBtn?.addEventListener("click", () => doShare());
+
+async function doShare(autoShareType = null) {
   const canvas    = document.getElementById("preview-canvas");
   const drawCanvas = document.getElementById("draw-canvas");
   if (!canvas || canvas.hidden) { showToast(t('communityDrawFirst')); return; }
 
-  communityShareBtn.disabled = true;
-  communityShareBtn.textContent = t('communitySharing');
+  if (communityShareBtn) {
+    communityShareBtn.disabled = true;
+    communityShareBtn.textContent = t('communitySharing');
+  }
 
   try {
-    // 1. Check profile — need parental consent + nickname.
+    // 1. Check profile.
     let profile;
-    try {
-      profile = await apiGet("/api/community/profile");
-    } catch (e) {
-      profile = { sharingEnabled: false, hasNickname: false };
-    }
+    try { profile = await apiGet("/api/community/profile"); }
+    catch (e) { profile = { sharingEnabled: false, hasNickname: false }; }
 
-    // 2. First time — require parental consent.
+    // 2. Parental consent if first time.
     let consentHeader = {};
     if (!profile.sharingEnabled) {
       await requireParentalConsent();
       consentHeader = { "X-Parental-Consent": "yes" };
     }
 
-    // 3. If no nickname yet, require one first.
+    // 3. Nickname if first time.
     if (!profile.hasNickname) {
       const { nickname, avatarIndex } = await requireNickname();
       await apiPost("/api/community/profile", { nickname, avatarIndex }, consentHeader);
-      consentHeader = {}; // already applied
+      consentHeader = {};
     }
 
-    // 4. Pick share type.
+    // 4. Pick share type (auto-skip if remembered or caller provides type).
     const hasDrawCanvas = drawCanvas && !drawCanvas.hidden;
-    const shareType = await pickShareType(hasDrawCanvas);
+    const shareType = autoShareType || await pickShareType(hasDrawCanvas);
 
-    // 5. Capture canvas image.
+    // 5. Capture canvas.
     let imageData;
     if (shareType === "freehand" && hasDrawCanvas) {
-      // Merge draw canvas onto preview canvas for the composite.
       const offscreen = document.createElement("canvas");
       offscreen.width  = canvas.width;
       offscreen.height = canvas.height;
@@ -577,30 +942,29 @@ communityShareBtn?.addEventListener("click", async () => {
       imageData = canvas.toDataURL("image/jpeg", 0.82);
     }
 
-    // 6. Read subject / difficulty / seed from DOM (set by generate.js on currentImage).
+    // 6. Read subject / difficulty from DOM.
     const subjectInput = document.getElementById("subject-input") || document.querySelector("[name=subject]");
     const subject   = subjectInput?.value?.trim() || "";
     const diffBtns  = document.querySelectorAll(".difficulty-btn.active, .diff-pill.active, .chip--selected[data-difficulty]");
     const difficulty = diffBtns[0]?.dataset?.difficulty || diffBtns[0]?.dataset?.value || "medium";
 
-    // 7. Upload.
-    const res = await apiPost("/api/community/artwork", {
-      shareType,
-      subject,
-      difficulty,
-      imageData,
-    }, consentHeader);
+    // 7. Upload (include parentArtworkId if coloring a community template).
+    const body = { shareType, subject, difficulty, imageData };
+    if (_pendingParentArtworkId) body.parentArtworkId = _pendingParentArtworkId;
+
+    await apiPost("/api/community/artwork", body, consentHeader);
 
     showToast(t('communitySharedToast'));
+    _pendingParentArtworkId = null;
 
-    // Refresh community gallery next time it opens.
+    // Refresh community gallery next time.
     galleryInitDone = false;
     nextPage = 0;
     allPagesLoaded = false;
 
   } catch (e) {
     if (e.message === "cancelled") {
-      // User cancelled — no toast needed.
+      // User cancelled — no toast.
     } else if (e.code === "SHARE_LIMIT") {
       showToast(e.message || t('communityShareLimitReached'));
     } else if (e.code === "PARENTAL_CONSENT_REQUIRED") {
@@ -610,13 +974,14 @@ communityShareBtn?.addEventListener("click", async () => {
       showToast(t('communityShareError'));
     }
   } finally {
-    communityShareBtn.disabled = false;
-    communityShareBtn.textContent = t('communityShareBtn');
+    if (communityShareBtn) {
+      communityShareBtn.disabled = false;
+      communityShareBtn.textContent = t('communityShareBtn');
+    }
   }
-});
+}
 
 // ── Enable share button when image generates ──────────────────────────────────
-// The preview canvas switches from hidden to visible; watch for that.
 
 const previewCanvas = document.getElementById("preview-canvas");
 if (previewCanvas && communityShareBtn) {
@@ -626,12 +991,8 @@ if (previewCanvas && communityShareBtn) {
 }
 
 // ── Progress sync to server ───────────────────────────────────────────────────
-// Called by main.js after recordCompletion so users appear on the leaderboard
-// and progress is stored cross-device for logged-in accounts.
-// Fire-and-forget: never blocks the completion flow; all errors are swallowed.
 
 function getAuthHeaders() {
-  // Read access token directly from localStorage (same key as account.js K_ACCESS).
   const token = localStorage.getItem('lalabuba-access-token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
@@ -666,7 +1027,6 @@ export async function syncProgressToServer(progress) {
       subjects:            p.subjects            || {},
     }, getAuthHeaders());
 
-    // Merge the server aggregate (may include other devices for this account).
     if (res && res.progress) {
       const merged = mergeFromServer(res.progress);
       if (merged) {
@@ -674,18 +1034,19 @@ export async function syncProgressToServer(progress) {
       }
     }
 
-    // Suggest signing in to anonymous users after their first completion.
+    // Show post-completion prompt after a short delay (UX: let any celebration settle first).
+    setTimeout(() => {
+      if (!previewCanvas?.hidden) showPostCompletionPrompt();
+    }, 1800);
+
     if (!localStorage.getItem('lalabuba-access-token') && (p.totalCompleted === 1)) {
       _suggestSignIn();
     }
   } catch {
-    // Best-effort: leaderboard sync is not critical to the coloring experience.
+    // Best-effort.
   }
 }
 
-// Load the server-side aggregate (account-level or device-level) and merge into
-// local progress. Useful on page load for logged-in users to pick up progress from
-// other devices.
 export async function loadProgressFromServer() {
   try {
     const headers = { 'X-Device-ID': getCommunityId(), ...getAuthHeaders() };
@@ -703,7 +1064,6 @@ export async function loadProgressFromServer() {
   }
 }
 
-// Non-intrusive one-time prompt for anonymous users to sign in for cross-device sync.
 const _SYNC_SUGGESTED_KEY = 'lalabuba-sync-suggested';
 function _suggestSignIn() {
   try {
@@ -713,12 +1073,10 @@ function _suggestSignIn() {
   showToast(t('progressSyncSignInPrompt') || '🔄 Sign in to keep your progress on all devices', 5000);
 }
 
-// Re-load aggregate whenever the user logs in during this page session.
 window.addEventListener('lalabuba:login', () => {
   loadProgressFromServer().catch(() => {});
 });
 
-// On page load: if already signed in, fetch aggregate once to pick up other devices.
 if (localStorage.getItem('lalabuba-access-token')) {
   loadProgressFromServer().catch(() => {});
 }
@@ -744,7 +1102,7 @@ const familyModal        = document.getElementById('family-modal');
 const familyMembersList  = document.getElementById('family-members-list');
 const closeFamilyModal   = document.getElementById('close-family-modal-btn');
 
-let _familyData = null; // null = unknown, false = no family, object = family data
+let _familyData = null;
 
 function _showFamilyState(loading, noFamily, inFamily) {
   if (familyLoadingEl)  { familyLoadingEl.hidden  = !loading; }
@@ -775,21 +1133,15 @@ async function _loadFamilyState() {
   }
 }
 
-// Toggle panel open/close
 familyToggleBtn?.addEventListener('click', () => {
   const isOpen = familyPanelBody && !familyPanelBody.hidden;
   if (familyPanelBody) familyPanelBody.hidden = isOpen;
   if (familyToggleBtn) familyToggleBtn.setAttribute('aria-expanded', String(!isOpen));
-  if (!isOpen && _familyData === null) {
-    _loadFamilyState();
-  }
+  if (!isOpen && _familyData === null) _loadFamilyState();
 });
 
-// Create family
 familyCreateBtn?.addEventListener('click', async () => {
-  try {
-    await requireParentalConsent();
-  } catch { return; }
+  try { await requireParentalConsent(); } catch { return; }
   familyCreateBtn.disabled = true;
   try {
     const res = await apiPost('/api/community/family', { action: 'create' }, { 'X-Parental-Consent': 'yes' });
@@ -809,25 +1161,20 @@ familyCreateBtn?.addEventListener('click', async () => {
   }
 });
 
-// Toggle join form visibility
 familyJoinOpenBtn?.addEventListener('click', () => {
   if (familyJoinForm) familyJoinForm.hidden = !familyJoinForm.hidden;
   if (!familyJoinForm?.hidden) familyCodeInput?.focus();
 });
 
-// Force uppercase in code input
 familyCodeInput?.addEventListener('input', (e) => {
-  const el = /** @type {HTMLInputElement} */ (e.target);
+  const el = e.target;
   el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
 });
 
-// Submit join
 familyJoinSubmit?.addEventListener('click', async () => {
   const code = familyCodeInput?.value?.trim().toUpperCase();
   if (!code || code.length !== 6) { showToast(t('familyJoinPlaceholder')); return; }
-  try {
-    await requireParentalConsent();
-  } catch { return; }
+  try { await requireParentalConsent(); } catch { return; }
   familyJoinSubmit.disabled = true;
   try {
     const res = await apiPost('/api/community/family', { action: 'join', familyCode: code }, { 'X-Parental-Consent': 'yes' });
@@ -847,7 +1194,6 @@ familyJoinSubmit?.addEventListener('click', async () => {
   }
 });
 
-// Copy family code to clipboard
 familyCodeCopyBtn?.addEventListener('click', async () => {
   const code = familyCodeValue?.textContent?.trim();
   if (!code) return;
@@ -859,7 +1205,6 @@ familyCodeCopyBtn?.addEventListener('click', async () => {
   }
 });
 
-// Leave family
 familyLeaveBtn?.addEventListener('click', async () => {
   if (!confirm(t('familyLeaveConfirm'))) return;
   familyLeaveBtn.disabled = true;
@@ -874,7 +1219,6 @@ familyLeaveBtn?.addEventListener('click', async () => {
   }
 });
 
-// View family members modal
 familyViewBtn?.addEventListener('click', async () => {
   if (!familyModal || !familyMembersList) return;
   familyModal.classList.remove('hidden');
@@ -887,8 +1231,7 @@ familyViewBtn?.addEventListener('click', async () => {
       return;
     }
     familyMembersList.innerHTML = data.members.map(m => {
-      const avatarEmoji = ['🐉','🐧','🐻','🦄','🐯','🦊','🐰','🐬','🦅','🐺',
-                           '🐼','🐨','🐆','🦉','🦜','🐹','🦔','🦦','🐿️','🦘'][m.avatarIndex ?? 0] || '🐧';
+      const avatarEmoji = AVATAR_LIST[m.avatarIndex ?? 0] || '🐧';
       const artThumbs = (m.recentArtworks || []).map(a =>
         `<img class="family-member-art-thumb" src="${escHtml(a.imageUrl)}" alt="artwork" loading="lazy" />`
       ).join('');
@@ -907,14 +1250,8 @@ familyViewBtn?.addEventListener('click', async () => {
 });
 
 closeFamilyModal?.addEventListener('click', () => {
-  if (familyModal) {
-    familyModal.classList.add('hidden');
-    familyModal.setAttribute('aria-hidden', 'true');
-  }
+  if (familyModal) { familyModal.classList.add('hidden'); familyModal.setAttribute('aria-hidden', 'true'); }
 });
 familyModal?.addEventListener('click', (e) => {
-  if (e.target === familyModal) {
-    familyModal.classList.add('hidden');
-    familyModal.setAttribute('aria-hidden', 'true');
-  }
+  if (e.target === familyModal) { familyModal.classList.add('hidden'); familyModal.setAttribute('aria-hidden', 'true'); }
 });
