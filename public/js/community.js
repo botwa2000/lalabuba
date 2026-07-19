@@ -756,7 +756,7 @@ async function populateNicknameModal() {
   try {
     const data = await fetch("/api/community/nicknames").then(r => r.json());
     const opts = data.nicknames.map(n => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join("");
-    nicknameSelect.innerHTML = `<option value="">Pick a nickname…</option>${opts}`;
+    nicknameSelect.innerHTML = `<option value="">${t('nicknameModalTitle')}</option>${opts}`;
 
     if (avatarGrid) {
       avatarGrid.innerHTML = data.avatars.map((emoji, i) =>
