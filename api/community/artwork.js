@@ -34,6 +34,7 @@ async function handleGallery(req, res, ip) {
   const page     = Math.max(0, parseInt(q.page) || 0);
   const rawType  = (q.type  || "").toLowerCase();
   const rawDiff  = (q.difficulty || "").toLowerCase();
+  const rawSearch = (q.q || "").trim().slice(0, 100);
   const pageSize = await db.getConfigInt("gallery_page_size", 20);
   const offset   = page * pageSize;
 
@@ -48,6 +49,10 @@ async function handleGallery(req, res, ip) {
   if (rawDiff && VALID_DIFFS.has(rawDiff)) {
     conditions.push(`a.difficulty = $${idx++}`);
     params.push(rawDiff);
+  }
+  if (rawSearch) {
+    conditions.push(`a.subject ILIKE $${idx++}`);
+    params.push(`%${rawSearch}%`);
   }
 
   params.push(pageSize + 1, offset); // fetch one extra to detect next page

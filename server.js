@@ -8,8 +8,9 @@ const db = require("./lib/db");
 const communityRouter = require("./api/community/router");
 const authRouter      = require("./api/auth/router");
 const { buildNav }    = require("./lib/lp-nav-component");
-const { renderFeaturesPage } = require("./lib/render-features-page");
-const { renderFaqPage }      = require("./lib/render-faq-page");
+const { renderFeaturesPage }  = require("./lib/render-features-page");
+const { renderFaqPage }       = require("./lib/render-faq-page");
+const { renderCommunityPage } = require("./lib/render-community-page");
 
 // Production + local server for Lalabuba on Hetzner (Docker Swarm).
 //
@@ -1428,6 +1429,22 @@ const server = http.createServer(async (req, res) => {
         const FAQ_LANGS = ['en','de','fr','es','pt','ru','it','nl','pl','tr','zh','hi'];
         if (FAQ_LANGS.includes(faqLang)) {
           return serveHtml(res, renderFaqPage(faqLang));
+        }
+      }
+    }
+
+    // ── Community gallery page: /community → 301; /{lang}/community → serve ────
+    if (p === '/community') {
+      res.writeHead(301, { Location: '/en/community', 'Cache-Control': 'public, max-age=31536000' });
+      return res.end();
+    }
+    {
+      const commMatch = p.match(/^\/([a-z]{2,3})\/community\/?$/);
+      if (commMatch) {
+        const commLang = commMatch[1];
+        const COMM_LANGS = ['en','de','fr','es','pt','ru','it','nl','pl','tr','zh','hi'];
+        if (COMM_LANGS.includes(commLang)) {
+          return serveHtml(res, renderCommunityPage(commLang));
         }
       }
     }

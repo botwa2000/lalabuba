@@ -85,17 +85,13 @@ const journalOnlyEls     = [
 ].map(id => document.getElementById(id)).filter(Boolean);
 
 function showJournalTab() {
-  galleryGrid?.removeAttribute("hidden");
-  journalOnlyEls.forEach(el => {
-    // Restore the element's original visibility (hidden attr was managed by gallery.js).
-    // We only un-hide the outer wrapper — gallery.js handles inner visibility.
-    el.style.display = "";
-  });
+  if (galleryGrid) galleryGrid.style.display = "";
+  journalOnlyEls.forEach(el => { el.style.display = ""; });
   if (communityPanel) communityPanel.hidden = true;
 }
 
 function showCommunityTab() {
-  galleryGrid?.setAttribute("hidden", "");
+  if (galleryGrid) galleryGrid.style.display = "none";
   journalOnlyEls.forEach(el => { el.style.display = "none"; });
   if (communityPanel) communityPanel.hidden = false;
   initCommunityGalleryOnce();
@@ -393,7 +389,7 @@ async function loadLeaderboard(type) {
       const rankMedal = entry.rank === 1 ? "🥇" : entry.rank === 2 ? "🥈" : entry.rank === 3 ? "🥉" : entry.rank;
       const scoreLabel = type === "weekly"
         ? t('communityLbScoreWeekly', entry.weeklyCompleted || 0, entry.weeklyStars || 0)
-        : t('communityLbScoreAllTime', entry.totalCompleted || 0);
+        : t('communityLbScoreAllTime', entry.totalShared || 0);
 
       li.innerHTML = `
         <span class="lb-rank">${rankMedal}</span>

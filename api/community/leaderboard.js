@@ -31,6 +31,7 @@ async function refreshWeeklyLeaderboard(weekStart, size) {
        AND a.moderation_status = 'approved'
      WHERE p.nickname IS NOT NULL
      GROUP BY p.device_uuid, p.nickname, p.avatar_index
+     HAVING COUNT(a.id) > 0
      ORDER BY weekly_completed DESC, weekly_stars DESC
      LIMIT $3`,
     [weekStart.toISOString(), weekEnd.toISOString(), size]
@@ -66,20 +67,27 @@ async function refreshWeeklyLeaderboard(weekStart, size) {
 
 async function refreshAllTimeLeaderboard(size) {
   const { rows } = await db.query(
-    `SELECT p.nickname, p.avatar_index, p.total_completed, p.longest_streak
+    `SELECT p.nickname, p.avatar_index,
+            COUNT(a.id)::int AS total_shared,
+            COALESCE(SUM(a.star_count), 0)::int AS total_stars
      FROM profiles p
-     WHERE p.nickname IS NOT NULL AND p.total_completed > 0
-     ORDER BY p.total_completed DESC, p.longest_streak DESC
+     LEFT JOIN artworks a
+       ON a.device_uuid = p.device_uuid
+       AND a.moderation_status = 'approved'
+     WHERE p.nickname IS NOT NULL
+     GROUP BY p.device_uuid, p.nickname, p.avatar_index
+     HAVING COUNT(a.id) > 0
+     ORDER BY total_shared DESC, total_stars DESC
      LIMIT $1`,
     [size]
   );
   return rows.map((r, i) => ({
-    rank:            i + 1,
-    nickname:        r.nickname,
-    avatarIndex:     r.avatar_index,
-    totalCompleted:  r.total_completed,
-    longestStreak:   r.longest_streak,
-    score:           r.total_completed,
+    rank:        i + 1,
+    nickname:    r.nickname,
+    avatarIndex: r.avatar_index,
+    totalShared: r.total_shared,
+    totalStars:  r.total_stars,
+    score:       r.total_shared,
   }));
 }
 
