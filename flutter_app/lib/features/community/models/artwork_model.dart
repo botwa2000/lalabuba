@@ -44,7 +44,7 @@ class CommunityArtwork {
   int get totalReactions => fireCount + heartCount + laughCount + celebrateCount;
 
   factory CommunityArtwork.fromJson(Map<String, dynamic> j) => CommunityArtwork(
-        id: (j['id'] as num).toInt(),
+        id: int.parse(j['id'].toString()),
         shareType: j['shareType'] as String? ?? 'colored',
         subject: j['subject'] as String?,
         difficulty: j['difficulty'] as String?,
@@ -60,6 +60,6 @@ class CommunityArtwork {
         laughCount: (j['laughCount'] as num?)?.toInt() ?? 0,
         celebrateCount: (j['celebrateCount'] as num?)?.toInt() ?? 0,
         recolorCount: (j['recolorCount'] as num?)?.toInt() ?? 0,
-        parentArtworkId: j['parentArtworkId'] == null ? null : (j['parentArtworkId'] as num).toInt(),
+        parentArtworkId: j['parentArtworkId'] == null ? null : int.parse(j['parentArtworkId'].toString()),
       );
 }
