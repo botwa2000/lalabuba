@@ -45,7 +45,7 @@ void main() {
       avatarIndex: 0,
     );
 
-    testWidgets('renders nickname and star count', (tester) async {
+    testWidgets('renders nickname and reaction summary', (tester) async {
       await tester.pumpWidget(_wrap(
         SizedBox(
           width: 160,
@@ -59,7 +59,37 @@ void main() {
       ));
 
       expect(find.textContaining('Sparkly Dragon'), findsOneWidget);
-      expect(find.textContaining('⭐ 7'), findsOneWidget);
+      // Card shows reaction summary (✨ when no reactions) not raw star count
+      expect(find.textContaining('✨'), findsOneWidget);
+    });
+
+    testWidgets('renders emoji reactions when present', (tester) async {
+      final artworkWithReactions = CommunityArtwork(
+        id: 2,
+        shareType: 'colored',
+        subject: 'Dog',
+        imageUrl: '/img/s/test2.png',
+        starCount: 3,
+        viewCount: 10,
+        sharedAt: '2026-07-13T10:00:00Z',
+        nickname: 'Wild Fox',
+        avatarIndex: 5,
+        fireCount: 4,
+        celebrateCount: 2,
+      );
+      await tester.pumpWidget(_wrap(
+        SizedBox(
+          width: 160,
+          height: 200,
+          child: CommunityArtworkCard(
+            artwork: artworkWithReactions,
+            onTap: () {},
+            baseUrl: 'https://lalabuba.com',
+          ),
+        ),
+      ));
+      // Top reaction is 🔥4, second is 🎉2
+      expect(find.textContaining('🔥4'), findsOneWidget);
     });
 
     testWidgets('prepends baseUrl for relative imageUrl', (tester) async {
