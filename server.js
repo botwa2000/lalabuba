@@ -1040,6 +1040,97 @@ ${buildNav({ lang: 'en', breadcrumbs: [{ href: '/coloring-pages/', label: 'Color
   serveHtml(res, html);
 }
 
+function serveI18nDailyPage(res, lang, date, enWord) {
+  const cfg   = i18n.LANGS[lang];
+  if (!cfg) return sendJson(res, 404, { error: 'Not found' });
+  const { root, htmlLang, t } = cfg;
+  const entry = gallery.getDailyEntry(date);
+  const imgs  = entry?.images || [];
+  const wordDisplay = enWord.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+  const canon = `https://lalabuba.com/${root}/${cfg.dailySlug}/${date}-${enWord}/`;
+  const enCanon = `https://lalabuba.com/en/coloring-pages/daily/${date}-${enWord}/`;
+  const deWord  = gallery.DE_DAILY_WORDS[enWord];
+  const deCanon = deWord ? `https://lalabuba.com/de/ausmalbilder/taeglich/${date}-${deWord}/` : null;
+
+  // Build hreflang for all 12 languages
+  const hreflangs = [
+    `  <link rel="alternate" hreflang="en" href="${enCanon}"/>`,
+    `  <link rel="alternate" hreflang="x-default" href="${enCanon}"/>`,
+    deCanon ? `  <link rel="alternate" hreflang="de" href="${deCanon}"/>` : '',
+    `  <link rel="alternate" hreflang="${htmlLang}" href="${canon}"/>`,
+    ...Object.entries(i18n.LANGS)
+      .filter(([l, c]) => l !== lang && c.dailySlug)
+      .map(([, c]) => `  <link rel="alternate" hreflang="${c.htmlLang}" href="https://lalabuba.com/${c.root}/${c.dailySlug}/${date}-${enWord}/"/>`),
+  ].filter(Boolean).join('\n');
+
+  let galleryHtml = '';
+  if (imgs.length) {
+    galleryHtml = `<div class="gallery-grid">${imgs.map(e =>
+      galleryCardHtml({ ...e, subject: wordDisplay }, { name: wordDisplay })
+    ).join('')}</div>`;
+  } else {
+    galleryHtml = `<p class="gallery-empty">${t.dailyCta(wordDisplay)} <a href="/?s=1&q=${encodeURIComponent(enWord)}&d=easy" class="lp-cta-inline">${t.dailyCta(wordDisplay)}</a></p>`;
+  }
+
+  const firstImg = imgs[0];
+  const ogImage  = firstImg ? `https://lalabuba.com${firstImg.url}` : 'https://lalabuba.com/og-image.png';
+  const html = `<!doctype html>
+<html lang="${htmlLang}">
+<head>
+  <meta charset="utf-8"/>
+  <script>(function(){var t=localStorage.getItem('lalabuba-theme');if(t){document.documentElement.setAttribute('data-theme',t);}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}})();</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>${t.dailyTitle(wordDisplay, date)}</title>
+  <meta name="description" content="${t.dailyDesc(wordDisplay, date)}"/>
+  <link rel="canonical" href="${canon}"/>
+${hreflangs}
+  <meta property="og:title" content="${t.dailyTitle(wordDisplay, date)}"/>
+  <meta property="og:description" content="${t.dailyDesc(wordDisplay, date)}"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="${canon}"/>
+  <meta property="og:image" content="${ogImage}"/>
+  <meta property="og:site_name" content="Lalabuba"/>
+  <meta name="theme-color" content="#7c4dff"/>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+  <link rel="icon" href="/favicon.png" type="image/png"/>
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+  <link rel="stylesheet" href="/css/legal.css?v=303"/>
+  <link rel="stylesheet" href="/css/gallery.css"/>
+  <script type="module" src="/js/lp-nav.js"></script>
+</head>
+<body>
+${buildNav({ lang, breadcrumbs: [{ href: `/${root}/`, label: t.imageHubLabel }, { label: `${wordDisplay} (${date})` }], hreflangMap: { en: enCanon, [lang]: canon } })}
+<div class="lp-hero">
+  <div class="lp-hero-inner">
+    <span class="lp-hero-emoji">🖌️</span>
+    <h1>${wordDisplay} — ${t.dailyLabel}</h1>
+    <p class="lp-hero-desc">${t.dailyDesc(wordDisplay, date)}</p>
+    <a href="/?s=1&q=${encodeURIComponent(enWord)}&d=easy" class="lp-cta">${t.dailyCta(wordDisplay)}</a>
+  </div>
+</div>
+<div class="legal-content">
+  <section class="lp-section gallery-section">
+    <h2 class="section-heading">${wordDisplay} — ${date}</h2>
+    ${galleryHtml}
+  </section>
+  <section class="lp-section">
+    <h2 class="section-heading">${t.topicsHeading}</h2>
+    <div class="lp-related-grid">
+      ${Object.entries(gallery.TOPIC_META).map(([slug, m]) => {
+        const tSlug = cfg.topicSlugs[slug] || slug;
+        return `<a href="/${root}/${tSlug}/" class="lp-related-card"><span class="lp-rel-emoji">${m.emoji}</span> ${t.topicNames?.[slug] || m.name}</a>`;
+      }).join('')}
+    </div>
+  </section>
+</div>
+<footer class="legal-footer">
+  ${(t.footerLinks(root) || []).map(([href, label]) => `<a href="${href}">${label}</a>`).join('<span class="sep">·</span>')}
+</footer>
+</body>
+</html>`;
+  serveHtml(res, html);
+}
+
 function serveGermanDailyPage(res, date, deWord) {
   const entry      = gallery.getDailyEntry(date);
   const enWord     = gallery.getDailyWordForDate(date);
@@ -1448,11 +1539,17 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (parts.length === 2 && serveI18nHub._roots[parts[0]]) {
-      const lang     = serveI18nHub._roots[parts[0]];
+      const lang      = serveI18nHub._roots[parts[0]];
       const topicSlug = parts[1];
-      const cfg      = i18n.LANGS[lang];
+      const cfg       = i18n.LANGS[lang];
+      // "today" redirect: /<root>/<todaySlug>/ → /<root>/<dailySlug>/<date>-<word>/
+      if (cfg.todaySlug && topicSlug === cfg.todaySlug) {
+        const { word, date } = gallery.getDailyWord();
+        res.writeHead(301, { Location: `/${cfg.root}/${cfg.dailySlug}/${date}-${word}/`, 'Cache-Control': 'no-store' });
+        return res.end();
+      }
       // Reverse slug → enTopic
-      const enTopic  = Object.entries(cfg.topicSlugs).find(([, s]) => s === topicSlug)?.[0];
+      const enTopic = Object.entries(cfg.topicSlugs).find(([, s]) => s === topicSlug)?.[0];
       if (enTopic) return serveI18nTopic(res, lang, enTopic);
     }
 
@@ -1466,13 +1563,18 @@ const server = http.createServer(async (req, res) => {
       if (enTopic) return serveImagePrint(req, res, lang, enTopic, imageSlug);
     }
 
-    // ── i18n individual image page: /<root>/<topic>/<image-slug>/ ─────────────
+    // ── i18n daily page: /<root>/<dailySlug>/<date>-<word>/ ──────────────────
     if (parts.length === 3 && serveI18nHub._roots[parts[0]]) {
       const lang      = serveI18nHub._roots[parts[0]];
       const topicSlug = parts[1];
       const imageSlug = parts[2];
       const cfg       = i18n.LANGS[lang];
-      const enTopic   = Object.entries(cfg.topicSlugs).find(([, s]) => s === topicSlug)?.[0];
+      if (cfg.dailySlug && topicSlug === cfg.dailySlug) {
+        const dailyMatch = imageSlug.match(/^(\d{4}-\d{2}-\d{2})-(.+)$/);
+        if (dailyMatch) return serveI18nDailyPage(res, lang, dailyMatch[1], dailyMatch[2]);
+      }
+      // ── i18n individual image page: /<root>/<topic>/<image-slug>/ ───────────
+      const enTopic = Object.entries(cfg.topicSlugs).find(([, s]) => s === topicSlug)?.[0];
       if (enTopic) return serveIndividualImagePage(res, lang, enTopic, imageSlug);
     }
 

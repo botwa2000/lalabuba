@@ -4620,30 +4620,38 @@ const COLORING_TODAY_LABELS = {
   zh:'🌟 今日涂色页 →', hi:'🌟 आज का चित्र →',
 };
 
-function updateTopicLinks(lang) {
+function getHubHref(lang) {
   const root = COLORING_ROOTS[lang] || 'coloring-pages';
+  if (lang === 'en') return '/en/coloring-pages/';
+  if (lang === 'de') return '/de/ausmalbilder/';
+  return `/${root}/`;
+}
+function getTopicHref(lang, slug) {
+  const root = COLORING_ROOTS[lang] || 'coloring-pages';
+  if (lang === 'en') return `/en/coloring-pages/${slug}/`;
+  if (lang === 'de') return `/de/ausmalbilder/${slug}/`;
+  return `/${root}/${slug}/`;
+}
+
+function updateTopicLinks(lang) {
+  const hubHref = getHubHref(lang);
   // Update explore nav button href to the correct language hub
   const exploreBtn = document.getElementById('explore-nav-btn');
-  if (exploreBtn) {
-    const enHub = lang === 'en' ? '/en/coloring-pages/' : `/${root}/`;
-    exploreBtn.href = enHub;
-  }
+  if (exploreBtn) exploreBtn.href = hubHref;
   document.querySelectorAll('[data-topic]').forEach(el => {
     const topic = el.dataset.topic;
     const slug  = COLORING_TOPIC_SLUGS[topic]?.[lang] || topic;
-    el.href = `/${root}/${slug}/`;
+    el.href = getTopicHref(lang, slug);
     const span = el.querySelector('span');
     if (span) span.textContent = COLORING_TOPIC_NAMES[topic]?.[lang] || span.textContent;
   });
   const todayLink = document.getElementById('hero-today-link');
   if (todayLink) {
-    todayLink.href = lang === 'de' ? '/ausmalbilder/heute/' : '/coloring-pages/today/';
+    todayLink.href = lang === 'de' ? '/de/ausmalbilder/heute/' : '/en/coloring-pages/today/';
     todayLink.textContent = COLORING_TODAY_LABELS[lang] || COLORING_TODAY_LABELS.en;
   }
   const footerColoringLink = document.getElementById('footer-coloring-link');
-  if (footerColoringLink) {
-    footerColoringLink.href = lang === 'en' ? '/en/coloring-pages/' : `/${root}/`;
-  }
+  if (footerColoringLink) footerColoringLink.href = hubHref;
   document.querySelectorAll('[data-lang-page]').forEach(el => {
     el.href = `/${lang}/${el.dataset.langPage}`;
   });
