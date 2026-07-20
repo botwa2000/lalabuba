@@ -8,6 +8,7 @@ import '../../features/rewards/rewards_screen.dart';
 import '../../features/rewards/scenes_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/mascot/mascot_studio_screen.dart';
+import '../../features/community/screens/community_gallery_screen.dart';
 
 export '../../features/canvas/canvas_screen.dart' show CanvasScreenArgs;
 
@@ -17,6 +18,7 @@ class Routes {
   static const explore = '/explore';
   static const exploreTopic = '/explore/:topic';
   static const gallery = '/gallery';
+  static const community = '/community';
   static const rewards = '/rewards';
   static const scenes = '/scenes';
   static const mascotStudio = '/mascot-studio';
@@ -84,6 +86,16 @@ final appRouter = GoRouter(
       pageBuilder: (ctx, state) => CustomTransitionPage(
         key: state.pageKey,
         child: const GalleryScreen(),
+        transitionsBuilder: (ctx, anim, _, child) =>
+            FadeTransition(opacity: anim, child: child),
+      ),
+    ),
+    GoRoute(
+      path: Routes.community,
+      name: 'community',
+      pageBuilder: (ctx, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const CommunityGalleryScreen(),
         transitionsBuilder: (ctx, anim, _, child) =>
             FadeTransition(opacity: anim, child: child),
       ),

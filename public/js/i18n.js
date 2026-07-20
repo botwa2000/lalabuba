@@ -4620,6 +4620,12 @@ const COLORING_TODAY_LABELS = {
   zh:'🌟 今日涂色页 →', hi:'🌟 आज का चित्र →',
 };
 
+const COLORING_TODAY_SLUGS = {
+  en:'today', de:'heute', fr:'aujourd-hui', es:'hoy', pt:'hoje',
+  ru:'seychas', it:'oggi', nl:'vandaag', pl:'dzisiaj',
+  tr:'bugun', zh:'jintian', hi:'aaj',
+};
+
 function getHubHref(lang) {
   const root = COLORING_ROOTS[lang] || 'coloring-pages';
   if (lang === 'en') return '/en/coloring-pages/';
@@ -4647,7 +4653,7 @@ function updateTopicLinks(lang) {
   });
   const todayLink = document.getElementById('hero-today-link');
   if (todayLink) {
-    todayLink.href = lang === 'de' ? '/de/ausmalbilder/heute/' : '/en/coloring-pages/today/';
+    todayLink.href = getHubHref(lang) + (COLORING_TODAY_SLUGS[lang] || 'today') + '/';
     todayLink.textContent = COLORING_TODAY_LABELS[lang] || COLORING_TODAY_LABELS.en;
   }
   const footerColoringLink = document.getElementById('footer-coloring-link');

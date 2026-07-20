@@ -8,7 +8,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../progress/progress_service.dart';
-import '../community/screens/community_gallery_screen.dart';
 import 'print_book.dart';
 import '../../services/account_service.dart';
 
@@ -33,85 +32,59 @@ class GalleryScreen extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
     final imagesAsync = ref.watch(galleryImagesProvider);
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            l10n.t('journalTitle'),
-            style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.menu_book_rounded),
-              tooltip: l10n.t('printBookBtn'),
-              onPressed: () async {
-                final files = imagesAsync.valueOrNull ?? const <File>[];
-                if (files.isEmpty) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          l10n.t('journalTitle'),
+          style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu_book_rounded),
+            tooltip: l10n.t('printBookBtn'),
+            onPressed: () async {
+              final files = imagesAsync.valueOrNull ?? const <File>[];
+              if (files.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.t('printBookEmpty'))),
+                );
+                return;
+              }
+              HapticFeedback.lightImpact();
+              try {
+                await printColoringBook(
+                  title: l10n.t('printBookTitle'),
+                  files: files,
+                );
+              } catch (_) {
+                if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(l10n.t('printBookEmpty'))),
                   );
-                  return;
                 }
-                HapticFeedback.lightImpact();
-                try {
-                  await printColoringBook(
-                    title: l10n.t('printBookTitle'),
-                    files: files,
-                  );
-                } catch (_) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.t('printBookEmpty'))),
-                    );
-                  }
-                }
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded),
-              onPressed: () => ref.invalidate(galleryImagesProvider),
-            ),
-          ],
-          bottom: TabBar(
-            tabs: [
-              Tab(
-                child: Text(
-                  l10n.t('galleryTabJournal'),
-                  style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
-                ),
-              ),
-              Tab(
-                child: Text(
-                  l10n.t('galleryTabCommunity'),
-                  style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
+              }
+            },
           ),
-        ),
-        body: TabBarView(
-          children: [
-            // ── Tab 1: Journal ──────────────────────────────────────────────
-            Column(
-              children: [
-                _buildJournalHeader(context, ref, l10n),
-                Expanded(
-                  child: imagesAsync.when(
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Center(child: Text('Error: $e')),
-                    data: (files) => files.isEmpty
-                        ? _buildEmpty(context, l10n)
-                        : _buildGrid(context, ref, files, l10n),
-                  ),
-                ),
-              ],
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () => ref.invalidate(galleryImagesProvider),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildJournalHeader(context, ref, l10n),
+          Expanded(
+            child: imagesAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+              data: (files) => files.isEmpty
+                  ? _buildEmpty(context, l10n)
+                  : _buildGrid(context, ref, files, l10n),
             ),
-            // ── Tab 2: Community ────────────────────────────────────────────
-            const CommunityGalleryScreen(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

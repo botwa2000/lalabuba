@@ -483,8 +483,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         }),
         IconButton(
+          icon: const Icon(Icons.people_rounded),
+          tooltip: l10n.t('galleryTabCommunity'),
+          onPressed: () => context.pushNamed('community'),
+        ),
+        IconButton(
           icon: const Icon(Icons.explore_rounded),
-          tooltip: 'Explore',
+          tooltip: l10n.t('navExplore'),
           onPressed: () => context.pushNamed('explore'),
         ),
         IconButton(
