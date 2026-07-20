@@ -1417,10 +1417,14 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // ── Language root pages: /de/, /fr/, /es/, /pt/, /ru/, /it/, /nl/, /pl/, /tr/, /zh/, /hi/ ──
+    // ── Language root pages: /en/, /de/, /fr/, /es/, /pt/, /ru/, /it/, /nl/, /pl/, /tr/, /zh/, /hi/ ──
     const langRootMatch = p.match(/^\/([a-z]{2,3})\/?$/);
     if (langRootMatch) {
       const lrCode = langRootMatch[1];
+      if (lrCode === 'en') {
+        res.writeHead(301, { Location: '/', 'Cache-Control': 'public, max-age=3600' });
+        return res.end();
+      }
       if (lrCode === 'de' || i18n.LANGS[lrCode]) {
         return serveLanguageRoot(res, lrCode);
       }
@@ -1450,6 +1454,16 @@ const server = http.createServer(async (req, res) => {
       // Reverse slug → enTopic
       const enTopic  = Object.entries(cfg.topicSlugs).find(([, s]) => s === topicSlug)?.[0];
       if (enTopic) return serveI18nTopic(res, lang, enTopic);
+    }
+
+    // ── i18n print/download: /<root>/<topic>/<image-slug>/print ─────────────
+    if (parts.length === 4 && parts[3] === 'print' && serveI18nHub._roots[parts[0]]) {
+      const lang      = serveI18nHub._roots[parts[0]];
+      const topicSlug = parts[1];
+      const imageSlug = parts[2];
+      const cfg       = i18n.LANGS[lang];
+      const enTopic   = Object.entries(cfg.topicSlugs).find(([, s]) => s === topicSlug)?.[0];
+      if (enTopic) return serveImagePrint(req, res, lang, enTopic, imageSlug);
     }
 
     // ── i18n individual image page: /<root>/<topic>/<image-slug>/ ─────────────

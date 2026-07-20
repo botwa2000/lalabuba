@@ -4640,6 +4640,10 @@ function updateTopicLinks(lang) {
     todayLink.href = lang === 'de' ? '/ausmalbilder/heute/' : '/coloring-pages/today/';
     todayLink.textContent = COLORING_TODAY_LABELS[lang] || COLORING_TODAY_LABELS.en;
   }
+  const footerColoringLink = document.getElementById('footer-coloring-link');
+  if (footerColoringLink) {
+    footerColoringLink.href = lang === 'en' ? '/en/coloring-pages/' : `/${root}/`;
+  }
   document.querySelectorAll('[data-lang-page]').forEach(el => {
     el.href = `/${lang}/${el.dataset.langPage}`;
   });
