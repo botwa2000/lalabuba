@@ -10,6 +10,18 @@ const _kAvatars = [
 String avatarEmoji(int idx) =>
     (idx >= 0 && idx < _kAvatars.length) ? _kAvatars[idx] : '🐻';
 
+String _reactionSummary(CommunityArtwork artwork) {
+  final pairs = <(String, int)>[
+    ('🔥', artwork.fireCount),
+    ('❤️', artwork.heartCount),
+    ('😂', artwork.laughCount),
+    ('🎉', artwork.celebrateCount),
+  ].where((p) => p.$2 > 0).toList()
+    ..sort((a, b) => b.$2.compareTo(a.$2));
+  if (pairs.isEmpty) return '✨';
+  return pairs.take(2).map((p) => '${p.$1}${p.$2}').join(' ');
+}
+
 class CommunityArtworkCard extends StatelessWidget {
   final CommunityArtwork artwork;
   final VoidCallback onTap;
@@ -78,7 +90,7 @@ class CommunityArtworkCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '⭐ ${artwork.starCount}',
+                    _reactionSummary(artwork),
                     style: GoogleFonts.nunito(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,

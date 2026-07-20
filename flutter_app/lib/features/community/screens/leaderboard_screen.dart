@@ -104,7 +104,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                   style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
             ),
             Tab(
-              child: Text('💖 Most Loved',
+              child: Text(l10n.t('leaderboardMostLovedTab'),
                   style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
             ),
           ],

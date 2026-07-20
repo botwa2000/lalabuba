@@ -148,7 +148,7 @@ class _CommunityGalleryScreenState
       ('colored', l10n.t('communityFilterColorings')),
       ('template', l10n.t('communityFilterTemplates')),
       ('freehand', l10n.t('communityFilterDrawings')),
-      ('daily', '🎯 Daily'),
+      ('daily', l10n.t('communityFilterDaily')),
       if (_weeklyThemeActive == true && _weeklyThemeWord != null)
         ('theme', '${_weeklyThemeEmoji ?? '🎨'} $_weeklyThemeWord'),
     ];

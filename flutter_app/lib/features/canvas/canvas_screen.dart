@@ -1833,10 +1833,19 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     try {
       final svc = ref.read(communityServiceProvider);
       unawaited(svc.syncProgress(
-        totalCompleted: progress.totalCompleted,
-        currentStreak: progress.streak,
-        longestStreak: progress.longestStreak,
-        lastActiveDate: progress.lastColoredDay,
+        totalCompleted:  progress.totalCompleted,
+        totalGenerated:  progress.totalGenerated,
+        currentStreak:   progress.streak,
+        longestStreak:   progress.longestStreak,
+        lastActiveDate:  progress.lastColoredDay,
+        daysColored:     progress.daysColored,
+        easyCompleted:   progress.easyCompleted,
+        mediumCompleted: progress.mediumCompleted,
+        hardCompleted:   progress.hardCompleted,
+        extremeCompleted: progress.extremeCompleted,
+        drawPenUses:     progress.drawPenUses,
+        saves:           progress.saves,
+        shares:          progress.shares,
       ));
     } catch (_) {}
 

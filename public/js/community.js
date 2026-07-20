@@ -115,6 +115,16 @@ const journalOnlyEls     = [
 ].map(id => document.getElementById(id)).filter(Boolean);
 
 let _notificationsChecked = false;
+let _ownNickname = null;
+
+async function _getOwnNickname() {
+  if (_ownNickname !== null) return _ownNickname;
+  try {
+    const p = await apiGet('/api/community/profile');
+    _ownNickname = p.hasNickname ? (p.nickname || '') : '';
+  } catch { _ownNickname = ''; }
+  return _ownNickname;
+}
 
 function showJournalTab() {
   if (galleryGrid) galleryGrid.style.display = "";
@@ -126,6 +136,7 @@ function showCommunityTab() {
   if (galleryGrid) galleryGrid.style.display = "none";
   journalOnlyEls.forEach(el => { el.style.display = "none"; });
   if (communityPanel) communityPanel.hidden = false;
+  _removeCommunityTabDot();
   initCommunityGalleryOnce();
 
   // Check notifications once per page session.
@@ -165,11 +176,28 @@ if (galleryModal) {
 
 // ── Notifications ─────────────────────────────────────────────────────────────
 
+function _addCommunityTabDot() {
+  const commTab = document.querySelector('.gallery-tab[data-tab="community"]');
+  if (!commTab || commTab.querySelector('.comm-tab-dot')) return;
+  commTab.style.position = 'relative';
+  const dot = document.createElement('span');
+  dot.className = 'comm-tab-dot';
+  dot.style.cssText =
+    'position:absolute;top:4px;right:6px;width:8px;height:8px;' +
+    'background:#e74c3c;border-radius:50%;pointer-events:none;';
+  commTab.appendChild(dot);
+}
+
+function _removeCommunityTabDot() {
+  document.querySelector('.comm-tab-dot')?.remove();
+}
+
 async function checkNotifications() {
   try {
     const data = await apiGet("/api/community/notifications");
     if (data.newReactions > 0 && communityPanel) {
       showNotificationBanner(data.newReactions, data.details || []);
+      _addCommunityTabDot();
     }
   } catch { /* offline */ }
 }
@@ -630,7 +658,7 @@ let currentLbType = "weekly";
   const btn = document.createElement("button");
   btn.className = "lb-tab";
   btn.dataset.type = "mostloved";
-  btn.textContent = "💖 Most Loved";
+  btn.textContent = t('communityMostLoved');
   btn.setAttribute("role", "tab");
   btn.setAttribute("aria-selected", "false");
   container.appendChild(btn);
@@ -672,7 +700,10 @@ async function loadLeaderboard(type) {
   leaderboardList.innerHTML = `<li class="community-empty" style="display:block">${t('communityLoadingLb')}</li>`;
   if (leaderboardEmpty) leaderboardEmpty.hidden = true;
   try {
-    const data = await fetch(`/api/community/leaderboard?type=${type}`).then(r => r.json());
+    const [data, ownNickname] = await Promise.all([
+      fetch(`/api/community/leaderboard?type=${type}`).then(r => r.json()),
+      _getOwnNickname(),
+    ]);
     leaderboardList.innerHTML = "";
     if (!data.entries || !data.entries.length) {
       if (leaderboardEmpty) leaderboardEmpty.hidden = false;
@@ -680,7 +711,8 @@ async function loadLeaderboard(type) {
     }
     for (const entry of data.entries) {
       const li = document.createElement("li");
-      li.className = "lb-entry";
+      const isOwn = ownNickname && entry.nickname === ownNickname;
+      li.className = "lb-entry" + (isOwn ? " lb-entry--own" : "");
       const rankMedal = entry.rank === 1 ? "🥇" : entry.rank === 2 ? "🥈" : entry.rank === 3 ? "🥉" : entry.rank;
       let scoreLabel;
       if (type === "weekly") {
@@ -851,10 +883,10 @@ function showPostCompletionPrompt() {
   prompt.className = "post-completion-prompt";
   prompt.innerHTML = `
     <span class="pcp-emoji">🌟</span>
-    <span class="pcp-msg">Your coloring is ready! Share it with the community?</span>
+    <span class="pcp-msg">${escHtml(t('communityPcpMsg'))}</span>
     <div class="pcp-btns">
-      <button class="pcp-share">Share to Community</button>
-      <button class="pcp-dismiss">Not now</button>
+      <button class="pcp-share">${escHtml(t('communityPcpShare'))}</button>
+      <button class="pcp-dismiss">${escHtml(t('communityPcpDismiss'))}</button>
     </div>`;
 
   document.body.appendChild(prompt);
@@ -907,7 +939,10 @@ async function doShare(autoShareType = null) {
   try {
     // 1. Check profile.
     let profile;
-    try { profile = await apiGet("/api/community/profile"); }
+    try {
+      profile = await apiGet("/api/community/profile");
+      if (profile.hasNickname && profile.nickname) _ownNickname = profile.nickname;
+    }
     catch (e) { profile = { sharingEnabled: false, hasNickname: false }; }
 
     // 2. Parental consent if first time.
