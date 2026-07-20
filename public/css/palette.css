@@ -33,6 +33,7 @@
   box-shadow: 0 2px 6px rgba(0,0,0,.18), inset 0 -2px 0 rgba(0,0,0,.1);
   cursor: pointer;
   padding: 0;
+  position: relative; /* needed for z-index to work vs siblings in flex/grid */
   transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s;
   display: block;
 }
@@ -42,7 +43,7 @@
   z-index: 2;
 }
 .color-swatch.active {
-  transform: scale(1.3);
+  transform: scale(1.18);
   box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--c, #aaa), 0 0 0 9px rgba(0,0,0,.18), 0 8px 20px rgba(0,0,0,.28);
   z-index: 3;
   outline: none;
@@ -50,9 +51,9 @@
 
 @keyframes swatchFlash {
   0%   { transform: scale(1); }
-  20%  { transform: scale(1.6) translateY(-7px); }
-  50%  { transform: scale(1.45) translateY(-4px); }
-  75%  { transform: scale(1.55) translateY(-6px); }
+  20%  { transform: scale(1.35) translateY(-5px); }
+  50%  { transform: scale(1.25) translateY(-3px); }
+  75%  { transform: scale(1.32) translateY(-4px); }
   100% { transform: scale(1); }
 }
 .color-swatch.flash {
@@ -155,6 +156,9 @@
     width: auto;
   }
   .tool-btn { width: auto; height: 46px; padding: 0 14px; gap: 6px; font-size: .72rem; border-radius: 12px; white-space: nowrap; }
+  /* Erase: icon-only square — same size as a color swatch */
+  .erase-btn { width: 46px; padding: 0; justify-content: center; border-radius: 12px; }
+  .erase-btn > span { display: none; }
   .picker-dot { width: 12px; height: 12px; }
   .legend-free-item { width: auto; flex-shrink: 0; }
   .free-color-btn { width: auto; height: 46px; padding: 0 16px; }
@@ -165,9 +169,20 @@
     align-self: center;
     background: linear-gradient(to bottom, transparent, rgba(0,0,0,.16), transparent);
   }
+  /* Fade-right shadow to hint at scrollable colours */
+  .palette-strip::after {
+    content: '';
+    position: sticky;
+    right: 0;
+    flex-shrink: 0;
+    width: 28px;
+    align-self: stretch;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,.75));
+    pointer-events: none;
+  }
 }
 
-/* Phone landscape: compact palette in 140px column beside canvas */
+/* Phone landscape: compact palette in 130px column beside canvas */
 @media (orientation: landscape) and (max-height: 500px) {
   .palette-sidebar {
     position: sticky;
@@ -182,7 +197,10 @@
     flex-direction: column;
   }
   .palette-strip {
-    grid-template-columns: repeat(4, 1fr);
+    display: grid; /* override the mobile-portrait flex */
+    flex-direction: unset;
+    overflow-x: visible;
+    grid-template-columns: repeat(3, 1fr);
     gap: 4px;
     padding: 1px 2px;
   }

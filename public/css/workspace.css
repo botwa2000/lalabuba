@@ -445,7 +445,7 @@
 /* Phone landscape: canvas + compact palette side by side, action bar compact */
 @media (orientation: landscape) and (max-height: 500px) {
   .workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 130px; /* canvas | palette column */
     grid-template-rows: 1fr;
     gap: 6px;
     padding: 0 6px 6px;
