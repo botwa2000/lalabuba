@@ -338,7 +338,7 @@ function serveDeTopicPageBySlug(res, deSlug) {
   return serveHtml(res, enhanced);
 }
 
-// Serve individual coloring-page image (URL-4): /en/coloring-pages/:topic/:slug/
+// Serve individual coloring-page image (URL-4): /en/coloring-pages/:topic/:slug/ and i18n equivalents
 function serveIndividualImagePage(res, lang, topic, imageSlug) {
   const topicImages = gallery.getAllForTopic(topic);
   let entry = null;
@@ -350,34 +350,87 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
   if (!entry) return sendJson(res, 404, { error: "Not found" });
 
   const meta        = gallery.TOPIC_META[topic];
-  const topicName   = meta?.name || topic;
   const subject     = entry.subject || topic;
   const subjectTitle = subject.charAt(0).toUpperCase() + subject.slice(1);
-  const diffLabel   = { easy: "Easy", medium: "Medium", hard: "Hard" }[difficulty] || difficulty;
-  const isDE        = lang === "de";
-  const htmlLang    = isDE ? "de" : "en";
-  const deSlug      = EN_TO_DE_SLUG[topic];
-  const hubHref     = isDE ? "/de/ausmalbilder/" : "/en/coloring-pages/";
-  const hubLabel    = isDE ? "Ausmalbilder" : "Coloring Pages";
-  const topicPath   = isDE && deSlug ? `/de/ausmalbilder/${deSlug}/` : `/en/coloring-pages/${topic}/`;
-  const basePath    = topicPath;
-  const canonical   = `https://lalabuba.com${basePath}${imageSlug}/`;
-  const title       = isDE
-    ? `${subjectTitle} Ausmalbild (${diffLabel}) — Kostenlos | Lalabuba`
-    : `${subjectTitle} Coloring Page (${diffLabel}) — Free Printable | Lalabuba`;
-  const desc        = isDE
-    ? `Kostenloses ${subject} Ausmalbild für Kinder. ${diffLabel}. Online ausmalen oder ausdrucken.`
-    : `Free printable ${subject} coloring page for kids. ${diffLabel} difficulty. Color online or print at Lalabuba.`;
-  const colorHref   = `/?s=1&img=${encodeURIComponent(entry.url)}&q=${encodeURIComponent(subject)}&d=${difficulty}`;
-  const printHref   = `${basePath}${imageSlug}/print`;
-  const dlHref      = `${basePath}${imageSlug}/print?download=1`;
-  const colorLabel  = isDE ? "Online ausmalen →" : "Color Online →";
-  const printLabel  = isDE ? "Drucken" : "Print";
-  const dlLabel     = isDE ? "Herunterladen" : "Download PNG";
 
+  const isDE   = lang === "de";
+  const i18nCfg = (!isDE && lang !== "en") ? i18n.LANGS[lang] : null;
+
+  // ── Language-specific strings ──────────────────────────────────────────────
+  let htmlLang, hubHref, hubLabel, topicPath, topicName, diffLabel,
+      title, desc, colorLabel, printLabel, dlLabel, moreLabel;
+
+  if (i18nCfg) {
+    // One of the 10 i18n languages (fr/es/pt/ru/it/nl/pl/tr/zh/hi)
+    const t        = i18nCfg.t;
+    const root     = i18nCfg.root;
+    const langSlug = i18nCfg.topicSlugs[topic] || topic;
+    htmlLang       = i18nCfg.htmlLang;
+    hubHref        = `/${root}/`;
+    hubLabel       = t.imageHubLabel;
+    topicPath      = `/${root}/${langSlug}/`;
+    topicName      = t.topicNames?.[topic] || (meta?.name || topic);
+    const diffMap  = t.diffLabels || { easy: "Easy", medium: "Medium", hard: "Hard" };
+    diffLabel      = diffMap[difficulty] || difficulty;
+    title          = t.imagePageTitle(subjectTitle, diffLabel);
+    desc           = t.imagePageDesc(subject, diffLabel);
+    colorLabel     = t.imageColorBtn;
+    printLabel     = t.imagePrintBtn;
+    dlLabel        = t.imageDownBtn;
+    moreLabel      = t.imageMoreLabel(topicName);
+  } else if (isDE) {
+    const deSlug2  = EN_TO_DE_SLUG[topic];
+    htmlLang       = "de";
+    hubHref        = "/de/ausmalbilder/";
+    hubLabel       = "Ausmalbilder";
+    topicPath      = deSlug2 ? `/de/ausmalbilder/${deSlug2}/` : `/en/coloring-pages/${topic}/`;
+    topicName      = DE_TOPIC_NAMES?.[topic] || (meta?.name || topic);
+    diffLabel      = { easy: "Einfach", medium: "Mittel", hard: "Schwer" }[difficulty] || difficulty;
+    title          = `${subjectTitle} Ausmalbild (${diffLabel}) — Kostenlos | Lalabuba`;
+    desc           = `Kostenloses ${subject} Ausmalbild für Kinder. ${diffLabel}. Online ausmalen oder ausdrucken.`;
+    colorLabel     = "Online ausmalen →";
+    printLabel     = "Drucken";
+    dlLabel        = "Herunterladen";
+    moreLabel      = `Mehr ${topicName} Ausmalbilder`;
+  } else {
+    // English (default)
+    htmlLang       = "en";
+    hubHref        = "/en/coloring-pages/";
+    hubLabel       = "Coloring Pages";
+    topicPath      = `/en/coloring-pages/${topic}/`;
+    topicName      = meta?.name || topic;
+    diffLabel      = { easy: "Easy", medium: "Medium", hard: "Hard" }[difficulty] || difficulty;
+    title          = `${subjectTitle} Coloring Page (${diffLabel}) — Free Printable | Lalabuba`;
+    desc           = `Free printable ${subject} coloring page for kids. ${diffLabel} difficulty. Color online or print at Lalabuba.`;
+    colorLabel     = "Color Online →";
+    printLabel     = "Print";
+    dlLabel        = "Download PNG";
+    moreLabel      = `More ${topicName} Coloring Pages`;
+  }
+
+  const basePath  = topicPath;
+  const canonical = `https://lalabuba.com${basePath}${imageSlug}/`;
+  const colorHref = `/?s=1&img=${encodeURIComponent(entry.url)}&q=${encodeURIComponent(subject)}&d=${difficulty}`;
+  const printHref = `${basePath}${imageSlug}/print`;
+  const dlHref    = `${basePath}${imageSlug}/print?download=1`;
+
+  // ── hreflang block ─────────────────────────────────────────────────────────
+  const deSlug = EN_TO_DE_SLUG[topic];
   const hreflangLines = [`  <link rel="alternate" hreflang="en" href="https://lalabuba.com/en/coloring-pages/${topic}/${imageSlug}/"/>`];
   if (deSlug) hreflangLines.push(`  <link rel="alternate" hreflang="de" href="https://lalabuba.com/de/ausmalbilder/${deSlug}/${imageSlug}/"/>`);
+  for (const [lk, lc] of Object.entries(i18n.LANGS)) {
+    const ls = lc.topicSlugs[topic];
+    if (ls) hreflangLines.push(`  <link rel="alternate" hreflang="${lc.htmlLang}" href="https://lalabuba.com/${lc.root}/${ls}/${imageSlug}/"/>`);
+  }
   hreflangLines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/en/coloring-pages/${topic}/${imageSlug}/"/>`);
+
+  // hreflangMap for nav builder
+  const hreflangMap = { en: `https://lalabuba.com/en/coloring-pages/${topic}/${imageSlug}/` };
+  if (deSlug) hreflangMap.de = `https://lalabuba.com/de/ausmalbilder/${deSlug}/${imageSlug}/`;
+  for (const [lk, lc] of Object.entries(i18n.LANGS)) {
+    const ls = lc.topicSlugs[topic];
+    if (ls) hreflangMap[lc.htmlLang] = `https://lalabuba.com/${lc.root}/${ls}/${imageSlug}/`;
+  }
 
   const jsonLd = JSON.stringify({ "@context":"https://schema.org", "@graph": [
     { "@type":"ImageObject", "name":title, "description":desc,
@@ -396,7 +449,7 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
   const related   = allImages.filter(e => e.slug !== imageSlug).slice(0, 4);
   const relatedHtml = related.length ? `
   <section class="lp-section gallery-section">
-    <h2 class="section-heading">${isDE ? `Mehr ${topicName} Ausmalbilder` : `More ${topicName} Coloring Pages`}</h2>
+    <h2 class="section-heading">${moreLabel}</h2>
     <div class="gallery-grid">${related.map(e => galleryCardHtml(e, meta, null, { basePath })).join("")}</div>
   </section>` : "";
 
@@ -421,9 +474,9 @@ ${hreflangLines.join('\n')}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=284"/>
-  <link rel="stylesheet" href="/css/gallery.css?v=284"/>
-  <link rel="stylesheet" href="/css/image-page.css?v=284"/>
+  <link rel="stylesheet" href="/css/legal.css?v=302"/>
+  <link rel="stylesheet" href="/css/gallery.css?v=302"/>
+  <link rel="stylesheet" href="/css/image-page.css?v=302"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">${jsonLd}</script>
 </head>
@@ -432,9 +485,7 @@ ${buildNav({ lang: htmlLang, breadcrumbs: [
   { href: hubHref, label: hubLabel },
   { href: topicPath, label: topicName },
   { label: subjectTitle },
-], hreflangMap: { en:`https://lalabuba.com/en/coloring-pages/${topic}/${imageSlug}/`,
-    ...(deSlug?{de:`https://lalabuba.com/de/ausmalbilder/${deSlug}/${imageSlug}/`}:{}) },
-   ctaHref: colorHref })}
+], hreflangMap, ctaHref: colorHref })}
 <main class="lp-main lp-image-page">
   <div class="lp-image-hero">
     <a href="${colorHref}" class="lp-coloring-img-link" title="${colorLabel}">
@@ -453,7 +504,7 @@ ${buildNav({ lang: htmlLang, breadcrumbs: [
       <a href="${topicPath}" class="lp-topic-link">${topicName}</a>
     </div>
     <p class="lp-image-desc">${desc}</p>
-    <a href="/?s=1&q=${encodeURIComponent(topic)}&d=${difficulty}" class="lp-generate-link">✨ ${isDE?`Mehr ${topicName} generieren`:`Generate more ${topicName}`} →</a>
+    <a href="/?s=1&q=${encodeURIComponent(topic)}&d=${difficulty}" class="lp-generate-link">✨ ${moreLabel} →</a>
   </div>
   ${relatedHtml}
 </main>
@@ -567,7 +618,7 @@ const HEAD_COMMON = `  <meta name="theme-color" content="#7c4dff"/>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=284"/>
+  <link rel="stylesheet" href="/css/legal.css?v=302"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>`;
 
@@ -822,7 +873,7 @@ function serveTodayPage(res) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=284"/>
+  <link rel="stylesheet" href="/css/legal.css?v=302"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
@@ -927,7 +978,7 @@ function serveDailyPage(res, date, word) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=284"/>
+  <link rel="stylesheet" href="/css/legal.css?v=302"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
@@ -1038,7 +1089,7 @@ function serveGermanDailyPage(res, date, deWord) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=284"/>
+  <link rel="stylesheet" href="/css/legal.css?v=302"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
@@ -1399,6 +1450,16 @@ const server = http.createServer(async (req, res) => {
       // Reverse slug → enTopic
       const enTopic  = Object.entries(cfg.topicSlugs).find(([, s]) => s === topicSlug)?.[0];
       if (enTopic) return serveI18nTopic(res, lang, enTopic);
+    }
+
+    // ── i18n individual image page: /<root>/<topic>/<image-slug>/ ─────────────
+    if (parts.length === 3 && serveI18nHub._roots[parts[0]]) {
+      const lang      = serveI18nHub._roots[parts[0]];
+      const topicSlug = parts[1];
+      const imageSlug = parts[2];
+      const cfg       = i18n.LANGS[lang];
+      const enTopic   = Object.entries(cfg.topicSlugs).find(([, s]) => s === topicSlug)?.[0];
+      if (enTopic) return serveIndividualImagePage(res, lang, enTopic, imageSlug);
     }
 
     // ── Features page: /features → 301; /{lang}/features → serve ─────────────
