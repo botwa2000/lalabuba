@@ -1443,7 +1443,11 @@ const server = http.createServer(async (req, res) => {
     // ── URL-3: Language-prefixed EN routes (/en/coloring-pages/...) ────────────
     if (p === "/en/coloring-pages" || p === "/en/coloring-pages/") {
       const hubPath = path.join(PUBLIC_DIR, "coloring-pages", "index.html");
-      try { return serveHtml(res, fs.readFileSync(hubPath, "utf8")); } catch { /* 404 below */ }
+      try {
+        let html = fs.readFileSync(hubPath, "utf8");
+        html = injectUnifiedNav(html, buildNav({ lang: 'en', breadcrumbs: [{ label: 'Coloring Pages' }], hreflangMap: hubHreflangMap(), ctaHref: '/' }));
+        return serveHtml(res, html);
+      } catch { /* 404 below */ }
     }
     if (p === "/en/coloring-pages/today" || p === "/en/coloring-pages/today/") {
       const { word, date } = gallery.getDailyWord();
@@ -1468,7 +1472,11 @@ const server = http.createServer(async (req, res) => {
     // ── URL-3: Language-prefixed DE routes (/de/ausmalbilder/...) ─────────────
     if (p === "/de/ausmalbilder" || p === "/de/ausmalbilder/") {
       const hubPath = path.join(PUBLIC_DIR, "ausmalbilder", "index.html");
-      try { return serveHtml(res, fs.readFileSync(hubPath, "utf8")); } catch { /* 404 below */ }
+      try {
+        let html = fs.readFileSync(hubPath, "utf8");
+        html = injectUnifiedNav(html, buildNav({ lang: 'de', breadcrumbs: [{ label: 'Ausmalbilder' }], hreflangMap: hubHreflangMap(), ctaHref: '/' }));
+        return serveHtml(res, html);
+      } catch { /* 404 below */ }
     }
     if (p === "/de/ausmalbilder/heute" || p === "/de/ausmalbilder/heute/") {
       const { word: dw, date } = gallery.getDailyWordDE();
