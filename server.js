@@ -245,6 +245,19 @@ function injectUnifiedNav(html, navHtml) {
   return html.slice(0, start) + navHtml + html.slice(end + 6);
 }
 
+function serveAboutPage(res) {
+  let html;
+  try { html = fs.readFileSync(path.join(PUBLIC_DIR, 'about.html'), 'utf8'); }
+  catch { return sendJson(res, 404, { error: 'Not found' }); }
+  html = html
+    .replace(/<link rel="canonical" href="https:\/\/lalabuba\.com\/about"\/>/, '<link rel="canonical" href="https://lalabuba.com/en/about"/>')
+    .replace(/<meta property="og:url" content="https:\/\/lalabuba\.com\/about"\/>/, '<meta property="og:url" content="https://lalabuba.com/en/about"/>')
+    .replace('"item":"https://lalabuba.com/about"', '"item":"https://lalabuba.com/en/about"');
+  const navHtml = buildNav({ lang: 'en', breadcrumbs: [{ label: 'About' }] });
+  html = injectUnifiedNav(html, navHtml);
+  return serveHtml(res, html);
+}
+
 async function serveTopicPageWithGallery(res, topic) {
   const meta = gallery.TOPIC_META[topic];
   const staticPath = path.join(PUBLIC_DIR, "coloring-pages", topic, "index.html");
@@ -1410,6 +1423,21 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(301, { Location: `/?${qs}`, "Cache-Control": "no-store" });
       res.end();
       return;
+    }
+
+    // /about → 301 to canonical /en/about
+    if (p === '/about' || p === '/about/') {
+      res.writeHead(301, { Location: '/en/about', 'Cache-Control': 'public, max-age=3600' });
+      return res.end();
+    }
+    // /en/about — serve About page with standard nav injection
+    if (p === '/en/about' || p === '/en/about/') {
+      return serveAboutPage(res);
+    }
+    // All other /{lang}/about paths → redirect to /en/about (content is English-only)
+    if (/^\/[a-z]{2}\/about\/?$/.test(p)) {
+      res.writeHead(301, { Location: '/en/about', 'Cache-Control': 'public, max-age=3600' });
+      return res.end();
     }
 
     // ── URL-3: Language-prefixed EN routes (/en/coloring-pages/...) ────────────
