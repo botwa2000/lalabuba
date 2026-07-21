@@ -1887,6 +1887,14 @@ initGalleryHandlers(continueArtwork);
       openGalleryModal(continueArtwork);
     });
   }
+  const communityNavBtn = document.getElementById('community-nav-btn');
+  if (communityNavBtn) {
+    communityNavBtn.addEventListener('click', () => {
+      openGalleryModal(continueArtwork);
+      const commTab = document.querySelector('.gallery-tab[data-tab="community"]');
+      if (commTab) commTab.click();
+    });
+  }
   // Restore the "new sticker waiting" dot across sessions.
   let dirty = false;
   try { dirty = localStorage.getItem(JOURNAL_DIRTY_KEY) === '1'; } catch {}
