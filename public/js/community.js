@@ -103,16 +103,10 @@ async function getConfig() {
   return _config || {};
 }
 
-// ── Gallery modal tab switching ───────────────────────────────────────────────
+// ── Community modal ───────────────────────────────────────────────────────────
 
-const galleryTabBtns     = document.querySelectorAll(".gallery-tab");
-const galleryGrid        = document.getElementById("gallery-grid");
-const communityPanel     = document.getElementById("community-gallery-panel");
-
-const journalOnlyEls     = [
-  "journal-stats", "daily-mission-card", "mascot-card", "crayon-packs",
-  "sticker-shelf", "journal-next", "print-book-btn",
-].map(id => document.getElementById(id)).filter(Boolean);
+const communityPanel = document.getElementById("community-gallery-panel");
+const communityModal = document.getElementById("community-modal");
 
 let _notificationsChecked = false;
 let _ownNickname = null;
@@ -126,66 +120,39 @@ async function _getOwnNickname() {
   return _ownNickname;
 }
 
-function showJournalTab() {
-  if (galleryGrid) galleryGrid.style.display = "";
-  journalOnlyEls.forEach(el => { el.style.display = ""; });
-  if (communityPanel) communityPanel.hidden = true;
-}
-
-function showCommunityTab() {
-  if (galleryGrid) galleryGrid.style.display = "none";
-  journalOnlyEls.forEach(el => { el.style.display = "none"; });
-  if (communityPanel) communityPanel.hidden = false;
+export function openCommunityModal() {
+  if (!communityModal) return;
+  communityModal.classList.remove('hidden');
+  communityModal.setAttribute('aria-hidden', 'false');
   _removeCommunityTabDot();
   initCommunityGalleryOnce();
-
-  // Check notifications once per page session.
   if (!_notificationsChecked) {
     _notificationsChecked = true;
     checkNotifications();
   }
 }
 
-galleryTabBtns.forEach(btn => {
-  btn.addEventListener("click", () => {
-    galleryTabBtns.forEach(b => {
-      b.classList.remove("active");
-      b.setAttribute("aria-selected", "false");
-    });
-    btn.classList.add("active");
-    btn.setAttribute("aria-selected", "true");
-    if (btn.dataset.tab === "journal") showJournalTab();
-    else showCommunityTab();
-  });
-});
-
-const galleryModal = document.getElementById("gallery-modal");
-const galleryModalObserver = new MutationObserver(() => {
-  if (!galleryModal?.classList.contains("hidden")) {
-    galleryTabBtns.forEach(b => {
-      const isJournal = b.dataset.tab === "journal";
-      b.classList.toggle("active", isJournal);
-      b.setAttribute("aria-selected", isJournal ? "true" : "false");
-    });
-    showJournalTab();
-  }
-});
-if (galleryModal) {
-  galleryModalObserver.observe(galleryModal, { attributes: true, attributeFilter: ["class"] });
+function closeCommunityModal() {
+  if (!communityModal) return;
+  communityModal.classList.add('hidden');
+  communityModal.setAttribute('aria-hidden', 'true');
 }
+
+document.getElementById('close-community-modal')?.addEventListener('click', closeCommunityModal);
+communityModal?.addEventListener('click', e => { if (e.target === communityModal) closeCommunityModal(); });
 
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 function _addCommunityTabDot() {
-  const commTab = document.querySelector('.gallery-tab[data-tab="community"]');
-  if (!commTab || commTab.querySelector('.comm-tab-dot')) return;
-  commTab.style.position = 'relative';
+  const navBtn = document.getElementById('community-nav-btn');
+  if (!navBtn || navBtn.querySelector('.comm-tab-dot')) return;
+  navBtn.style.position = 'relative';
   const dot = document.createElement('span');
   dot.className = 'comm-tab-dot';
   dot.style.cssText =
     'position:absolute;top:4px;right:6px;width:8px;height:8px;' +
     'background:#e74c3c;border-radius:50%;pointer-events:none;';
-  commTab.appendChild(dot);
+  navBtn.appendChild(dot);
 }
 
 function _removeCommunityTabDot() {
@@ -312,7 +279,7 @@ function injectDailyFilterChip() {
   const btn = document.createElement("button");
   btn.className = "cf-btn";
   btn.dataset.type = "daily";
-  btn.textContent = "🎯 Daily";
+  btn.textContent = t('communityFilterDaily');
   container.appendChild(btn);
 
   btn.addEventListener("click", () => {

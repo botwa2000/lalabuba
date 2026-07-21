@@ -143,21 +143,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=309" />
-  <link rel="stylesheet" href="/css/header.css?v=309" />
-  <link rel="stylesheet" href="/css/hero.css?v=309" />
-  <link rel="stylesheet" href="/css/generator.css?v=309" />
-  <link rel="stylesheet" href="/css/layout.css?v=309" />
-  <link rel="stylesheet" href="/css/workspace.css?v=309" />
-  <link rel="stylesheet" href="/css/palette.css?v=309" />
-  <link rel="stylesheet" href="/css/modals.css?v=309" />
-  <link rel="stylesheet" href="/css/footer.css?v=309" />
-  <link rel="stylesheet" href="/css/print.css?v=309" />
-  <link rel="stylesheet" href="/css/cookies.css?v=309" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=309" />
-  <link rel="stylesheet" href="/css/community.css?v=309" />
-  <link rel="stylesheet" href="/css/account.css?v=309" />
-  <script src="/js/cookies.js?v=309"></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=310" />
+  <link rel="stylesheet" href="/css/header.css?v=310" />
+  <link rel="stylesheet" href="/css/hero.css?v=310" />
+  <link rel="stylesheet" href="/css/generator.css?v=310" />
+  <link rel="stylesheet" href="/css/layout.css?v=310" />
+  <link rel="stylesheet" href="/css/workspace.css?v=310" />
+  <link rel="stylesheet" href="/css/palette.css?v=310" />
+  <link rel="stylesheet" href="/css/modals.css?v=310" />
+  <link rel="stylesheet" href="/css/footer.css?v=310" />
+  <link rel="stylesheet" href="/css/print.css?v=310" />
+  <link rel="stylesheet" href="/css/cookies.css?v=310" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=310" />
+  <link rel="stylesheet" href="/css/community.css?v=310" />
+  <link rel="stylesheet" href="/css/account.css?v=310" />
+  <script src="/js/cookies.js?v=310"></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -696,11 +696,6 @@
         <h3 id="gallery-modal-title" data-i18n="journalTitle">My Journal</h3>
         <button id="close-gallery-modal" class="gallery-close" aria-label="Close">✕</button>
       </div>
-      <!-- Gallery / Community tabs -->
-      <div class="gallery-tabs" role="tablist">
-        <button class="gallery-tab active" data-tab="journal" role="tab" aria-selected="true" data-i18n="galleryTabJournal">📓 My Journal</button>
-        <button class="gallery-tab" data-tab="community" role="tab" aria-selected="false" data-i18n="galleryTabCommunity">🌟 Community</button>
-      </div>
       <p id="journal-stats" class="journal-stats"></p>
       <!-- Daily mission card (rendered by gallery.js) -->
       <div id="daily-mission-card" class="daily-mission-card" hidden></div>
@@ -714,20 +709,29 @@
       <button id="print-book-btn" class="print-book-btn" type="button" data-i18n="printBookBtn" hidden>📖 Print book</button>
       <div id="gallery-grid" class="gallery-grid"></div>
 
-      <!-- Community gallery tab content (hidden by default) -->
-      <div id="community-gallery-panel" class="community-panel" hidden>
+    </div>
+  </div>
+
+  <!-- Community modal (standalone, separate from journal) -->
+  <div id="community-modal" class="gallery-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="community-modal-title">
+    <div class="gallery-modal-card">
+      <div class="gallery-header">
+        <h3 id="community-modal-title" data-i18n="galleryTabCommunity">🌟 Community</h3>
+        <button id="close-community-modal" class="gallery-close" aria-label="Close">✕</button>
+      </div>
+      <div id="community-gallery-panel" class="community-panel">
         <div class="community-lb-row">
           <button id="community-lb-btn" class="community-lb-btn" data-i18n="communityLbBtn">🏅 Leaderboard</button>
         </div>
         <div class="community-filters" role="group" aria-label="Filter artworks">
           <button class="cf-btn active" data-type="all" data-i18n="communityFilterAll">All</button>
-          <button class="cf-btn" data-type="colored" data-i18n="communityFilterColorings">🎨 Colored</button>
+          <button class="cf-btn" data-type="colored" data-i18n="communityFilterColorings">🎨 Colorings</button>
           <button class="cf-btn" data-type="template" data-i18n="communityFilterTemplates">📋 Templates</button>
-          <button class="cf-btn" data-type="freehand" data-i18n="communityFilterDrawings">✏️ Freehand</button>
+          <button class="cf-btn" data-type="freehand" data-i18n="communityFilterDrawings">✏️ Drawings</button>
         </div>
         <div id="community-grid" class="community-grid" role="list"></div>
         <div id="community-sentinel" class="community-sentinel" aria-hidden="true"></div>
-        <p id="community-empty" class="community-empty" hidden data-i18n="communityEmptyWeb">No artworks yet — be the first to share! 🌟</p>
+        <p id="community-empty" class="community-empty" hidden data-i18n="communityEmptyWeb">No artworks yet — be the first! 🌟</p>
       </div>
     </div>
   </div>
@@ -840,8 +844,8 @@
 
   <!-- Safety net: if the main module throws before it can hide the splash screen,
        hide it here so the app never appears permanently frozen on native. -->
-  <script type="module" src="/js/main.js?v=309"></script>
-  <script type="module" src="/js/community.js?v=309"></script>
+  <script type="module" src="/js/main.js?v=310"></script>
+  <script type="module" src="/js/community.js?v=310"></script>
 
   <!-- Family members modal -->
   <div id="family-modal" class="family-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="family-modal-title">
@@ -950,7 +954,7 @@
   <!-- Account modal (content rendered by account.js) -->
   <div id="account-modal" role="dialog" aria-modal="true" aria-label="Account" hidden></div>
 
-  <script type="module" src="/js/account.js?v=309"></script>
+  <script type="module" src="/js/account.js?v=310"></script>
 </body>
 </html>
 

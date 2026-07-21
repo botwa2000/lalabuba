@@ -9,7 +9,7 @@ import { isSoundOn, toggleSound, playComplete, bounce, sparkleBurst } from './fx
 import { isNarrateOn, toggleNarrate, narrateSupported, speak } from './narrate.js';
 import { animateCompletion } from './canvas.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
-import { syncProgressToServer } from './community.js';
+import { syncProgressToServer, openCommunityModal } from './community.js';
 import {
   form, subjectInput, showNumbersInput, difficultySelect,
   paletteSelect, previewCanvas, drawCanvas, printButton, downloadButton,
@@ -1889,14 +1889,7 @@ initGalleryHandlers(continueArtwork);
   }
   const communityNavBtn = document.getElementById('community-nav-btn');
   if (communityNavBtn) {
-    communityNavBtn.addEventListener('click', () => {
-      openGalleryModal(continueArtwork);
-      // Defer so the MutationObserver reset (which resets to journal) fires first
-      setTimeout(() => {
-        const commTab = document.querySelector('.gallery-tab[data-tab="community"]');
-        if (commTab) commTab.click();
-      }, 0);
-    });
+    communityNavBtn.addEventListener('click', () => openCommunityModal());
   }
   // Restore the "new sticker waiting" dot across sessions.
   let dirty = false;
