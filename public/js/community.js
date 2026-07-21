@@ -377,23 +377,17 @@ function appendArtworks(artworks) {
     const avatar  = aw.avatarIndex ?? 1;
     const emojiSummary = emojiReactionSummary(aw);
 
+    const typeEmoji = aw.shareType === "template" ? "📋" : aw.shareType === "freehand" ? "✏️" : "🎨";
     card.innerHTML = `
       <img src="${aw.imageUrl}" alt="${escHtml(subject)} coloring" loading="lazy" />
-      <div class="community-card-info">
-        <div class="community-card-subject">${escHtml(subject)}</div>
+      <div class="community-card-overlay">
         <div class="community-card-meta">
           <span class="community-card-avatar">${AVATAR_LIST[avatar] || "🐧"}</span>
           <span class="community-card-nick">${escHtml(nick)}</span>
         </div>
-        <div class="community-card-stars">${emojiSummary}</div>
-      </div>`;
-
-    if (aw.recolorCount > 0) {
-      const badge = document.createElement("div");
-      badge.className = "community-card-badge";
-      badge.textContent = `👥 ${aw.recolorCount}`;
-      card.querySelector(".community-card-info").appendChild(badge);
-    }
+        ${emojiSummary ? `<div class="community-card-stars">${emojiSummary}</div>` : ""}
+      </div>
+      <div class="community-card-type-badge">${typeEmoji}</div>`;
 
     card.addEventListener("click", () => openLightbox(aw));
     communityGridEl.appendChild(card);

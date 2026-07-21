@@ -279,6 +279,7 @@ const TRANSLATIONS = {
     galleryTabJournal: "📓 My Journal",
     galleryTabCommunity: "🌟 Community",
     communityLbBtn: "🏅 Leaderboard",
+    communitySubtitleWeb: "See & share colorful masterpieces!",
     communityEmptyWeb: "No artworks yet — be the first! 🌟",
     leaderboardEmptyWeb: "No entries yet — start coloring!",
     communityLoadingLb: "Loading…",

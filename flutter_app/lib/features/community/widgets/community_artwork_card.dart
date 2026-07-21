@@ -10,7 +10,13 @@ const _kAvatars = [
 String avatarEmoji(int idx) =>
     (idx >= 0 && idx < _kAvatars.length) ? _kAvatars[idx] : '🐻';
 
-String _reactionSummary(CommunityArtwork artwork) {
+String _typeEmoji(String shareType) => switch (shareType) {
+  'template' => '📋',
+  'freehand' => '✏️',
+  _ => '🎨',
+};
+
+String _topReaction(CommunityArtwork artwork) {
   final pairs = <(String, int)>[
     ('🔥', artwork.fireCount),
     ('❤️', artwork.heartCount),
@@ -18,7 +24,7 @@ String _reactionSummary(CommunityArtwork artwork) {
     ('🎉', artwork.celebrateCount),
   ].where((p) => p.$2 > 0).toList()
     ..sort((a, b) => b.$2.compareTo(a.$2));
-  if (pairs.isEmpty) return '✨';
+  if (pairs.isEmpty) return '';
   return pairs.take(2).map((p) => '${p.$1}${p.$2}').join(' ');
 }
 
@@ -40,63 +46,99 @@ class CommunityArtworkCard extends StatelessWidget {
     final url = artwork.imageUrl.startsWith('/')
         ? '$baseUrl${artwork.imageUrl}'
         : artwork.imageUrl;
+    final reactions = _topReaction(artwork);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           color: cs.surfaceContainerHighest,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         clipBehavior: Clip.hardEdge,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Expanded(
-              child: Image.network(
-                url,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorBuilder: (_, __, ___) => const Center(
-                  child: Text('🎨', style: TextStyle(fontSize: 40)),
-                ),
-                loadingBuilder: (_, child, progress) => progress == null
-                    ? child
-                    : const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2)),
+            // Image
+            Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Center(
+                child: Text('🎨', style: TextStyle(fontSize: 40, color: cs.onSurfaceVariant)),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                children: [
-                  Text(avatarEmoji(artwork.avatarIndex),
-                      style: const TextStyle(fontSize: 14)),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      artwork.nickname,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.nunito(
-                          fontSize: 11, fontWeight: FontWeight.w700),
+              loadingBuilder: (_, child, progress) {
+                if (progress == null) return child;
+                return Container(
+                  color: cs.surfaceContainerHighest,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      value: progress.expectedTotalBytes != null
+                          ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes!
+                          : null,
                     ),
                   ),
-                  Text(
-                    _reactionSummary(artwork),
-                    style: GoogleFonts.nunito(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface.withValues(alpha: 0.6)),
+                );
+              },
+            ),
+            // Bottom gradient + info overlay
+            Positioned(
+              bottom: 0, left: 0, right: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(8, 20, 8, 7),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Color(0xCC000000), Color(0x00000000)],
                   ),
-                ],
+                ),
+                child: Row(
+                  children: [
+                    Text(avatarEmoji(artwork.avatarIndex),
+                        style: const TextStyle(fontSize: 13)),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        artwork.nickname,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.nunito(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    if (reactions.isNotEmpty)
+                      Text(
+                        reactions,
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            // Type badge (top-right)
+            Positioned(
+              top: 6, right: 6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _typeEmoji(artwork.shareType),
+                  style: const TextStyle(fontSize: 11),
+                ),
               ),
             ),
           ],

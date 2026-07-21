@@ -349,6 +349,8 @@
   "communityFilterDaily": "🎯 Daily",
   "communityTopArtists": "Top Artists",
   "communityGalleryLoadError": "Could not load gallery",
+  "communitySubtitle": "See & share colorful masterpieces!",
+  "communityEmptyHint": "Color a picture and tap 🌟 Share to add your artwork here!",
   "communityGalleryEmpty": "No artworks yet!\nBe the first to share 🎨",
   "communityReportTitle": "Report this artwork?",
   "communityReportBody": "This will flag the artwork for review. Thank you for keeping the community safe!",
