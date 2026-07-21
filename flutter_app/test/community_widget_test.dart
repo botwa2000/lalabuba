@@ -59,8 +59,8 @@ void main() {
       ));
 
       expect(find.textContaining('Sparkly Dragon'), findsOneWidget);
-      // Card shows reaction summary (✨ when no reactions) not raw star count
-      expect(find.textContaining('✨'), findsOneWidget);
+      // Redesigned card shows no reaction text when no reactions exist
+      expect(find.textContaining('✨'), findsNothing);
     });
 
     testWidgets('renders emoji reactions when present', (tester) async {
