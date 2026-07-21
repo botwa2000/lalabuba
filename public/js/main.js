@@ -1891,8 +1891,11 @@ initGalleryHandlers(continueArtwork);
   if (communityNavBtn) {
     communityNavBtn.addEventListener('click', () => {
       openGalleryModal(continueArtwork);
-      const commTab = document.querySelector('.gallery-tab[data-tab="community"]');
-      if (commTab) commTab.click();
+      // Defer so the MutationObserver reset (which resets to journal) fires first
+      setTimeout(() => {
+        const commTab = document.querySelector('.gallery-tab[data-tab="community"]');
+        if (commTab) commTab.click();
+      }, 0);
     });
   }
   // Restore the "new sticker waiting" dot across sessions.
