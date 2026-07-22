@@ -24,6 +24,7 @@ services:
       - lalabuba_dev_GALLERY_ADMIN_KEY
       - lalabuba_dev_JWT_SECRET
       - lalabuba_dev_BREVO_API_KEY
+      - lalabuba_dev_DOCS_SECRET
     deploy:
       replicas: 1
       update_config:
@@ -53,3 +54,4 @@ secrets:
   lalabuba_dev_GALLERY_ADMIN_KEY: { external: true }
   lalabuba_dev_JWT_SECRET: { external: true }
   lalabuba_dev_BREVO_API_KEY: { external: true }
+  lalabuba_dev_DOCS_SECRET: { external: true }
