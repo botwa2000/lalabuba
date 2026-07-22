@@ -11,6 +11,9 @@ const { buildNav }    = require("./lib/lp-nav-component");
 const { renderFeaturesPage }  = require("./lib/render-features-page");
 const { renderFaqPage }       = require("./lib/render-faq-page");
 const { renderCommunityPage } = require("./lib/render-community-page");
+const docsAuth  = require("./lib/docs-auth");
+const { renderDocsPage, renderLoginPage, renderOtpPage } = require("./lib/render-docs-page");
+const { sendOtp } = require("./lib/email");
 
 // Production + local server for Lalabuba on Hetzner (Docker Swarm).
 //
@@ -1412,6 +1415,166 @@ const server = http.createServer(async (req, res) => {
       req.body = {};
     }
     return communityRouter(req, res, p);
+  }
+
+  // ── /docs routes ──────────────────────────────────────────────────────────
+  // All /docs responses get noindex + no-cache so crawlers and CDN never serve them.
+  if (p.startsWith("/docs")) {
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    res.setHeader("Cache-Control", "no-store");
+
+    const isHttps = req.headers["x-forwarded-proto"] === "https" || req.headers["x-forwarded-proto"] === "https,https";
+    const ip      = docsAuth.clientIp(req);
+
+    function serveHtmlDoc(status, html) {
+      res.writeHead(status, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(html);
+    }
+
+    function readPostBody() {
+      return new Promise(resolve => {
+        let body = "";
+        req.on("data", c => { body += c; if (body.length > 4096) body = body.slice(0, 4096); });
+        req.on("end", () => resolve(body));
+      });
+    }
+
+    // Serve screenshots for the docs page (only if authenticated — images may show internal UI)
+    if (p.startsWith("/docs/screenshots/")) {
+      if (!docsAuth.isAuthenticated(req)) { sendJson(res, 403, { error: "Forbidden" }); return; }
+      const fname   = path.basename(p);
+      const imgPath = path.join(__dirname, "store_assets", "final", fname);
+      try {
+        const buf = fs.readFileSync(imgPath);
+        res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "private, max-age=600" });
+        res.end(buf);
+      } catch { sendJson(res, 404, { error: "Not found" }); }
+      return;
+    }
+
+    // GET /docs → public doc (no auth required)
+    if ((p === "/docs" || p === "/docs/") && req.method === "GET") {
+      serveHtmlDoc(200, renderDocsPage({ internal: false }));
+      return;
+    }
+
+    // GET /docs/internal → full doc (auth required)
+    if ((p === "/docs/internal" || p === "/docs/internal/") && req.method === "GET") {
+      // Share token in query string: sets session cookie then redirects to clean URL
+      const shareToken = parsedUrl.searchParams.get("t");
+      if (shareToken && docsAuth.validateShareToken(shareToken)) {
+        res.setHeader("Set-Cookie", docsAuth.sessionCookieHeader(docsAuth.generateSession(), isHttps));
+        res.writeHead(302, { Location: "/docs/internal" });
+        res.end();
+        return;
+      }
+      if (docsAuth.isAuthenticated(req)) {
+        serveHtmlDoc(200, renderDocsPage({ internal: true }));
+        return;
+      }
+      res.writeHead(302, { Location: "/docs/login" });
+      res.end();
+      return;
+    }
+
+    // GET /docs/login → email form
+    // POST /docs/login → validate email + Turnstile, send OTP
+    if (p === "/docs/login" || p === "/docs/login/") {
+      if (req.method === "GET") {
+        serveHtmlDoc(200, renderLoginPage());
+        return;
+      }
+      if (req.method === "POST") {
+        if (docsAuth.isSendLimited(ip)) {
+          serveHtmlDoc(429, renderLoginPage({ rateLimited: true }));
+          return;
+        }
+        const body   = await readPostBody();
+        const params = new URLSearchParams(body);
+        const email  = (params.get("email") || "").trim().toLowerCase();
+        const cfToken = params.get("cf-turnstile-response") || "";
+
+        // Turnstile check first (before revealing whether email is valid)
+        const turnstileOk = await docsAuth.verifyTurnstile(cfToken, ip);
+        if (!turnstileOk) {
+          serveHtmlDoc(403, renderLoginPage({ error: true }));
+          return;
+        }
+
+        if (!docsAuth.isAllowedEmail(email)) {
+          // Always show same response — don't reveal which emails are allowed
+          serveHtmlDoc(200, renderOtpPage({ email }));
+          return;
+        }
+
+        const { code, state } = docsAuth.generateOtp();
+        docsAuth.recordSend(ip);
+        res.setHeader("Set-Cookie", docsAuth.otpCookieHeader(state, isHttps));
+
+        try {
+          await sendOtp(email, code, "en");
+        } catch (err) {
+          console.error("[docs] OTP email send failed:", err.message);
+          // Still show the OTP page — in dev BREVO_API_KEY may not be set, code logs to console
+        }
+
+        serveHtmlDoc(200, renderOtpPage({ email }));
+        return;
+      }
+    }
+
+    // POST /docs/verify → validate OTP, issue session
+    if ((p === "/docs/verify" || p === "/docs/verify/") && req.method === "POST") {
+      if (docsAuth.isVerifyLimited(ip)) {
+        serveHtmlDoc(429, renderOtpPage({ rateLimited: true }));
+        return;
+      }
+      const body      = await readPostBody();
+      const params    = new URLSearchParams(body);
+      const code      = (params.get("code") || "").replace(/\D/g, "").slice(0, 6);
+      const otpState  = docsAuth.getOtpCookie(req);
+
+      if (docsAuth.validateOtp(code, otpState)) {
+        docsAuth.clearVerifyFails(ip);
+        res.setHeader("Set-Cookie", [
+          docsAuth.sessionCookieHeader(docsAuth.generateSession(), isHttps),
+          docsAuth.clearOtpCookieHeader(),
+        ]);
+        res.writeHead(302, { Location: "/docs/internal" });
+        res.end();
+      } else {
+        docsAuth.recordVerifyFail(ip);
+        serveHtmlDoc(401, renderOtpPage({ error: true }));
+      }
+      return;
+    }
+
+    // GET /docs/logout → clear session + OTP cookie
+    if (p === "/docs/logout" && req.method === "GET") {
+      res.setHeader("Set-Cookie", [docsAuth.clearSessionCookieHeader(), docsAuth.clearOtpCookieHeader()]);
+      res.writeHead(302, { Location: "/docs" });
+      res.end();
+      return;
+    }
+
+    // GET /docs/token?h=N → generate a share link (requires active session)
+    if (p === "/docs/token" && req.method === "GET") {
+      if (!docsAuth.isAuthenticated(req)) {
+        res.writeHead(302, { Location: "/docs/login" });
+        res.end();
+        return;
+      }
+      const hours     = Math.min(parseFloat(parsedUrl.searchParams.get("h") || "24"), 720);
+      const { token } = docsAuth.generateShareToken(hours);
+      const expDate   = new Date((Math.floor(Date.now() / 1000) + Math.round(hours * 3600)) * 1000).toUTCString();
+      const link      = `https://lalabuba.com/docs/internal?t=${encodeURIComponent(token)}`;
+      res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end(`Share link (valid ${hours}h until ${expDate}):\n\n${link}\n`);
+      return;
+    }
+
+    sendJson(res, 404, { error: "Not found" });
+    return;
   }
 
   if (req.method === "GET") {
