@@ -2,7 +2,7 @@ name: lalabuba
 description: Lalabuba — AI Coloring Pages for Kids
 publish_to: 'none'
 
-version: 1.0.4+1075
+version: 1.0.5+1076
 
 environment:
   sdk: '>=3.4.0 <4.0.0'

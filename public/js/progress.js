@@ -50,7 +50,6 @@ export const BADGES = [
   // Creativity
   { id: 'rainbow',       emoji: '🌈', group: 'creativity', test: (p) => p.hardCompleted >= 1 },
   { id: 'champion',      emoji: '🥇', group: 'creativity', test: (p) => p.extremeCompleted >= 1 },
-  { id: 'maxColors',     emoji: '🎆', group: 'creativity', test: (p) => p.maxColorUses >= 1 },
   { id: 'paletteMaster', emoji: '🎭', group: 'creativity', test: (p) => ['classic','pastel','nature'].every((x) => p.palettesUsed.includes(x)) },
   { id: 'inventor',      emoji: '✍️', group: 'creativity', test: (p) => p.freeTextCreations >= 1 },
   { id: 'penArtist',     emoji: '✏️', group: 'creativity', test: (p) => p.drawPenUses >= 1 },
@@ -113,7 +112,6 @@ function fresh() {
     mediumCompleted: 0,      // Medium finished
     hardCompleted: 0,        // Hard OR Extreme finished
     extremeCompleted: 0,     // Extreme only
-    maxColorUses: 0,         // finished with the Max (99) colour count
     freeTextCreations: 0,    // finished a picture from a typed idea
     drawPenUses: 0,          // used the freehand draw pen
     shares: 0,               // artwork shared
@@ -199,7 +197,6 @@ export function recordCompletion({ subject, difficulty, palette, colorCount, isC
   if (difficulty === 'medium')                           p.mediumCompleted++;
   if (difficulty === 'hard' || difficulty === 'extreme') p.hardCompleted++;
   if (difficulty === 'extreme')                          p.extremeCompleted++;
-  if (colorCount === 99) p.maxColorUses++;
   if (isCustom) p.freeTextCreations++;
   if (isDaily) p.dailyWordsCompleted++;
 
@@ -281,7 +278,6 @@ export function mergeFromServer(serverProgress) {
     ['mediumCompleted',     'mediumCompleted'],
     ['hardCompleted',       'hardCompleted'],
     ['extremeCompleted',    'extremeCompleted'],
-    ['maxColorUses',        'maxColorUses'],
     ['freeTextCreations',   'freeTextCreations'],
     ['drawPenUses',         'drawPenUses'],
     ['saves',               'saves'],

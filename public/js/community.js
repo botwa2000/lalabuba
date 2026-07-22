@@ -1007,7 +1007,6 @@ export async function syncProgressToServer(progress) {
       mediumCompleted:     p.mediumCompleted     || 0,
       hardCompleted:       p.hardCompleted       || 0,
       extremeCompleted:    p.extremeCompleted    || 0,
-      maxColorUses:        p.maxColorUses        || 0,
       numbersCompleted:    0,
       freeColorCompleted:  0,
       freeTextCreations:   p.freeTextCreations   || 0,

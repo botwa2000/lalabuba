@@ -56,7 +56,6 @@ const kBadges = <StickerBadge>[
   StickerBadge('extremeUnlock', '🔓', BadgeGroup.creativity, _extremeUnlock), // unlocked Extreme
   StickerBadge('rainbow', '🌈', BadgeGroup.creativity, _rainbow), // finished a Hard
   StickerBadge('champion', '🥇', BadgeGroup.creativity, _champion), // finished an Extreme
-  StickerBadge('maxColors', '🎆', BadgeGroup.creativity, _maxColors),
   StickerBadge('paletteMaster', '🎭', BadgeGroup.creativity, _paletteMaster),
   StickerBadge('inventor', '✍️', BadgeGroup.creativity, _inventor), // own idea
   StickerBadge('penArtist', '✏️', BadgeGroup.creativity, _penArtist), // draw pen
@@ -104,7 +103,6 @@ bool isExtremeUnlocked(Progress p) =>
     p.easyCompleted >= 1 &&
     p.mediumCompleted >= 1 &&
     (p.hardCompleted - p.extremeCompleted) >= 1;
-bool _maxColors(Progress p) => p.maxColorUses >= 1;
 bool _paletteMaster(Progress p) =>
     p.palettesUsed.toSet().containsAll(const {'classic', 'pastel', 'nature'});
 bool _inventor(Progress p) => p.freeTextCreations >= 1;
@@ -185,7 +183,6 @@ class Progress {
   final int mediumCompleted; // Medium only
   final int hardCompleted; // Hard OR Extreme finished
   final int extremeCompleted; // Extreme only
-  final int maxColorUses; // finished with the Max (99) colour count
   final int numbersCompleted; // finished a colour-by-number page (numbers shown)
   final int freeColorCompleted; // finished a free-colour page (no numbers)
   final int freeTextCreations; // finished a picture from a typed idea
@@ -210,7 +207,6 @@ class Progress {
     this.mediumCompleted = 0,
     this.hardCompleted = 0,
     this.extremeCompleted = 0,
-    this.maxColorUses = 0,
     this.numbersCompleted = 0,
     this.freeColorCompleted = 0,
     this.freeTextCreations = 0,
@@ -238,7 +234,6 @@ class Progress {
         'mediumCompleted': mediumCompleted,
         'hardCompleted': hardCompleted,
         'extremeCompleted': extremeCompleted,
-        'maxColorUses': maxColorUses,
         'numbersCompleted': numbersCompleted,
         'freeColorCompleted': freeColorCompleted,
         'freeTextCreations': freeTextCreations,
@@ -267,7 +262,6 @@ class Progress {
         mediumCompleted: (j['mediumCompleted'] ?? 0) as int,
         hardCompleted: (j['hardCompleted'] ?? 0) as int,
         extremeCompleted: (j['extremeCompleted'] ?? 0) as int,
-        maxColorUses: (j['maxColorUses'] ?? 0) as int,
         numbersCompleted: (j['numbersCompleted'] ?? 0) as int,
         freeColorCompleted: (j['freeColorCompleted'] ?? 0) as int,
         freeTextCreations: (j['freeTextCreations'] ?? 0) as int,
@@ -295,7 +289,6 @@ class Progress {
     int? mediumCompleted,
     int? hardCompleted,
     int? extremeCompleted,
-    int? maxColorUses,
     int? numbersCompleted,
     int? freeColorCompleted,
     int? freeTextCreations,
@@ -320,7 +313,6 @@ class Progress {
         mediumCompleted: mediumCompleted ?? this.mediumCompleted,
         hardCompleted: hardCompleted ?? this.hardCompleted,
         extremeCompleted: extremeCompleted ?? this.extremeCompleted,
-        maxColorUses: maxColorUses ?? this.maxColorUses,
         numbersCompleted: numbersCompleted ?? this.numbersCompleted,
         freeColorCompleted: freeColorCompleted ?? this.freeColorCompleted,
         freeTextCreations: freeTextCreations ?? this.freeTextCreations,
@@ -480,8 +472,6 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
       mediumCompleted: medium,
       hardCompleted: hard,
       extremeCompleted: extreme,
-      maxColorUses:
-          colorCount == 99 ? p.maxColorUses + 1 : p.maxColorUses,
       numbersCompleted:
           withNumbers ? p.numbersCompleted + 1 : p.numbersCompleted,
       freeColorCompleted:
@@ -557,7 +547,6 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
         'mediumCompleted':     p.mediumCompleted,
         'hardCompleted':       p.hardCompleted,
         'extremeCompleted':    p.extremeCompleted,
-        'maxColorUses':        p.maxColorUses,
         'numbersCompleted':    p.numbersCompleted,
         'freeColorCompleted':  p.freeColorCompleted,
         'freeTextCreations':   p.freeTextCreations,
@@ -675,7 +664,6 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
       mediumCompleted:     medium,
       hardCompleted:       hard,
       extremeCompleted:    extreme,
-      maxColorUses:        maxInt(local.maxColorUses,        srv['maxColorUses']),
       numbersCompleted:    maxInt(local.numbersCompleted,    srv['numbersCompleted']),
       freeColorCompleted:  maxInt(local.freeColorCompleted,  srv['freeColorCompleted']),
       freeTextCreations:   maxInt(local.freeTextCreations,   srv['freeTextCreations']),

@@ -1252,7 +1252,7 @@ initShareHandlers();
 
 // ─── Settings chips (A2) ──────────────────────────────────────────────────────
 const DIFF_CYCLE    = ['easy', 'medium', 'hard', 'extreme'];
-const COUNT_CYCLE   = [6, 12, 18, 24, 'max'];
+const COUNT_CYCLE   = [6, 12, 18, 24];
 const PALETTE_CYCLE = ['classic', 'pastel', 'nature'];
 const DIFF_EMOJI    = { easy: '🌟', medium: '🌟🌟', hard: '🌟🌟🌟', extreme: '🔥' };
 const PALETTE_EMOJI = { classic: '🖍️', pastel: '🌸', nature: '🌿', neon: '⚡', candy: '🍭', galaxy: '🌌' };
@@ -1386,13 +1386,9 @@ if (chipDiff) chipDiff.addEventListener('click', () => {
 });
 
 if (chipCount) chipCount.addEventListener('click', () => {
-  const palette = PALETTES[paletteSelect.value];
-  const maxCount = palette.length;
-  const atMax = state.colorCount >= maxCount;
-  const curIdx = atMax ? COUNT_CYCLE.length - 1 : Math.max(0, COUNT_CYCLE.indexOf(state.colorCount));
-  const nextRaw = COUNT_CYCLE[(curIdx + 1) % COUNT_CYCLE.length];
-  const next = nextRaw === 'max' ? maxCount : Number(nextRaw);
-  setColorCount(next, next >= maxCount);
+  const curIdx = Math.max(0, COUNT_CYCLE.indexOf(state.colorCount));
+  const next = COUNT_CYCLE[(curIdx + 1) % COUNT_CYCLE.length];
+  setColorCount(next);
   updateCountChip();
 });
 
@@ -1408,7 +1404,7 @@ if (chipPalette) chipPalette.addEventListener('click', () => {
   paletteSelect.value = cycle[(cur + 1) % cycle.length];
   paletteSelect.dispatchEvent(new Event('change'));
   updatePaletteChip();
-  updateCountChip(); // palette affects max count
+  updateCountChip();
 });
 
 function syncHeroNumbersBtn() { /* #hero-numbers-toggle does not exist; kept for call-site compat */ }

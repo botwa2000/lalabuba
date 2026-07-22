@@ -17,7 +17,6 @@ export const MISSIONS = [
   { id: 'colorAny',  emoji: '🎨', amount: 1, metric: (p) => p.totalCompleted },
   { id: 'colorTwo',  emoji: '✌️', amount: 2, metric: (p) => p.totalCompleted },
   { id: 'hard',      emoji: '💪', amount: 1, metric: (p) => p.hardCompleted },
-  { id: 'maxColors', emoji: '🌈', amount: 1, metric: (p) => p.maxColorUses },
   { id: 'ownIdea',   emoji: '✍️', amount: 1, metric: (p) => p.freeTextCreations },
   { id: 'share',     emoji: '📤', amount: 1, metric: (p) => p.shares },
   { id: 'save',      emoji: '💾', amount: 1, metric: (p) => p.saves },

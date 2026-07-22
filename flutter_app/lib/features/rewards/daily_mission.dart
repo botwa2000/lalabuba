@@ -21,7 +21,6 @@ class MissionDef {
 
 int _mTotal(Progress p) => p.totalCompleted;
 int _mHard(Progress p) => p.hardCompleted;
-int _mMaxColors(Progress p) => p.maxColorUses;
 int _mOwnIdea(Progress p) => p.freeTextCreations;
 int _mShare(Progress p) => p.shares;
 int _mSave(Progress p) => p.saves;
@@ -31,7 +30,6 @@ const kMissions = <MissionDef>[
   MissionDef('colorAny', '🎨', 1, _mTotal),
   MissionDef('colorTwo', '✌️', 2, _mTotal),
   MissionDef('hard', '💪', 1, _mHard),
-  MissionDef('maxColors', '🌈', 1, _mMaxColors),
   MissionDef('ownIdea', '✍️', 1, _mOwnIdea),
   MissionDef('share', '📤', 1, _mShare),
   MissionDef('save', '💾', 1, _mSave),

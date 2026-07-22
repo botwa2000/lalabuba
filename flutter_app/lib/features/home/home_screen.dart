@@ -715,7 +715,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           value: _cntLabelShort(settings?.colorCount ?? 12, l10n),
           onTap: () {
             HapticFeedback.selectionClick();
-            ref.read(settingsProvider.notifier).cycleColorCount([6, 12, 18, 24, 99]);
+            ref.read(settingsProvider.notifier).cycleColorCount([6, 12, 18, 24]);
           },
         ),
         const SizedBox(height: 4),
@@ -1255,11 +1255,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   String _palLabelShort(String p, L10n l10n) => l10n.t(_packNameKey(p));
 
-  String _cntLabel(int cnt, L10n l10n) =>
-      '🎨 ${cnt == 99 ? l10n.t('colorsMax') : cnt.toString()}';
+  String _cntLabel(int cnt, L10n l10n) => '🎨 ${cnt.toString()}';
 
-  String _cntLabelShort(int cnt, L10n l10n) =>
-      cnt == 99 ? l10n.t('colorsMax') : cnt.toString();
+  String _cntLabelShort(int cnt, L10n l10n) => cnt.toString();
 }
 
 // ─── Consolidated settings sheet body ────────────────────────────────────────

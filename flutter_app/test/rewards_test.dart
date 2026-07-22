@@ -53,7 +53,6 @@ void main() {
     });
 
     test('creativity stickers', () {
-      expect(earnedFor(const Progress(maxColorUses: 1)), contains('maxColors'));
       expect(
           earnedFor(const Progress(freeTextCreations: 1)), contains('inventor'));
       expect(earnedFor(const Progress(drawPenUses: 1)), contains('penArtist'));
@@ -185,19 +184,18 @@ void main() {
             subject: 'dragon',
             difficulty: 'extreme',
             palette: 'pastel',
-            colorCount: 99,
+            colorCount: 24,
             isCustom: true,
             isDaily: false,
           );
       final p = c.read(progressProvider).valueOrNull!;
-      expect(p.maxColorUses, 1);
       expect(p.freeTextCreations, 1);
       expect(p.extremeCompleted, 1);
       expect(p.hardCompleted, 1); // extreme also counts as hard
       expect(p.palettesUsed, contains('pastel'));
       expect(p.themesColored.contains('animal'), true);
       final ids = newBadges.map((b) => b.id).toSet();
-      expect(ids.containsAll({'first', 'maxColors', 'inventor', 'champion'}),
+      expect(ids.containsAll({'first', 'inventor', 'champion'}),
           true);
     });
 
