@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -397,17 +396,17 @@ class _ImageGrid extends StatelessWidget {
   }
 }
 
-class _GalleryCard extends ConsumerWidget {
+class _GalleryCard extends StatelessWidget {
   final _GalleryEntry entry;
   final String difficulty;
   const _GalleryCard({required this.entry, required this.difficulty});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => _openCanvas(context, ref),
+      onTap: () => _openCanvas(context),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Stack(
@@ -463,44 +462,17 @@ class _GalleryCard extends ConsumerWidget {
     );
   }
 
-  Future<void> _openCanvas(BuildContext context, WidgetRef ref) async {
-    // Fetch image bytes so the canvas can render without re-generating.
-    try {
-      final config = await ref.read(appConfigProvider.future);
-      final baseUrl = config.apiBaseUrl.replaceFirst(RegExp(r'/$'), '');
-      final url = entry.url.startsWith('/')
-          ? '$baseUrl${entry.url}'
-          : entry.url;
-      final resp = await Dio().get<List<int>>(url,
-          options: Options(
-            responseType: ResponseType.bytes,
-            sendTimeout: const Duration(seconds: 15),
-            receiveTimeout: const Duration(seconds: 20),
-          ));
-      final bytes = Uint8List.fromList(resp.data ?? []);
-      if (bytes.isEmpty) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not load image — please try again')),
-          );
-        }
-        return;
-      }
-      if (!context.mounted) return;
-      context.pushNamed('canvas',
-          extra: CanvasScreenArgs(
-            subject: entry.subject,
-            displayLabel: entry.subject,
-            source: 'explore',
-            preloadedBytes: bytes,
-            preloadedDifficulty: difficulty,
-          ));
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not load image — please try again')),
-        );
-      }
-    }
+  // Navigate immediately — CanvasScreen fetches the image via Flutter's own
+  // HttpClient (same TLS/redirect stack as Image.network), so it works reliably
+  // wherever the thumbnail already displays.
+  void _openCanvas(BuildContext context) {
+    context.pushNamed('canvas',
+        extra: CanvasScreenArgs(
+          subject: entry.subject,
+          displayLabel: entry.subject,
+          source: 'explore',
+          preloadedUrl: entry.url,
+          preloadedDifficulty: difficulty,
+        ));
   }
 }

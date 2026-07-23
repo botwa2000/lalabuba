@@ -52,6 +52,10 @@ class CanvasScreenArgs {
   final String source;
   // When set, skip API generation and render this image directly.
   final Uint8List? preloadedBytes;
+  // Fallback URL: if preloadedBytes is null, _renderPreloaded fetches this URL
+  // using Flutter's own HttpClient (same stack as Image.network, handles CDN
+  // redirects and certificates correctly).
+  final String? preloadedUrl;
   // Difficulty to use when preloadedBytes is set (affects palette/region counts).
   final String preloadedDifficulty;
 
@@ -61,6 +65,7 @@ class CanvasScreenArgs {
     this.seed,
     this.source = 'custom',
     this.preloadedBytes,
+    this.preloadedUrl,
     this.preloadedDifficulty = 'medium',
   });
 }
@@ -135,12 +140,47 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     super.dispose();
   }
 
-  // Render an image that was pre-fetched by the Explore screen (no API call).
+  // Render an image from the Explore screen without an API generation call.
+  // Accepts pre-fetched bytes (fast path) or fetches from preloadedUrl using
+  // Flutter's own HttpClient — same TLS/redirect stack as Image.network.
   Future<void> _renderPreloaded() async {
     debugPrint('LALABUBA_PATH: _renderPreloaded called (source=${widget.args.source})');
-    final bytes = widget.args.preloadedBytes;
-    if (bytes == null) return;
-    setState(() { _isGenerating = true; _errorMsg = null; });
+    Uint8List? bytes = widget.args.preloadedBytes;
+
+    if (bytes == null) {
+      final url = widget.args.preloadedUrl;
+      if (url == null) return;
+      setState(() { _isGenerating = true; _errorMsg = null; });
+      try {
+        final client = HttpClient();
+        try {
+          final request = await client.getUrl(Uri.parse(url));
+          final response = await request.close();
+          if (response.statusCode != 200) {
+            throw Exception('HTTP ${response.statusCode}');
+          }
+          final chunks = <List<int>>[];
+          await for (final chunk in response) {
+            chunks.add(chunk);
+          }
+          bytes = Uint8List.fromList(chunks.expand((c) => c).toList());
+        } finally {
+          client.close();
+        }
+      } catch (e) {
+        debugPrint('LALABUBA_PATH: _renderPreloaded fetch failed: $e');
+        if (mounted) setState(() { _isGenerating = false; _errorMsg = e.toString(); });
+        return;
+      }
+    } else {
+      setState(() { _isGenerating = true; _errorMsg = null; });
+    }
+
+    if (bytes.isEmpty) {
+      if (mounted) setState(() { _isGenerating = false; _errorMsg = 'Empty image data'; });
+      return;
+    }
+
     ref.read(canvasProvider.notifier).reset();
     final settings = ref.read(settingsProvider).valueOrNull;
     final difficulty = widget.args.preloadedDifficulty;

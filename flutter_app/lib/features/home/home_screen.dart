@@ -17,7 +17,6 @@ import '../../shared/services/subject_localizer.dart';
 import '../../shared/widgets/lala_card.dart';
 import '../../shared/widgets/lala_chip.dart';
 import '../../shared/widgets/lala_text_field.dart';
-import '../../shared/widgets/lala_empty_hint.dart';
 import '../../shared/widgets/lala_bottom_sheet.dart';
 import '../../shared/widgets/lala_showcase.dart';
 import '../account/account_screen.dart';
@@ -388,64 +387,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          // Brand mascot logo (same artwork as the app icon). Restored to the
-          // header after an earlier version showed only a 🎨 emoji.
-          Image.asset('assets/icon/logo.png', height: 28, filterQuality: FilterQuality.medium),
-          const SizedBox(width: 8),
+          Image.asset('assets/icon/logo.png', height: 26, filterQuality: FilterQuality.medium),
+          const SizedBox(width: 6),
           Text(
             'Lalabuba',
             style: GoogleFonts.fredoka(
               fontWeight: FontWeight.w700,
-              fontSize: 22,
+              fontSize: 20,
               color: cs.primary,
             ),
           ),
         ],
       ),
       actions: [
-        // Theme toggle and language picker were standalone actions here; both are
-        // now consolidated into the gear's settings bottom sheet (below).
-        // 🌱 days-colored streak pill — only once the child has colored a day.
+        // 🌱 streak pill — constrained so it never crowds the brand name
         Builder(builder: (_) {
           final p = ref.watch(progressProvider).valueOrNull;
           if (p == null || p.daysColored <= 0) return const SizedBox.shrink();
           return Center(
-            child: Container(
-              margin: const EdgeInsets.only(right: 2),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xFFD4FC79), Color(0xFF96E6A1)]),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: Text(
-                l10n.t('daysColoredPill', {'days': '${p.daysColored}'}),
-                style: GoogleFonts.fredoka(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1F6F43)),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 72),
+              child: Container(
+                margin: const EdgeInsets.only(right: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [Color(0xFFD4FC79), Color(0xFF96E6A1)]),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Text(
+                  l10n.t('daysColoredPill', {'days': '${p.daysColored}'}),
+                  style: GoogleFonts.fredoka(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1F6F43)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
           );
         }),
-        // Mascot avatar — taps into Rewards (which shows the mascot at top).
-        // Replaces the pulsing trophy; the mascot IS the rewards entry point.
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 2),
           child: MascotAvatar(
-            size: 36,
+            size: 32,
             onTap: () {
               HapticFeedback.lightImpact();
               context.pushNamed('rewards');
             },
           ),
         ),
-        // Journal/Gallery icon with a masterpiece-count badge (parity with web):
-        // shows totalCompleted once > 0, hidden at 0 (teaser above covers that).
         Builder(builder: (_) {
           final p = ref.watch(progressProvider).valueOrNull;
           final done = p?.totalCompleted ?? 0;
           final btn = IconButton(
+            iconSize: 22,
             icon: const Icon(Icons.photo_library_rounded),
             tooltip: l10n.t('galleryBtn'),
             onPressed: () => context.pushNamed('gallery'),
@@ -460,8 +457,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 top: 6,
                 child: Container(
                   constraints:
-                      const BoxConstraints(minWidth: 18, minHeight: 18),
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                      const BoxConstraints(minWidth: 16, minHeight: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
                     color: cs.primary,
                     borderRadius: BorderRadius.circular(50),
@@ -471,7 +468,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Text(
                       done > 99 ? '99+' : '$done',
                       style: GoogleFonts.fredoka(
-                          fontSize: 10,
+                          fontSize: 9,
                           fontWeight: FontWeight.w700,
                           color: cs.onPrimary,
                           height: 1.1),
@@ -483,21 +480,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         }),
         IconButton(
+          iconSize: 22,
           icon: const Icon(Icons.people_rounded),
           tooltip: l10n.t('galleryTabCommunity'),
           onPressed: () => context.pushNamed('community'),
         ),
         IconButton(
-          icon: const Icon(Icons.explore_rounded),
-          tooltip: l10n.t('navExplore'),
-          onPressed: () => context.pushNamed('explore'),
-        ),
-        IconButton(
+          iconSize: 22,
           icon: const Icon(Icons.settings_rounded),
           tooltip: l10n.t('settingsTitle'),
           onPressed: () => _openSettingsSheet(context, l10n),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 2),
       ],
     );
   }
@@ -584,10 +578,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final cs = Theme.of(context).colorScheme;
     final settings = settingsAsync.valueOrNull;
     final panelWidth =
-        (MediaQuery.sizeOf(context).width * 0.32).clamp(260.0, 340.0);
+        (MediaQuery.sizeOf(context).width * 0.34).clamp(260.0, 340.0);
 
     return Row(
       children: [
+        // LEFT: settings + prompt — compact controls panel
         SizedBox(
           width: panelWidth,
           child: Column(
@@ -598,14 +593,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        l10n.t('heroHeading'),
-                        style: GoogleFonts.fredoka(
-                            fontSize: 15, fontWeight: FontWeight.w700),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
                       homeAsync.whenOrNull(
                             data: (home) => home.dailyChallenge != null
                                 ? _buildDailyPill(
@@ -614,39 +601,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ) ??
                           const SizedBox.shrink(),
                       const SizedBox(height: 10),
-                      _buildPickDivider(context, l10n),
-                      const SizedBox(height: 8),
-                      homeAsync.whenOrNull(
-                            data: (home) => _buildCardGrid(
-                                context, home, l10n, _currentLocale,
-                                compact: true),
-                          ) ??
-                          const SizedBox.shrink(),
-                      // ── Inline settings section — fills dead space ──
-                      const SizedBox(height: 12),
                       _buildLandscapeSettings(
                           context, cs, l10n, settings, sub),
                     ],
                   ),
                 ),
               ),
-              // Landscape: no chips (settings are inline above)
               _buildBottomBar(context, l10n, settingsAsync, sub,
                   showChips: false),
               SizedBox(height: MediaQuery.paddingOf(context).bottom),
             ],
           ),
         ),
+        // RIGHT: suggestion cards — the main content browser
         Expanded(
-          child: Container(
-            margin: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                  color: cs.outlineVariant.withValues(alpha: 0.5)),
-            ),
-            child: LalaEmptyHint(message: l10n.t('emptyHint')),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 12, 4),
+                child: Row(
+                  children: [
+                    Expanded(child: _buildPickDivider(context, l10n)),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () => context.pushNamed('explore'),
+                      icon: Icon(Icons.explore_rounded,
+                          size: 15, color: cs.primary),
+                      label: Text(
+                        l10n.t('navExplore'),
+                        style: GoogleFonts.fredoka(
+                            fontSize: 12,
+                            color: cs.primary,
+                            fontWeight: FontWeight.w700),
+                      ),
+                      style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2)),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: homeAsync.whenOrNull(
+                      data: (home) => SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(4, 0, 12, 16),
+                        child: _buildCardGrid(context, home, l10n,
+                            _currentLocale,
+                            compact: true),
+                      ),
+                    ) ??
+                    const Center(child: CircularProgressIndicator.adaptive()),
+              ),
+            ],
           ),
         ),
       ],

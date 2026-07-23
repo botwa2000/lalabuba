@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/l10n_service.dart';
@@ -162,15 +163,18 @@ class _CommunityGalleryScreenState
       color: brightness == Brightness.dark
           ? const Color(0xFF1A1A2E)
           : const Color(0xFFFAF5FF),
-      child: Column(
-        children: [
-          _buildHeader(cs, brightness, l10n),
-          if (_newReactions > 0) _buildReactionBanner(cs, l10n),
-          if (_weeklyThemeActive == true && _weeklyThemeWord != null)
-            _buildThemeBanner(cs, l10n),
-          _buildFilterRow(filters),
-          Expanded(child: _buildBody(cs, l10n)),
-        ],
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            _buildHeader(cs, brightness, l10n),
+            if (_newReactions > 0) _buildReactionBanner(cs, l10n),
+            if (_weeklyThemeActive == true && _weeklyThemeWord != null)
+              _buildThemeBanner(cs, l10n),
+            _buildFilterRow(filters),
+            Expanded(child: _buildBody(cs, l10n)),
+          ],
+        ),
       ),
     );
   }
@@ -221,37 +225,75 @@ class _CommunityGalleryScreenState
               ],
             ),
           ),
-          // Top Artists button — compact pill
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.22),
-                borderRadius: BorderRadius.circular(50),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.40)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('🏆', style: TextStyle(fontSize: 15)),
-                  const SizedBox(width: 5),
-                  Text(
-                    l10n.t('communityTopArtists'),
-                    style: GoogleFonts.fredoka(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
+          // Action buttons: Share my art + Top Artists
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Share my art — navigates to gallery so user can pick a coloring
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  context.pushNamed('gallery');
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.28),
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.50)),
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('📤', style: TextStyle(fontSize: 13)),
+                      const SizedBox(width: 5),
+                      Text(
+                        l10n.t('communityShareBtn'),
+                        style: GoogleFonts.fredoka(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 6),
+              // Top Artists leaderboard
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.40)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🏆', style: TextStyle(fontSize: 13)),
+                      const SizedBox(width: 5),
+                      Text(
+                        l10n.t('communityTopArtists'),
+                        style: GoogleFonts.fredoka(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -414,7 +456,6 @@ class _CommunityGalleryScreenState
   }
 
   Widget _buildEmpty(ColorScheme cs, L10n l10n) {
-    final brightness = Theme.of(context).brightness;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -465,16 +506,13 @@ class _CommunityGalleryScreenState
           ),
           const SizedBox(height: 28),
           // Placeholder artwork skeletons to make the screen feel alive
-          _buildSkeletonGrid(brightness),
+          _buildSkeletonGrid(cs),
         ],
       ),
     );
   }
 
-  Widget _buildSkeletonGrid(Brightness brightness) {
-    final skeletonColor = brightness == Brightness.dark
-        ? Colors.white.withValues(alpha: 0.06)
-        : Colors.black.withValues(alpha: 0.06);
+  Widget _buildSkeletonGrid(ColorScheme cs) {
     return GridView.count(
       crossAxisCount: 2,
       crossAxisSpacing: 10,
@@ -484,13 +522,13 @@ class _CommunityGalleryScreenState
       physics: const NeverScrollableScrollPhysics(),
       children: List.generate(4, (i) => Container(
         decoration: BoxDecoration(
-          color: skeletonColor,
+          color: cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
           child: Text(
             ['🦄', '🐉', '🦋', '🚀'][i],
-            style: TextStyle(fontSize: 36, color: Colors.white.withValues(alpha: 0.3)),
+            style: TextStyle(fontSize: 36, color: cs.onSurface.withValues(alpha: 0.35)),
           ),
         ),
       )),
