@@ -23,7 +23,6 @@ import '../account/account_screen.dart';
 import '../rewards/daily_mission.dart';
 import '../rewards/crayon_packs.dart';
 import '../rewards/scenes.dart';
-import '../mascot/mascot_studio_screen.dart';
 import 'voice_input_button.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -428,15 +427,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           );
         }),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2),
-          child: MascotAvatar(
-            size: 32,
-            onTap: () {
-              HapticFeedback.lightImpact();
-              context.pushNamed('rewards');
-            },
-          ),
+        IconButton(
+          iconSize: 22,
+          icon: const Icon(Icons.auto_stories_rounded),
+          tooltip: l10n.t('navExplore'),
+          onPressed: () => context.pushNamed('explore'),
         ),
         Builder(builder: (_) {
           final p = ref.watch(progressProvider).valueOrNull;

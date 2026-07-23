@@ -593,7 +593,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           next.isReady &&
           next.isComplete &&
           !_isGenerating) {
-        _celebrationShown = true;
+        setState(() { _celebrationShown = true; });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _onColoringComplete(next);
         });
@@ -1802,7 +1802,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   /// auto-detected completion. Guards against firing twice or on an empty page.
   void _onFinishPressed(CanvasState canvas) {
     if (_celebrationShown || !canvas.hasMeaningfulProgress) return;
-    _celebrationShown = true;
+    setState(() { _celebrationShown = true; });
     HapticFeedback.mediumImpact();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _onColoringComplete(ref.read(canvasProvider));
