@@ -453,6 +453,9 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
       "contentUrl":`https://lalabuba.com${entry.url}`, "url":canonical,
       "encodingFormat": entry.url.endsWith(".jpg") ? "image/jpeg" : "image/png",
       "license":"https://creativecommons.org/licenses/by/4.0/",
+      "acquireLicensePage":"https://lalabuba.com/terms",
+      "copyrightNotice":"© 2026 Lalabuba",
+      "creditText":"Lalabuba",
       "creator":{"@type":"Organization","name":"Lalabuba"} },
     { "@type":"BreadcrumbList", "itemListElement":[
       {"@type":"ListItem","position":1,"name":hubLabel,"item":`https://lalabuba.com${hubHref}`},
