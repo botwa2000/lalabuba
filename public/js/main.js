@@ -8,6 +8,7 @@ import { awardForCompletion, addArtSticker, weekScene, SCENE_SUBJECTS } from './
 import { isSoundOn, toggleSound, playComplete, bounce, sparkleBurst } from './fx.js';
 import { isNarrateOn, toggleNarrate, narrateSupported, speak } from './narrate.js';
 import { animateCompletion } from './canvas.js';
+import { track } from './analytics.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
 import { syncProgressToServer, openCommunityModal } from './community.js';
 import {
@@ -271,6 +272,7 @@ function celebrate() {
       } catch {}
     } catch {}
     state.completionRecorded = true;
+    track('coloring_completed', { subject: state.lastEnglishSubject || subjectText, difficulty: difficultySelect.value });
   } else {
     try { progress = getProgress(); } catch {}
   }
@@ -783,6 +785,7 @@ downloadButton.addEventListener("click", () => {
   link.href = tempCanvas.toDataURL("image/png");
   link.download = `${subjectInput.value.trim().replace(/\s+/g, "-").toLowerCase() || "coloring-page"}.png`;
   link.click();
+  track('draw_saved', { subject: subjectInput.value.trim() });
 
   // Explicit Save → credit the Keeper / Collector / Gallery Star stickers.
   try { toastNewBadges(recordSave().newBadges); } catch {}
@@ -793,6 +796,7 @@ const shareArtworkBtn = document.getElementById('share-artwork-btn');
 if (shareArtworkBtn) {
   shareArtworkBtn.addEventListener('click', async () => {
     if (!state.currentImage) return;
+    track('draw_shared', { subject: subjectInput.value.trim() });
 
     const tmp = document.createElement('canvas');
     tmp.width  = previewCanvas.width;
@@ -1383,6 +1387,7 @@ if (chipDiff) chipDiff.addEventListener('click', () => {
   difficultySelect.value = allowed[(cur + 1) % allowed.length];
   difficultySelect.dispatchEvent(new Event('change'));
   updateDiffChip();
+  track('difficulty_changed', { difficulty: difficultySelect.value });
 });
 
 if (chipCount) chipCount.addEventListener('click', () => {
@@ -1390,6 +1395,7 @@ if (chipCount) chipCount.addEventListener('click', () => {
   const next = COUNT_CYCLE[(curIdx + 1) % COUNT_CYCLE.length];
   setColorCount(next);
   updateCountChip();
+  track('color_count_changed', { colorCount: next });
 });
 
 if (chipPalette) chipPalette.addEventListener('click', () => {
