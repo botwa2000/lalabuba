@@ -206,7 +206,7 @@ class _CommunityGalleryScreenState
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '🌟 ${l10n.t('galleryTabCommunity')}',
+                  l10n.t('galleryTabCommunity'),
                   style: GoogleFonts.fredoka(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -217,9 +217,9 @@ class _CommunityGalleryScreenState
                 Text(
                   l10n.t('communitySubtitle'),
                   style: GoogleFonts.nunito(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.88),
-                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -230,11 +230,11 @@ class _CommunityGalleryScreenState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Share my art — navigates to gallery so user can pick a coloring
+              // Share my art — goes to home so user can draw and share from canvas
               GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  context.pushNamed('gallery');
+                  context.pushNamed('home');
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -600,9 +600,9 @@ class _FilterPill extends StatelessWidget {
         child: Text(
           label,
           style: GoogleFonts.nunito(
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: selected ? Colors.white : cs.onSurface.withValues(alpha: 0.75),
+            color: selected ? Colors.white : cs.onSurface.withValues(alpha: 0.85),
           ),
         ),
       ),
