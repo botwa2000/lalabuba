@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,7 +23,7 @@ class RewardsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final progress =
-        ref.watch(progressProvider).valueOrNull ?? const Progress();
+        ref.watch(progressProvider).value ?? const Progress();
 
     return Scaffold(
       appBar: AppBar(
@@ -60,7 +60,7 @@ class _MascotCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final ms = ref.watch(mascotProvider).valueOrNull ?? const MascotState();
+    final ms = ref.watch(mascotProvider).value ?? const MascotState();
 
     return GestureDetector(
       onTap: () => context.pushNamed('mascotStudio'),
@@ -198,7 +198,7 @@ class _DailyMissionCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final missionAsync = ref.watch(missionProvider);
-    final mission = missionAsync.valueOrNull;
+    final mission = missionAsync.value;
     if (mission == null) return const SizedBox.shrink();
 
     final cap = '${mission.def.id[0].toUpperCase()}${mission.def.id.substring(1)}';
@@ -366,7 +366,7 @@ class _CrayonPacksSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final current =
-        ref.watch(settingsProvider).valueOrNull?.palette ?? 'classic';
+        ref.watch(settingsProvider).value?.palette ?? 'classic';
     final unlocked = kCrayonPacks.where((p) => isPackUnlocked(progress, p.id)).length;
 
     return Column(

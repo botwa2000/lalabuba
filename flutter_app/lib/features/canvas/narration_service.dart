@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../../shared/services/storage_service.dart';
@@ -25,7 +25,7 @@ class NarrationController extends AsyncNotifier<bool> {
     return StorageService.readBool(StorageService.kNarrate, false);
   }
 
-  bool get isOn => state.valueOrNull ?? false;
+  bool get isOn => state.value ?? false;
 
   Future<void> toggle() async {
     final next = !isOn;

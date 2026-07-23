@@ -1,4 +1,4 @@
-import 'package:flutter/services.dart';
+﻿import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lalabuba/features/progress/progress_service.dart';
@@ -188,7 +188,7 @@ void main() {
             isCustom: true,
             isDaily: false,
           );
-      final p = c.read(progressProvider).valueOrNull!;
+      final p = c.read(progressProvider).value!;
       expect(p.freeTextCreations, 1);
       expect(p.extremeCompleted, 1);
       expect(p.hardCompleted, 1); // extreme also counts as hard
@@ -212,7 +212,7 @@ void main() {
       }
       final fifth = await n.recordSave();
       expect(fifth.map((b) => b.id), contains('collector'));
-      expect(c.read(progressProvider).valueOrNull!.saves, 5);
+      expect(c.read(progressProvider).value!.saves, 5);
     });
 
     test('draw-pen badge awarded once, second call is a no-op', () async {
@@ -225,7 +225,7 @@ void main() {
       expect(first.map((b) => b.id), contains('penArtist'));
       final second = await n.recordDrawPenUse();
       expect(second, isEmpty);
-      expect(c.read(progressProvider).valueOrNull!.drawPenUses, 1);
+      expect(c.read(progressProvider).value!.drawPenUses, 1);
     });
 
     test('old saved progress (no new fields) loads with safe defaults', () {

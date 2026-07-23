@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,7 +43,7 @@ class GalleryScreen extends ConsumerWidget {
             icon: const Icon(Icons.menu_book_rounded),
             tooltip: l10n.t('printBookBtn'),
             onPressed: () async {
-              final files = imagesAsync.valueOrNull ?? const <File>[];
+              final files = imagesAsync.value ?? const <File>[];
               if (files.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(l10n.t('printBookEmpty'))),
@@ -93,7 +93,7 @@ class GalleryScreen extends ConsumerWidget {
   // greyed) — the collection that pulls the child back.
   Widget _buildJournalHeader(BuildContext context, WidgetRef ref, L10n l10n) {
     final cs = Theme.of(context).colorScheme;
-    final progress = ref.watch(progressProvider).valueOrNull ?? const Progress();
+    final progress = ref.watch(progressProvider).value ?? const Progress();
     final earned = progress.badges.toSet();
 
     final isEmpty = progress.totalCompleted == 0;

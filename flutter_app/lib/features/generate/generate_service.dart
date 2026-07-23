@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
@@ -119,7 +119,7 @@ class GenerateService {
 }
 
 final generateServiceProvider = Provider<GenerateService>((ref) {
-  final config = ref.watch(appConfigProvider).valueOrNull;
+  final config = ref.watch(appConfigProvider).value;
   if (config == null) throw StateError('AppConfig not loaded');
   return GenerateService(config);
 });

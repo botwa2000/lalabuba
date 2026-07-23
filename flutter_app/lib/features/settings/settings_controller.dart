@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/services/analytics_service.dart';
 import '../../shared/services/storage_service.dart';
 import '../rewards/crayon_packs.dart';
@@ -47,7 +47,7 @@ class SettingsNotifier extends AsyncNotifier<SettingsState> {
   }
 
   Future<void> cycleDifficulty(List<String> allowed) async {
-    final s = state.valueOrNull;
+    final s = state.value;
     if (s == null) return;
     final available = _difficulties.where(allowed.contains).toList();
     if (available.isEmpty) return;
@@ -59,7 +59,7 @@ class SettingsNotifier extends AsyncNotifier<SettingsState> {
   }
 
   Future<void> cyclePalette(List<String> allowed) async {
-    final s = state.valueOrNull;
+    final s = state.value;
     if (s == null) return;
     final available = _palettes.where(allowed.contains).toList();
     if (available.isEmpty) return;
@@ -71,7 +71,7 @@ class SettingsNotifier extends AsyncNotifier<SettingsState> {
   }
 
   Future<void> cycleColorCount(List<int> allowed) async {
-    final s = state.valueOrNull;
+    final s = state.value;
     if (s == null) return;
     final available = _colorCounts.where(allowed.contains).toList();
     if (available.isEmpty) return;
@@ -83,7 +83,7 @@ class SettingsNotifier extends AsyncNotifier<SettingsState> {
   }
 
   Future<void> toggleNumbers() async {
-    final s = state.valueOrNull;
+    final s = state.value;
     if (s == null) return;
     final next = !s.showNumbers;
     await StorageService.writeBool(StorageService.kShowNumbers, next);
@@ -92,14 +92,14 @@ class SettingsNotifier extends AsyncNotifier<SettingsState> {
   }
 
   Future<void> setDifficulty(String d) async {
-    final s = state.valueOrNull;
+    final s = state.value;
     if (s == null) return;
     await StorageService.write(StorageService.kDifficulty, d);
     state = AsyncData(s.copyWith(difficulty: d));
   }
 
   Future<void> setPalette(String p) async {
-    final s = state.valueOrNull;
+    final s = state.value;
     if (s == null) return;
     await StorageService.write(StorageService.kPalette, p);
     state = AsyncData(s.copyWith(palette: p));

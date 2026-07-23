@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -85,7 +85,7 @@ final localeProvider = AsyncNotifierProvider<LocaleNotifier, L10n>(LocaleNotifie
 
 // Convenience: synchronous access once loaded, falls back to key if not ready
 final l10nProvider = Provider<L10n>((ref) {
-  return ref.watch(localeProvider).valueOrNull ?? L10n('en', const {});
+  return ref.watch(localeProvider).value ?? L10n('en', const {});
 });
 
 const supportedLocales = _supportedLocales;

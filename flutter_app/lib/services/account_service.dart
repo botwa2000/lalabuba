@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
 import '../shared/services/device_id_service.dart';
@@ -331,7 +331,7 @@ class AccountNotifier extends StateNotifier<AccountState> {
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 final accountProvider = StateNotifierProvider<AccountNotifier, AccountState>((ref) {
-  final config = ref.watch(appConfigProvider).valueOrNull;
+  final config = ref.watch(appConfigProvider).value;
   if (config == null) throw StateError('AppConfig not loaded');
   return AccountNotifier(const FlutterSecureStorage(), config);
 });

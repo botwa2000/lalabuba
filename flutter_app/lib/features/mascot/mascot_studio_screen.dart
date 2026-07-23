@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,7 +18,7 @@ class MascotAvatar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs    = Theme.of(context).colorScheme;
-    final ms    = ref.watch(mascotProvider).valueOrNull;
+    final ms    = ref.watch(mascotProvider).value;
     final mascot = ms?.mascot;
     final hat    = ms?.hat;
 
@@ -68,7 +68,7 @@ class MascotChooser extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs  = Theme.of(context).colorScheme;
     final l10n = ref.watch(l10nProvider);
-    final ms  = ref.watch(mascotProvider).valueOrNull ?? const MascotState();
+    final ms  = ref.watch(mascotProvider).value ?? const MascotState();
 
     final unlocked = kMascots.where((m) => isMascotUnlocked(m, ms.loadouts)).toList();
     final locked   = kMascots.where((m) => !isMascotUnlocked(m, ms.loadouts)).toList();
@@ -150,7 +150,7 @@ class _MascotChip extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final ms = ref.watch(mascotProvider).valueOrNull;
+    final ms = ref.watch(mascotProvider).value;
     final selected = ms?.selectedMascotId == m.id;
 
     return GestureDetector(
@@ -213,8 +213,8 @@ class _MascotStudioScreenState extends ConsumerState<MascotStudioScreen>
   Widget build(BuildContext context) {
     final cs       = Theme.of(context).colorScheme;
     final l10n     = ref.watch(l10nProvider);
-    final ms       = ref.watch(mascotProvider).valueOrNull ?? const MascotState();
-    final progress = ref.watch(progressProvider).valueOrNull ?? const Progress();
+    final ms       = ref.watch(mascotProvider).value ?? const MascotState();
+    final progress = ref.watch(progressProvider).value ?? const Progress();
     final total    = progress.totalCompleted;
 
     if (!ms.isSetUp) {

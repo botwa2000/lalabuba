@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,7 +29,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
 
   Future<void> _load() async {
     final svc = ref.read(communityServiceProvider);
-    final config = ref.read(appConfigProvider).valueOrNull;
+    final config = ref.read(appConfigProvider).value;
     if (config != null) _baseUrl = config.apiBaseUrl;
     setState(() => _loading = true);
     try {

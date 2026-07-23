@@ -1,4 +1,4 @@
-// showcaseview 5.0.2's ShowCaseWidget/of/startShowCase are marked deprecated
+﻿// showcaseview 5.1.0's ShowCaseWidget/of/startShowCase are marked deprecated
 // (slated for removal in v6) but are the documented, self-contained per-screen
 // API for this pinned version; the v6 register() replacement adds global scope
 // lifecycle we don't need. Intentional until we bump the package major.
@@ -113,14 +113,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   String get _currentLocale =>
-      ref.read(localeProvider).valueOrNull?.locale ?? 'en';
+      ref.read(localeProvider).value?.locale ?? 'en';
 
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final homeAsync = ref.watch(homeProvider);
     final settingsAsync = ref.watch(settingsProvider);
-    final sub = ref.watch(subscriptionProvider).valueOrNull;
+    final sub = ref.watch(subscriptionProvider).value;
     // Assign today's mission and snapshot its baseline at app start, so a
     // mission like "color a picture" still counts a picture finished before the
     // child opens the Rewards screen.
@@ -242,7 +242,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool isLandscape,
   ) {
     final cs = Theme.of(context).colorScheme;
-    final settings = settingsAsync.valueOrNull;
+    final settings = settingsAsync.value;
     // Always 2 columns so cards are big enough for the emoji to be clearly visible.
     const cardColumns = 2;
 
@@ -401,7 +401,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       actions: [
         // 🌱 streak pill — constrained so it never crowds the brand name
         Builder(builder: (_) {
-          final p = ref.watch(progressProvider).valueOrNull;
+          final p = ref.watch(progressProvider).value;
           if (p == null || p.daysColored <= 0) return const SizedBox.shrink();
           return Center(
             child: ConstrainedBox(
@@ -434,7 +434,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onPressed: () => context.pushNamed('explore'),
         ),
         Builder(builder: (_) {
-          final p = ref.watch(progressProvider).valueOrNull;
+          final p = ref.watch(progressProvider).value;
           final done = p?.totalCompleted ?? 0;
           final btn = IconButton(
             iconSize: 22,
@@ -571,7 +571,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     SubscriptionState? sub,
   ) {
     final cs = Theme.of(context).colorScheme;
-    final settings = settingsAsync.valueOrNull;
+    final settings = settingsAsync.value;
     final panelWidth =
         (MediaQuery.sizeOf(context).width * 0.34).clamp(260.0, 340.0);
 
@@ -689,7 +689,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           value: _diffLabel(settings?.difficulty ?? 'medium', l10n),
           onTap: () {
             HapticFeedback.selectionClick();
-            final p = ref.read(progressProvider).valueOrNull ?? const Progress();
+            final p = ref.read(progressProvider).value ?? const Progress();
             ref.read(settingsProvider.notifier).cycleDifficulty(
                   isExtremeUnlocked(p)
                       ? const ['easy', 'medium', 'hard', 'extreme']
@@ -705,7 +705,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           onTap: () {
             HapticFeedback.selectionClick();
             // Cycle only the crayon packs the child has unlocked.
-            final p = ref.read(progressProvider).valueOrNull ?? const Progress();
+            final p = ref.read(progressProvider).value ?? const Progress();
             ref.read(settingsProvider.notifier)
                 .cyclePalette(unlockedPaletteIds(p));
           },
@@ -790,7 +790,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // the localizer hasn't finished loading.
         final display = ref
                 .read(subjectLocalizerProvider)
-                .valueOrNull
+                .value
                 ?.localize(english, _currentLocale) ??
             english;
         _fillSubject(display, englishOverride: english, source: 'scene');
@@ -964,7 +964,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required bool showChips,
   }) {
     final cs = Theme.of(context).colorScheme;
-    final settings = settingsAsync.valueOrNull;
+    final settings = settingsAsync.value;
 
     return Container(
       decoration: BoxDecoration(
@@ -1111,7 +1111,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final diffChip = LalaChip(
       label: _diffLabel(settings?.difficulty ?? 'medium', l10n),
       onTap: () {
-        final p = ref.read(progressProvider).valueOrNull ?? const Progress();
+        final p = ref.read(progressProvider).value ?? const Progress();
         ref.read(settingsProvider.notifier).cycleDifficulty(
               isExtremeUnlocked(p)
                   ? const ['easy', 'medium', 'hard', 'extreme']
@@ -1123,7 +1123,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final palChip = LalaChip(
       label: _palLabel(settings?.palette ?? 'classic', l10n),
       onTap: () {
-        final p = ref.read(progressProvider).valueOrNull ?? const Progress();
+        final p = ref.read(progressProvider).value ?? const Progress();
         ref.read(settingsProvider.notifier).cyclePalette(unlockedPaletteIds(p));
       },
     );
@@ -1282,7 +1282,7 @@ class _SettingsSheetBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final currentLocale = ref.watch(localeProvider).valueOrNull?.locale ?? 'en';
+    final currentLocale = ref.watch(localeProvider).value?.locale ?? 'en';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -305,7 +305,7 @@ class CommunityService {
 }
 
 final communityServiceProvider = Provider<CommunityService>((ref) {
-  final config = ref.watch(appConfigProvider).valueOrNull;
+  final config = ref.watch(appConfigProvider).value;
   if (config == null) throw StateError('AppConfig not loaded');
   return CommunityService(config);
 });

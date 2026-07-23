@@ -1,4 +1,4 @@
-// showcaseview 5.0.2's ShowCaseWidget/of/startShowCase are marked deprecated
+﻿// showcaseview 5.1.0's ShowCaseWidget/of/startShowCase are marked deprecated
 // (slated for removal in v6) but are the documented, self-contained per-screen
 // API for this pinned version; the v6 register() replacement adds global scope
 // lifecycle we don't need. Intentional until we bump the package major.
@@ -182,7 +182,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     }
 
     ref.read(canvasProvider.notifier).reset();
-    final settings = ref.read(settingsProvider).valueOrNull;
+    final settings = ref.read(settingsProvider).value;
     final difficulty = widget.args.preloadedDifficulty;
     final colorCount = settings?.colorCount ?? 12;
     final paletteColors = _getPaletteColors(settings?.palette ?? 'classic', colorCount);
@@ -223,8 +223,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       final config = await ref.read(appConfigProvider.future);
       svc = GenerateService(config);
     }
-    final settings = ref.read(settingsProvider).valueOrNull;
-    final sub = ref.read(subscriptionProvider).valueOrNull;
+    final settings = ref.read(settingsProvider).value;
+    final sub = ref.read(subscriptionProvider).value;
 
     if (sub != null && !sub.canGenerate) {
       _showDailyLimitReached();
@@ -583,7 +583,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final cs = Theme.of(context).colorScheme;
     final l10n = ref.watch(l10nProvider);
     final canvas = ref.watch(canvasProvider);
-    final settings = ref.watch(settingsProvider).valueOrNull;
+    final settings = ref.watch(settingsProvider).value;
     final isLandscape =
         MediaQuery.orientationOf(context) == Orientation.landscape;
 
@@ -804,15 +804,15 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         // finish. Off by default; the icon reflects state. Turning it on speaks
         // the praise line immediately so the child hears the voice is working.
         Builder(builder: (_) {
-          final on = ref.watch(narrationProvider).valueOrNull ?? false;
+          final on = ref.watch(narrationProvider).value ?? false;
           return IconButton(
             icon: Text(on ? '🔊' : '🔈', style: const TextStyle(fontSize: 19)),
             tooltip: l10n.t(on ? 'narrateOnChip' : 'narrateOffChip'),
             onPressed: () async {
               await ref.read(narrationProvider.notifier).toggle();
-              if (ref.read(narrationProvider).valueOrNull ?? false) {
+              if (ref.read(narrationProvider).value ?? false) {
                 final locale =
-                    ref.read(localeProvider).valueOrNull?.locale ?? 'en';
+                    ref.read(localeProvider).value?.locale ?? 'en';
                 ref
                     .read(narrationProvider.notifier)
                     .speak(l10n.t('narratePraise'), locale);
@@ -973,7 +973,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                       d.localPosition,
                       canvasSize: size,
                       assist: maskAssistFor(
-                          ref.read(settingsProvider).valueOrNull?.difficulty),
+                          ref.read(settingsProvider).value?.difficulty),
                     )
                 : canvas.mode == DrawMode.eyedropper
                     ? (d) => _onEyedropperSample(d.localPosition, size)
@@ -1065,7 +1065,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   void _narrateRegion(int regionId) {
     final pi = ref.read(canvasProvider).detection?.regionPaletteIndex[regionId];
     if (pi == null) return; // numberless / free-fill region — nothing to read
-    final locale = ref.read(localeProvider).valueOrNull?.locale ?? 'en';
+    final locale = ref.read(localeProvider).value?.locale ?? 'en';
     ref.read(narrationProvider.notifier).speak('${pi + 1}', locale);
   }
 
@@ -1815,7 +1815,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         : 0;
     AnalyticsService.track('coloring_completed', {
       'subject': _subject,
-      'difficulty': ref.read(settingsProvider).valueOrNull?.difficulty ?? 'medium',
+      'difficulty': ref.read(settingsProvider).value?.difficulty ?? 'medium',
       'regions_filled': canvas.regionColors.length,
       'total_regions': canvas.detection?.regions.length ?? 0,
       'show_numbers': canvas.showNumbers,
@@ -1825,11 +1825,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     });
 
     final l10n = ref.read(l10nProvider);
-    final settings = ref.read(settingsProvider).valueOrNull;
+    final settings = ref.read(settingsProvider).value;
 
     // Read-aloud praise the moment the picture is finished (no-op unless the
     // child has narration on). Parity with the web speak(narratePraise) call.
-    final locale = ref.read(localeProvider).valueOrNull?.locale ?? 'en';
+    final locale = ref.read(localeProvider).value?.locale ?? 'en';
     ref.read(narrationProvider.notifier).speak(l10n.t('narratePraise'), locale);
 
     // 1. Persist the finished artwork to the in-app Journal. We write to the app
@@ -1867,7 +1867,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           );
     } catch (_) {}
     final progress =
-        ref.read(progressProvider).valueOrNull ?? const Progress();
+        ref.read(progressProvider).value ?? const Progress();
 
     // Fire-and-forget: sync completion to server so leaderboard stays current.
     try {
@@ -2156,7 +2156,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
     // 6. Upload
     try {
-      final settings = ref.read(settingsProvider).valueOrNull;
+      final settings = ref.read(settingsProvider).value;
       await svc.shareArtwork(
         shareType: shareType,
         subject: _subject,
@@ -2219,7 +2219,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final seed = _currentSeed;
     if (seed == null) return;
 
-    final baseUrl = ref.read(appConfigProvider).valueOrNull?.apiBaseUrl
+    final baseUrl = ref.read(appConfigProvider).value?.apiBaseUrl
         ?? 'https://lalabuba.com';
     final encodedSubject = Uri.encodeQueryComponent(_subject);
     final challengeUrl = '$baseUrl/challenge?subject=$encodedSubject&seed=$seed';

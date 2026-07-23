@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/services/storage_service.dart';
 import 'subscription_models.dart';
 
@@ -48,7 +48,7 @@ class SubscriptionNotifier extends AsyncNotifier<SubscriptionState> {
   }
 
   Future<void> recordGeneration() async {
-    final s = state.valueOrNull;
+    final s = state.value;
     if (s == null) return;
     final newUsed = s.dailyUsed + 1;
     await StorageService.writeInt(StorageService.kDailyCount, newUsed);

@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -313,7 +313,7 @@ class ScenesNotifier extends AsyncNotifier<ScenesState> {
     await StorageService.write(_key, jsonEncode(j));
   }
 
-  ScenesState get _s => state.valueOrNull ?? const ScenesState();
+  ScenesState get _s => state.value ?? const ScenesState();
 
   Map<String, List<Placement>> _clonePlaced([ScenesState? from]) {
     final src = (from ?? _s).placed;

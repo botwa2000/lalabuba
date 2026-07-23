@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,9 +48,9 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
     final l10n = ref.watch(l10nProvider);
     final cs = Theme.of(context).colorScheme;
     final total =
-        (ref.watch(progressProvider).valueOrNull ?? const Progress())
+        (ref.watch(progressProvider).value ?? const Progress())
             .totalCompleted;
-    final scenes = ref.watch(scenesProvider).valueOrNull ?? const ScenesState();
+    final scenes = ref.watch(scenesProvider).value ?? const ScenesState();
 
     // Keep `_current` on a scene the child can actually open.
     if (!isSceneUnlocked(total, _current)) {
@@ -167,7 +167,7 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
             // Double-tap removes the topmost sticker under the finger.
             onDoubleTapDown: (d) => _doubleTapPos = d.localPosition,
             onDoubleTap: () {
-              final ps = ref.read(scenesProvider).valueOrNull
+              final ps = ref.read(scenesProvider).value
                       ?.placedIn(_current) ??
                   const [];
               for (int i = ps.length - 1; i >= 0; i--) {
@@ -182,7 +182,7 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
             // recogniser. Placed at the stage level so the second finger can
             // land anywhere on the stage, not just on the sticker's own bounds.
             onScaleStart: (d) {
-              final ps = ref.read(scenesProvider).valueOrNull
+              final ps = ref.read(scenesProvider).value
                       ?.placedIn(_current) ??
                   const [];
               _activeIdx = null;

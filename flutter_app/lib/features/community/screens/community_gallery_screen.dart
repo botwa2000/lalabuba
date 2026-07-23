@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -108,7 +108,7 @@ class _CommunityGalleryScreenState
     });
 
     try {
-      final config = ref.read(appConfigProvider).valueOrNull;
+      final config = ref.read(appConfigProvider).value;
       if (config != null) _baseUrl = config.apiBaseUrl;
 
       final result = await svc.getGallery(

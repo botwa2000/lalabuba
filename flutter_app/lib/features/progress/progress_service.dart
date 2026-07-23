@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/services/storage_service.dart';
@@ -408,7 +408,7 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
 
   /// Counts a generation (drives the parent-facing daily counter context).
   Future<void> recordGeneration() async {
-    final p = state.valueOrNull ?? await _load();
+    final p = state.value ?? await _load();
     await _save(p.copyWith(totalGenerated: p.totalGenerated + 1));
   }
 
@@ -423,7 +423,7 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
     bool isDaily = false, // came from the daily word
     bool withNumbers = true, // colour-by-number mode (vs free colour)
   }) async {
-    var p = state.valueOrNull ?? await _load();
+    var p = state.value ?? await _load();
     final tk = _todayKey();
 
     var streak = p.streak;
@@ -502,13 +502,13 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
   Future<List<StickerBadge>> recordDrawPenUse() {
     // Cheap idempotency: the badge only needs the first use; skip the write once
     // already counted so toggling the pen doesn't churn storage.
-    final p = state.valueOrNull;
+    final p = state.value;
     if (p != null && p.drawPenUses >= 1) return Future.value(const []);
     return _bump((p) => p.copyWith(drawPenUses: p.drawPenUses + 1));
   }
 
   Future<List<StickerBadge>> _bump(Progress Function(Progress) f) async {
-    final p = state.valueOrNull ?? await _load();
+    final p = state.value ?? await _load();
     final (awarded, newBadges) = _award(f(p));
     await _save(awarded);
     return newBadges;
@@ -613,7 +613,7 @@ class ProgressNotifier extends AsyncNotifier<Progress> {
   /// Merge a server progress map into local state using MAX strategy for
   /// integers and UNION for list/map fields. Saves and updates state if changed.
   Future<void> _mergeFromServer(Map<String, dynamic> srv) async {
-    final local = state.valueOrNull ?? await _load();
+    final local = state.value ?? await _load();
 
     int maxInt(int a, dynamic b) {
       final bInt = b is num ? b.toInt() : 0;

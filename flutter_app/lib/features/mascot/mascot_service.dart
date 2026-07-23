@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../shared/services/storage_service.dart';
 import 'mascot.dart';
 
@@ -34,7 +34,7 @@ class MascotNotifier extends AsyncNotifier<MascotState> {
   }
 
   Future<void> chooseMascot(String mascotId) async {
-    final current = state.valueOrNull ?? const MascotState();
+    final current = state.value ?? const MascotState();
     final m = mascotById(mascotId);
     if (m == null || !isMascotUnlocked(m, current.loadouts)) return;
     await StorageService.write(_kSelected, mascotId);
@@ -46,7 +46,7 @@ class MascotNotifier extends AsyncNotifier<MascotState> {
   Future<void> equipExpression(String? itemId) async => _equip('expression', itemId);
 
   Future<void> _equip(String slot, String? itemId) async {
-    final current = state.valueOrNull ?? const MascotState();
+    final current = state.value ?? const MascotState();
     final mid = current.selectedMascotId;
     if (mid == null) return;
     final existing = current.loadouts[mid] ?? const MascotLoadout();

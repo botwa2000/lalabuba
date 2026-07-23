@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,7 +65,7 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
   }
 
   void shuffle() {
-    final s = state.valueOrNull;
+    final s = state.value;
     if (s == null) return;
     final shuffled = [...s.allCards]..shuffle(_rng);
     state = AsyncData(s.copyWith(
@@ -75,7 +75,7 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
   }
 
   void setSubject(String subject) {
-    final s = state.valueOrNull;
+    final s = state.value;
     if (s == null) return;
     state = AsyncData(s.copyWith(subject: subject));
   }
@@ -84,7 +84,7 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
   /// label while still sending the English prompt to the API. The stored
   /// subject stays English (used as the generation prompt).
   SubjectCard? surpriseMe() {
-    final s = state.valueOrNull;
+    final s = state.value;
     if (s == null || s.allCards.isEmpty) return null;
     final card = s.allCards[_rng.nextInt(s.allCards.length)];
     state = AsyncData(s.copyWith(subject: card.englishPrompt));
@@ -92,7 +92,7 @@ class HomeNotifier extends AsyncNotifier<HomeState> {
   }
 
   void selectCard(SubjectCard card) {
-    final s = state.valueOrNull;
+    final s = state.value;
     if (s == null) return;
     state = AsyncData(s.copyWith(subject: card.englishPrompt));
   }

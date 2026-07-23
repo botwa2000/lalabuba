@@ -1,4 +1,4 @@
-import 'package:flutter/services.dart';
+﻿import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lalabuba/features/canvas/canvas_models.dart';
@@ -147,7 +147,7 @@ void main() {
           .read(progressProvider.notifier)
           .recordCompletion(subject: 'cat', difficulty: 'easy');
 
-      final p = c.read(progressProvider).valueOrNull!;
+      final p = c.read(progressProvider).value!;
       expect(p.totalCompleted, 1);
       expect(p.streak, 1);
       expect(p.daysColored, 1);
@@ -161,7 +161,7 @@ void main() {
 
       await c.read(progressProvider.notifier).recordGeneration();
       await c.read(progressProvider.notifier).recordGeneration();
-      expect(c.read(progressProvider).valueOrNull!.totalGenerated, 2);
+      expect(c.read(progressProvider).value!.totalGenerated, 2);
     });
 
     test('withNumbers true awards byNumbers; false awards freeColor', () async {
@@ -177,7 +177,7 @@ void main() {
       final b2 = await n.recordCompletion(subject: 'dog', withNumbers: false);
       expect(b2.map((b) => b.id), contains('freeColor'));
 
-      final p = c.read(progressProvider).valueOrNull!;
+      final p = c.read(progressProvider).value!;
       expect(p.numbersCompleted, 1);
       expect(p.freeColorCompleted, 1);
     });
@@ -191,7 +191,7 @@ void main() {
       await n.recordCompletion(subject: 'cat');
       await n.recordCompletion(subject: 'dog');
 
-      final p = c.read(progressProvider).valueOrNull!;
+      final p = c.read(progressProvider).value!;
       expect(p.totalCompleted, 2);
       expect(p.daysColored, 1); // still one day
       expect(p.streak, 1);
