@@ -76,8 +76,25 @@ workflows:
             --build-number="${BUILD_CODE}" \
             --export-options-plist="$CM_BUILD_DIR/export_options.plist" 2>&1 | tee "$CM_BUILD_DIR/flutter_build_ipa.log"
 
+      - name: Upload dSYMs to Firebase Crashlytics
+        script: |
+          UPLOAD_BIN="ios/Pods/FirebaseCrashlytics/upload-symbols"
+          GSVC_PLIST="ios/Runner/GoogleService-Info.plist"
+          DSYM_DIR="build/ios/archive/Runner.xcarchive/dSYMs"
+          if [ ! -f "$UPLOAD_BIN" ]; then
+            echo "upload-symbols not found at $UPLOAD_BIN — skipping dSYM upload"; exit 0
+          fi
+          if [ ! -d "$DSYM_DIR" ]; then
+            echo "dSYM directory not found at $DSYM_DIR — skipping"; exit 0
+          fi
+          find "$DSYM_DIR" -name "*.dSYM" | while read dsym; do
+            echo "Uploading: $dsym"
+            "$UPLOAD_BIN" -gsp "$GSVC_PLIST" -p ios "$dsym"
+          done
+
     artifacts:
       - build/ios/ipa/*.ipa
+      - build/ios/archive/Runner.xcarchive/dSYMs/*.dSYM
       - $CM_BUILD_DIR/flutter_build_ipa.log
       - /tmp/xcodebuild_logs/*.log
 
