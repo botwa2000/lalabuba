@@ -267,8 +267,10 @@ class _DigitBox extends StatelessWidget {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             maxLength: 1,
-            style: GoogleFonts.robotoMono(
-                fontSize: 22, fontWeight: FontWeight.w700),
+            style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 22,
+                fontWeight: FontWeight.w700),
             decoration: InputDecoration(
               counterText: '',
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
