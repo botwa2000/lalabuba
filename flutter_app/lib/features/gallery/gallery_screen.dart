@@ -69,6 +69,11 @@ class GalleryScreen extends ConsumerWidget {
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () => ref.invalidate(galleryImagesProvider),
           ),
+          IconButton(
+            icon: const Icon(Icons.settings_rounded),
+            tooltip: 'Settings',
+            onPressed: () => context.push('/settings'),
+          ),
         ],
       ),
       body: Column(
@@ -167,7 +172,7 @@ class GalleryScreen extends ConsumerWidget {
                 return GestureDetector(
                   onTap: () {
                     HapticFeedback.lightImpact();
-                    context.pushNamed('rewards');
+                    context.goNamed('treehouse');
                   },
                   child: Container(
                   width: 74,

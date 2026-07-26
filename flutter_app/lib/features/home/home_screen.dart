@@ -433,58 +433,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           tooltip: l10n.t('navExplore'),
           onPressed: () => context.pushNamed('explore'),
         ),
-        Builder(builder: (_) {
-          final p = ref.watch(progressProvider).value;
-          final done = p?.totalCompleted ?? 0;
-          final btn = IconButton(
-            iconSize: 22,
-            icon: const Icon(Icons.photo_library_rounded),
-            tooltip: l10n.t('galleryBtn'),
-            onPressed: () => context.pushNamed('gallery'),
-          );
-          if (done <= 0) return btn;
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              btn,
-              Positioned(
-                right: 4,
-                top: 6,
-                child: Container(
-                  constraints:
-                      const BoxConstraints(minWidth: 16, minHeight: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                    color: cs.primary,
-                    borderRadius: BorderRadius.circular(50),
-                    border: Border.all(color: cs.surface, width: 1.5),
-                  ),
-                  child: Center(
-                    child: Text(
-                      done > 99 ? '99+' : '$done',
-                      style: GoogleFonts.fredoka(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: cs.onPrimary,
-                          height: 1.1),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        }),
-        IconButton(
-          iconSize: 22,
-          icon: const Icon(Icons.people_rounded),
-          tooltip: l10n.t('galleryTabCommunity'),
-          onPressed: () => context.pushNamed('community'),
-        ),
         IconButton(
           iconSize: 22,
           icon: const Icon(Icons.settings_rounded),
           tooltip: l10n.t('settingsTitle'),
-          onPressed: () => _openSettingsSheet(context, l10n),
+          onPressed: () => context.push('/settings'),
         ),
         const SizedBox(width: 2),
       ],

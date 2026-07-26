@@ -234,7 +234,7 @@ class _CommunityGalleryScreenState
               GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  context.pushNamed('home');
+                  context.goNamed('draw');
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -283,6 +283,36 @@ class _CommunityGalleryScreenState
                       const SizedBox(width: 5),
                       Text(
                         l10n.t('communityTopArtists'),
+                        style: GoogleFonts.fredoka(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  context.push('/settings');
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.settings_rounded, size: 13, color: Colors.white),
+                      const SizedBox(width: 5),
+                      Text(
+                        l10n.t('settingsTitle'),
                         style: GoogleFonts.fredoka(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
