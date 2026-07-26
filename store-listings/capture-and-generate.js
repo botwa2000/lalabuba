@@ -91,9 +91,19 @@ const SCREENS = [
     subtitle: 'Type any idea — AI makes a one-of-a-kind drawing in seconds',
     actions: [
       { t: 'launch' },
-      { t: 'wait', ms: 3000 },
-      { t: 'tab', n: 0 },       // ensure Draw tab active
-      { t: 'wait', ms: 1500 },
+      { t: 'wait', ms: 6000 },
+      { t: 'tab', n: 0 },
+      { t: 'wait', ms: 2000 },
+      // Dismiss any tutorial/onboarding callout by tapping neutral area (top half of screen)
+      { t: 'tap', x: 540, y: 300 },
+      { t: 'wait', ms: 1000 },
+    ],
+    tabletActions: [
+      { t: 'launch' },
+      { t: 'wait', ms: 6000 },
+      { t: 'wait', ms: 2000 },
+      { t: 'tap', x: 760, y: 300 },
+      { t: 'wait', ms: 1000 },
     ],
   },
 
@@ -113,25 +123,42 @@ const SCREENS = [
     subtitle: 'No instructions needed — kids figure it out right away',
     actions: [
       { t: 'launch' },
-      { t: 'wait', ms: 3500 },
+      { t: 'wait', ms: 6000 },
       { t: 'tap', x: 540, y: 1409 },   // focus EditText
       { t: 'wait', ms: 400 },
       { t: 'text', v: 'unicorn' },       // type subject
       { t: 'key', c: 111 },              // KEYCODE_ESCAPE → dismiss keyboard
       { t: 'wait', ms: 1000 },
       { t: 'tap', x: 761, y: 1560 },    // tap Draw! (now enabled, keyboard gone)
-      { t: 'wait', ms: 28000 },
+      { t: 'wait', ms: 90000 },
+      // Dismiss hint + add color fills to show the coloring mechanic in action
+      { t: 'tap', x: 51, y: 1305 },    // tap red swatch → selects color + dismisses hint
+      { t: 'wait', ms: 600 },
+      { t: 'tap', x: 500, y: 750 },    // fill unicorn body region
+      { t: 'wait', ms: 800 },
+      { t: 'tap', x: 311, y: 1305 },   // tap yellow swatch
+      { t: 'wait', ms: 500 },
+      { t: 'tap', x: 230, y: 560 },    // fill mane area
+      { t: 'wait', ms: 800 },
+      { t: 'tap', x: 701, y: 1305 },   // tap cyan/teal swatch
+      { t: 'wait', ms: 500 },
+      { t: 'tap', x: 180, y: 430 },    // fill horn area
+      { t: 'wait', ms: 800 },
+      { t: 'tap', x: 571, y: 1305 },   // tap green swatch
+      { t: 'wait', ms: 500 },
+      { t: 'tap', x: 650, y: 900 },    // fill leg/lower area
+      { t: 'wait', ms: 1000 },
     ],
     tabletActions: [
       { t: 'launch' },
-      { t: 'wait', ms: 3500 },
+      { t: 'wait', ms: 6000 },
       { t: 'tap', x: 1752, y: 240 },   // focus EditText
       { t: 'wait', ms: 400 },
       { t: 'text', v: 'unicorn' },
       { t: 'key', c: 111 },
       { t: 'wait', ms: 1000 },
       { t: 'tap', x: 1972, y: 676 },   // tap Draw!
-      { t: 'wait', ms: 28000 },
+      { t: 'wait', ms: 90000 },
     ],
   },
 
@@ -146,13 +173,13 @@ const SCREENS = [
     subtitle: 'Dragons, unicorns, space — pick anything and start coloring',
     actions: [
       { t: 'launch' },
-      { t: 'wait', ms: 3000 },
+      { t: 'wait', ms: 6000 },
       { t: 'tapF', xf: 0.820, yf: 0.086 },  // Explore button in AppBar
       { t: 'wait', ms: 2500 },
     ],
     tabletActions: [
       { t: 'launch' },
-      { t: 'wait', ms: 3000 },
+      { t: 'wait', ms: 6000 },
       { t: 'tapF', xf: 0.942, yf: 0.065 },  // Explore button in AppBar
       { t: 'wait', ms: 2500 },
     ],
@@ -161,39 +188,41 @@ const SCREENS = [
   // ── 04: Treehouse (rewards, mascot, achievements) ────────────────────────────
   {
     id:       '04_treehouse',
-    phone:    'tablet_land_rewards.png',
+    phone:    'phone_port_04_treehouse.png',  // phone portrait captured separately
     tablet:   'tablet_land_rewards.png',
     title:    'Color more, unlock more.',
     subtitle: 'Earn badges, crayon packs, and a pet companion as you go',
     actions: [
       { t: 'launch' },
-      { t: 'wait', ms: 3500 },
+      { t: 'wait', ms: 6000 },
       { t: 'tab', n: 3 },
       { t: 'wait', ms: 2500 },
     ],
   },
 
   // ── 05: Mascot studio ────────────────────────────────────────────────────────
-  // Phone: uiautomator dump: "Choose your companion!" bounds [42,311][1038,647] → center (540,479)
-  // Tablet: uses same phone portrait raw — composite crops to 'top' showing Mascot Studio title.
+  // Phone: "Choose your companion!" bounds [42,311][1038,647] → center (540,479)
+  // Tablet: tablet landscape (2560×1600) from emulator-5556
   {
     id:       '05_mascot',
-    phone:    'tablet_land_mascot.png',
+    phone:    'phone_port_05_mascot.png',  // phone portrait captured separately
     tablet:   'tablet_land_mascot.png',
     title:    'Pick a pet. Dress it up.',
     subtitle: 'Unlock hats, accessories, and expressions for your companion',
     actions: [
       { t: 'launch' },
-      { t: 'wait', ms: 3500 },
-      { t: 'tab', n: 3 },
+      { t: 'wait', ms: 6000 },
+      { t: 'tab', n: 3 },               // Treehouse tab
       { t: 'wait', ms: 2500 },
-      { t: 'tap', x: 540, y: 479 },  // "Choose your companion!" card center
-      { t: 'wait', ms: 5000 },
+      { t: 'tap', x: 540, y: 479 },     // "Choose your companion!" card → Mascot Studio
+      { t: 'wait', ms: 2000 },
+      { t: 'tap', x: 97, y: 460 },      // Tap Pixel companion → customization screen
+      { t: 'wait', ms: 2000 },
     ],
   },
 
   // ── 06: Completed coloring canvas ────────────────────────────────────────────
-  // Wait 45s for AI generation to complete — shows finished numbered coloring page.
+  // Wait 90s for AI generation to complete — shows finished numbered coloring page.
   // Tablet composite reuses the phone portrait with 'entropy' smart crop to find
   // the dinosaur image (avoids the tablet emulator's persistent stylus input dialog).
   {
@@ -205,27 +234,76 @@ const SCREENS = [
     subtitle: 'Tap any numbered region to fill it — no mess, no cleanup',
     actions: [
       { t: 'launch' },
-      { t: 'wait', ms: 3500 },
+      { t: 'wait', ms: 6000 },
       { t: 'tap', x: 540, y: 1409 },   // focus EditText
       { t: 'wait', ms: 400 },
-      { t: 'text', v: 'dinosaur' },
+      { t: 'text', v: 'dragon' },
       { t: 'key', c: 111 },             // dismiss keyboard
       { t: 'wait', ms: 1000 },
-      { t: 'tap', x: 761, y: 1560 },   // tap Draw!
-      { t: 'wait', ms: 45000 },
+      { t: 'tap', x: 761, y: 1560 },   // Draw! (suggestion cards collapsed after typing)
+      { t: 'wait', ms: 240000 },
+      { t: 'tap', x: 137, y: 1305 },   // orange swatch → dismisses hint
+      { t: 'wait', ms: 600 },
+      { t: 'tap', x: 400, y: 550 },    // fill body
+      { t: 'wait', ms: 800 },
+      { t: 'tap', x: 51, y: 1305 },    // red swatch
+      { t: 'wait', ms: 500 },
+      { t: 'tap', x: 250, y: 500 },    // fill wing/head
+      { t: 'wait', ms: 800 },
+      { t: 'tap', x: 701, y: 1305 },   // cyan swatch
+      { t: 'wait', ms: 500 },
+      { t: 'tap', x: 600, y: 700 },    // fill another region
+      { t: 'wait', ms: 800 },
     ],
   },
 
   // ── 07: Journal tab (personal art collection) ────────────────────────────────
   {
     id:       '07_journal',
-    phone:    'tablet_land_journal_dragon.png',
-    tablet:   'tablet_land_journal_dragon.png',
+    phone:    'phone_port_07_journal.png',
+    tablet:   'tablet_land_07_journal.png',
     title:    'Every masterpiece saved.',
     subtitle: 'Flip back through your art and watch your collection grow',
     actions: [
+      // Generate a butterfly, color it, finish it, then navigate to journal
       { t: 'launch' },
-      { t: 'wait', ms: 3500 },
+      { t: 'wait', ms: 6000 },
+      { t: 'tap', x: 540, y: 1409 },   // focus search bar
+      { t: 'wait', ms: 400 },
+      { t: 'text', v: 'unicorn' },
+      { t: 'key', c: 111 },             // dismiss keyboard
+      { t: 'wait', ms: 1000 },
+      { t: 'tap', x: 761, y: 1560 },   // Draw!
+      { t: 'wait', ms: 120000 },        // unicorn generates fast (~90s)
+      { t: 'tap', x: 137, y: 1305 },   // orange swatch → dismiss hint
+      { t: 'wait', ms: 600 },
+      { t: 'tap', x: 400, y: 550 },    // fill body
+      { t: 'wait', ms: 800 },
+      { t: 'tap', x: 51, y: 1305 },    // red swatch
+      { t: 'wait', ms: 500 },
+      { t: 'tap', x: 250, y: 500 },    // fill wing
+      { t: 'wait', ms: 800 },
+      { t: 'tap', x: 174, y: 1780 },   // "I'm finished!" button
+      { t: 'wait', ms: 5000 },          // wait for celebration + auto-navigation
+      { t: 'tap', x: 126, y: 162 },    // Home button (canvas header) → goes to Draw tab
+      { t: 'wait', ms: 1500 },
+      { t: 'tab', n: 1 },               // Journal tab
+      { t: 'wait', ms: 2500 },
+    ],
+    tabletActions: [
+      { t: 'launch' },
+      { t: 'wait', ms: 6000 },
+      { t: 'tap', x: 1752, y: 240 },   // EditText on tablet
+      { t: 'wait', ms: 400 },
+      { t: 'text', v: 'butterfly' },
+      { t: 'key', c: 111 },
+      { t: 'wait', ms: 1000 },
+      { t: 'tap', x: 1972, y: 676 },   // Draw! on tablet
+      { t: 'wait', ms: 240000 },
+      { t: 'tapF', xf: 0.07, yf: 0.87 }, // "I'm finished!" estimated position on tablet
+      { t: 'wait', ms: 3000 },
+      { t: 'tap', x: 1280, y: 800 },   // dismiss celebration
+      { t: 'wait', ms: 1000 },
       { t: 'tab', n: 1 },
       { t: 'wait', ms: 2500 },
     ],
@@ -240,7 +318,7 @@ const SCREENS = [
     subtitle: 'See what others made, share your own, get inspired',
     actions: [
       { t: 'launch' },
-      { t: 'wait', ms: 3500 },
+      { t: 'wait', ms: 6000 },
       { t: 'tab', n: 2 },
       { t: 'wait', ms: 3500 }, // wait for community art grid to load
     ],
@@ -279,6 +357,8 @@ async function runActions(device, actions) {
         try { adbShell(device.serial, `am force-stop ${APP_PACKAGE}`); } catch {}
         await sleep(500);
         adbShell(device.serial, `wm dismiss-keyguard`);
+        // Force light mode so canvas renders with white background, not dark grey
+        try { adbShell(device.serial, `cmd uimode night no`); } catch {}
         // Disable stylus handwriting dialog that blocks input text on tablet emulators
         try { adbShell(device.serial, `settings put global stylus_handwriting_enabled 0`); } catch {}
         await sleep(300);

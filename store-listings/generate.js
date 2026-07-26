@@ -88,10 +88,10 @@ const SCREENS = [
   {
     name:      '02_coloring',
     phone:     'phone_port_02_coloring.png',
-    tablet:    'tablet_land_canvas_inprogress.png',
-    positions: { tablet: 'left' },
+    tablet:    'tablet_land_02_coloring_canvas.png',
+    positions: { tablet: 'top' },
     title:     'Tap a number. Pick a color. Done.',
-    subtitle:  'No instructions needed — kids figure it out right away',
+    subtitle:  'No instructions needed — kids just get it',
   },
   {
     name:      '03_explore',
@@ -103,23 +103,24 @@ const SCREENS = [
   },
   {
     name:      '04_rewards',
-    phone:     'tablet_land_rewards.png',
+    phone:     'phone_port_04_treehouse.png',
     tablet:    'tablet_land_rewards.png',
     positions: { tablet: 'left' },
     title:     'Color more, unlock more.',
     subtitle:  'Earn badges, crayon packs, and a pet companion as you go',
   },
   {
-    name:      '05_mascot',
-    phone:     'tablet_land_mascot.png',
-    tablet:    'tablet_land_mascot.png',
-    positions: { tablet: 'left' },
-    title:     'Pick a pet. Dress it up.',
-    subtitle:  'Unlock hats, accessories, and expressions for your companion',
+    name:          '05_mascot',
+    phone:         'phone_port_05_mascot.png',
+    tablet:        'tablet_land_mascot.png',
+    positions:     { tablet: 'left' },
+    title:         'Pick a pet. Dress it up.',
+    subtitle:      'Unlock hats, accessories, and expressions for your companion',
+    ovFracOverride: { tablet: 0.50, phone: 0.45 },
   },
   {
     name:      '06_scenes',
-    phone:     'tablet_land_scenes.png',
+    phone:     'phone_port_06_canvas.png',
     tablet:    'tablet_land_scenes.png',
     positions: { tablet: 'left' },
     title:     'Bring your art to life.',
@@ -127,15 +128,15 @@ const SCREENS = [
   },
   {
     name:      '07_journal',
-    phone:     'tablet_land_journal_dragon.png',
-    tablet:    'tablet_land_journal_dragon.png',
+    phone:     'phone_port_07_journal.png',
+    tablet:    'tablet_land_07_journal.png',
     positions: { tablet: 'left' },
     title:     'Every masterpiece saved.',
     subtitle:  'Flip back through your art and watch your collection grow',
   },
   {
     name:      '08_community',
-    phone:     'phone_port_05_community.png',
+    phone:     'phone_port_08_community.png',
     tablet:    'tablet_land_community.png',
     positions: { tablet: 'left' },
     title:     'Share art with kids everywhere.',
@@ -154,16 +155,17 @@ const TARGETS = [
   // Google Play — phone portrait 9:16
   { dir: 'google-play/phone',  w: 1080, h: 1920, src: 'phone',  ovFrac: 0.27, tPx: 52, sPx: 28, tCh: 30, sCh: 43 },
   // Google Play — 10" tablet landscape
-  { dir: 'google-play/tablet', w: 2560, h: 1600, src: 'tablet', ovFrac: 0.27, tPx: 78, sPx: 43, tCh: 36, sCh: 52 },
+  { dir: 'google-play/tablet', w: 2560, h: 1600, src: 'tablet', ovFrac: 0.27, tPx: 78, sPx: 43, tCh: 36, sCh: 60 },
   // App Store — iPhone 6.7" Pro Max (also accepted for 6.5")
-  { dir: 'app-store/iphone',   w: 1290, h: 2796, src: 'phone',  ovFrac: 0.23, tPx: 64, sPx: 36, tCh: 30, sCh: 42 },
+  { dir: 'app-store/iphone',   w: 1290, h: 2796, src: 'phone',  ovFrac: 0.23, tPx: 64, sPx: 36, tCh: 35, sCh: 60 },
   // App Store — iPad Pro 12.9" landscape (matches tablet landscape source, minimal crop)
-  { dir: 'app-store/ipad',     w: 2732, h: 2048, src: 'tablet', ovFrac: 0.27, tPx: 78, sPx: 43, tCh: 36, sCh: 52 },
+  { dir: 'app-store/ipad',     w: 2732, h: 2048, src: 'tablet', ovFrac: 0.27, tPx: 78, sPx: 43, tCh: 36, sCh: 60 },
 ];
 
 // ─── Core composite ───────────────────────────────────────────────────────────
 async function composite(srcPath, target, screen) {
-  const { w, h, dir, ovFrac, tPx, sPx, tCh, sCh, src } = target;
+  const { w, h, dir, tPx, sPx, tCh, sCh, src } = target;
+  const ovFrac = screen.ovFracOverride?.[src] ?? target.ovFrac;
 
   const srcMeta = await sharp(srcPath).metadata();
   const srcIsLandscape = srcMeta.width > srcMeta.height;
