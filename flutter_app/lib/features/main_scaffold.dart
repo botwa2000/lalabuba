@@ -10,7 +10,6 @@ class MainScaffold extends StatelessWidget {
   void _onTabTapped(int index) {
     navigationShell.goBranch(
       index,
-      // Second tap on the same tab restores the branch root (scroll-to-top pattern).
       initialLocation: index == navigationShell.currentIndex,
     );
   }
@@ -30,14 +29,14 @@ class MainScaffold extends StatelessWidget {
             label: 'Draw',
           ),
           NavigationDestination(
+            icon: Text('🔍', style: GoogleFonts.nunito(fontSize: 22, height: 1)),
+            selectedIcon: Text('🔍', style: GoogleFonts.nunito(fontSize: 26, height: 1)),
+            label: 'Explore',
+          ),
+          NavigationDestination(
             icon: Text('📓', style: GoogleFonts.nunito(fontSize: 22, height: 1)),
             selectedIcon: Text('📓', style: GoogleFonts.nunito(fontSize: 26, height: 1)),
             label: 'Journal',
-          ),
-          NavigationDestination(
-            icon: Text('🖼️', style: GoogleFonts.nunito(fontSize: 22, height: 1)),
-            selectedIcon: Text('🖼️', style: GoogleFonts.nunito(fontSize: 26, height: 1)),
-            label: 'Gallery',
           ),
           NavigationDestination(
             icon: Text('🌳', style: GoogleFonts.nunito(fontSize: 22, height: 1)),

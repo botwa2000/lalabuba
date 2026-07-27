@@ -2,18 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/l10n_service.dart';
 import '../community_service.dart';
 import '../models/artwork_model.dart';
 import '../widgets/community_artwork_card.dart';
-import 'leaderboard_screen.dart';
 
-// ─── Accent colours ─────────────────────────────────────────────────────────
-const _kGradientStart = Color(0xFFFF8C69); // warm coral
-const _kGradientEnd   = Color(0xFFFF5BA7); // vivid pink
 
 class CommunityGalleryScreen extends ConsumerStatefulWidget {
   const CommunityGalleryScreen({super.key});
@@ -146,8 +141,12 @@ class _CommunityGalleryScreenState
   Widget build(BuildContext context) {
     super.build(context);
     final cs = Theme.of(context).colorScheme;
-    final brightness = Theme.of(context).brightness;
     final l10n = ref.watch(l10nProvider);
+
+    // Refresh when signalled from outside (e.g. after sharing from canvas).
+    ref.listen<int>(communityGalleryRefreshProvider, (prev, next) {
+      if (next != prev) _load(reset: true);
+    });
 
     final filters = <(String, String)>[
       ('all', l10n.t('communityFilterAll')),
@@ -159,174 +158,14 @@ class _CommunityGalleryScreenState
         ('theme', '${_weeklyThemeEmoji ?? '🎨'} $_weeklyThemeWord'),
     ];
 
-    return ColoredBox(
-      color: brightness == Brightness.dark
-          ? const Color(0xFF1A1A2E)
-          : const Color(0xFFFAF5FF),
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _buildHeader(cs, brightness, l10n),
-            if (_newReactions > 0) _buildReactionBanner(cs, l10n),
-            if (_weeklyThemeActive == true && _weeklyThemeWord != null)
-              _buildThemeBanner(cs, l10n),
-            _buildFilterRow(filters),
-            Expanded(child: _buildBody(cs, l10n)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(ColorScheme cs, Brightness brightness, L10n l10n) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [_kGradientStart, _kGradientEnd],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: _kGradientEnd.withValues(alpha: 0.30),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  l10n.t('galleryTabCommunity'),
-                  style: GoogleFonts.fredoka(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  l10n.t('communitySubtitle'),
-                  style: GoogleFonts.nunito(
-                    fontSize: 13,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Action buttons: Share my art + Top Artists
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // Share my art — goes to home so user can draw and share from canvas
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.goNamed('draw');
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.28),
-                    borderRadius: BorderRadius.circular(50),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.50)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('📤', style: TextStyle(fontSize: 13)),
-                      const SizedBox(width: 5),
-                      Text(
-                        l10n.t('communityShareBtn'),
-                        style: GoogleFonts.fredoka(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              // Top Artists leaderboard
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(50),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.40)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('🏆', style: TextStyle(fontSize: 13)),
-                      const SizedBox(width: 5),
-                      Text(
-                        l10n.t('communityTopArtists'),
-                        style: GoogleFonts.fredoka(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.push('/settings');
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(50),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.settings_rounded, size: 13, color: Colors.white),
-                      const SizedBox(width: 5),
-                      Text(
-                        l10n.t('settingsTitle'),
-                        style: GoogleFonts.fredoka(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return Column(
+      children: [
+        if (_newReactions > 0) _buildReactionBanner(cs, l10n),
+        if (_weeklyThemeActive == true && _weeklyThemeWord != null)
+          _buildThemeBanner(cs, l10n),
+        _buildFilterRow(filters),
+        Expanded(child: _buildBody(cs, l10n)),
+      ],
     );
   }
 
@@ -497,14 +336,14 @@ class _CommunityGalleryScreenState
             width: 100, height: 100,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [_kGradientStart, _kGradientEnd],
+              gradient: LinearGradient(
+                colors: [cs.primary, cs.secondary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: _kGradientEnd.withValues(alpha: 0.35),
+                  color: cs.secondary.withValues(alpha: 0.35),
                   blurRadius: 20,
                   offset: const Offset(0, 6),
                 ),
@@ -609,14 +448,7 @@ class _FilterPill extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: selected
-              ? const LinearGradient(
-                  colors: [_kGradientStart, _kGradientEnd],
-                ).colors.first
-              : cs.surfaceContainerHighest,
-          gradient: selected
-              ? const LinearGradient(colors: [_kGradientStart, _kGradientEnd])
-              : null,
+          color: selected ? cs.primary : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(50),
           border: Border.all(
             color: selected
@@ -624,7 +456,7 @@ class _FilterPill extends StatelessWidget {
                 : cs.outlineVariant.withValues(alpha: 0.5),
           ),
           boxShadow: selected
-              ? [BoxShadow(color: _kGradientEnd.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2))]
+              ? [BoxShadow(color: cs.primary.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2))]
               : [],
         ),
         child: Text(
@@ -898,10 +730,7 @@ class _ReactionButton extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          gradient: active
-              ? const LinearGradient(colors: [_kGradientStart, _kGradientEnd])
-              : null,
-          color: active ? null : Colors.white12,
+          color: active ? cs.primary : Colors.white12,
           borderRadius: BorderRadius.circular(50),
           border: active ? null : Border.all(color: Colors.white24),
         ),

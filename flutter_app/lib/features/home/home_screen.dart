@@ -429,12 +429,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }),
         IconButton(
           iconSize: 22,
-          icon: const Icon(Icons.auto_stories_rounded),
-          tooltip: l10n.t('navExplore'),
-          onPressed: () => context.pushNamed('explore'),
-        ),
-        IconButton(
-          iconSize: 22,
           icon: const Icon(Icons.settings_rounded),
           tooltip: l10n.t('settingsTitle'),
           onPressed: () => context.push('/settings'),
@@ -573,7 +567,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Expanded(child: _buildPickDivider(context, l10n)),
                     const SizedBox(width: 8),
                     TextButton.icon(
-                      onPressed: () => context.pushNamed('explore'),
+                      onPressed: () => context.goNamed('explore'),
                       icon: Icon(Icons.explore_rounded,
                           size: 15, color: cs.primary),
                       label: Text(
@@ -1085,7 +1079,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       label: _cntLabel(settings?.colorCount ?? 12, l10n),
       onTap: () => ref
           .read(settingsProvider.notifier)
-          .cycleColorCount([6, 12, 18, 24, 99]),
+          .cycleColorCount([6, 12, 18, 24]),
     );
 
     // Coloring-MODE switch: name the mode so its purpose is obvious.

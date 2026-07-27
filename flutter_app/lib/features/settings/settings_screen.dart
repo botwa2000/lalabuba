@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/l10n/l10n_service.dart';
+import '../../core/di/providers.dart' show themeModeProvider;
 import '../../services/account_service.dart';
 import '../../shared/widgets/parental_gate.dart';
 import '../community/community_service.dart';
@@ -26,6 +28,125 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   CommunityProfile? _profile;
   bool _profileLoading = true;
+
+  Widget _buildDisplaySection(BuildContext context, L10n l10n) {
+    final themeMode = ref.watch(themeModeProvider);
+    final currentLocale = ref.watch(localeProvider).value?.locale ?? 'en';
+    final cs = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(l10n.t('settingsDisplay')),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Theme toggle
+                Text(l10n.t('settingsTheme'),
+                    style: GoogleFonts.nunito(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface.withValues(alpha: 0.6))),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _SettingsChoiceChip(
+                      label: l10n.t('settingsThemeLight'),
+                      icon: Icons.light_mode_rounded,
+                      selected: themeMode == ThemeMode.light,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        ref.read(themeModeProvider.notifier).state = ThemeMode.light;
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _SettingsChoiceChip(
+                      label: l10n.t('settingsThemeDark'),
+                      icon: Icons.dark_mode_rounded,
+                      selected: themeMode == ThemeMode.dark,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        ref.read(themeModeProvider.notifier).state = ThemeMode.dark;
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _SettingsChoiceChip(
+                      label: l10n.t('settingsThemeSystem'),
+                      icon: Icons.brightness_auto_rounded,
+                      selected: themeMode == ThemeMode.system,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        ref.read(themeModeProvider.notifier).state = ThemeMode.system;
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Language picker
+                Text(l10n.t('settingsLanguage'),
+                    style: GoogleFonts.nunito(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface.withValues(alpha: 0.6))),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: languageMeta.entries.map((e) {
+                    final selected = e.key == currentLocale;
+                    return GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        ref.read(localeProvider.notifier).setLocale(e.key);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? cs.primaryContainer
+                              : cs.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: selected
+                                ? cs.primary.withValues(alpha: 0.55)
+                                : cs.outlineVariant.withValues(alpha: 0.5),
+                            width: selected ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(e.value.flag,
+                                style: const TextStyle(fontSize: 16)),
+                            const SizedBox(width: 6),
+                            Text(
+                              e.value.name,
+                              style: GoogleFonts.nunito(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: selected
+                                    ? cs.onPrimaryContainer
+                                    : cs.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildAccountSection(BuildContext context, L10n l10n) {
     final account = ref.watch(accountProvider);
@@ -139,6 +260,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildDisplaySection(context, l10n),
+          const SizedBox(height: 16),
           _buildAccountSection(context, l10n),
           const SizedBox(height: 16),
           _buildCommunitySection(context, l10n),
@@ -331,6 +454,59 @@ class _SectionHeader extends StatelessWidget {
           fontWeight: FontWeight.w700,
           fontSize: 16,
           color: cs.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsChoiceChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _SettingsChoiceChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? cs.primaryContainer : cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? cs.primary.withValues(alpha: 0.55)
+                : cs.outlineVariant.withValues(alpha: 0.5),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                size: 16,
+                color: selected ? cs.onPrimaryContainer : cs.onSurface),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.nunito(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: selected ? cs.onPrimaryContainer : cs.onSurface,
+              ),
+            ),
+          ],
         ),
       ),
     );

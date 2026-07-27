@@ -34,7 +34,7 @@ class SettingsNotifier extends AsyncNotifier<SettingsState> {
   // All known palettes (crayon packs), in catalogue order. cyclePalette only
   // offers the ones currently unlocked, passed in as `allowed`.
   static final _palettes = kPaletteOrder;
-  static const _colorCounts = [6, 12, 18, 24, 99];
+  static const _colorCounts = [6, 12, 18, 24];
 
   @override
   Future<SettingsState> build() async {

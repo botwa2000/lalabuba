@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,9 +7,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/l10n/l10n_service.dart';
-import '../progress/progress_service.dart';
+import '../../core/di/providers.dart';
+import '../community/community_service.dart';
+import '../community/screens/community_gallery_screen.dart';
+import '../community/widgets/nickname_picker.dart';
 import 'print_book.dart';
 import '../../services/account_service.dart';
+import '../../shared/widgets/parental_gate.dart';
 
 final galleryImagesProvider = FutureProvider<List<File>>((ref) async {
   final childId = ref.watch(accountProvider.select((s) => s.activeChildId));
@@ -24,13 +28,49 @@ final galleryImagesProvider = FutureProvider<List<File>>((ref) async {
   return files;
 });
 
-class GalleryScreen extends ConsumerWidget {
+class GalleryScreen extends ConsumerStatefulWidget {
   const GalleryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GalleryScreen> createState() => _GalleryScreenState();
+}
+
+class _GalleryScreenState extends ConsumerState<GalleryScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    final initialTab = ref.read(journalTabIndexProvider);
+    if (initialTab > 0) {
+      _tabController.index = initialTab;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(journalTabIndexProvider.notifier).state = 0;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final imagesAsync = ref.watch(galleryImagesProvider);
+
+    ref.listen<int>(journalTabIndexProvider, (prev, next) {
+      if (next > 0 && mounted) {
+        _tabController.animateTo(next);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) ref.read(journalTabIndexProvider.notifier).state = 0;
+        });
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -45,6 +85,7 @@ class GalleryScreen extends ConsumerWidget {
             onPressed: () async {
               final files = imagesAsync.value ?? const <File>[];
               if (files.isEmpty) {
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(l10n.t('printBookEmpty'))),
                 );
@@ -57,11 +98,10 @@ class GalleryScreen extends ConsumerWidget {
                   files: files,
                 );
               } catch (_) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.t('printBookEmpty'))),
-                  );
-                }
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l10n.t('printBookEmpty'))),
+                );
               }
             },
           ),
@@ -75,36 +115,79 @@ class GalleryScreen extends ConsumerWidget {
             onPressed: () => context.push('/settings'),
           ),
         ],
-      ),
-      body: Column(
-        children: [
-          _buildJournalHeader(context, ref, l10n),
-          Expanded(
-            child: imagesAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
-              data: (files) => files.isEmpty
-                  ? _buildEmpty(context, l10n)
-                  : _buildGrid(context, ref, files, l10n),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('📓', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 6),
+                  Text(l10n.t('journalTabMyArt'),
+                      style: GoogleFonts.fredoka(fontWeight: FontWeight.w600)),
+                ],
+              ),
             ),
-          ),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🌟', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 6),
+                  Text(l10n.t('journalTabCommunity'),
+                      style: GoogleFonts.fredoka(fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _MyArtTab(imagesAsync: imagesAsync, l10n: l10n),
+          const CommunityGalleryScreen(),
         ],
       ),
     );
   }
+}
 
-  // Masterpiece count + streak, and the sticker shelf (earned in colour, locked
-  // greyed) — the collection that pulls the child back.
-  Widget _buildJournalHeader(BuildContext context, WidgetRef ref, L10n l10n) {
-    final cs = Theme.of(context).colorScheme;
+// ─── My Art tab ───────────────────────────────────────────────────────────────
+
+class _MyArtTab extends ConsumerWidget {
+  final AsyncValue<List<File>> imagesAsync;
+  final L10n l10n;
+
+  const _MyArtTab({required this.imagesAsync, required this.l10n});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final progress = ref.watch(progressProvider).value ?? const Progress();
     final earned = progress.badges.toSet();
 
+    return Column(
+      children: [
+        _buildJournalHeader(context, ref, progress, earned),
+        Expanded(
+          child: imagesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Error: $e')),
+            data: (files) => files.isEmpty
+                ? _buildEmpty(context)
+                : _buildGrid(context, ref, files),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildJournalHeader(BuildContext context, WidgetRef ref,
+      Progress progress, Set<String> earned) {
+    final cs = Theme.of(context).colorScheme;
     final isEmpty = progress.totalCompleted == 0;
     final statsText = () {
-      // Brand-new child (no completions): show an encouraging line instead of a
-      // blank header, so the Journal explains what it's for (parity with web).
       if (isEmpty) return l10n.t('journalEmpty');
       final base =
           l10n.t('celebMasterpieces', {'count': '${progress.totalCompleted}'});
@@ -114,8 +197,6 @@ class GalleryScreen extends ConsumerWidget {
       return '$base$streak';
     }();
 
-    // "Next sticker" hint: closest unreached count milestone (parity with web).
-    // Milestones mirror kBadges' count thresholds 1/5/10/25/50; hidden past 50.
     const milestones = <(int, String)>[
       (1, '🌟'),
       (5, '🖐️'),
@@ -159,62 +240,92 @@ class GalleryScreen extends ConsumerWidget {
                 ),
               ),
             ),
-          SizedBox(
-            height: 86,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: kBadges.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (_, i) {
-                final b = kBadges[i];
-                final has = earned.contains(b.id);
-                final cap = '${b.id[0].toUpperCase()}${b.id.substring(1)}';
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    context.goNamed('treehouse');
-                  },
-                  child: Container(
-                  width: 74,
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                  decoration: BoxDecoration(
-                    gradient: has
-                        ? const LinearGradient(
-                            colors: [Color(0xFFFFF7E0), Color(0xFFFFE6F2)])
-                        : null,
-                    color: has ? null : cs.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: has ? const Color(0xFFFFD166) : cs.outlineVariant,
-                      width: has ? 2 : 1,
-                    ),
-                  ),
-                  child: Opacity(
-                    opacity: has ? 1 : 0.5,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(has ? b.emoji : '🔒',
-                            style: const TextStyle(fontSize: 26)),
-                        const SizedBox(height: 4),
-                        Flexible(
-                          child: Text(
-                            l10n.t('badge${cap}Title'),
-                            maxLines: 2,
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.nunito(
-                                fontSize: 9, fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ),
-                );
+          if (earned.isEmpty)
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                context.goNamed('treehouse');
               },
-            ),
-          ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: cs.outlineVariant.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('🌟', style: TextStyle(fontSize: 22)),
+                    const SizedBox(width: 8),
+                    Text(
+                      l10n.t('badgeUnlockHint'),
+                      style: GoogleFonts.nunito(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurface.withValues(alpha: 0.7)),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.chevron_right_rounded,
+                        size: 16, color: cs.onSurface.withValues(alpha: 0.5)),
+                  ],
+                ),
+              ),
+            )
+          else
+            Builder(builder: (ctx) {
+              final earnedList = kBadges.where((b) => earned.contains(b.id)).toList();
+              return SizedBox(
+                height: 86,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: earnedList.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (_, i) {
+                    final b = earnedList[i];
+                    final cap = '${b.id[0].toUpperCase()}${b.id.substring(1)}';
+                    return GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        context.goNamed('treehouse');
+                      },
+                      child: Container(
+                        width: 74,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 4),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                              colors: [Color(0xFFFFF7E0), Color(0xFFFFE6F2)]),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: const Color(0xFFFFD166), width: 2),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(b.emoji,
+                                style: const TextStyle(fontSize: 26)),
+                            const SizedBox(height: 4),
+                            Flexible(
+                              child: Text(
+                                l10n.t('badge${cap}Title'),
+                                maxLines: 2,
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.nunito(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            }),
           if (nextHint != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -222,8 +333,8 @@ class GalleryScreen extends ConsumerWidget {
                 nextHint,
                 style: GoogleFonts.nunito(
                   fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface.withValues(alpha: 0.65),
+                  color: cs.onSurface.withValues(alpha: 0.55),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -232,7 +343,7 @@ class GalleryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmpty(BuildContext context, L10n l10n) {
+  Widget _buildEmpty(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
@@ -256,8 +367,7 @@ class GalleryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildGrid(
-      BuildContext context, WidgetRef ref, List<File> files, L10n l10n) {
+  Widget _buildGrid(BuildContext context, WidgetRef ref, List<File> files) {
     return GridView.builder(
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -267,23 +377,22 @@ class GalleryScreen extends ConsumerWidget {
         childAspectRatio: 1.0,
       ),
       itemCount: files.length,
-      itemBuilder: (ctx, i) => _buildTile(context, ref, files[i], l10n),
+      itemBuilder: (ctx, i) => _buildTile(context, ref, files[i]),
     );
   }
 
-  Widget _buildTile(
-      BuildContext context, WidgetRef ref, File file, L10n l10n) {
+  Widget _buildTile(BuildContext context, WidgetRef ref, File file) {
     final cs = Theme.of(context).colorScheme;
     return GestureDetector(
-      onTap: () => _openFullScreen(context, ref, file, l10n),
+      onTap: () => showDialog(
+        context: context,
+        builder: (_) => _GalleryFullScreen(file: file, l10n: l10n),
+      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.file(
           file,
           fit: BoxFit.cover,
-          // Decode at thumbnail resolution instead of full size. Saved artwork
-          // is up to ~3072px wide; decoding that into a 2-column grid cell
-          // wastes memory and can jank the gallery. 400px covers retina tiles.
           cacheWidth: 400,
           filterQuality: FilterQuality.low,
           errorBuilder: (_, __, ___) => Container(
@@ -294,58 +403,149 @@ class GalleryScreen extends ConsumerWidget {
       ),
     );
   }
-
-  void _openFullScreen(
-      BuildContext context, WidgetRef ref, File file, L10n l10n) {
-    showDialog(
-      context: context,
-      builder: (_) => _GalleryFullScreen(file: file, l10n: l10n, ref: ref),
-    );
-  }
 }
 
-class _GalleryFullScreen extends StatelessWidget {
+// ─── Full-screen viewer ───────────────────────────────────────────────────────
+
+class _GalleryFullScreen extends ConsumerStatefulWidget {
   final File file;
   final L10n l10n;
-  final WidgetRef ref;
 
-  const _GalleryFullScreen(
-      {required this.file, required this.l10n, required this.ref});
+  const _GalleryFullScreen({required this.file, required this.l10n});
+
+  @override
+  ConsumerState<_GalleryFullScreen> createState() => _GalleryFullScreenState();
+}
+
+class _GalleryFullScreenState extends ConsumerState<_GalleryFullScreen> {
+  bool _sharingToCommunity = false;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = widget.l10n;
     return Dialog.fullscreen(
       child: Scaffold(
         appBar: AppBar(
           actions: [
+            if (_sharingToCommunity)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else
+              IconButton(
+                icon: const Text('🌟', style: TextStyle(fontSize: 20)),
+                tooltip: l10n.t('communityShareBtn'),
+                onPressed: _shareToCommunity,
+              ),
             IconButton(
               icon: const Icon(Icons.share_rounded),
-              onPressed: () => _share(),
+              onPressed: _shareOS,
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded),
-              onPressed: () => _confirmDelete(context),
+              onPressed: _confirmDelete,
             ),
           ],
         ),
         body: Center(
           child: InteractiveViewer(
-            child: Image.file(file),
+            child: Image.file(widget.file),
           ),
         ),
       ),
     );
   }
 
-  Future<void> _share() async {
-    final xFile = XFile(file.path, mimeType: 'image/png');
+  Future<void> _shareOS() async {
+    final xFile = XFile(widget.file.path, mimeType: 'image/png');
     await SharePlus.instance.share(ShareParams(
       files: [xFile],
       text: 'My Lalabuba artwork! 🎨',
     ));
   }
 
-  void _confirmDelete(BuildContext context) {
+  Future<void> _shareToCommunity() async {
+    final l10n = widget.l10n;
+    CommunityService svc;
+    try {
+      svc = ref.read(communityServiceProvider);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.t('communityShareError'))),
+      );
+      return;
+    }
+
+    bool withConsent = false;
+    bool hasNickname = false;
+    try {
+      final profile = await svc.getProfile();
+      withConsent = !profile.sharingEnabled;
+      hasNickname = profile.hasNickname;
+    } catch (_) {}
+
+    if (!mounted) return;
+    if (withConsent) {
+      final ok = await showParentalGate(context, l10n);
+      if (!ok || !mounted) return;
+    }
+    if (!hasNickname) {
+      final nickname = await showNicknamePicker(context, svc, l10n);
+      if (nickname == null || !mounted) return;
+      try {
+        await svc.setupProfile(
+          nickname: nickname,
+          withParentalConsent: withConsent,
+        );
+        withConsent = false;
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.t('communityShareError'))),
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    setState(() => _sharingToCommunity = true);
+
+    try {
+      final bytes = await widget.file.readAsBytes();
+      await svc.shareArtwork(
+        shareType: 'colored',
+        subject: null,
+        difficulty: null,
+        seed: null,
+        jpegBytes: bytes,
+        withParentalConsent: withConsent,
+      );
+      if (!mounted) return;
+      ref.read(communityGalleryRefreshProvider.notifier).state++;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.t('communitySharedToast')),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.t('communityShareError'))),
+      );
+    } finally {
+      if (mounted) setState(() => _sharingToCommunity = false);
+    }
+  }
+
+  void _confirmDelete() {
+    final l10n = widget.l10n;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -358,10 +558,11 @@ class _GalleryFullScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
+              // Capture navigator before async gap to avoid BuildContext lint.
+              final outerNav = Navigator.of(context);
               Navigator.pop(ctx);
-              await file.delete();
-              ref.invalidate(galleryImagesProvider);
-              if (context.mounted) Navigator.pop(context);
+              await widget.file.delete();
+              outerNav.pop();
             },
             child: Text(l10n.t('galleryDeleteYes'),
                 style: const TextStyle(color: Colors.red)),

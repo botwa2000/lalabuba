@@ -125,7 +125,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       if (mounted && !seen) setState(() => _canvasTutorialSeen = false);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.args.preloadedBytes != null) {
+      if (widget.args.preloadedBytes != null || widget.args.preloadedUrl != null) {
         _renderPreloaded();
       } else {
         _generate();
@@ -750,42 +750,18 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         padding: const EdgeInsets.only(left: 8),
         child: Row(
           children: [
-            GestureDetector(
-              onTap: () async {
+            IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              style: IconButton.styleFrom(
+                backgroundColor: cs.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(40, 40),
+                padding: const EdgeInsets.all(8),
+              ),
+              onPressed: () async {
                 final ok = await _confirmLeave(context, l10n);
                 if (ok && context.mounted) context.pop();
               },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Theme.of(context).colorScheme.primary, const Color(0xFF448AFF)],
-                  ),
-                  borderRadius: BorderRadius.circular(50),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('🏠', style: TextStyle(fontSize: 15)),
-                    const SizedBox(width: 4),
-                    Text(
-                      l10n.t('homeBtn'),
-                      style: GoogleFonts.fredoka(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -2176,9 +2152,15 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.t('communitySharedToast')),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         ),
       );
+      // Navigate to Journal → Community tab so the child sees their artwork.
+      ref.read(communityGalleryRefreshProvider.notifier).state++;
+      ref.read(journalTabIndexProvider.notifier).state = 1;
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      context.goNamed('journal');
     } on DioException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars();

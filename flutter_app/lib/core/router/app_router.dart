@@ -9,17 +9,15 @@ import '../../features/treehouse/treehouse_screen.dart';
 import '../../features/rewards/scenes_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/mascot/mascot_studio_screen.dart';
-import '../../features/community/screens/community_gallery_screen.dart';
 
 export '../../features/canvas/canvas_screen.dart' show CanvasScreenArgs;
 
 class Routes {
   static const draw        = '/draw';
   static const canvas      = '/canvas';
-  static const explore     = '/draw/explore';
-  static const exploreTopic = '/draw/explore/:topic';
+  static const explore     = '/explore';
+  static const exploreTopic = '/explore/:topic';
   static const journal     = '/journal';
-  static const gallery     = '/gallery';
   static const treehouse   = '/treehouse';
   static const scenes      = '/treehouse/scenes';
   static const mascotStudio = '/treehouse/mascot';
@@ -30,8 +28,9 @@ class Routes {
 final appRouter = GoRouter(
   initialLocation: Routes.draw,
   redirect: (ctx, state) {
-    // Redirect legacy root path to draw tab.
     if (state.matchedLocation == '/') return Routes.draw;
+    // Redirect legacy /gallery deep-link to journal.
+    if (state.matchedLocation == '/gallery') return Routes.journal;
     return null;
   },
   routes: [
@@ -47,59 +46,52 @@ final appRouter = GoRouter(
               path: Routes.draw,
               name: 'draw',
               builder: (ctx, state) => const HomeScreen(),
+            ),
+          ],
+        ),
+
+        // ── Explore tab ─────────────────────────────────────────────────────
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: Routes.explore,
+              name: 'explore',
+              pageBuilder: (ctx, state) => CustomTransitionPage(
+                key: state.pageKey,
+                child: const ExploreScreen(),
+                transitionsBuilder: (ctx, anim, _, child) =>
+                    FadeTransition(opacity: anim, child: child),
+              ),
               routes: [
                 GoRoute(
-                  path: 'explore',
-                  name: 'explore',
-                  pageBuilder: (ctx, state) => CustomTransitionPage(
-                    key: state.pageKey,
-                    child: const ExploreScreen(),
-                    transitionsBuilder: (ctx, anim, _, child) =>
-                        FadeTransition(opacity: anim, child: child),
-                  ),
-                  routes: [
-                    GoRoute(
-                      path: ':topic',
-                      name: 'exploreTopic',
-                      pageBuilder: (ctx, state) {
-                        final topic = state.pathParameters['topic'] ?? '';
-                        final extra = state.extra as (String, String)?;
-                        final emoji = extra?.$1 ?? '🎨';
-                        final name  = extra?.$2 ?? topic;
-                        return CustomTransitionPage(
-                          key: state.pageKey,
-                          child: ExploreTopicScreen(
-                              topic: topic, emoji: emoji, name: name),
-                          transitionsBuilder: (ctx, anim, _, child) =>
-                              FadeTransition(opacity: anim, child: child),
-                        );
-                      },
-                    ),
-                  ],
+                  path: ':topic',
+                  name: 'exploreTopic',
+                  pageBuilder: (ctx, state) {
+                    final topic = state.pathParameters['topic'] ?? '';
+                    final extra = state.extra as (String, String)?;
+                    final emoji = extra?.$1 ?? '🎨';
+                    final name  = extra?.$2 ?? topic;
+                    return CustomTransitionPage(
+                      key: state.pageKey,
+                      child: ExploreTopicScreen(
+                          topic: topic, emoji: emoji, name: name),
+                      transitionsBuilder: (ctx, anim, _, child) =>
+                          FadeTransition(opacity: anim, child: child),
+                    );
+                  },
                 ),
               ],
             ),
           ],
         ),
 
-        // ── Journal tab (personal art) ───────────────────────────────────────
+        // ── Journal tab (personal + community art) ───────────────────────────
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: Routes.journal,
               name: 'journal',
               builder: (ctx, state) => const GalleryScreen(),
-            ),
-          ],
-        ),
-
-        // ── Gallery tab (community art) ──────────────────────────────────────
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: Routes.gallery,
-              name: 'gallery',
-              builder: (ctx, state) => const CommunityGalleryScreen(),
             ),
           ],
         ),

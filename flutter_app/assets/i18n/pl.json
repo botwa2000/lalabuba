@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Co dzisiaj narysujemy? ✨",
   "heroSub": "Twoja wyobraźnia… narysowana przez Lalabuba",
   "tagline": "Rysuj · Koloruj · Kochaj 🌈",
@@ -73,6 +73,7 @@
   "gallerySave": "Zapisz w Zdjęciach",
   "settingsTitle": "Ustawienia",
   "settingsLanguage": "Język",
+  "settingsDisplay": "Wygląd",
   "settingsTheme": "Motyw",
   "settingsThemeLight": "Jasny",
   "settingsThemeDark": "Ciemny",
@@ -184,6 +185,9 @@
   "celebKeep": "Koloruj dalej",
   "daysColoredPill": "🌱 {days}",
   "journalTitle": "Mój dziennik",
+  "journalTabMyArt": "Moja Sztuka",
+  "journalTabCommunity": "Społeczność",
+  "badgeUnlockHint": "Zdobądź swoją pierwszą naklejkę",
   "journalStickers": "Naklejki",
   "journalLocked": "Koloruj dalej, aby odblokować!",
   "rewardsTeaser": "🏆 Zdobywaj naklejki!",

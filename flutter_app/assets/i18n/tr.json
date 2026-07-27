@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Bugün ne çizelim? ✨",
   "heroSub": "Hayal gücün… Lalabuba tarafından çizildi",
   "tagline": "Çiz · Boya · Sev 🌈",
@@ -73,6 +73,7 @@
   "gallerySave": "Fotoğraflara kaydet",
   "settingsTitle": "Ayarlar",
   "settingsLanguage": "Dil",
+  "settingsDisplay": "Görünüm",
   "settingsTheme": "Tema",
   "settingsThemeLight": "Açık",
   "settingsThemeDark": "Koyu",
@@ -184,6 +185,9 @@
   "celebKeep": "Boyamaya devam et",
   "daysColoredPill": "🌱 {days}",
   "journalTitle": "Günlüğüm",
+  "journalTabMyArt": "Sanatım",
+  "journalTabCommunity": "Topluluk",
+  "badgeUnlockHint": "İlk çıkartmanı kazan",
   "journalStickers": "Çıkartmalar",
   "journalLocked": "Açmak için boyamaya devam et!",
   "rewardsTeaser": "🏆 Çıkartma kazan!",

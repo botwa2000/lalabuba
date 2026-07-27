@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "今天画什么呢？✨",
   "heroSub": "你的想象力…由 Lalabuba 绘制",
   "tagline": "画 · 涂色 · 享受 🌈",
@@ -73,6 +73,7 @@
   "gallerySave": "保存到相册",
   "settingsTitle": "设置",
   "settingsLanguage": "语言",
+  "settingsDisplay": "显示",
   "settingsTheme": "主题",
   "settingsThemeLight": "浅色",
   "settingsThemeDark": "深色",
@@ -184,6 +185,9 @@
   "celebKeep": "继续涂色",
   "daysColoredPill": "🌱 {days}",
   "journalTitle": "我的日记",
+  "journalTabMyArt": "我的艺术",
+  "journalTabCommunity": "社区",
+  "badgeUnlockHint": "赢得你的第一个贴纸",
   "journalStickers": "贴纸",
   "journalLocked": "继续涂色来解锁吧！",
   "rewardsTeaser": "🏆 赢取贴纸！",

@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Wat tekenen we vandaag? ✨",
   "heroSub": "Jouw fantasie… getekend door Lalabuba",
   "tagline": "Teken · Kleur · Geniet 🌈",
@@ -73,6 +73,7 @@
   "gallerySave": "Opslaan in Foto’s",
   "settingsTitle": "Instellingen",
   "settingsLanguage": "Taal",
+  "settingsDisplay": "Weergave",
   "settingsTheme": "Thema",
   "settingsThemeLight": "Licht",
   "settingsThemeDark": "Donker",
@@ -184,6 +185,9 @@
   "celebKeep": "Verder kleuren",
   "daysColoredPill": "🌱 {days}",
   "journalTitle": "Mijn dagboek",
+  "journalTabMyArt": "Mijn Kunst",
+  "journalTabCommunity": "Gemeenschap",
+  "badgeUnlockHint": "Verdien je eerste sticker",
   "journalStickers": "Stickers",
   "journalLocked": "Blijf kleuren om te ontgrendelen!",
   "rewardsTeaser": "🏆 Verdien stickers!",

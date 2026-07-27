@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "O que vamos desenhar hoje? ✨",
   "heroSub": "Sua imaginação… desenhada pelo Lalabuba",
   "tagline": "Desenhe · Pinte · Ame 🌈",
@@ -73,6 +73,7 @@
   "gallerySave": "Salvar nas Fotos",
   "settingsTitle": "Configurações",
   "settingsLanguage": "Idioma",
+  "settingsDisplay": "Aparência",
   "settingsTheme": "Tema",
   "settingsThemeLight": "Claro",
   "settingsThemeDark": "Escuro",
@@ -184,6 +185,9 @@
   "celebKeep": "Continuar colorindo",
   "daysColoredPill": "🌱 {days}",
   "journalTitle": "Meu diário",
+  "journalTabMyArt": "Minha Arte",
+  "journalTabCommunity": "Comunidade",
+  "badgeUnlockHint": "Ganhe o seu primeiro sticker",
   "journalStickers": "Adesivos",
   "journalLocked": "Continue colorindo para desbloquear!",
   "rewardsTeaser": "🏆 Ganhe adesivos!",

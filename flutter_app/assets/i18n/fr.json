@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Qu'allons-nous dessiner aujourd'hui ? ✨",
   "heroSub": "Ton imagination… dessinée par Lalabuba",
   "tagline": "Dessine · Colorie · Adore-le 🌈",
@@ -73,6 +73,7 @@
   "gallerySave": "Enregistrer dans Photos",
   "settingsTitle": "Paramètres",
   "settingsLanguage": "Langue",
+  "settingsDisplay": "Apparence",
   "settingsTheme": "Thème",
   "settingsThemeLight": "Clair",
   "settingsThemeDark": "Sombre",
@@ -184,6 +185,9 @@
   "celebKeep": "Continuer à colorier",
   "daysColoredPill": "🌱 {days}",
   "journalTitle": "Mon journal",
+  "journalTabMyArt": "Mon Art",
+  "journalTabCommunity": "Communauté",
+  "badgeUnlockHint": "Gagne ton premier sticker",
   "journalStickers": "Autocollants",
   "journalLocked": "Continue à colorier pour débloquer !",
   "rewardsTeaser": "🏆 Gagne des autocollants !",

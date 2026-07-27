@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Что мы нарисуем сегодня? ✨",
   "heroSub": "Твоя фантазия… нарисована Lalabuba",
   "tagline": "Рисуй · Раскрашивай · Люби 🌈",
@@ -73,6 +73,7 @@
   "gallerySave": "Сохранить в Фото",
   "settingsTitle": "Настройки",
   "settingsLanguage": "Язык",
+  "settingsDisplay": "Внешний вид",
   "settingsTheme": "Тема",
   "settingsThemeLight": "Светлая",
   "settingsThemeDark": "Тёмная",
@@ -184,6 +185,9 @@
   "celebKeep": "Продолжить раскрашивать",
   "daysColoredPill": "🌱 {days}",
   "journalTitle": "Мой дневник",
+  "journalTabMyArt": "Моё Искусство",
+  "journalTabCommunity": "Сообщество",
+  "badgeUnlockHint": "Заработай первый стикер",
   "journalStickers": "Наклейки",
   "journalLocked": "Раскрашивай дальше, чтобы открыть!",
   "rewardsTeaser": "🏆 Зарабатывай наклейки!",

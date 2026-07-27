@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "आज क्या बनाएं? ✨",
   "heroSub": "तुम्हारी कल्पना… Lalabuba द्वारा बनाई गई",
   "tagline": "बनाओ · रंगो · प्यार करो 🌈",
@@ -73,6 +73,7 @@
   "gallerySave": "फ़ोटो में सेव करें",
   "settingsTitle": "सेटिंग्स",
   "settingsLanguage": "भाषा",
+  "settingsDisplay": "प्रदर्शन",
   "settingsTheme": "थीम",
   "settingsThemeLight": "हल्का",
   "settingsThemeDark": "गहरा",
@@ -184,6 +185,9 @@
   "celebKeep": "रंग भरते रहो",
   "daysColoredPill": "🌱 {days}",
   "journalTitle": "मेरी डायरी",
+  "journalTabMyArt": "मेरी कला",
+  "journalTabCommunity": "समुदाय",
+  "badgeUnlockHint": "अपना पहला स्टिकर अर्जित करें",
   "journalStickers": "स्टिकर",
   "journalLocked": "अनलॉक करने के लिए रंग भरते रहो!",
   "rewardsTeaser": "🏆 स्टिकर कमाओ!",

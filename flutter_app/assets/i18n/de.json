@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Was sollen wir heute zeichnen? ✨",
   "heroSub": "Deine Fantasie… gezeichnet von Lalabuba",
   "tagline": "Zeichne · Färbe · Liebe es 🌈",
@@ -75,6 +75,7 @@
   "gallerySave": "In Fotos speichern",
   "settingsTitle": "Einstellungen",
   "settingsLanguage": "Sprache",
+  "settingsDisplay": "Darstellung",
   "settingsTheme": "Design",
   "settingsThemeLight": "Hell",
   "settingsThemeDark": "Dunkel",
@@ -184,6 +185,9 @@
   "celebKeep": "Weitermalen",
   "daysColoredPill": "🌱 {days}",
   "journalTitle": "Mein Tagebuch",
+  "journalTabMyArt": "Meine Kunst",
+  "journalTabCommunity": "Gemeinschaft",
+  "badgeUnlockHint": "Verdiene deinen ersten Sticker",
   "journalStickers": "Sticker",
   "journalLocked": "Mal weiter, um es freizuschalten!",
   "rewardsTeaser": "🏆 Sticker verdienen!",

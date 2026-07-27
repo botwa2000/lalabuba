@@ -1,4 +1,4 @@
-{
+﻿{
   "heroHeading": "Cosa disegniamo oggi? ✨",
   "heroSub": "La tua fantasia… disegnata da Lalabuba",
   "tagline": "Disegna · Colora · Amalo 🌈",
@@ -73,6 +73,7 @@
   "gallerySave": "Salva nelle Foto",
   "settingsTitle": "Impostazioni",
   "settingsLanguage": "Lingua",
+  "settingsDisplay": "Aspetto",
   "settingsTheme": "Tema",
   "settingsThemeLight": "Chiaro",
   "settingsThemeDark": "Scuro",
@@ -184,6 +185,9 @@
   "celebKeep": "Continua a colorare",
   "daysColoredPill": "🌱 {days}",
   "journalTitle": "Il mio diario",
+  "journalTabMyArt": "La Mia Arte",
+  "journalTabCommunity": "Comunità",
+  "badgeUnlockHint": "Guadagna il tuo primo adesivo",
   "journalStickers": "Adesivi",
   "journalLocked": "Continua a colorare per sbloccarlo!",
   "rewardsTeaser": "🏆 Guadagna adesivi!",

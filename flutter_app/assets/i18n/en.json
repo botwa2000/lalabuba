@@ -1,4 +1,4 @@
-{
+﻿{
   "celebTitle": "Well done! 🎉",
   "celebMsg": "You colored the whole picture!",
   "celebJournalSaved": "✨ Added to your Journal!",
@@ -12,6 +12,9 @@
   "celebKeep": "Keep coloring",
   "daysColoredPill": "🌱 {days}",
   "journalTitle": "My Journal",
+  "journalTabMyArt": "My Art",
+  "journalTabCommunity": "Community",
+  "badgeUnlockHint": "Earn your first sticker",
   "journalStickers": "Stickers",
   "journalLocked": "Keep coloring to unlock!",
   "rewardsTeaser": "🏆 Earn stickers!",
@@ -113,6 +116,7 @@
   "gallerySave": "Save to Photos",
   "settingsTitle": "Settings",
   "settingsLanguage": "Language",
+  "settingsDisplay": "Display",
   "settingsTheme": "Theme",
   "settingsThemeLight": "Light",
   "settingsThemeDark": "Dark",

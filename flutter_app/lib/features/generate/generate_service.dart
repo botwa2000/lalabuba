@@ -21,7 +21,7 @@ class GenerateService {
       : _dio = Dio(BaseOptions(
           baseUrl: config.generateUrl.replaceFirst('/api/generate-image', ''),
           connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: Duration(seconds: config.timeoutSeconds + 30),
+          receiveTimeout: Duration(seconds: config.timeoutSeconds + 60),
           responseType: ResponseType.bytes,
         ));
 
@@ -51,8 +51,8 @@ class GenerateService {
     // actually cancels the platform socket and lets the Future resolve.
     final cancel = CancelToken();
     final timer = Timer(
-      const Duration(seconds: 90),
-      () => cancel.cancel('Generation timeout — server did not respond within 90 s'),
+      const Duration(seconds: 120),
+      () => cancel.cancel('Generation timeout — server did not respond within 120 s'),
     );
 
     try {

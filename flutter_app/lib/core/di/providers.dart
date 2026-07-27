@@ -22,3 +22,9 @@ final appThemesProvider = FutureProvider<({AppTheme light, AppTheme dark})>(
 
 // ─── Theme mode ──────────────────────────────────────────────────────────────
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
+
+// ─── Community gallery cross-screen signals ───────────────────────────────────
+// Increment to trigger a reload of CommunityGalleryScreen (e.g. after share).
+final communityGalleryRefreshProvider = StateProvider<int>((ref) => 0);
+// Set to 1 to auto-switch Journal screen to the Community sub-tab.
+final journalTabIndexProvider = StateProvider<int>((ref) => 0);
