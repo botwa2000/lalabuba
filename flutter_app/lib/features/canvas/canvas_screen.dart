@@ -152,10 +152,16 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       if (url == null) return;
       setState(() { _isGenerating = true; _errorMsg = null; });
       try {
-        final client = HttpClient();
+        final client = HttpClient()
+          ..connectionTimeout = const Duration(seconds: 20)
+          ..idleTimeout = const Duration(seconds: 30);
         try {
           final request = await client.getUrl(Uri.parse(url));
-          final response = await request.close();
+          request.headers.set('User-Agent', 'LalabubaFlutter/1.0');
+          final response = await request.close()
+              .timeout(const Duration(seconds: 30), onTimeout: () {
+            throw Exception('Image fetch timed out after 30s');
+          });
           if (response.statusCode != 200) {
             throw Exception('HTTP ${response.statusCode}');
           }
