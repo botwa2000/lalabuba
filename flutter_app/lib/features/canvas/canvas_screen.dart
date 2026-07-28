@@ -80,6 +80,7 @@ class CanvasScreen extends ConsumerStatefulWidget {
 
 class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   bool _isGenerating = false;
+  bool _isPreloading = false;
   String? _errorMsg;
   bool _hintVisible = true;
   // One-shot guard so the completion celebration fires once per finished image.
@@ -150,7 +151,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     if (bytes == null) {
       final url = widget.args.preloadedUrl;
       if (url == null) return;
-      setState(() { _isGenerating = true; _errorMsg = null; });
+      setState(() { _isPreloading = true; _errorMsg = null; });
       try {
         final client = HttpClient()
           ..connectionTimeout = const Duration(seconds: 20)
@@ -175,15 +176,15 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         }
       } catch (e) {
         debugPrint('LALABUBA_PATH: _renderPreloaded fetch failed: $e');
-        if (mounted) setState(() { _isGenerating = false; _errorMsg = e.toString(); });
+        if (mounted) setState(() { _isPreloading = false; _errorMsg = e.toString(); });
         return;
       }
     } else {
-      setState(() { _isGenerating = true; _errorMsg = null; });
+      setState(() { _isPreloading = true; _errorMsg = null; });
     }
 
     if (bytes.isEmpty) {
-      if (mounted) setState(() { _isGenerating = false; _errorMsg = 'Empty image data'; });
+      if (mounted) setState(() { _isPreloading = false; _errorMsg = 'Empty image data'; });
       return;
     }
 
@@ -207,9 +208,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         'source': 'explore',
         'preloaded': true,
       });
-      if (mounted) setState(() { _isGenerating = false; _hintVisible = true; });
+      if (mounted) setState(() { _isPreloading = false; _hintVisible = true; });
     } catch (e) {
-      if (mounted) setState(() { _isGenerating = false; _errorMsg = e.toString(); });
+      if (mounted) setState(() { _isPreloading = false; _errorMsg = e.toString(); });
     }
   }
 
@@ -833,7 +834,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                   top: 12, left: 0, right: 0,
                   child: _buildEyedropperPreview(context, l10n),
                 ),
-              if (_isGenerating || canvas.isProcessing)
+              if (_isPreloading)
+                Positioned.fill(
+                  child: LalaLoadingOverlay(
+                    message: l10n.t('communityLoadingLb'),
+                  ),
+                ),
+              if (!_isPreloading && (_isGenerating || canvas.isProcessing))
                 Positioned.fill(
                   child: LalaLoadingOverlay(
                     message: l10n.t('generating',
@@ -874,7 +881,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                       Positioned(
                           top: 12, left: 0, right: 0,
                           child: _buildEyedropperPreview(context, l10n)),
-                    if (_isGenerating || canvas.isProcessing)
+                    if (_isPreloading)
+                      Positioned.fill(
+                          child: LalaLoadingOverlay(
+                              message: l10n.t('communityLoadingLb'))),
+                    if (!_isPreloading && (_isGenerating || canvas.isProcessing))
                       Positioned.fill(
                           child: LalaLoadingOverlay(
                               message: l10n.t('generating',
@@ -1730,7 +1741,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => _generate(),
+                onPressed: () {
+                  if (widget.args.preloadedUrl != null || widget.args.preloadedBytes != null) {
+                    _renderPreloaded();
+                  } else {
+                    _generate();
+                  }
+                },
                 child: Text(
                   l10n.t('regenBtn'),
                   style: GoogleFonts.fredoka(fontWeight: FontWeight.w700),
