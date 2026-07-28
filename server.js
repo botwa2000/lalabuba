@@ -300,6 +300,10 @@ async function serveTopicPageWithGallery(res, topic) {
     /hreflang="de" href="https:\/\/lalabuba\.com\/ausmalbilder\//g,
     `hreflang="de" href="https://lalabuba.com/de/ausmalbilder/`
   );
+  enhanced = enhanced.replace(
+    /hreflang="x-default" href="https:\/\/lalabuba\.com\/coloring-pages\//g,
+    `hreflang="x-default" href="https://lalabuba.com/en/coloring-pages/`
+  );
 
   // Inject unified nav (replaces old legal-nav block in static HTML)
   const topicNav = buildNav({
