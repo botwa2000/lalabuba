@@ -81,30 +81,32 @@ workflows:
           LOG="$CM_BUILD_DIR/dsym_upload.log"
           GSVC_PLIST="ios/Runner/GoogleService-Info.plist"
           {
-            echo "=== dSYM upload diagnostic ==="
-            echo "ios/Pods exists: $([ -d ios/Pods ] && echo YES || echo NO)"
-            echo "Pods dirs: $(ls ios/Pods 2>/dev/null | tr '\n' ' ' || echo 'empty/missing')"
-            # Search all likely locations for upload-symbols
-            UPLOAD_BIN=$(find ios/Pods ios/.symlinks -name "upload-symbols" 2>/dev/null | head -1)
-            if [ -z "$UPLOAD_BIN" ]; then
-              echo "ERROR: upload-symbols not found — all 'upload*' files under ios/:"
-              find ios -name 'upload*' 2>/dev/null | head -10
-              echo "FirebaseCrashlytics dirs: $(find ios -type d -name 'FirebaseCrashlytics' 2>/dev/null | head -5)"
-            else
-              echo "Found: $UPLOAD_BIN"
-              DSYM_DIR="build/ios/archive/Runner.xcarchive/dSYMs"
-              [ ! -d "$DSYM_DIR" ] && DSYM_DIR=$(find build/ios/archive -maxdepth 3 -name "dSYMs" -type d 2>/dev/null | head -1)
-              if [ -z "$DSYM_DIR" ] || [ ! -d "$DSYM_DIR" ]; then
-                echo "ERROR: dSYM dir not found"
-              else
-                echo "Uploading from: $DSYM_DIR"
-                find "$DSYM_DIR" -name "*.dSYM" | while read dsym; do
-                  echo "Uploading: $(basename $dsym)"
-                  "$UPLOAD_BIN" -gsp "$GSVC_PLIST" -p ios "$dsym" && echo "OK" || echo "FAIL"
-                done
-              fi
+            # Firebase iOS SDK 11.x ships as xcframeworks — upload-symbols is not in
+            # Pods/. Download it directly from Firebase's distribution URL.
+            UPLOAD_BIN="/tmp/firebase-upload-symbols"
+            if [ ! -f "$UPLOAD_BIN" ]; then
+              echo ">>> Downloading upload-symbols from Firebase..."
+              curl -s -o "$UPLOAD_BIN" \
+                "https://dl.google.com/dl/firebase/ios/crashlytics/upload-symbols"
+              chmod +x "$UPLOAD_BIN"
             fi
-            echo "=== done ==="
+            if [ ! -f "$UPLOAD_BIN" ]; then
+              echo "ERROR: failed to download upload-symbols"
+              exit 0
+            fi
+            echo ">>> upload-symbols ready: $(file $UPLOAD_BIN | head -c 80)"
+            DSYM_DIR="build/ios/archive/Runner.xcarchive/dSYMs"
+            [ ! -d "$DSYM_DIR" ] && DSYM_DIR=$(find build/ios/archive -maxdepth 3 -name "dSYMs" -type d 2>/dev/null | head -1)
+            if [ -z "$DSYM_DIR" ] || [ ! -d "$DSYM_DIR" ]; then
+              echo "ERROR: dSYM directory not found"
+            else
+              echo ">>> Uploading dSYMs from: $DSYM_DIR"
+              find "$DSYM_DIR" -name "*.dSYM" | while read dsym; do
+                echo "Uploading: $(basename $dsym)"
+                "$UPLOAD_BIN" -gsp "$GSVC_PLIST" -p ios "$dsym" && echo "OK" || echo "FAIL"
+              done
+              echo ">>> Upload complete"
+            fi
           } 2>&1 | tee "$LOG"
 
     artifacts:
