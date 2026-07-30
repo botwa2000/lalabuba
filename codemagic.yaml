@@ -81,20 +81,21 @@ workflows:
           LOG="$CM_BUILD_DIR/dsym_upload.log"
           GSVC_PLIST="ios/Runner/GoogleService-Info.plist"
           {
-            # Firebase iOS SDK 11.x ships as xcframeworks — upload-symbols is not in
-            # Pods/. Download it directly from Firebase's distribution URL.
+            # Firebase iOS SDK 11.x ships as xcframeworks; upload-symbols is no
+            # longer in Pods/. Fetch the script from the Firebase GitHub repo.
             UPLOAD_BIN="/tmp/firebase-upload-symbols"
             if [ ! -f "$UPLOAD_BIN" ]; then
-              echo ">>> Downloading upload-symbols from Firebase..."
-              curl -s -o "$UPLOAD_BIN" \
-                "https://dl.google.com/dl/firebase/ios/crashlytics/upload-symbols"
+              echo ">>> Downloading upload-symbols from Firebase GitHub..."
+              curl -fsSL -o "$UPLOAD_BIN" \
+                "https://raw.githubusercontent.com/firebase/firebase-ios-sdk/main/Crashlytics/upload-symbols"
               chmod +x "$UPLOAD_BIN"
             fi
-            if [ ! -f "$UPLOAD_BIN" ]; then
-              echo "ERROR: failed to download upload-symbols"
+            FILE_TYPE=$(file "$UPLOAD_BIN" 2>/dev/null || echo "")
+            if ! echo "$FILE_TYPE" | grep -qiE "Mach-O|script|executable"; then
+              echo "ERROR: download failed — file type: $FILE_TYPE"
               exit 0
             fi
-            echo ">>> upload-symbols ready: $(file $UPLOAD_BIN | head -c 80)"
+            echo ">>> upload-symbols ready: $FILE_TYPE"
             DSYM_DIR="build/ios/archive/Runner.xcarchive/dSYMs"
             [ ! -d "$DSYM_DIR" ] && DSYM_DIR=$(find build/ios/archive -maxdepth 3 -name "dSYMs" -type d 2>/dev/null | head -1)
             if [ -z "$DSYM_DIR" ] || [ ! -d "$DSYM_DIR" ]; then
