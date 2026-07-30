@@ -78,19 +78,31 @@ workflows:
 
       - name: Upload dSYMs to Firebase Crashlytics
         script: |
-          UPLOAD_BIN="ios/Pods/FirebaseCrashlytics/upload-symbols"
           GSVC_PLIST="ios/Runner/GoogleService-Info.plist"
+          # Locate upload-symbols anywhere under Pods (path varies by CocoaPods version)
+          UPLOAD_BIN=$(find ios/Pods -name "upload-symbols" -type f 2>/dev/null | head -1)
+          if [ -z "$UPLOAD_BIN" ]; then
+            echo "ERROR: upload-symbols not found under ios/Pods — dSYM upload skipped"
+            echo "Ensure firebase_crashlytics is in Podfile and pod install ran"
+            exit 0
+          fi
+          # Locate dSYMs: primary path, then fallback search
           DSYM_DIR="build/ios/archive/Runner.xcarchive/dSYMs"
-          if [ ! -f "$UPLOAD_BIN" ]; then
-            echo "upload-symbols not found at $UPLOAD_BIN — skipping dSYM upload"; exit 0
-          fi
           if [ ! -d "$DSYM_DIR" ]; then
-            echo "dSYM directory not found at $DSYM_DIR — skipping"; exit 0
+            DSYM_DIR=$(find build/ios/archive -maxdepth 3 -name "dSYMs" -type d 2>/dev/null | head -1)
           fi
+          if [ -z "$DSYM_DIR" ] || [ ! -d "$DSYM_DIR" ]; then
+            echo "ERROR: dSYM directory not found — skipping upload"
+            find build/ios/archive -name "*.dSYM" 2>/dev/null | head -5
+            exit 0
+          fi
+          echo ">>> Uploading dSYMs from: $DSYM_DIR"
+          FAILED=0
           find "$DSYM_DIR" -name "*.dSYM" | while read dsym; do
-            echo "Uploading: $dsym"
-            "$UPLOAD_BIN" -gsp "$GSVC_PLIST" -p ios "$dsym"
+            echo "Uploading: $(basename $dsym)"
+            "$UPLOAD_BIN" -gsp "$GSVC_PLIST" -p ios "$dsym" || { echo "WARNING: upload failed for $dsym"; FAILED=1; }
           done
+          [ "$FAILED" -eq 0 ] && echo ">>> dSYM upload complete" || echo "WARNING: some dSYMs failed to upload"
 
     artifacts:
       - build/ios/ipa/*.ipa
