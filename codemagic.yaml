@@ -78,40 +78,40 @@ workflows:
 
       - name: Upload dSYMs to Firebase Crashlytics
         script: |
+          LOG="$CM_BUILD_DIR/dsym_upload.log"
           GSVC_PLIST="ios/Runner/GoogleService-Info.plist"
-          # --- diagnostic: show ios/Pods tree depth-2 so we can see what's there
-          echo ">>> ios/Pods exists: $([ -d ios/Pods ] && echo YES || echo NO)"
-          echo ">>> Pod dirs: $(ls ios/Pods 2>/dev/null | head -20 || echo 'empty/missing')"
-          # --- locate upload-symbols (searches full Pods tree and .symlinks)
-          UPLOAD_BIN=$(find ios/Pods ios/.symlinks -name "upload-symbols" -type f 2>/dev/null | head -1)
-          if [ -z "$UPLOAD_BIN" ]; then
-            echo "ERROR: upload-symbols not found in ios/Pods or ios/.symlinks"
-            echo "All files named 'upload*' under ios/: $(find ios -name 'upload*' 2>/dev/null | head -10)"
-            echo "FirebaseCrashlytics pod dir: $(find ios -type d -name 'FirebaseCrashlytics' 2>/dev/null | head -5)"
-            exit 0
-          fi
-          echo ">>> Found upload-symbols at: $UPLOAD_BIN"
-          # Locate dSYMs: primary path, then fallback search
-          DSYM_DIR="build/ios/archive/Runner.xcarchive/dSYMs"
-          if [ ! -d "$DSYM_DIR" ]; then
-            DSYM_DIR=$(find build/ios/archive -maxdepth 3 -name "dSYMs" -type d 2>/dev/null | head -1)
-          fi
-          if [ -z "$DSYM_DIR" ] || [ ! -d "$DSYM_DIR" ]; then
-            echo "ERROR: dSYM directory not found — skipping upload"
-            find build/ios/archive -name "*.dSYM" 2>/dev/null | head -5
-            exit 0
-          fi
-          echo ">>> Uploading dSYMs from: $DSYM_DIR"
-          find "$DSYM_DIR" -name "*.dSYM" | while read dsym; do
-            echo "Uploading: $(basename $dsym)"
-            "$UPLOAD_BIN" -gsp "$GSVC_PLIST" -p ios "$dsym" || echo "WARNING: upload failed for $dsym"
-          done
-          echo ">>> dSYM upload step complete"
+          {
+            echo "=== dSYM upload diagnostic ==="
+            echo "ios/Pods exists: $([ -d ios/Pods ] && echo YES || echo NO)"
+            echo "Pods dirs: $(ls ios/Pods 2>/dev/null | tr '\n' ' ' || echo 'empty/missing')"
+            # Search all likely locations for upload-symbols
+            UPLOAD_BIN=$(find ios/Pods ios/.symlinks -name "upload-symbols" 2>/dev/null | head -1)
+            if [ -z "$UPLOAD_BIN" ]; then
+              echo "ERROR: upload-symbols not found — all 'upload*' files under ios/:"
+              find ios -name 'upload*' 2>/dev/null | head -10
+              echo "FirebaseCrashlytics dirs: $(find ios -type d -name 'FirebaseCrashlytics' 2>/dev/null | head -5)"
+            else
+              echo "Found: $UPLOAD_BIN"
+              DSYM_DIR="build/ios/archive/Runner.xcarchive/dSYMs"
+              [ ! -d "$DSYM_DIR" ] && DSYM_DIR=$(find build/ios/archive -maxdepth 3 -name "dSYMs" -type d 2>/dev/null | head -1)
+              if [ -z "$DSYM_DIR" ] || [ ! -d "$DSYM_DIR" ]; then
+                echo "ERROR: dSYM dir not found"
+              else
+                echo "Uploading from: $DSYM_DIR"
+                find "$DSYM_DIR" -name "*.dSYM" | while read dsym; do
+                  echo "Uploading: $(basename $dsym)"
+                  "$UPLOAD_BIN" -gsp "$GSVC_PLIST" -p ios "$dsym" && echo "OK" || echo "FAIL"
+                done
+              fi
+            fi
+            echo "=== done ==="
+          } 2>&1 | tee "$LOG"
 
     artifacts:
       - build/ios/ipa/*.ipa
       - build/ios/archive/Runner.xcarchive/dSYMs/*.dSYM
       - $CM_BUILD_DIR/flutter_build_ipa.log
+      - $CM_BUILD_DIR/dsym_upload.log
       - /tmp/xcodebuild_logs/*.log
 
     publishing:
