@@ -92,15 +92,101 @@ self.onmessage = ({ data }) => {
     }
   }
 
-  // 8. Watershed: flood every band pixel from its nearest region so the label map
+  // 8. Thin-wall merge: collapse regions that are separated only by thin internal
+  //    lines (striation marks, detail lines ≤ 10 px wide) into one region so that
+  //    each visually-enclosed area gets exactly one number badge and one fill tap
+  //    covers it completely. Thick boundary outlines (> 10 px) are never bridged.
+  //    Runs on the pre-watershed label where wall pixels are still -1.
+  {
+    // Centroid for each valid region from its trapped-ball pixel set.
+    const centroids = new Map();
+    for (const [id, pixels] of segBuf) {
+      if (!validIds.has(id) || pixels.length === 0) continue;
+      let sx = 0, sy = 0;
+      for (const pi of pixels) { sx += pi % width; sy += (pi / width) | 0; }
+      centroids.set(id, { x: Math.round(sx / pixels.length), y: Math.round(sy / pixels.length) });
+    }
+
+    // Find all wall-adjacent valid region pairs (valid regions on both sides of a -1 pixel).
+    const adjPairs = new Set();
+    for (let i = 0; i < n; i++) {
+      if (label[i] !== -1) continue;
+      const x = i % width, y = (i / width) | 0;
+      const nbrs = [];
+      if (x > 0        && label[i - 1]     > 0 && validIds.has(label[i - 1]))     nbrs.push(label[i - 1]);
+      if (x < width-1  && label[i + 1]     > 0 && validIds.has(label[i + 1]))     nbrs.push(label[i + 1]);
+      if (y > 0        && label[i - width]  > 0 && validIds.has(label[i - width])) nbrs.push(label[i - width]);
+      if (y < height-1 && label[i + width]  > 0 && validIds.has(label[i + width])) nbrs.push(label[i + width]);
+      for (let a = 0; a < nbrs.length - 1; a++) {
+        for (let b = a + 1; b < nbrs.length; b++) {
+          if (nbrs[a] === nbrs[b]) continue;
+          const lo = Math.min(nbrs[a], nbrs[b]), hi = Math.max(nbrs[a], nbrs[b]);
+          adjPairs.add(`${lo}:${hi}`);
+        }
+      }
+    }
+
+    // Union-Find.
+    const ufP = new Map();
+    for (const id of validIds) ufP.set(id, id);
+    const ufFind = (x) => {
+      while (ufP.get(x) !== x) {
+        const pp = ufP.get(ufP.get(x));
+        if (pp !== undefined) ufP.set(x, pp);
+        x = ufP.get(x);
+      }
+      return x;
+    };
+    const ufUnion = (a, b) => { a = ufFind(a); b = ufFind(b); if (a !== b) ufP.set(a, b); };
+
+    // For each adjacent pair walk a Bresenham line between centroids; count wall
+    // pixels crossed. ≤ THIN_WALL_PX → thin internal line → merge into one region.
+    const THIN_WALL_PX = 10;
+    for (const pair of adjPairs) {
+      const ci = pair.indexOf(':');
+      const a = Number(pair.slice(0, ci)), b = Number(pair.slice(ci + 1));
+      // Never merge the background region into a foreground region.
+      if (a === backgroundRegionId || b === backgroundRegionId) continue;
+      const cA = centroids.get(a), cB = centroids.get(b);
+      if (!cA || !cB) continue;
+      const dx = cB.x - cA.x, dy = cB.y - cA.y;
+      const steps = Math.max(Math.abs(dx), Math.abs(dy));
+      if (steps === 0) { ufUnion(a, b); continue; }
+      let wallPx = 0;
+      for (let t = 0; t <= steps; t++) {
+        const px = Math.round(cA.x + dx * t / steps);
+        const py = Math.round(cA.y + dy * t / steps);
+        if (px < 0 || px >= width || py < 0 || py >= height) continue;
+        if (label[py * width + px] === -1) wallPx++;
+      }
+      if (wallPx <= THIN_WALL_PX) ufUnion(a, b);
+    }
+
+    // Apply merges if any happened.
+    let hasMerge = false;
+    for (const id of validIds) if (ufFind(id) !== id) { hasMerge = true; break; }
+    if (hasMerge) {
+      for (let i = 0; i < n; i++) {
+        const id = label[i];
+        if (id > 0 && validIds.has(id)) label[i] = ufFind(id);
+      }
+      const newV = new Set();
+      for (const id of validIds) newV.add(ufFind(id));
+      validIds.clear();
+      for (const id of newV) validIds.add(id);
+      backgroundRegionId = ufFind(backgroundRegionId) || backgroundRegionId;
+    }
+  }
+
+  // 9. Watershed: flood every band pixel from its nearest region so the label map
   //    tiles the full image — adjacent fills meet exactly at the black line, no seam.
   watershedAssign(label, width, height);
 
-  // 9. Final per-region pixel sets, excluding line pixels so fills never paint
+  // 10. Final per-region pixel sets, excluding line pixels so fills never paint
   //    over the black line art.
   const regionPixels = buildRegionPixels(label, lineMask, [...validIds], width, height);
 
-  // 10. Pack into transferable typed arrays (zero-copy transfer back to main thread)
+  // 11. Pack into transferable typed arrays (zero-copy transfer back to main thread)
   const regionIds = [...regionPixels.keys()];
   const regionPixelBuffers = regionIds.map(id => new Int32Array(regionPixels.get(id)).buffer);
 
