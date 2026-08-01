@@ -84,8 +84,9 @@ const MIME_TYPES = {
 };
 
 // Route handlers (reused as-is; require ../lib/* relative to ./api).
-const generateHandler = require("./api/generate-image.js");
-const contactHandler = require("./api/contact.js");
+const generateHandler  = require("./api/generate-image.js");
+const contactHandler   = require("./api/contact.js");
+const healthDeepHandler = require("./api/health-deep.js");
 
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" });
@@ -1273,6 +1274,13 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { status: "ok" });
   }
 
+  // Deep health check: actually generates a test image and validates quality.
+  // Protected by GALLERY_ADMIN_KEY. Cached 10 min to avoid burning credits.
+  if (p === "/api/health-deep") {
+    enhanceRes(res);
+    return healthDeepHandler(req, res);
+  }
+
   // API routes — dispatch to the shared handlers.
   if (p === "/api/generate-image" || p === "/api/contact") {
     if (req.method === "POST") {
@@ -1843,6 +1851,26 @@ const server = http.createServer(async (req, res) => {
   gallery.backfillSlugs();
   db.cleanupExpiredArtworks().catch(err => console.error("[cleanup]", err.message));
   setInterval(() => db.cleanupExpiredArtworks().catch(() => {}), 24 * 60 * 60 * 1000);
+
+  // Hourly generation health check — generates a real test image, logs result.
+  // Helps catch provider outages (quota, auth, dark-image quality regressions) quickly.
+  // Runs 5 min after boot (avoids hammering during startup/restarts), then every hour.
+  const runDeepHealthLog = async () => {
+    try {
+      const result = await healthDeepHandler.runHealthCheck(true /* force refresh */);
+      const tag = result.status === "ok" ? "[health-ok]" : "[health-WARN]";
+      console.log(`${tag} generation=${result.generationMs}ms quality=${JSON.stringify(result.quality)} providers=${JSON.stringify(result.providers)}`);
+      if (result.status !== "ok") {
+        console.error(`[health-ALERT] status=${result.status} error=${result.error}`);
+      }
+    } catch (err) {
+      console.error("[health-ALERT] deep health check threw:", err.message);
+    }
+  };
+  setTimeout(() => {
+    runDeepHealthLog();
+    setInterval(runDeepHealthLog, 60 * 60 * 1000);
+  }, 5 * 60 * 1000);
   server.listen(PORT, HOST, () => {
     console.log(`Lalabuba server listening on http://${HOST}:${PORT}`);
   });
