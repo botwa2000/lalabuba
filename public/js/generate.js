@@ -198,11 +198,12 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
       }
     }
 
-    // 75-second hard timeout — prevents an infinite hang on slow connections.
+    // Hard timeout — prevents an infinite hang on slow connections.
     // Novel subjects take ~20-30s on the server (Novita); Pollinations cache
     // hits return in ~1-2s. Hard/extreme go straight to Novita (~20-30s).
+    const _clientTimeout = window.DRAWING_CONFIG?.generation?.clientTimeoutMs ?? 80000;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 75000);
+    const timeoutId = setTimeout(() => controller.abort(), _clientTimeout);
     let response;
     try {
       response = await fetch(`${apiBase}/api/generate-image`, {

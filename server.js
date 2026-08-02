@@ -1287,6 +1287,14 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ── Drawing model config ──────────────────────────────────────────────────
+  if (p === "/api/drawing-config") {
+    return require("./api/drawing-config")(req, res);
+  }
+  if (p === "/api/admin/drawing-config") {
+    return require("./api/admin/drawing-config")(req, res);
+  }
+
   // ── Serve generated images (coloring shares + gallery + community shared) ──
   const imgMatch = p.match(/^\/img\/(c|g|s)\/([A-Za-z0-9_.-]+)$/);
   if (imgMatch && req.method === "GET") {

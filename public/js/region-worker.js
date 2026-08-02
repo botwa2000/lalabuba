@@ -11,13 +11,21 @@
 //            backgroundRegionId, regionIds, regionPixelBuffers, gen }
 //   All ArrayBuffers are transferred (zero-copy).
 
-import { buildOutlineMask }    from './outline-mask.js?v=214';
-import { bridgeLineGaps }      from './line-bridge.js?v=214';
-import { trappedBallSegment }  from './trapped-ball.js?v=214';
-import { watershedAssign, buildRegionPixels } from './fill-core.js?v=214';
+import { buildOutlineMask }    from './outline-mask.js?v=323';
+import { bridgeLineGaps }      from './line-bridge.js?v=323';
+import { trappedBallSegment }  from './trapped-ball.js?v=323';
+import { watershedAssign, buildRegionPixels } from './fill-core.js?v=323';
+
+// Fallback detection params match lib/drawing-config.js DEFAULTS.
+const DETECTION_DEFAULTS = {
+  regionFilter: { absoluteFloor: 30, promoteFloor: 50, rescueFloor: 5 },
+  workerTimeoutMs: 90000,
+};
 
 self.onmessage = ({ data }) => {
-  const { pixels, width, height, gen } = data;
+  const { pixels, width, height, gen, detection } = data;
+  const det = Object.assign({}, DETECTION_DEFAULTS, detection || {});
+  const rf  = Object.assign({}, DETECTION_DEFAULTS.regionFilter, (detection || {}).regionFilter || {});
   const n = width * height;
   const src = new Uint8ClampedArray(pixels);   // pixels is a transferred ArrayBuffer
 
@@ -59,14 +67,14 @@ self.onmessage = ({ data }) => {
   }
   const validIds = new Set();
   for (const [id, buf] of segBuf) {
-    if (buf.length >= 30) validIds.add(id);
+    if (buf.length >= rf.absoluteFloor) validIds.add(id);
   }
-  // Dense/Extreme images can produce zero regions above 30px (every pixel is a
+  // Dense/Extreme images can produce zero regions above absoluteFloor (every pixel is a
   // line dot so all trapped-ball seeds are tiny). Rescue the largest regions
-  // down to 5px so the image stays colorable rather than going completely dark.
+  // down to rescueFloor px so the image stays colorable rather than going completely dark.
   if (validIds.size === 0 && segBuf.size > 0) {
     const sorted = [...segBuf.entries()].sort((a, b) => b[1].length - a[1].length);
-    const floor = Math.max(1, Math.min(5, sorted[0][1].length));
+    const floor = Math.max(1, Math.min(rf.rescueFloor, sorted[0][1].length));
     for (const [id, buf] of sorted) {
       if (buf.length >= floor) validIds.add(id);
     }

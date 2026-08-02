@@ -7,10 +7,12 @@
 // finished when a forgiving, self-scaling ~90% of those areas are coloured with
 // ANY colour — by a tap/paint fill OR by enough freehand (pencil) coverage.
 
-// How many areas count as "meaningful" per difficulty. Mirrors the Flutter
-// _maxNumberedFor and the recommended ranges:
-// Easy ~6-10 · Medium ~12-20 · Hard ~24-36 · Extreme ~48-64.
-export function numberedCapFor(diff) {
+// How many areas count as "meaningful" per difficulty.
+// Accepts optional cfg (window.DRAWING_CONFIG); falls back to hardcoded values
+// so this function is safe to call before the config fetch completes.
+export function numberedCapFor(diff, cfg) {
+  const fromCfg = cfg?.difficulties?.[diff]?.maxRegions;
+  if (fromCfg != null) return fromCfg;
   switch (diff) {
     case 'easy':    return 10;
     case 'hard':    return 30;
@@ -29,20 +31,21 @@ export function pickMeaningfulTargets(entries, cap, backgroundId) {
     .map(([id]) => id);
 }
 
-// Forgiving, self-scaling completion threshold. With few big areas (Easy) this
-// rounds up to "all of them"; on dense pages it tolerates the slivers a child
-// inevitably leaves uncoloured.
-export function freeComplete(total, coloured) {
+// Forgiving, self-scaling completion threshold. Accepts optional cfg; falls back
+// to 0.90 so the function is safe to call before the config fetch completes.
+export function freeComplete(total, coloured, cfg) {
   if (total <= 0) return false;
-  return coloured >= Math.ceil(total * 0.9);
+  const ratio = cfg?.completion?.freeCoverageRatio ?? 0.90;
+  return coloured >= Math.ceil(total * ratio);
 }
 
 // A freehand area counts as coloured once this fraction of its interior is
 // painted. Low + forgiving: children colour unevenly, leaving white gaps.
 export const COVER_THRESHOLD = 0.45;
 
-export function isCovered(coveredPixels, totalPixels, threshold = COVER_THRESHOLD) {
-  return totalPixels > 0 && coveredPixels / totalPixels >= threshold;
+export function isCovered(coveredPixels, totalPixels, threshold) {
+  const t = threshold ?? (window.DRAWING_CONFIG?.completion?.freehandCoverThreshold ?? COVER_THRESHOLD);
+  return totalPixels > 0 && coveredPixels / totalPixels >= t;
 }
 
 // ── Masked "stay-in-the-lines" freehand ──────────────────────────────────────

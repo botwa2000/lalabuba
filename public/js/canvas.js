@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { DIFFICULTY } from './data.js';
 import { t } from './i18n.js';
+import { getDetectionConfig } from './config.js';
 import {
   previewCanvas, drawCanvas, context, drawCtx,
   previewStage, showNumbersInput, printButton, downloadButton, clearPencilBtn,
@@ -11,10 +12,10 @@ import { bounce, sparkleBurst, sparkleAt, playComplete } from './fx.js';
 // occur when /js/fill-core.js is requested before its first deploy. Bump with
 // the asset version. (.js is served no-store, so the query only affects the CDN
 // cache key, never freshness.)
-import { fillRegionCore, watershedAssign, buildRegionPixels } from './fill-core.js?v=214';
-import { buildOutlineMask } from './outline-mask.js?v=214';
-import { bridgeLineGaps }   from './line-bridge.js?v=214';
-import { trappedBallSegment } from './trapped-ball.js?v=214';
+import { fillRegionCore, watershedAssign, buildRegionPixels } from './fill-core.js?v=323';
+import { buildOutlineMask } from './outline-mask.js?v=323';
+import { bridgeLineGaps }   from './line-bridge.js?v=323';
+import { trappedBallSegment } from './trapped-ball.js?v=323';
 
 // ─── Off-thread segmentation worker ─────────────────────────────────────────
 // precomputeRegions() can block the main thread for 200ms–10s on complex images
@@ -28,7 +29,7 @@ function _getWorker() {
   if (_worker) return _worker;
   try {
     // ES module workers: supported on Chrome 80+, Firefox 114+, Safari 15+, iOS 15+.
-    _worker = new Worker(new URL('./region-worker.js?v=214', import.meta.url), { type: 'module' });
+    _worker = new Worker(new URL('./region-worker.js?v=323', import.meta.url), { type: 'module' });
   } catch { _worker = null; }
   return _worker;
 }
@@ -60,20 +61,21 @@ function _postToWorker(imageDataBuffer, width, height, gen) {
     worker.addEventListener('message', onMsg);
     worker.addEventListener('error', onErr);
 
-    // 90-second safety valve: if the worker is still running (very complex image),
+    // Safety valve: if the worker is still running (very complex image),
     // reject so .catch() falls back to synchronous segmentation and .finally()
     // re-enables the Numbers button. Worker is destroyed so the next generation
     // starts fresh.
+    const dc = getDetectionConfig();
     timeoutId = setTimeout(() => {
       cleanup();
       _worker = null;
       reject(new Error('worker-timeout'));
-    }, 90000);
+    }, dc.workerTimeoutMs);
 
     // Slice (copy) the pixel buffer so state.baseImageData.data.buffer is not
     // detached — the main thread still needs it for drawing/coloring.
     const pixelsCopy = imageDataBuffer.slice(0);
-    worker.postMessage({ pixels: pixelsCopy, width, height, gen }, [pixelsCopy]);
+    worker.postMessage({ pixels: pixelsCopy, width, height, gen, detection: dc }, [pixelsCopy]);
   });
 }
 
@@ -722,12 +724,13 @@ export function floodFillAt(canvasX, canvasY, fillColor) {
   const lineMask = state.lineMask; // null until worker finishes — that's OK
 
   let startIdx = canvasY * width + canvasX;
-  // Don't start on a line pixel. If the tap landed on one, search within 16 px
-  // for the nearest non-line pixel so dense-stipple images still get filled.
-  const isLine = (idx) => lineMask ? lineMask[idx] : (paint[idx*4]+paint[idx*4+1]+paint[idx*4+2])/3 < 80;
+  // Don't start on a line pixel. Search within snapRadius for the nearest non-line pixel.
+  const _bfsDark = getDetectionConfig().bfsDarkThreshold;
+  const _snapR   = getDetectionConfig().snapRadius?.web ?? 16;
+  const isLine = (idx) => lineMask ? lineMask[idx] : (paint[idx*4]+paint[idx*4+1]+paint[idx*4+2])/3 < _bfsDark;
   if (isLine(startIdx)) {
     let found = false;
-    outer16: for (let r = 1; r <= 16; r++) {
+    outer16: for (let r = 1; r <= _snapR; r++) {
       for (let dy = -r; dy <= r; dy++) {
         for (let dx = -r; dx <= r; dx++) {
           if (Math.abs(dx) < r && Math.abs(dy) < r) continue;
@@ -747,19 +750,17 @@ export function floodFillAt(canvasX, canvasY, fillColor) {
   visited[startIdx] = 1;
   queue[tail++] = startIdx;
 
-  // Cap at 65% of the image to avoid flooding the entire white background.
-  // (Primary fill uses fillRegion when regionMap is ready; this BFS only
-  // runs as a fallback before segmentation completes.)
-  const MAX_FILL = Math.floor(n * 0.65);
+  // Cap flood fill to avoid consuming the entire white background.
+  const MAX_FILL = Math.floor(n * (getDetectionConfig().bfsFloodCapRatio ?? 0.65));
 
   while (head < tail) {
     if (tail >= MAX_FILL) return { success: false };
     const i = queue[head++];
     const x = i % width, y = (i / width) | 0;
-    if (x > 0)       { const nb = i-1;     if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < 80; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
-    if (x < width-1) { const nb = i+1;     if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < 80; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
-    if (y > 0)       { const nb = i-width; if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < 80; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
-    if (y < height-1){ const nb = i+width; if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < 80; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
+    if (x > 0)       { const nb = i-1;     if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < _bfsDark; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
+    if (x < width-1) { const nb = i+1;     if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < _bfsDark; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
+    if (y > 0)       { const nb = i-width; if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < _bfsDark; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
+    if (y < height-1){ const nb = i+width; if (!visited[nb]) { const iL = lineMask ? lineMask[nb] : (paint[nb*4]+paint[nb*4+1]+paint[nb*4+2])/3 < _bfsDark; if (!iL) { visited[nb]=1; queue[tail++]=nb; } } }
   }
 
   const { r, g, b } = fillColor;

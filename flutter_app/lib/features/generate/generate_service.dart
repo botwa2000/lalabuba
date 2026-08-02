@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/app_config.dart';
 import '../../core/di/providers.dart';
+import '../../core/drawing_config_service.dart';
 import '../../shared/services/device_id_service.dart';
 import 'generate_models.dart';
 
@@ -33,8 +34,11 @@ class GenerateService {
   }) async {
     final deviceId = await DeviceIdService.getDeviceId();
     final effectiveSeed = seed ?? _newSeed();
-    const width = 768;
-    const height = 768;
+    final resolution =
+        DrawingConfigService.instance.difficulties[difficulty]?.resolution ??
+            1024;
+    final width = resolution;
+    final height = resolution;
 
     final req = GenerationRequest(
       subject: subject,
@@ -50,9 +54,11 @@ class GenerateService {
     // alive silently). A CancelToken sends an abort to Dio's HTTP layer, which
     // actually cancels the platform socket and lets the Future resolve.
     final cancel = CancelToken();
+    final timeoutMs = DrawingConfigService.instance.generation.clientTimeoutMs;
     final timer = Timer(
-      const Duration(seconds: 90),
-      () => cancel.cancel('Generation timeout — server did not respond within 90 s'),
+      Duration(milliseconds: timeoutMs),
+      () => cancel.cancel(
+          'Generation timeout — server did not respond within ${timeoutMs ~/ 1000} s'),
     );
 
     try {

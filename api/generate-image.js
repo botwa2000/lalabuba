@@ -3,6 +3,7 @@ const path = require("path");
 const { sanitizeSubject, isSafeSubject } = require("../lib/content-safety");
 const { buildPrompt, generateImage } = require("../lib/image-providers");
 const { translateToEnglish } = require("../lib/translate");
+const { getDrawingConfigSync } = require("../lib/drawing-config");
 
 const HF_TOKEN = process.env.HF_TOKEN;
 const HF_MODEL = process.env.HF_MODEL || "black-forest-labs/FLUX.1-schnell";
@@ -34,20 +35,21 @@ function cleanupOldLocalImages() {
 
 // ─── Rate limiting (per serverless instance) ─────────────────────────────────
 const rateLimitMap = new Map();
-const RATE_LIMIT_MAX    = 15;
-const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
 
 function isRateLimited(ip) {
+  const cfg = getDrawingConfigSync().providers ?? {};
+  const maxReqs = cfg.rateLimitMax    ?? 15;
+  const window  = cfg.rateLimitWindowMs ?? 3_600_000;
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    rateLimitMap.set(ip, { count: 1, resetAt: now + window });
     if (rateLimitMap.size > 5000) {
       for (const [k, v] of rateLimitMap) if (now > v.resetAt) rateLimitMap.delete(k);
     }
     return false;
   }
-  if (entry.count >= RATE_LIMIT_MAX) return true;
+  if (entry.count >= maxReqs) return true;
   entry.count++;
   return false;
 }

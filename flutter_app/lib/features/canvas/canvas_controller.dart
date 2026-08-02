@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'canvas_models.dart';
 import 'flood_fill.dart';
 import 'stroke_mask.dart';
+import '../../core/drawing_config_service.dart';
 
 /// Thrown when a region-detection run is abandoned because a newer image load
 /// superseded it — lets the awaiting frame unwind and free its buffers.
@@ -17,7 +18,7 @@ class _DetectionSuperseded implements Exception {
 }
 
 class CanvasNotifier extends Notifier<CanvasState> {
-  static const _maxUndo = 20;
+  int get _maxUndo => DrawingConfigService.instance.canvas.undoStackMax;
 
   // FIX 1: monotonically increasing token for composite updates. Each update
   // captures the value it bumped to; only the update whose token still matches
@@ -288,7 +289,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
     // since the background is intentionally uncolourable and a near-edge tap on
     // it should not bleed colour into the subject.
     if (r != -2) return null;
-    const snap = 5; // image-space px to search outward
+    final snap = DrawingConfigService.instance.detection.snapRadius.flutter;
     var bestRegion = -1;
     var bestDist2 = 1 << 30;
     for (var dy = -snap; dy <= snap; dy++) {
