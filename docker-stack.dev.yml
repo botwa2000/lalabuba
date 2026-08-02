@@ -21,7 +21,8 @@ services:
       - lalabuba_dev_CF_ACCOUNT_ID
       - lalabuba_dev_CF_API_TOKEN
       - lalabuba_dev_TURNSTILE_SECRET_KEY
-      - lalabuba_dev_GALLERY_ADMIN_KEY
+      - source: lalabuba_dev_GALLERY_ADMIN_KEY_v2
+        target: lalabuba_dev_GALLERY_ADMIN_KEY
       - lalabuba_dev_JWT_SECRET
       - lalabuba_dev_BREVO_API_KEY
       - lalabuba_dev_DOCS_SECRET
@@ -51,7 +52,7 @@ secrets:
   lalabuba_dev_CF_ACCOUNT_ID: { external: true }
   lalabuba_dev_CF_API_TOKEN: { external: true }
   lalabuba_dev_TURNSTILE_SECRET_KEY: { external: true }
-  lalabuba_dev_GALLERY_ADMIN_KEY: { external: true }
+  lalabuba_dev_GALLERY_ADMIN_KEY_v2: { external: true }
   lalabuba_dev_JWT_SECRET: { external: true }
   lalabuba_dev_BREVO_API_KEY: { external: true }
   lalabuba_dev_DOCS_SECRET: { external: true }
