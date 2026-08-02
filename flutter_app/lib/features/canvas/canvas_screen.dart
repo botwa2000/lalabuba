@@ -916,7 +916,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       description: l10n.t('tipCanvasBody'),
       child: Container(
         color: cs.surfaceContainerLow,
-        child: canvas.isReady
+        child: (canvas.hasImage && !canvas.isProcessing)
             ? _buildZoomableCanvas(context, canvas)
             : const SizedBox.expand(),
       ),

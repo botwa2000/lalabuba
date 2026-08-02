@@ -104,7 +104,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
     final RegionDetectionResult result;
     try {
       result = await _detectInIsolate(params, gen)
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 60));
     } on _DetectionSuperseded {
       // A newer loadImage took over while this one was spawning/running. Return
       // so this async frame (and its captured ~8 MB of image buffers) unwinds and
