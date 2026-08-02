@@ -405,10 +405,18 @@ window.onTurnstileSuccess = (token) => {
   state.turnstileToken = token;
   document.body.classList.remove('ts-needs-interaction');
 };
-window.onTurnstileExpired = () => { state.turnstileToken = null; };
-window.onTurnstileError   = () => {
+window.onTurnstileExpired = () => {
+  state.turnstileToken = null;
+  // Immediately restart the silent challenge so the next Draw! has a fresh token.
+  const _el = document.getElementById('turnstile-widget');
+  if (window.turnstile && _el) window.turnstile.reset(_el);
+};
+window.onTurnstileError = () => {
   state.turnstileToken = null;
   document.body.classList.remove('ts-needs-interaction');
+  // Retry after a short delay — avoids a tight loop if CF is temporarily down.
+  const _el = document.getElementById('turnstile-widget');
+  setTimeout(() => { if (window.turnstile && _el) window.turnstile.reset(_el); }, 3000);
 };
 // CF fires this just before showing the visual checkbox — move widget on-screen.
 window.onTurnstileBeforeInteractive = () => {
@@ -427,12 +435,18 @@ function getTurnstileToken() {
   if (existing) return Promise.resolve(existing);
   // Token not ready yet — wait silently. If CF needs a human click it will call
   // onTurnstileBeforeInteractive which moves the widget on-screen automatically.
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const poll = setInterval(() => {
       if (state.turnstileToken) { clearInterval(poll); clearTimeout(timer); resolve(state.turnstileToken); }
     }, 100);
-    // 15 s grace period, then pass null so the API call still proceeds.
-    const timer = setTimeout(() => { clearInterval(poll); resolve(null); }, 15000);
+    // 15 s grace period. If still no token, reset the widget and surface a
+    // friendly retry message — never send a null token (guaranteed 403).
+    const timer = setTimeout(() => {
+      clearInterval(poll);
+      const _el = document.getElementById('turnstile-widget');
+      if (window.turnstile && _el) window.turnstile.reset(_el);
+      reject(new Error('Security check is taking a moment — please try again.'));
+    }, 15000);
   });
 }
 
