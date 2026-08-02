@@ -1033,9 +1033,14 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     }
     final regionId = notifier.regionAtOffset(pos, size);
     if (regionId != null) {
-      HapticFeedback.lightImpact();
-      notifier.fillRegion(regionId);
-      _narrateRegion(regionId);
+      final bgId = ref.read(canvasProvider).detection?.backgroundRegionId;
+      if (regionId == bgId) {
+        notifier.floodFillAt(pos, size);
+      } else {
+        HapticFeedback.lightImpact();
+        notifier.fillRegion(regionId);
+        _narrateRegion(regionId);
+      }
     }
   }
 
@@ -1057,7 +1062,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     }
     final regionId = notifier.regionAtOffset(pos, size);
     if (regionId != null) {
-      notifier.fillRegion(regionId);
+      final bgId = ref.read(canvasProvider).detection?.backgroundRegionId;
+      if (regionId != bgId) {
+        notifier.fillRegion(regionId);
+      }
+      // Background region: skip BFS fill on pan (tap-only for perf)
     }
   }
 

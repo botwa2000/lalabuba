@@ -57,6 +57,7 @@ class RegionDetectionResult {
   final Map<int, int> regionColorMap;       // regionId → ARGB32 int (pre-assigned palette)
   final Map<int, int> regionPaletteIndex;   // regionId → 0-based palette index (for number display)
   final Uint8List? lineMask;            // length = width*height; 1 = visible line-art pixel
+  final Uint8List? wallMask;            // structural boundary mask (lines + bridges + virtual frame) for BFS background fill
 
   const RegionDetectionResult({
     required this.pixelToRegion,
@@ -67,6 +68,7 @@ class RegionDetectionResult {
     this.regionColorMap = const {},
     this.regionPaletteIndex = const {},
     this.lineMask,
+    this.wallMask,
   });
 }
 

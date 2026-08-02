@@ -288,15 +288,13 @@ class CanvasNotifier extends Notifier<CanvasState> {
     final r = d.pixelToRegion[idx];
     if (r >= 0 && r != d.backgroundRegionId) return r;
 
-    // The tap landed on the outline band (-2) or the uncolourable background.
-    // Thin lines and small numberless details are easy to "miss" by a pixel —
-    // tapping the black line between two areas, or just inside a tiny shape,
-    // returned null and nothing filled ("can't colour the areas without
-    // numbers"). Snap to the nearest genuine, fillable region within a small
-    // radius so those taps resolve to the area the child clearly meant. We do
-    // NOT snap when the tap is on the true background id directly (r == bg),
-    // since the background is intentionally uncolourable and a near-edge tap on
-    // it should not bleed colour into the subject.
+    // Background region tap — return the id so the caller can route it to BFS
+    // flood fill rather than the region-fill path.
+    if (r == d.backgroundRegionId) return d.backgroundRegionId;
+
+    // The tap landed on the outline band (-2). Snap to the nearest genuine,
+    // fillable region within a small radius so "tap the black line" resolves
+    // to the area the child clearly meant.
     if (r != -2) return null;
     final snap = DrawingConfigService.instance.detection.snapRadius.flutter;
     var bestRegion = -1;
@@ -359,6 +357,82 @@ class CanvasNotifier extends Notifier<CanvasState> {
     state = s.copyWith(
         regionColors: newColors, undoStack: _pushUndo(s.undoStack, action));
     unawaited(_applyRegionComposite(regionId, isErasing ? null : s.activeColor));
+  }
+
+  /// BFS-bounded flood fill for background region taps. Spreads from the
+  /// tapped canvas pixel through all connected non-wall pixels (bounded by the
+  /// structural wallMask — line art + invisible bridges + virtual frame), so
+  /// the fill stays within the local enclosed pocket rather than flooding the
+  /// entire outer white space.
+  Future<void> floodFillAt(Offset pos, Size canvasSize) async {
+    final s = state;
+    final d = s.detection;
+    final orig = s.originalRgba;
+    if (d == null || orig == null) return;
+    final wm = d.wallMask;
+    if (wm == null) return;
+    final color = s.activeColor;
+    if (color == Colors.transparent) return;
+
+    final displayRect = fitImageRect(
+      d.width.toDouble(), d.height.toDouble(),
+      canvasSize.width, canvasSize.height,
+    );
+    if (!displayRect.contains(pos)) return;
+
+    final nx = (pos.dx - displayRect.left) / displayRect.width;
+    final ny = (pos.dy - displayRect.top) / displayRect.height;
+    final imgX = (nx * d.width).round().clamp(0, d.width - 1);
+    final imgY = (ny * d.height).round().clamp(0, d.height - 1);
+
+    final w = d.width, h = d.height;
+    final startIdx = imgY * w + imgX;
+    if (wm[startIdx] != 0) return;
+
+    final argb = color.toARGB32();
+    final cr = (argb >> 16) & 0xFF;
+    final cg = (argb >> 8) & 0xFF;
+    final cb = argb & 0xFF;
+
+    final buf = _compositeBuf ??= Uint8List.fromList(orig);
+    final gen = ++_compositeGen;
+
+    final visited = Uint8List(w * h);
+    final queue = List<int>.filled(w * h, 0);
+    int head = 0, tail = 0;
+
+    visited[startIdx] = 1;
+    queue[tail++] = startIdx;
+
+    while (head < tail) {
+      final i = queue[head++];
+      final o = i * 4;
+      buf[o] = cr;
+      buf[o + 1] = cg;
+      buf[o + 2] = cb;
+      buf[o + 3] = 255;
+      final px = i % w;
+      if (px > 0) {
+        final nb = i - 1;
+        if (visited[nb] == 0 && wm[nb] == 0) { visited[nb] = 1; queue[tail++] = nb; }
+      }
+      if (px < w - 1) {
+        final nb = i + 1;
+        if (visited[nb] == 0 && wm[nb] == 0) { visited[nb] = 1; queue[tail++] = nb; }
+      }
+      if (i >= w) {
+        final nb = i - w;
+        if (visited[nb] == 0 && wm[nb] == 0) { visited[nb] = 1; queue[tail++] = nb; }
+      }
+      if (i + w < w * h) {
+        final nb = i + w;
+        if (visited[nb] == 0 && wm[nb] == 0) { visited[nb] = 1; queue[tail++] = nb; }
+      }
+    }
+
+    final img = await _rgbaToImage(buf, w, h);
+    if (gen != _compositeGen || state.detection != d) return;
+    state = state.copyWith(compositeImage: img, compositeRgba: buf);
   }
 
   /// Erase any freehand strokes passing within [radius] (canvas-local px) of

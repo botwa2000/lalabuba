@@ -378,6 +378,13 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     if (i + w < w * h)   { final nb = i + w; if (pixelToRegion[nb] == -2) { pixelToRegion[nb] = id; waterQ[wTail++] = nb; } }
   }
 
+  // Snapshot the structural boundary mask (original lines + invisible bridge
+  // pixels + virtual frame) for use by BFS background flood fill. When the
+  // user taps the background region the BFS is bounded by this mask so the
+  // fill stays within the local enclosed pocket rather than flooding the
+  // entire outer white space through the same gap the bridge plugged.
+  final wallMask = Uint8List.fromList(outlineMask);
+
   return RegionDetectionResult(
     pixelToRegion: pixelToRegion,
     regions: sortedRegions,
@@ -387,6 +394,7 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     regionColorMap: regionColorMap,
     regionPaletteIndex: regionPaletteIndex,
     lineMask: lineMask,
+    wallMask: wallMask,
   );
 }
 
