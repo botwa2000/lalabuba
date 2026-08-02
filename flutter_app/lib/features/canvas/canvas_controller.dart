@@ -103,11 +103,20 @@ class CanvasNotifier extends Notifier<CanvasState> {
 
     final RegionDetectionResult result;
     try {
-      result = await _detectInIsolate(params, gen);
+      result = await _detectInIsolate(params, gen)
+          .timeout(const Duration(seconds: 30));
     } on _DetectionSuperseded {
       // A newer loadImage took over while this one was spawning/running. Return
       // so this async frame (and its captured ~8 MB of image buffers) unwinds and
       // is GC'd, instead of awaiting a future that never completes (a leak).
+      return;
+    } catch (_) {
+      // Isolate crashed, timed out, or OOM'd — clear the processing flag so the
+      // canvas shows the image (without region numbers) instead of hanging forever.
+      _killDetectIsolate();
+      if (gen == _detectGen) {
+        state = state.copyWith(isProcessing: false);
+      }
       return;
     }
 

@@ -28,7 +28,7 @@ function _getWorker() {
   if (_worker) return _worker;
   try {
     // ES module workers: supported on Chrome 80+, Firefox 114+, Safari 15+, iOS 15+.
-    _worker = new Worker(new URL('./region-worker.js?v=320', import.meta.url), { type: 'module' });
+    _worker = new Worker(new URL('./region-worker.js?v=321', import.meta.url), { type: 'module' });
   } catch { _worker = null; }
   return _worker;
 }
@@ -75,6 +75,29 @@ function _postToWorker(imageDataBuffer, width, height, gen) {
     const pixelsCopy = imageDataBuffer.slice(0);
     worker.postMessage({ pixels: pixelsCopy, width, height, gen }, [pixelsCopy]);
   });
+}
+
+// After the worker returns and overlayNumbers() rebuilds regionColorMap, scan
+// paintedImageData to retroactively detect regions that were filled pre-worker.
+// Pre-worker fills used regionId=0 so completedRegions only held {0}; this upgrades
+// to real worker region IDs so checkCompletion() fires correctly.
+function _retroactiveCompletionDetect() {
+  if (!state.regionColorMap || !state.regionPixels || !state.paintedImageData || !state.baseImageData) return;
+  const paint = state.paintedImageData.data;
+  const base  = state.baseImageData.data;
+  for (const [id] of state.regionColorMap) {
+    if (state.completedRegions.has(id)) continue;
+    const pixels = state.regionPixels.get(id);
+    if (!pixels || pixels.length === 0) continue;
+    const step = Math.max(1, Math.floor(pixels.length / 30));
+    for (let i = 0; i < pixels.length; i += step) {
+      const o = pixels[i] * 4;
+      if (paint[o] !== base[o] || paint[o + 1] !== base[o + 1] || paint[o + 2] !== base[o + 2]) {
+        state.completedRegions.add(id);
+        break;
+      }
+    }
+  }
 }
 
 // Apply the worker result to state (all typed arrays were transferred zero-copy).
@@ -1066,6 +1089,7 @@ export async function renderGeneratedImage(imageBase64) {
     .finally(() => {
       if (gen !== _segGeneration) return;
       state.isSegmenting = false;
-      redrawCanvas(); // regionMap now set → overlayNumbers() upgrades to accurate badges
+      redrawCanvas(); // regionMap now set → overlayNumbers() rebuilds regionColorMap
+      _retroactiveCompletionDetect(); // upgrades pre-worker completedRegions to real IDs
     });
 }

@@ -655,15 +655,16 @@ previewCanvas.addEventListener("click", (event) => {
   const regionId = findRegionAt(canvasX, canvasY);
 
   // Color guidance in numbers mode — block fill if wrong color, flash the correct one.
-  // The kid must select the right colour first; this is the core colour-by-number mechanic.
-  // NOTE: regionId may be 0 pre-worker (no regionMap yet) — the gate intentionally omits
-  // the regionId > 0 check so the centroid-distance fallback can enforce color pre-worker.
+  // Only numbered regions (post-worker, in regionColorMap) enforce a specific color.
+  // Non-numbered regions (regionId > 0, NOT in regionColorMap) are freely colorable.
+  // Pre-worker taps (regionId === 0, no regionMap yet) use centroid-distance fallback.
   if (!state.isFreeMode && showNumbersInput.checked && state.regionColorMap?.size > 0) {
-    // Direct hit via worker regionMap (post-worker); otherwise fall back to nearest
-    // badge centroid which works both pre-worker (sequential IDs) and post-worker
-    // (for worker regions not assigned a badge).
-    let required = (regionId > 0 ? state.regionColorMap.get(regionId) : undefined) ?? -1;
-    if (required < 0 && state.numberRegions?.length > 0) {
+    let required = -1;
+    if (regionId > 0 && state.regionColorMap.has(regionId)) {
+      // Numbered region — enforce its assigned colour.
+      required = state.regionColorMap.get(regionId);
+    } else if (regionId === 0 && state.numberRegions?.length > 0) {
+      // Pre-worker tap: find nearest numbered badge by centroid distance.
       let bestDist = Infinity;
       for (const reg of state.numberRegions) {
         const mid = reg._mapId ?? 0;
@@ -673,6 +674,7 @@ previewCanvas.addEventListener("click", (event) => {
         if (d < bestDist) { bestDist = d; required = state.regionColorMap.get(mid); }
       }
     }
+    // Non-numbered areas (regionId > 0 but not in colorMap): required stays -1 → free
     if (required >= 0 && state.selectedPaletteIndex !== required) {
       const colorLabel = activePalette()[required]?.label ?? '';
       flashPaletteSwatch(required);
