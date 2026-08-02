@@ -41,6 +41,7 @@ import 'narration_service.dart';
 import 'completion_celebration.dart';
 import '../rewards/crayon_packs.dart';
 import '../rewards/scenes.dart';
+import '../../core/drawing_config_service.dart';
 
 // Args passed when navigating to CanvasScreen
 class CanvasScreenArgs {
@@ -324,30 +325,16 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     }
   }
 
-  int _minAreaFor(String difficulty) {
-    switch (difficulty) {
-      case 'easy':    return 2000;
-      case 'medium':  return 1000;
-      case 'hard':    return 400;
-      case 'extreme': return 150;
-      default:        return 800;
-    }
-  }
+  int _minAreaFor(String difficulty) =>
+      DrawingConfigService.instance.difficulties[difficulty]?.minArea ?? 2000;
 
   /// Difficulty-scaled cap on how many areas get a number badge. This is ALSO
   /// the set of "meaningful areas" a child must colour to finish (in free mode,
   /// ~90% of these — see CanvasState.isComplete), so it directly tunes how
   /// reachable the reward is per level. Mirrors the recommended ranges:
   /// Easy ~6-10 · Medium ~12-20 · Hard ~24-36 · Extreme ~48-64.
-  int _maxNumberedFor(String difficulty) {
-    switch (difficulty) {
-      case 'easy':    return 10;
-      case 'medium':  return 18;
-      case 'hard':    return 30;
-      case 'extreme': return 48;
-      default:        return 18;
-    }
-  }
+  int _maxNumberedFor(String difficulty) =>
+      DrawingConfigService.instance.difficulties[difficulty]?.maxRegions ?? 10;
 
   void _showDailyLimitReached() {
     if (!mounted) return;

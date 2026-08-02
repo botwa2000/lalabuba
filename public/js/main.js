@@ -29,6 +29,7 @@ import { numberedCapFor, pickMeaningfulTargets, freeComplete, isCovered } from '
 import { initShareHandlers, loadFromShare } from './share.js';
 import { initZoom, getCanvasCoords, isPanMode } from './zoom.js';
 import { initOnboarding } from './onboarding.js';
+import { getDrawingConfig } from './config.js';
 
 function formatTime(ms) {
   const s = Math.floor(ms / 1000);
@@ -113,7 +114,7 @@ function meaningfulTargets() {
   // on Extreme) each time would be wasteful. Invalidated on new image / difficulty
   // change (state.numberTargets = null).
   if (state.numberTargets) return state.numberTargets;
-  const cap = numberedCapFor(difficultySelect.value);
+  const cap = numberedCapFor(difficultySelect.value, getDrawingConfig());
   const entries = [...state.regionPixels.entries()].map(([id, px]) => [id, px.length]);
   state.numberTargets = pickMeaningfulTargets(entries, cap, state.backgroundRegionId);
   return state.numberTargets;
@@ -176,7 +177,7 @@ function checkCompletion() {
     // Auto-complete regions too small to reliably tap (< 0.05% of canvas pixels).
     // These are valid coloring areas but slivers a finger/cursor can't hit precisely.
     if (state.regionAreaMap && previewCanvas) {
-      const tiny = previewCanvas.width * previewCanvas.height * 0.0005;
+      const tiny = previewCanvas.width * previewCanvas.height * (getDrawingConfig().completion?.tinyRegionAutoRatio ?? 0.0005);
       for (const [id, area] of state.regionAreaMap) {
         if (area < tiny && !state.completedRegions.has(id)) state.completedRegions.add(id);
       }
@@ -190,7 +191,7 @@ function checkCompletion() {
     if (!targets.length) return;
     const covered = freeColouredRegions(targets);
     const done = targets.filter((id) => covered.has(id)).length;
-    if (!freeComplete(targets.length, done)) return;
+    if (!freeComplete(targets.length, done, getDrawingConfig())) return;
   }
 
   celebrate();
@@ -1824,6 +1825,14 @@ if (!DEBUG) {
   if (debugAside) debugAside.style.display = 'none';
   document.querySelectorAll('.debug-item').forEach(el => { el.style.display = 'none'; });
 }
+
+// Fire-and-forget: fetch drawing model config from the server. Stored in
+// window.DRAWING_CONFIG so all subsequent calls to getDrawingConfig() return
+// the live server values. Failures are silent — fallback defaults apply.
+fetch('/api/drawing-config')
+  .then(r => r.ok ? r.json() : null)
+  .then(cfg => { if (cfg) window.DRAWING_CONFIG = cfg; })
+  .catch(() => {});
 
 try {
   renderLegend();
