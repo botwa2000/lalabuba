@@ -190,6 +190,13 @@ self.onmessage = ({ data }) => {
   //    tiles the full image — adjacent fills meet exactly at the black line, no seam.
   watershedAssign(label, width, height);
 
+  // 9b. Snapshot the structural boundary mask (original lines + invisible bridge
+  //     pixels + virtual frame) AFTER watershed. This "wallMask" is used by the
+  //     main thread's BFS flood fill when the user taps the background region — it
+  //     keeps the fill bounded to the local pocket (e.g. an arm) rather than
+  //     flooding the entire outer white space through the same bridge gaps.
+  const wallMask = new Uint8Array(outlineMask);
+
   // 10. Final per-region pixel sets, excluding line pixels so fills never paint
   //    over the black line art.
   const regionPixels = buildRegionPixels(label, lineMask, [...validIds], width, height);
@@ -199,7 +206,7 @@ self.onmessage = ({ data }) => {
   const regionPixelBuffers = regionIds.map(id => new Int32Array(regionPixels.get(id)).buffer);
 
   self.postMessage(
-    { regionMap: label.buffer, lineMask: lineMask.buffer, backgroundRegionId, regionIds, regionPixelBuffers, gen },
-    [label.buffer, lineMask.buffer, ...regionPixelBuffers],
+    { regionMap: label.buffer, lineMask: lineMask.buffer, wallMask: wallMask.buffer, backgroundRegionId, regionIds, regionPixelBuffers, gen },
+    [label.buffer, lineMask.buffer, wallMask.buffer, ...regionPixelBuffers],
   );
 };

@@ -746,11 +746,12 @@ previewCanvas.addEventListener("click", (event) => {
   if (regionId > 0) state.completedRegions.add(regionId);
 
   // Primary fill: use exact region pixels when worker has finished (accurate,
-  // no MAX_FILL cap). fillRegion works for ANY region including the background —
-  // it has the exact pixel list so it never overflows. Fall back to BFS only when
-  // regionMap is not yet ready (segmentation still running).
+  // no MAX_FILL cap). Background region is the exception — its pixel set spans
+  // the entire outer white space, so filling it would paint the whole page border.
+  // Instead use BFS from the tap point, bounded by the structural wall mask (which
+  // includes bridge pixels that seal interior pockets like an unenclosed arm).
   let fillResult;
-  if (state.regionMap && regionId > 0) {
+  if (state.regionMap && regionId > 0 && regionId !== state.backgroundRegionId) {
     fillResult = fillRegion(regionId, fillColor);
   } else {
     fillResult = floodFillAt(canvasX, canvasY, fillColor);
@@ -1159,6 +1160,12 @@ setPaintEndCallback(checkPaintCoverage);
 // Pencil/freehand strokes also re-check free-mode coverage completion so a child
 // who colours by hand (unevenly) still earns the auto-celebration.
 setStrokeEndCallback(() => { try { checkCompletion(); } catch {} });
+
+// When the region worker finishes AFTER the user has already filled all numbered
+// areas, _retroactiveCompletionDetect() in canvas.js upgrades completedRegions to
+// real worker IDs and then fires this event so checkCompletion() can run with the
+// now-complete data and trigger the celebration.
+document.addEventListener('lalabuba:retroactive-completion', () => { try { checkCompletion(); } catch {} });
 
 // ─── Zoom ─────────────────────────────────────────────────────────────────────
 const canvasFrame = document.querySelector('.canvas-frame');

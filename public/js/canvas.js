@@ -29,7 +29,7 @@ function _getWorker() {
   if (_worker) return _worker;
   try {
     // ES module workers: supported on Chrome 80+, Firefox 114+, Safari 15+, iOS 15+.
-    _worker = new Worker(new URL('./region-worker.js?v=323', import.meta.url), { type: 'module' });
+    _worker = new Worker(new URL('./region-worker.js?v=327', import.meta.url), { type: 'module' });
   } catch { _worker = null; }
   return _worker;
 }
@@ -104,9 +104,10 @@ function _retroactiveCompletionDetect() {
 
 // Apply the worker result to state (all typed arrays were transferred zero-copy).
 function _applyWorkerResult(result) {
-  const { regionMap, lineMask, backgroundRegionId, regionIds, regionPixelBuffers } = result;
+  const { regionMap, lineMask, wallMask, backgroundRegionId, regionIds, regionPixelBuffers } = result;
   state.regionMap = new Int32Array(regionMap);
   state.lineMask  = new Uint8Array(lineMask);
+  state.wallMask  = wallMask ? new Uint8Array(wallMask) : null;
   state.backgroundRegionId = backgroundRegionId;
   const rp = new Map();
   regionIds.forEach((id, i) => rp.set(id, new Int32Array(regionPixelBuffers[i])));
@@ -744,7 +745,9 @@ export function floodFillAt(canvasX, canvasY, fillColor) {
   const paint  = state.paintedImageData.data;
   const { width, height } = previewCanvas;
   const n = width * height;
-  const lineMask = state.lineMask; // null until worker finishes — that's OK
+  // wallMask (post-bridge structural boundaries) bounds BFS to local pockets so
+  // background-region taps (e.g. an unenclosed arm) don't flood the whole page.
+  const lineMask = state.wallMask ?? state.lineMask; // null until worker finishes — that's OK
 
   let startIdx = canvasY * width + canvasX;
   // Don't start on a line pixel. Search within snapRadius for the nearest non-line pixel.
@@ -851,7 +854,7 @@ export function findRegionAt(canvasX, canvasY) {
   if (!state.regionMap) return 0;
   const direct = state.regionMap[canvasY * width + canvasX];
   if (direct > 0) return direct;
-  for (let r = 1; r <= 16; r++) {
+  for (let r = 1; r <= 20; r++) {
     for (let dy = -r; dy <= r; dy++) {
       for (let dx = -r; dx <= r; dx++) {
         if (Math.abs(dx) < r && Math.abs(dy) < r) continue;
@@ -1092,5 +1095,8 @@ export async function renderGeneratedImage(imageBase64) {
       state.isSegmenting = false;
       redrawCanvas(); // regionMap now set → overlayNumbers() rebuilds regionColorMap
       _retroactiveCompletionDetect(); // upgrades pre-worker completedRegions to real IDs
+      // Signal main.js to run checkCompletion() — needed when all regions were filled
+      // before/during the worker run so completedRegions only just became complete.
+      document.dispatchEvent(new CustomEvent('lalabuba:retroactive-completion'));
     });
 }
