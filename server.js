@@ -1730,6 +1730,21 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // ── Redirect old sitemap /<lang>/<slug> URLs → /<slug>/ ─────────────────
+    // The old sitemap listed /tr/boyama-sayfalari/, /en/features, /de/ausmalbilder/, etc.
+    // None of those language-prefix paths exist. 301 to the real path so Google updates fast.
+    {
+      const oldPrefixMatch = p.match(/^\/([a-z]{2,3})\/([^/]+)\/?$/);
+      if (oldPrefixMatch) {
+        const [, langCode, slug] = oldPrefixMatch;
+        const isKnownLang = langCode === 'en' || langCode === 'de' || !!i18n.LANGS[langCode];
+        if (isKnownLang) {
+          res.writeHead(301, { Location: `/${slug}/`, 'Cache-Control': 'public, max-age=86400' });
+          return res.end();
+        }
+      }
+    }
+
     // ── Language root pages: /en/, /de/, /fr/, /es/, /pt/, /ru/, /it/, /nl/, /pl/, /tr/, /zh/, /hi/ ──
     const langRootMatch = p.match(/^\/([a-z]{2,3})\/?$/);
     if (langRootMatch) {
