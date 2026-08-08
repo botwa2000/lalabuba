@@ -305,6 +305,10 @@ async function serveTopicPageWithGallery(res, topic) {
     /hreflang="x-default" href="https:\/\/lalabuba\.com\/coloring-pages\//g,
     `hreflang="x-default" href="https://lalabuba.com/en/coloring-pages/`
   );
+  enhanced = enhanced.replace(
+    /"item":"https:\/\/lalabuba\.com\/coloring-pages\//g,
+    '"item":"https://lalabuba.com/en/coloring-pages/'
+  );
 
   // Inject unified nav (replaces old legal-nav block in static HTML)
   const topicNav = buildNav({
@@ -354,6 +358,40 @@ function serveDeTopicPageBySlug(res, deSlug) {
     enhanced = enhanced.replace(
       /hreflang="de" href="https:\/\/lalabuba\.com\/ausmalbilder\//g,
       `hreflang="de" href="https://lalabuba.com/de/ausmalbilder/`
+    );
+    enhanced = enhanced.replace(
+      /hreflang="en" href="https:\/\/lalabuba\.com\/coloring-pages\//g,
+      `hreflang="en" href="https://lalabuba.com/en/coloring-pages/`
+    );
+    enhanced = enhanced.replace(
+      /hreflang="x-default" href="https:\/\/lalabuba\.com\/coloring-pages\//g,
+      `hreflang="x-default" href="https://lalabuba.com/en/coloring-pages/`
+    );
+    enhanced = enhanced.replace(
+      /"item":"https:\/\/lalabuba\.com\/ausmalbilder\//g,
+      '"item":"https://lalabuba.com/de/ausmalbilder/'
+    );
+  } else {
+    // DE-only pages (einschulung, schultuete, etc.) have no EN equivalent.
+    // Remove hreflang="en" and hreflang="x-default" so Google doesn't crawl 404 EN URLs.
+    enhanced = enhanced.replace(/<link rel="alternate" hreflang="en"[^>]*>\n?/g, '');
+    enhanced = enhanced.replace(/<link rel="alternate" hreflang="x-default"[^>]*>\n?/g, '');
+    // Patch canonical and og:url to /de/ prefix
+    enhanced = enhanced.replace(
+      /<link rel="canonical" href="https:\/\/lalabuba\.com\/ausmalbilder\//,
+      '<link rel="canonical" href="https://lalabuba.com/de/ausmalbilder/'
+    );
+    enhanced = enhanced.replace(
+      /<meta property="og:url" content="https:\/\/lalabuba\.com\/ausmalbilder\//,
+      '<meta property="og:url" content="https://lalabuba.com/de/ausmalbilder/'
+    );
+    enhanced = enhanced.replace(
+      /hreflang="de" href="https:\/\/lalabuba\.com\/ausmalbilder\//g,
+      `hreflang="de" href="https://lalabuba.com/de/ausmalbilder/`
+    );
+    enhanced = enhanced.replace(
+      /"item":"https:\/\/lalabuba\.com\/ausmalbilder\//g,
+      '"item":"https://lalabuba.com/de/ausmalbilder/'
     );
   }
   return serveHtml(res, enhanced);
@@ -1631,6 +1669,15 @@ const server = http.createServer(async (req, res) => {
       const hubPath = path.join(PUBLIC_DIR, "coloring-pages", "index.html");
       try {
         let html = fs.readFileSync(hubPath, "utf8");
+        // Patch redirect-source URLs → canonical /en/ and /de/ prefixed URLs
+        html = html.replace(/<link rel="canonical" href="https:\/\/lalabuba\.com\/coloring-pages\/"/, '<link rel="canonical" href="https://lalabuba.com/en/coloring-pages/"');
+        html = html.replace(/<meta property="og:url" content="https:\/\/lalabuba\.com\/coloring-pages\/"/, '<meta property="og:url" content="https://lalabuba.com/en/coloring-pages/"');
+        html = html.replace(/hreflang="en" href="https:\/\/lalabuba\.com\/coloring-pages\/"/g, 'hreflang="en" href="https://lalabuba.com/en/coloring-pages/"');
+        html = html.replace(/hreflang="de" href="https:\/\/lalabuba\.com\/ausmalbilder\/"/g, 'hreflang="de" href="https://lalabuba.com/de/ausmalbilder/"');
+        html = html.replace(/hreflang="x-default" href="https:\/\/lalabuba\.com\/coloring-pages\/"/g, 'hreflang="x-default" href="https://lalabuba.com/en/coloring-pages/"');
+        html = html.replace(/"url":"https:\/\/lalabuba\.com\/coloring-pages\/"/g, '"url":"https://lalabuba.com/en/coloring-pages/"');
+        html = html.replace(/"item":"https:\/\/lalabuba\.com\/coloring-pages\/"/g, '"item":"https://lalabuba.com/en/coloring-pages/"');
+        html = html.replace(/"url":"https:\/\/lalabuba\.com\/coloring-pages\/([^"]+)"/g, '"url":"https://lalabuba.com/en/coloring-pages/$1"');
         html = injectUnifiedNav(html, buildNav({ lang: 'en', breadcrumbs: [{ label: 'Coloring Pages' }], hreflangMap: hubHreflangMap(), ctaHref: '/' }));
         return serveHtml(res, html);
       } catch { /* 404 below */ }
@@ -1660,6 +1707,15 @@ const server = http.createServer(async (req, res) => {
       const hubPath = path.join(PUBLIC_DIR, "ausmalbilder", "index.html");
       try {
         let html = fs.readFileSync(hubPath, "utf8");
+        // Patch redirect-source URLs → canonical /de/ and /en/ prefixed URLs
+        html = html.replace(/<link rel="canonical" href="https:\/\/lalabuba\.com\/ausmalbilder\/"/, '<link rel="canonical" href="https://lalabuba.com/de/ausmalbilder/"');
+        html = html.replace(/<meta property="og:url" content="https:\/\/lalabuba\.com\/ausmalbilder\/"/, '<meta property="og:url" content="https://lalabuba.com/de/ausmalbilder/"');
+        html = html.replace(/hreflang="de" href="https:\/\/lalabuba\.com\/ausmalbilder\/"/g, 'hreflang="de" href="https://lalabuba.com/de/ausmalbilder/"');
+        html = html.replace(/hreflang="en" href="https:\/\/lalabuba\.com\/coloring-pages\/"/g, 'hreflang="en" href="https://lalabuba.com/en/coloring-pages/"');
+        html = html.replace(/hreflang="x-default" href="https:\/\/lalabuba\.com\/coloring-pages\/"/g, 'hreflang="x-default" href="https://lalabuba.com/en/coloring-pages/"');
+        html = html.replace(/"url":"https:\/\/lalabuba\.com\/ausmalbilder\/"/g, '"url":"https://lalabuba.com/de/ausmalbilder/"');
+        html = html.replace(/"item":"https:\/\/lalabuba\.com\/ausmalbilder\/"/g, '"item":"https://lalabuba.com/de/ausmalbilder/"');
+        html = html.replace(/"url":"https:\/\/lalabuba\.com\/ausmalbilder\/([^"]+)"/g, '"url":"https://lalabuba.com/de/ausmalbilder/$1"');
         html = injectUnifiedNav(html, buildNav({ lang: 'de', breadcrumbs: [{ label: 'Ausmalbilder' }], hreflangMap: hubHreflangMap(), ctaHref: '/' }));
         return serveHtml(res, html);
       } catch { /* 404 below */ }

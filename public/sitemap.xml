@@ -9,157 +9,7 @@
     <priority>1.0</priority>
   </url>
 
-  <!-- ── App pages ─────────────────────────────────────────────────────── -->
-  <url>
-    <loc>https://lalabuba.com/features</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/faq</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/about</loc>
-    <lastmod>2026-05-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/contact</loc>
-    <lastmod>2026-05-16</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
-  <!-- ── English coloring pages ────────────────────────────────────────── -->
-  <url>
-    <loc>https://lalabuba.com/coloring-pages/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/coloring-pages/dragon/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/coloring-pages/unicorn/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/coloring-pages/butterfly/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/coloring-pages/dinosaur/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/coloring-pages/cat/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/coloring-pages/princess/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/coloring-pages/mermaid/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/coloring-pages/rocket/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-
-  <!-- ── German coloring pages (Ausmalbilder) ─────────────────────────── -->
-  <url>
-    <loc>https://lalabuba.com/ausmalbilder/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/ausmalbilder/drache/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/ausmalbilder/einhorn/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/ausmalbilder/schmetterling/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/ausmalbilder/dinosaurier/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/ausmalbilder/katze/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/ausmalbilder/prinzessin/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/ausmalbilder/meerjungfrau/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/ausmalbilder/rakete/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/ausmalbilder/einschulung/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/ausmalbilder/schultuete/</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- ── Language root pages (app in each language) ────────────────────── -->
+  <!-- ── Language root pages ───────────────────────────────────────────── -->
   <url><loc>https://lalabuba.com/de/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://lalabuba.com/fr/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://lalabuba.com/es/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
@@ -171,6 +21,36 @@
   <url><loc>https://lalabuba.com/tr/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://lalabuba.com/zh/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://lalabuba.com/hi/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+
+  <!-- ── App pages (canonical = /en/ prefixed, /features etc. 301 there) ─ -->
+  <url><loc>https://lalabuba.com/en/features</loc><lastmod>2026-07-18</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lalabuba.com/en/faq</loc><lastmod>2026-07-18</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lalabuba.com/en/about</loc><lastmod>2026-05-16</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://lalabuba.com/contact</loc><lastmod>2026-05-16</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
+
+  <!-- ── English coloring pages (canonical = /en/ prefix) ─────────────── -->
+  <url><loc>https://lalabuba.com/en/coloring-pages/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://lalabuba.com/en/coloring-pages/dragon/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://lalabuba.com/en/coloring-pages/unicorn/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://lalabuba.com/en/coloring-pages/butterfly/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://lalabuba.com/en/coloring-pages/dinosaur/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://lalabuba.com/en/coloring-pages/cat/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://lalabuba.com/en/coloring-pages/princess/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://lalabuba.com/en/coloring-pages/mermaid/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://lalabuba.com/en/coloring-pages/rocket/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+
+  <!-- ── German coloring pages (canonical = /de/ prefix) ──────────────── -->
+  <url><loc>https://lalabuba.com/de/ausmalbilder/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://lalabuba.com/de/ausmalbilder/drache/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lalabuba.com/de/ausmalbilder/einhorn/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lalabuba.com/de/ausmalbilder/schmetterling/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lalabuba.com/de/ausmalbilder/dinosaurier/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lalabuba.com/de/ausmalbilder/katze/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lalabuba.com/de/ausmalbilder/prinzessin/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lalabuba.com/de/ausmalbilder/meerjungfrau/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lalabuba.com/de/ausmalbilder/rakete/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lalabuba.com/de/ausmalbilder/einschulung/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lalabuba.com/de/ausmalbilder/schultuete/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
 
   <!-- ── i18n coloring page hubs (served at /<root>/, no lang prefix) ─── -->
   <url><loc>https://lalabuba.com/pages-a-colorier/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
@@ -185,23 +65,8 @@
   <url><loc>https://lalabuba.com/rang-bharane-ke-chitra/</loc><lastmod>2026-07-18</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
 
   <!-- ── Legal ─────────────────────────────────────────────────────────── -->
-  <url>
-    <loc>https://lalabuba.com/privacy</loc>
-    <lastmod>2026-05-16</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/terms</loc>
-    <lastmod>2026-05-16</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
-  </url>
-  <url>
-    <loc>https://lalabuba.com/impressum</loc>
-    <lastmod>2026-05-16</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
+  <url><loc>https://lalabuba.com/privacy</loc><lastmod>2026-05-16</lastmod><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://lalabuba.com/terms</loc><lastmod>2026-05-16</lastmod><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://lalabuba.com/impressum</loc><lastmod>2026-05-16</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
 
 </urlset>
