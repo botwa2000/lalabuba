@@ -20,45 +20,55 @@ async function run() {
   const W = meta.width;
   const H = meta.height;
 
-  // Banner is 18% of height for phones, 14% for landscape tablets
   const isLandscape = W > H;
-  const bannerFrac = isLandscape ? 0.13 : 0.17;
-  const bannerH = Math.round(H * bannerFrac);
 
-  // Font sizes scale with width
+  // Font sizes scale with width — unchanged
   const titleSize  = Math.round(W * 0.055);
   const subSize    = Math.round(W * 0.033);
-  const pad        = Math.round(W * 0.06);
+  // Tighter padding so banner is compact
+  const pad        = Math.round(W * 0.026);
 
-  // Purple→violet gradient matching app brand
-  // SVG banner overlay
   const titleLines = wrapText(caption, Math.floor((W - pad*2) / (titleSize * 0.55)));
-  const titleLineH = Math.round(titleSize * 1.25);
-  const subY = titleLines.length * titleLineH + Math.round(titleSize * 0.5);
-  const contentH = subY + (subtitle ? subSize * 1.4 : 0) + Math.round(titleSize * 0.3);
-  const actualBannerH = Math.max(bannerH, Math.round(contentH + pad));
+  const titleLineH = Math.round(titleSize * 1.15);
+  const subY = titleLines.length * titleLineH + Math.round(titleSize * 0.28);
+  const contentH = subY + (subtitle ? subSize * 1.25 : 0) + Math.round(titleSize * 0.2);
+  // Compact banner: just enough for content + small top/bottom pad
+  const actualBannerH = Math.round(contentH + pad * 2.2);
+
+  // Vertical gradient: transparent at top → rich purple at bottom
+  // Text sits in the opaque zone with heavy shadow for legibility
+  const shadowBlur = Math.round(titleSize * 0.25);
+  const strokeW    = Math.round(titleSize * 0.09);
 
   const titleSvgLines = titleLines.map((line, i) =>
-    `<text x="${W/2}" y="${Math.round(pad * 0.8 + titleLineH * i + titleSize)}"
+    `<text x="${W/2}" y="${Math.round(pad * 1.1 + titleLineH * i + titleSize)}"
       font-family="Fredoka, Arial Rounded MT Bold, Arial, sans-serif"
       font-size="${titleSize}" font-weight="700" fill="white"
       text-anchor="middle" dominant-baseline="auto"
-      paint-order="stroke" stroke="rgba(0,0,0,0.18)" stroke-width="${Math.round(titleSize*0.06)}">${escXml(line)}</text>`
+      filter="url(#shadow)"
+      paint-order="stroke" stroke="rgba(30,0,80,0.55)" stroke-width="${strokeW}">${escXml(line)}</text>`
   ).join('\n');
 
   const subSvg = subtitle
-    ? `<text x="${W/2}" y="${Math.round(pad * 0.8 + subY + subSize)}"
+    ? `<text x="${W/2}" y="${Math.round(pad * 1.1 + subY + subSize)}"
         font-family="Nunito, Arial, sans-serif"
-        font-size="${subSize}" font-weight="600" fill="rgba(255,255,255,0.88)"
-        text-anchor="middle" dominant-baseline="auto">${escXml(subtitle)}</text>`
+        font-size="${subSize}" font-weight="700" fill="white"
+        text-anchor="middle" dominant-baseline="auto"
+        filter="url(#shadow)"
+        paint-order="stroke" stroke="rgba(30,0,80,0.45)" stroke-width="${Math.round(strokeW*0.7)}">${escXml(subtitle)}</text>`
     : '';
 
   const svgOverlay = `<svg width="${W}" height="${actualBannerH}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#7C4DFF"/>
-      <stop offset="100%" stop-color="#A855F7"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="rgba(60,0,160,0)"/>
+      <stop offset="38%"  stop-color="rgba(70,0,170,0.62)"/>
+      <stop offset="100%" stop-color="rgba(80,0,185,0.91)"/>
     </linearGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="${Math.round(titleSize*0.04)}" stdDeviation="${shadowBlur}"
+        flood-color="rgba(0,0,0,0.95)" flood-opacity="1"/>
+    </filter>
   </defs>
   <rect width="${W}" height="${actualBannerH}" fill="url(#bg)"/>
   ${titleSvgLines}
