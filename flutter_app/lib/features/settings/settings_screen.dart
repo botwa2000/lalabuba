@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../../core/di/providers.dart' show themeModeProvider;
 import '../../services/account_service.dart';
+import '../../shared/services/storage_service.dart';
 import '../../shared/widgets/parental_gate.dart';
 import '../community/community_service.dart';
 import '../community/models/profile_model.dart';
@@ -429,12 +430,74 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     onTap: () => _openExternal(
                         ctx, l10n, 'https://lalabuba.com/terms'),
                   ),
+                  const Divider(height: 1),
+                  ListTile(
+                    title: Text(
+                      l10n.t('settingsDeleteAccount'),
+                      style: GoogleFonts.nunito(
+                          fontSize: 14, color: Colors.red[700]),
+                    ),
+                    leading: Icon(Icons.delete_forever_outlined,
+                        color: Colors.red[700]),
+                    onTap: () => _confirmDeleteAccount(ctx, l10n),
+                  ),
                 ],
               ),
             ),
           ],
         );
       },
+    );
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext ctx, L10n l10n) async {
+    final confirmed = await showDialog<bool>(
+      context: ctx,
+      builder: (dCtx) => AlertDialog(
+        title: Text(l10n.t('deleteAccountTitle'),
+            style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
+        content: Text(l10n.t('deleteAccountBody'),
+            style: GoogleFonts.nunito()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx, false),
+            child: Text(l10n.t('cancel')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red[700]),
+            onPressed: () => Navigator.pop(dCtx, true),
+            child: Text(l10n.t('deleteAccountConfirm')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !ctx.mounted) return;
+
+    // Delete server-side profile + artworks (best-effort — don't block on network)
+    try {
+      final svc = ref.read(communityServiceProvider);
+      await svc.deleteProfile();
+    } catch (_) {}
+
+    // Wipe all local secure storage (except theme + locale which are device preferences)
+    await Future.wait([
+      StorageService.delete(StorageService.kDeviceId),
+      StorageService.delete(StorageService.kDifficulty),
+      StorageService.delete(StorageService.kPalette),
+      StorageService.delete(StorageService.kColorCount),
+      StorageService.delete(StorageService.kShowNumbers),
+      StorageService.delete(StorageService.kDailyCount),
+      StorageService.delete(StorageService.kDailyDate),
+      StorageService.delete(StorageService.kTutorialHome),
+      StorageService.delete(StorageService.kTutorialCanvas),
+      StorageService.delete(StorageService.kNarrate),
+    ]);
+
+    if (!ctx.mounted) return;
+    // Return to root — app will re-initialise as a fresh install on next launch
+    Navigator.of(ctx).popUntil((route) => route.isFirst);
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(content: Text(l10n.t('deleteAccountSuccess'))),
     );
   }
 }

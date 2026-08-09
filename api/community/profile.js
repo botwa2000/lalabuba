@@ -11,7 +11,7 @@ module.exports = async (req, res) => {
   const origin = req.headers.origin;
   if (auth.ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Device-ID, X-Parental-Consent");
   }
   if (req.method === "OPTIONS") return res.status(204).end();
@@ -118,6 +118,31 @@ module.exports = async (req, res) => {
       avatarIndex:    r.avatar_index,
       sharingEnabled: r.sharing_enabled,
     });
+  }
+
+  // ── DELETE profile + all associated data ────────────────────────────────────
+  if (req.method === "DELETE") {
+    if (getRateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+    const fs   = require("fs");
+    const path = require("path");
+    const DATA_DIR = path.join(__dirname, "..", "..", "data");
+
+    // Collect artwork file paths before cascade-delete
+    const { rows: artworks } = await db.query(
+      "SELECT image_path FROM artworks WHERE device_uuid = $1", [uuid]
+    );
+
+    // Delete profile row — FK cascades wipe artworks, stars, reports, family membership
+    await db.query("DELETE FROM profiles WHERE device_uuid = $1", [uuid]);
+
+    // Remove artwork image files from disk (best-effort)
+    for (const { image_path } of artworks) {
+      if (!image_path) continue;
+      const rel = image_path.replace(/^\/img\//, "images/");
+      try { fs.unlinkSync(path.join(DATA_DIR, rel)); } catch { /* already gone */ }
+    }
+
+    return res.status(200).json({ ok: true });
   }
 
   res.status(405).json({ error: "Method not allowed." });

@@ -221,6 +221,13 @@ class CommunityService {
     );
   }
 
+  Future<void> deleteProfile() async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/api/community/profile',
+      options: Options(headers: await _headers()),
+    );
+  }
+
   Future<Leaderboard> getLeaderboard({String type = 'weekly'}) async {
     final r = await _dio.get<Map<String, dynamic>>(
       '/api/community/leaderboard',
