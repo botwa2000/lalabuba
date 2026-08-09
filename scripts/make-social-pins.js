@@ -51,25 +51,9 @@ const PINS = [
     accentLight: '#BBDEFB', // light blue
     keyword: 'rocket coloring pages for kids free printable',
   },
-  {
-    id: 'schultuete',
-    src: 'schultuete-easy-1313383578.png', // clean cone + candies, zero rendered text
-    headline1: 'Schultüte',
-    headline2: 'Ausmalbilder',
-    accentHex: '#B71C1C',   // deep red
-    accentLight: '#FFCDD2', // light red
-    keyword: 'Schultüte Ausmalbilder kostenlos ausdrucken',
-    skipExterior: true,
-    // Force the large cone body to classic Schultüte deep-red (Phase-1 override)
-    forcedColors: [
-      { fx: 0.50, fy: 0.70, color: [183, 28, 28] },
-    ],
-    // Phase-2 fallback: if cone interior was absorbed by skipExterior (open tip),
-    // fill it from the seed point while it's still white in `out`.
-    seeds: [
-      { fx: 0.50, fy: 0.70, color: [183, 28, 28], bounds: { x1: 0.10, y1: 0.30, x2: 0.90, y2: 0.99 } },
-    ],
-  },
+  // schultuete RETIRED (2026-08-09): a Schultüte pin already posted 8/5; flood-fill
+  // consistently leaked through outline gaps. Manifest row removed; file deleted.
+
   {
     id: 'einschulung',
     src: 'einschulung-easy-1520158737.png',
@@ -78,19 +62,9 @@ const PINS = [
     accentHex: '#00695C',   // deep teal
     accentLight: '#B2DFDB', // light teal
     keyword: 'Einschulung Ausmalbilder kostenlos ausdrucken',
-    skipExterior: true,
-    // Full-body exclusion zones in 940 px display space.
-    // The zone check uses BBOX OVERLAP (not center-point) — any region whose
-    // bounding box intersects a zone is left white.  Zones cover each person's
-    // entire silhouette so skin, faces, hands and legs are all uncolored.
-    // Architecture (sign, arch beam, outer stone walls) falls outside every zone
-    // and is still colorized.
-    faceZones: [
-      { x1:  70, y1: 255, x2: 258, y2: 935 }, // child 1 (leftmost)
-      { x1: 158, y1: 208, x2: 378, y2: 935 }, // child 2 (center-left, tallest)
-      { x1: 305, y1: 248, x2: 538, y2: 935 }, // child 3 (center-right, backpack)
-      { x1: 548, y1: 165, x2: 822, y2: 935 }, // teacher (right side, adult)
-    ],
+    // noFill: blank line-art hero — the account's #1 pin format for printable-seekers.
+    // Eliminates the entire flood-fill face-color defect class.
+    noFill: true,
   },
 ];
 
@@ -276,6 +250,13 @@ function svgHeadline(line1, line2, accentHex) {
   </svg>`;
 }
 
+function svgPrintLabel() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="20">
+    <text x="0" y="15" font-family="Segoe UI, Arial, sans-serif" font-size="13"
+      font-weight="700" fill="#222222">Ausdrucken &amp; Ausmalen</text>
+  </svg>`;
+}
+
 function svgBeforeLabel(x, y) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="20">
     <text x="60" y="15" font-family="Segoe UI, Arial, sans-serif" font-size="14"
@@ -342,18 +323,22 @@ async function makePin(cfg) {
     .raw()
     .toBuffer();
 
-  console.log(`  Flood-filling ${dispW}×${dispH}...`);
-  const coloredRaw = autoColorize(lineArtBuf, dispW, dispH, {
-    skipExterior:  cfg.skipExterior  || false,
-    faceZones:     cfg.faceZones     || [],
-    seeds:         cfg.seeds         || [],
-    forcedColors:  cfg.forcedColors  || [],
-  });
-
-  // Build colored PNG buffer from raw RGBA
-  const coloredBuf = await sharp(coloredRaw, { raw: { width: dispW, height: dispH, channels: 4 } })
-    .png({ compressionLevel: 6 })
-    .toBuffer();
+  let coloredBuf;
+  if (cfg.noFill) {
+    // Blank line-art format: no flood fill at all
+    coloredBuf = null;
+  } else {
+    console.log(`  Flood-filling ${dispW}×${dispH}...`);
+    const coloredRaw = autoColorize(lineArtBuf, dispW, dispH, {
+      skipExterior:  cfg.skipExterior  || false,
+      faceZones:     cfg.faceZones     || [],
+      seeds:         cfg.seeds         || [],
+      forcedColors:  cfg.forcedColors  || [],
+    });
+    coloredBuf = await sharp(coloredRaw, { raw: { width: dispW, height: dispH, channels: 4 } })
+      .png({ compressionLevel: 6 })
+      .toBuffer();
+  }
 
   // Also build line-art PNG buffer (for display)
   const lineArtPngBuf = await sharp(lineArtBuf, { raw: { width: dispW, height: dispH, channels: 4 } })
@@ -373,10 +358,15 @@ async function makePin(cfg) {
     .png()
     .toBuffer();
 
-  const colorThumbBuf = await sharp(coloredRaw, { raw: { width: dispW, height: dispH, channels: 4 } })
-    .resize(thumbW, thumbH, { fit: 'fill' })
-    .png()
-    .toBuffer();
+  const colorThumbBuf = cfg.noFill ? null : await sharp(
+    autoColorize(lineArtBuf, dispW, dispH, {
+      skipExterior: cfg.skipExterior || false,
+      faceZones:    cfg.faceZones    || [],
+      seeds:        cfg.seeds        || [],
+      forcedColors: cfg.forcedColors || [],
+    }),
+    { raw: { width: dispW, height: dispH, channels: 4 } }
+  ).resize(thumbW, thumbH, { fit: 'fill' }).png().toBuffer();
 
   // ─── Composite the pin ────────────────────────────────────────────────────
   // y positions:
@@ -408,23 +398,31 @@ async function makePin(cfg) {
     { input: Buffer.from(svgAccentBar(cfg.accentHex)), top: 0,    left: 0 },
     // headline
     { input: Buffer.from(svgHeadline(cfg.headline1, cfg.headline2, cfg.accentHex)), top: 100, left: 0 },
-    // main colored image
-    { input: coloredBuf, top: imgY, left: imgX },
-    // before thumbnail
-    { input: lineThumbBuf, top: thumbY, left: 35 },
-    // before label
-    { input: Buffer.from(svgBeforeLabel()), top: labelY, left: 35 },
-    // arrow
-    { input: Buffer.from(svgArrow()), top: arrowY, left: arrowX },
-    // after thumbnail
-    { input: colorThumbBuf, top: colorThY, left: colorThX },
-    // after label
-    { input: Buffer.from(svgAfterLabel()), top: labelY, left: colorThX },
-    // CTA text
-    { input: Buffer.from(svgCtaText()), top: ctaY, left: ctaX },
+    // hero image: blank line art (noFill) or flood-filled art (default)
+    { input: cfg.noFill ? lineArtPngBuf : coloredBuf, top: imgY, left: imgX },
     // pill (centered)
     { input: Buffer.from(svgPill(cfg.accentHex)), top: 1425, left: Math.round((W - 360) / 2) },
   ];
+
+  if (cfg.noFill) {
+    // Blank format strip: single thumbnail + "Ausdrucken & Ausmalen" + CTA
+    const printCtaX = 35 + thumbW + 20;
+    layers.push(
+      { input: lineThumbBuf, top: thumbY, left: 35 },
+      { input: Buffer.from(svgPrintLabel()), top: labelY, left: 35 },
+      { input: Buffer.from(svgCtaText()), top: ctaY, left: printCtaX },
+    );
+  } else {
+    // Standard before→after strip
+    layers.push(
+      { input: lineThumbBuf, top: thumbY, left: 35 },
+      { input: Buffer.from(svgBeforeLabel()), top: labelY, left: 35 },
+      { input: Buffer.from(svgArrow()), top: arrowY, left: arrowX },
+      { input: colorThumbBuf, top: colorThY, left: colorThX },
+      { input: Buffer.from(svgAfterLabel()), top: labelY, left: colorThX },
+      { input: Buffer.from(svgCtaText()), top: ctaY, left: ctaX },
+    );
+  }
 
   const outPath = path.join(OUT, `pin_${cfg.id}.png`);
   await sharp({

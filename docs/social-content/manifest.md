@@ -17,12 +17,13 @@ Layout: accent brand bar → keyword headline → colored "after" image (flood-f
 | `pin_cat.png` | Cat (EN) | Cat Coloring Pages | `cat-easy-1005447403.png` | Deep Orange |
 | `pin_unicorn.png` | Unicorn (EN) | Unicorn Coloring Pages | `unicorn-easy-282889560.jpg` | Deep Purple |
 | `pin_rocket.png` | Rocket (EN) | Rocket Coloring Pages | `rocket-easy-1224668489.png` | Deep Blue |
-| `pin_schultuete.png` | Schultüte (DE) | Schultüte Ausmalbilder | `schultuete-easy-1313383578.png` | Deep Red |
+| ~~`pin_schultuete.png`~~ | ~~Schultüte (DE)~~ | RETIRED 2026-08-09 — duplicate of pin already posted 8/5; flood-fill leaked through outline gaps on all attempts. Do not rebuild. | — | — |
 | `pin_einschulung.png` | Einschulung (DE) | Einschulung Ausmalbilder | `einschulung-easy-1520158737.png` | Deep Teal |
 
 **Sources:** `docs/coloring-page-library/{topic}/` (1024×1024 or 768×768)  
 **Colored "after":** flood-fill BFS from actual line art (same image, not different art)  
-**BFS options:** schultuete + einschulung use `skipExterior: true`; schultuete uses `forcedColors` to set cone body deep-red; einschulung uses `faceZones` (full-body, overlap-checked) to leave all person regions white  
+**BFS options:** einschulung uses `noFill: true` — blank line-art hero, zero flood fill (proven format; top pin by 7×). schultuete RETIRED.
+**Rule:** never use library images containing rendered text/letters for pins — AI text is almost always mangled.  
 **Regenerate:** `node scripts/make-social-pins.js` (all) or `node scripts/make-social-pins.js dinosaur` (single)
 
 ---
@@ -95,8 +96,8 @@ docs/social-content/
 │   ├── pin_cat.png                       (1000×1500)
 │   ├── pin_unicorn.png                   (1000×1500)
 │   ├── pin_rocket.png                    (1000×1500)
-│   ├── pin_schultuete.png                (1000×1500)
 │   └── pin_einschulung.png               (1000×1500)
+│   ⚠  pin_schultuete.png                RETIRED — deleted 2026-08-09
 ├── carousels/
 │   └── how-it-works/
 │       ├── slide_01_hook.png             (1080×1350)
