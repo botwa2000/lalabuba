@@ -13,9 +13,16 @@ const RAW_DIR   = path.join(__dirname, '..', 'store_assets', 'raw');
 const FINAL_DIR = path.join(__dirname, '..', 'store_assets', 'final');
 if (!fs.existsSync(FINAL_DIR)) fs.mkdirSync(FINAL_DIR, { recursive: true });
 
-// Status bar heights in actual pixels
+// ERASE heights — how many rows to blank out from y=0
 const SB_PHONE = 110;   // 1290×2796 iPhone
-const SB_IPAD  = 115;   // 2732×2048 iPad landscape (original bar extends to ~y=98 actual)
+// iPad: Android bar is at y≈168-204 inside a ~165px Flutter safe-area.
+// Erase all of y=0-229 to clear both the padding and the bar.
+const SB_IPAD  = 230;
+
+// DRAW heights — height of the iOS status bar SVG overlaid at y=0
+// Kept at iOS-standard proportions: ~44pt ×2x = 88px for iPad 2x.
+const DRAW_PHONE = SB_PHONE;   // phone erase and draw heights are the same
+const DRAW_IPAD  = 88;         // iPad: draw a compact iOS bar at the top
 
 function toHex(r, g, b) {
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
@@ -108,7 +115,8 @@ function makeStatusBarSvg(W, sbH, bgHex, iconHex) {
 async function fixScreenshot(srcFile) {
   const basename = path.basename(srcFile, '.png');
   const isIpad   = basename.includes('ipad');
-  const sbH      = isIpad ? SB_IPAD : SB_PHONE;
+  const sbH      = isIpad ? SB_IPAD  : SB_PHONE;   // erase height
+  const drawH    = isIpad ? DRAW_IPAD : DRAW_PHONE; // icon draw height
 
   // Read entire image as raw RGBA — direct pixel manipulation is the most reliable
   // way to overwrite the status bar, bypassing any compositing blend ambiguity.
@@ -141,7 +149,7 @@ async function fixScreenshot(srcFile) {
   const erasedBuf = await sharp(data, { raw: { width: W, height: H, channels: CH } })
     .png().toBuffer();
 
-  const iconsSvg = makeStatusBarSvg(W, sbH, bgHex, iconHex);
+  const iconsSvg = makeStatusBarSvg(W, drawH, bgHex, iconHex);
 
   const outName = `final_${basename}.png`;
   await sharp(erasedBuf)
@@ -149,7 +157,7 @@ async function fixScreenshot(srcFile) {
     .png()
     .toFile(path.join(FINAL_DIR, outName));
 
-  console.log(`✓ ${outName}  ${W}×${H}  sbH=${sbH}  bg=${bgHex}  icons=${iconHex}`);
+  console.log(`✓ ${outName}  ${W}×${H}  erase=${sbH}  draw=${drawH}  bg=${bgHex}  icons=${iconHex}`);
 }
 
 async function main() {
