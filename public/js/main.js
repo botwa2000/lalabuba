@@ -535,7 +535,6 @@ paletteSelect.addEventListener("change", async () => {
   state.paletteOverride = null; // user explicitly changed palette — clear semantic override
   renderLegend();
   updatePaletteChip();
-  updateCountChip();
 
   if (!state.currentImage) {
     return;
@@ -554,7 +553,6 @@ difficultySelect.addEventListener("change", () => {
     state.selectedPaletteIndex = 0;
   }
   renderLegend();
-  updateDiffChip();
   state.numberTargets = null; // cap changed → recompute free-mode targets
 
   if (state.currentImage && showNumbersInput.checked) {
@@ -898,40 +896,36 @@ document.getElementById("celebration-print").addEventListener("click", () => {
   if (printBtn) printBtn.click(); else window.print();
 });
 
-// ─── Difficulty pills ─────────────────────────────────────────────────────────
-function syncExtremePill() {
+// ─── Level cards (replaces diff-pills + chip-diff + chip-count) ──────────────
+// Default colorCount per level — mirrors config.js FALLBACK values.
+const LEVEL_DEFAULTS = { easy: 6, medium: 8, hard: 12, extreme: 32 };
+
+function syncExtremeCard() {
   const unlocked = isExtremeUnlocked(getProgress());
-  const pill = document.querySelector('.diff-pill[data-diff="extreme"]');
-  if (!pill) return;
-  pill.disabled = !unlocked;
-  pill.classList.toggle('diff-pill--locked', !unlocked);
-  if (!unlocked) {
-    pill.dataset.i18n = '';   // suppress applyTranslations overwrite while locked
-    pill.textContent = '🔒 ' + t('diffExtreme');
-    pill.title = '🔒 Complete Easy, Medium & Hard first';
-  } else {
-    delete pill.dataset.i18n;
-    pill.setAttribute('data-i18n', 'diffExtreme');
-    pill.textContent = t('diffExtreme');
-    pill.title = '';
-  }
+  const card = document.querySelector('.level-card[data-diff="extreme"]');
+  if (!card) return;
+  card.disabled = !unlocked;
+  card.classList.toggle('level-card--locked', !unlocked);
+  const meta = card.querySelector('.lc-meta');
+  if (meta) meta.textContent = unlocked ? '32+ colors · free style' : '🔒 Complete Easy, Medium & Hard first';
 }
-syncExtremePill();
+syncExtremeCard();
 
 // When community.js merges server progress (cross-device aggregate), refresh the
-// Extreme pill so that completions on other devices unlock it here immediately.
+// Extreme card so that completions on other devices unlock it here immediately.
 window.addEventListener('lalabuba:progressMerged', () => {
-  syncExtremePill();
-  updateDiffChip();
+  syncExtremeCard();
 });
 
-document.querySelectorAll('.diff-pill').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (btn.disabled) return;
-    document.querySelectorAll('.diff-pill').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    difficultySelect.value = btn.dataset.diff;
+document.querySelectorAll('.level-card').forEach(card => {
+  card.addEventListener('click', () => {
+    if (card.disabled) return;
+    document.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    difficultySelect.value = card.dataset.diff;
+    setColorCount(LEVEL_DEFAULTS[card.dataset.diff] ?? 8);
     difficultySelect.dispatchEvent(new Event('change'));
+    track('difficulty_changed', { difficulty: card.dataset.diff });
   });
 });
 
@@ -1001,7 +995,7 @@ document.querySelectorAll('.lang-option').forEach(btn => {
     }
     const hdt = document.getElementById('hero-daily-text');
     if (hdt) hdt.textContent = getTranslatedDailyWord(dailyWord, lang);
-    updateDiffChip(); updatePaletteChip(); updateModeChip(); // refresh translated chip titles
+    updatePaletteChip(); updateModeChip(); // refresh translated chip titles
     refreshWeekScenePill(); // re-translate the scene-of-the-week pill
     syncCanvasNumbersBtn(); // re-sync after applyTranslations() resets data-i18n buttons
     langDropdown.hidden = true;
@@ -1279,33 +1273,14 @@ document.addEventListener('click', (e) => {
 initShareHandlers();
 
 // ─── Settings chips (A2) ──────────────────────────────────────────────────────
-const DIFF_CYCLE    = ['easy', 'medium', 'hard', 'extreme'];
-const COUNT_CYCLE   = [6, 12, 18, 24];
 const PALETTE_CYCLE = ['classic', 'pastel', 'nature'];
-const DIFF_EMOJI    = { easy: '🌟', medium: '🌟🌟', hard: '🌟🌟🌟', extreme: '🔥' };
 const PALETTE_EMOJI = { classic: '🖍️', pastel: '🌸', nature: '🌿', neon: '⚡', candy: '🍭', galaxy: '🌌' };
 
-const chipDiff    = document.getElementById('chip-diff');
-const chipCount   = document.getElementById('chip-count');
 const chipPalette = document.getElementById('chip-palette');
 const chipMode    = document.getElementById('chip-mode');
 const chipSound   = document.getElementById('chip-sound');
 const chipNarrate = document.getElementById('chip-narrate');
 
-function updateDiffChip() {
-  if (!chipDiff) return;
-  const diffI18nKeys = { easy: 'diffEasy', medium: 'diffMedium', hard: 'diffHard', extreme: 'diffExtreme' };
-  const key = diffI18nKeys[difficultySelect.value] || 'diffEasy';
-  const raw = t(key);
-  const parts = raw.split(' ');
-  const label = parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0];
-  chipDiff.textContent = (DIFF_EMOJI[difficultySelect.value] || '⭐') + ' ' + label;
-  chipDiff.title = t('difficulty') + ': ' + label;
-}
-function updateCountChip() {
-  if (!chipCount) return;
-  chipCount.textContent = `🎨 ${state.colorCount}`;
-}
 function updatePaletteChip() {
   if (!chipPalette) return;
   const paletteI18nKeys = { classic: 'paletteClassic', pastel: 'palettePastel', nature: 'paletteNature' };
@@ -1376,7 +1351,7 @@ function updateNarrateChip() {
   chipNarrate.title = t(on ? 'narrateOnChip' : 'narrateOffChip');
 }
 function updateAllChips() {
-  updateDiffChip(); updateCountChip(); updatePaletteChip(); updateModeChip(); updateSoundChip(); updateNarrateChip();
+  updatePaletteChip(); updateModeChip(); updateSoundChip(); updateNarrateChip();
 }
 
 if (chipSound) chipSound.addEventListener('click', () => {
@@ -1404,24 +1379,6 @@ if (chipMode) chipMode.addEventListener('click', () => {
 });
 
 
-if (chipDiff) chipDiff.addEventListener('click', () => {
-  const unlocked = isExtremeUnlocked(getProgress());
-  const allowed  = unlocked ? DIFF_CYCLE : DIFF_CYCLE.filter(d => d !== 'extreme');
-  const cur = allowed.indexOf(difficultySelect.value);
-  difficultySelect.value = allowed[(cur + 1) % allowed.length];
-  difficultySelect.dispatchEvent(new Event('change'));
-  updateDiffChip();
-  track('difficulty_changed', { difficulty: difficultySelect.value });
-});
-
-if (chipCount) chipCount.addEventListener('click', () => {
-  const curIdx = Math.max(0, COUNT_CYCLE.indexOf(state.colorCount));
-  const next = COUNT_CYCLE[(curIdx + 1) % COUNT_CYCLE.length];
-  setColorCount(next);
-  updateCountChip();
-  track('color_count_changed', { colorCount: next });
-});
-
 if (chipPalette) chipPalette.addEventListener('click', () => {
   // Cycle only through packs the child has unlocked (classic/pastel/nature are
   // always available; neon/candy/galaxy appear once their threshold is met).
@@ -1434,7 +1391,6 @@ if (chipPalette) chipPalette.addEventListener('click', () => {
   paletteSelect.value = cycle[(cur + 1) % cycle.length];
   paletteSelect.dispatchEvent(new Event('change'));
   updatePaletteChip();
-  updateCountChip();
 });
 
 function syncHeroNumbersBtn() { /* #hero-numbers-toggle does not exist; kept for call-site compat */ }
@@ -1560,7 +1516,6 @@ function _exitFreeMode() {
   // Reset color count to max
   const maxN = PALETTES[paletteSelect.value].length;
   setColorCount(maxN, true);
-  updateCountChip();
   // Turn numbers back on (setColorCount already called renderLegend with isFreeMode=false)
   showNumbersInput.checked = true;
   showNumbersInput.dispatchEvent(new Event('change'));

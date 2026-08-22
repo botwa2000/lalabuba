@@ -394,6 +394,6 @@
 @container config-panel (max-width: 250px) {
   .ctrl-label { min-width: 56px; font-size: .68rem; }
   .setting-chip { font-size: .82rem; padding: 7px 12px; }
-  .diff-pill, .palette-pill, .size-pill, .count-pill { font-size: .8rem; padding: 6px 11px; }
+  .palette-pill, .size-pill, .count-pill { font-size: .8rem; padding: 6px 11px; }
   .check-pill { font-size: .82rem; padding: 7px 12px; }
 }

@@ -125,23 +125,41 @@
 .regen-btn:hover:not(:disabled) { border-color: var(--green); color: var(--green); transform: translateY(-2px); }
 .regen-btn:disabled { opacity: .4; cursor: not-allowed; }
 
-/* Difficulty pills */
-.diff-pill {
-  font-family: var(--ff-body);
-  font-size: .85rem;
-  font-weight: 800;
-  padding: 7px 15px;
-  border-radius: 50px;
-  border: 2.5px solid var(--border);
-  background: var(--card);
-  color: var(--muted);
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: all .2s;
+/* ─── Level cards (replaces diff-pills + chip-diff + chip-count) ─────────── */
+.level-grid { display: none; }
+.app.app-hero .level-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
 }
-.diff-pill:hover:not(:disabled)  { border-color: var(--blue); color: var(--blue); transform: translateY(-1px); }
-.diff-pill.selected               { background: linear-gradient(135deg, var(--blue), var(--purple)); border-color: transparent; color: #fff; box-shadow: 0 3px 14px rgba(124,77,255,.3); }
-.diff-pill--locked, .diff-pill:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: auto; }
+.level-card {
+  font-family: var(--ff-body);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 6px 8px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  cursor: pointer;
+  text-align: center;
+  transition: all .18s;
+  touch-action: manipulation;
+  width: 100%;
+}
+.level-card:hover:not(:disabled) { border-color: var(--blue); }
+.level-card.selected {
+  border-color: var(--purple);
+  background: rgba(124,77,255,.09);
+  box-shadow: 0 3px 14px rgba(124,77,255,.18);
+}
+.level-card--locked,
+.level-card:disabled { opacity: .4; cursor: not-allowed; pointer-events: auto; }
+.lc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.lc-name { font-size: .82rem; font-weight: 800; color: var(--ink); line-height: 1.2; }
+.lc-meta { font-size: .7rem; color: var(--muted); line-height: 1.3; }
 
 /* Palette pills */
 .palette-pill {
@@ -431,15 +449,7 @@
 }
 .app.app-hero .hero-sub-heading { display: block; }
 
-/* Hero mode: unified purple pill search bar */
-.hero-controls { display: none; }
-.app.app-hero .hero-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 14px;
-  align-items: center;
-}
+/* Hero mode: search bar */
 .hero-row {
   display: flex;
   flex-wrap: wrap;
@@ -517,8 +527,7 @@
 @media (prefers-reduced-motion: reduce) { .voice-btn.listening { animation: none; } }
 
 /* Settings chips: visible in both hero and coloring state.
-   In hero, show as a horizontal pill row (override config-panel column layout).
-   chip-diff is hidden in hero (the diff-pill row handles difficulty). */
+   In hero, show as a horizontal pill row (override config-panel column layout). */
 .app.app-hero .settings-chips {
   flex-direction: row;
   flex-wrap: wrap;
@@ -529,7 +538,6 @@
   text-align: center;
   border-radius: 50px;
 }
-.app.app-hero #chip-diff { display: none; }
 /* Status bar: hidden on landing page */
 .app.app-hero #status { display: none; }
 
@@ -666,8 +674,8 @@
     justify-content: center;
   }
   .app.app-hero .config-panel .regen-btn { display: none; }
-  /* Row 4: difficulty pills */
-  .app.app-hero .config-panel .hero-controls {
+  /* Row 4: level cards */
+  .app.app-hero .config-panel .level-grid {
     order: 4;
     flex: 1 1 100%;
   }
@@ -684,26 +692,11 @@
   }
 }
 
-/* Difficulty: single horizontal row on phones — 4 equal pills. */
-@media (max-width: 540px) {
-  .app.app-hero .hero-diff-row {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 5px;
-    width: 100%;
-    overflow: hidden;
-  }
-  .app.app-hero .hero-diff-row .diff-pill {
-    flex: 1;
-    padding: 8px 4px;
-    font-size: .76rem;
-    text-align: center;
-    justify-content: center;
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
+/* Level cards: tighter on very narrow phones */
+@media (max-width: 380px) {
+  .level-card { padding: 7px 4px 6px; }
+  .lc-name { font-size: .76rem; }
+  .lc-meta { font-size: .66rem; }
 }
 
 /* ─── Surprise button ────────────────────────────────────────────────────── */
