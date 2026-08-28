@@ -43,6 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // Where the current subject came from — propagated to the canvas so completion
   // can credit the "own idea" (custom) and "daily word" stickers.
   String _subjectSource = 'custom';
+  bool _settingsExpanded = false;
 
   // Coach-mark tutorial: highlight the prompt + Draw button on first launch and
   // when replayed via "How to play". Default seen=true so nothing flashes before
@@ -301,15 +302,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   color: cs.onSurface,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.t('tagline'),
-                style: GoogleFonts.nunito(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface.withValues(alpha: 0.55),
-                ),
-              ),
               const SizedBox(height: 20),
               _buildPickDivider(context, l10n),
               const SizedBox(height: 16),
@@ -464,16 +456,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     color: cs.onSurface,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  l10n.t('tagline'),
-                  style: GoogleFonts.nunito(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface.withValues(alpha: 0.55),
-                  ),
-                ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
+                _buildCollapsibleSettings(context, cs, l10n, settingsAsync.value, sub),
+                const SizedBox(height: 10),
                 homeAsync.whenOrNull(
                       data: (home) => home.dailyChallenge != null
                           ? _buildDailyPill(
@@ -501,8 +486,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ),
-        // Portrait: sticky bottom bar with input + draw + settings chips
-        _buildBottomBar(context, l10n, settingsAsync, sub, showChips: true),
+        // Portrait: sticky bottom bar with input + draw only (chips now in collapsible above)
+        _buildBottomBar(context, l10n, settingsAsync, sub, showChips: false),
         SizedBox(height: MediaQuery.paddingOf(context).bottom),
       ],
     );
@@ -1046,6 +1031,133 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       );
 
+  // ─── Portrait: collapsible settings panel ────────────────────────────────────
+
+  Widget _buildCollapsibleSettings(
+    BuildContext context,
+    ColorScheme cs,
+    L10n l10n,
+    SettingsState? settings,
+    SubscriptionState? sub,
+  ) {
+    final isOpen = _settingsExpanded;
+    final accentColor = cs.primary;
+
+    // Collapsed summary: Difficulty · Count · Palette
+    final diffStr = _diffLabel(settings?.difficulty ?? 'medium', l10n);
+    final cntStr = '${settings?.colorCount ?? 12}';
+    final palStr = _palLabelShort(settings?.palette ?? 'classic', l10n);
+    final summary = '$diffStr · $cntStr · $palStr';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Toggle header
+        Material(
+          color: cs.surfaceContainerLow,
+          borderRadius: isOpen
+              ? const BorderRadius.vertical(top: Radius.circular(12))
+              : const BorderRadius.all(Radius.circular(12)),
+          child: InkWell(
+            borderRadius: isOpen
+                ? const BorderRadius.vertical(top: Radius.circular(12))
+                : const BorderRadius.all(Radius.circular(12)),
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _settingsExpanded = !_settingsExpanded);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: isOpen ? accentColor : cs.outlineVariant,
+                  width: 1.5,
+                ),
+                borderRadius: isOpen
+                    ? const BorderRadius.vertical(top: Radius.circular(12))
+                    : const BorderRadius.all(Radius.circular(12)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer,
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: const Center(
+                      child: Text('🎛️',
+                          style: TextStyle(fontSize: 14, height: 1)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    l10n.t('settingsTitle'),
+                    style: GoogleFonts.fredoka(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      summary,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: GoogleFonts.nunito(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface.withValues(alpha: 0.45),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  AnimatedRotation(
+                    duration: const Duration(milliseconds: 200),
+                    turns: isOpen ? 0.5 : 0.0,
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 18,
+                      color: isOpen
+                          ? accentColor
+                          : cs.onSurface.withValues(alpha: 0.45),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // Expandable rows — animated open/close
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: isOpen
+              ? Container(
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    border: Border(
+                      left: BorderSide(color: accentColor, width: 1.5),
+                      right: BorderSide(color: accentColor, width: 1.5),
+                      bottom: BorderSide(color: accentColor, width: 1.5),
+                    ),
+                    borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(12)),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  child: _buildSettingsChips(
+                    context, cs, l10n, settings, sub,
+                    labeled: true, compact: true, skipOuterPadding: true,
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSettingsChips(
     BuildContext context,
     ColorScheme cs,
@@ -1054,6 +1166,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     SubscriptionState? sub, {
     bool labeled = false,
     bool compact = false,
+    bool skipOuterPadding = false,
   }) {
     final diffChip = LalaChip(
       label: _diffLabel(settings?.difficulty ?? 'medium', l10n),
@@ -1121,31 +1234,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ? const EdgeInsets.fromLTRB(12, 2, 12, 8)
         : const EdgeInsets.fromLTRB(0, 0, 0, 10);
 
-    return Padding(
-      padding: outerPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: List.generate(4, (i) => Padding(
-          padding: EdgeInsets.only(bottom: rowSpacing),
-          child: Row(
-            children: [
-              SizedBox(
-                width: labelWidth,
-                child: Text(
-                  '${settingEmojis[i]} ${settingLabels[i]}',
-                  style: GoogleFonts.fredoka(
-                    fontSize: labelFontSize,
-                    fontWeight: FontWeight.w700,
-                    color: cs.primary.withValues(alpha: 0.85),
-                  ),
+    final rows = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List.generate(4, (i) => Padding(
+        padding: EdgeInsets.only(bottom: rowSpacing),
+        child: Row(
+          children: [
+            SizedBox(
+              width: labelWidth,
+              child: Text(
+                '${settingEmojis[i]} ${settingLabels[i]}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.fredoka(
+                  fontSize: labelFontSize,
+                  fontWeight: FontWeight.w700,
+                  color: cs.primary.withValues(alpha: 0.85),
                 ),
               ),
-              settingChips[i],
-            ],
-          ),
-        )),
-      ),
+            ),
+            Flexible(child: settingChips[i]),
+          ],
+        ),
+      )),
     );
+
+    return skipOuterPadding
+        ? rows
+        : Padding(padding: outerPadding, child: rows);
   }
 
   // Labeled "💡 Surprise me" pill (the i18n string already includes the emoji).

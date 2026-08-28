@@ -81,9 +81,9 @@ jobs:
         working-directory: flutter_app
         run: |
           CURRENT=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
-          # Offset by 1000 to ensure versionCode always exceeds prior Play releases
-          # (which used raw run numbers, up to ~60).
-          CODE=$((1000 + GITHUB_RUN_NUMBER))
+          # Offset by 10000 to ensure versionCode always exceeds the pubspec baseline
+          # (pubspec currently at 1084; raw run numbers are small).
+          CODE=$((10000 + GITHUB_RUN_NUMBER))
           sed -i "s/^version: .*/version: ${CURRENT}+${CODE}/" pubspec.yaml
           echo "pubspec version → ${CURRENT}+${CODE}"
 

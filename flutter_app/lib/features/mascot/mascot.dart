@@ -69,6 +69,46 @@ const kMascotItems = [
 List<MascotItem> itemsByCategory(String cat) =>
     kMascotItems.where((i) => i.category == cat).toList();
 
+// ── Per-item transform (position, scale, rotation in the interactive preview) ──
+
+class ItemTransform {
+  final double dx;    // x offset from default position (logical px)
+  final double dy;    // y offset from default position
+  final double scale; // 1.0 = default size
+  final double angle; // rotation in radians
+
+  const ItemTransform({
+    this.dx = 0,
+    this.dy = 0,
+    this.scale = 1.0,
+    this.angle = 0,
+  });
+
+  bool get isDefault => dx == 0 && dy == 0 && scale == 1.0 && angle == 0;
+
+  ItemTransform copyWith({double? dx, double? dy, double? scale, double? angle}) =>
+      ItemTransform(
+        dx: dx ?? this.dx,
+        dy: dy ?? this.dy,
+        scale: scale ?? this.scale,
+        angle: angle ?? this.angle,
+      );
+
+  String serialize() => '$dx,$dy,$scale,$angle';
+
+  static ItemTransform deserialize(String? s) {
+    if (s == null || s.isEmpty) return const ItemTransform();
+    final parts = s.split(',');
+    if (parts.length != 4) return const ItemTransform();
+    return ItemTransform(
+      dx:    double.tryParse(parts[0]) ?? 0,
+      dy:    double.tryParse(parts[1]) ?? 0,
+      scale: double.tryParse(parts[2]) ?? 1.0,
+      angle: double.tryParse(parts[3]) ?? 0,
+    );
+  }
+}
+
 bool isItemUnlocked(MascotItem item, int totalCompleted) =>
     totalCompleted >= item.unlockAt;
 
@@ -79,12 +119,21 @@ class MascotLoadout {
   final String? hat;
   final String? accessory;
   final String? expression;
+  final ItemTransform hatTransform;
+  final ItemTransform accessoryTransform;
+  final ItemTransform expressionTransform;
 
   const MascotLoadout({
     this.hat,
     this.accessory,
     this.expression = 'exp_happy',
+    this.hatTransform = const ItemTransform(),
+    this.accessoryTransform = const ItemTransform(),
+    this.expressionTransform = const ItemTransform(),
   });
+
+  bool get anyTransformCustomized =>
+      !hatTransform.isDefault || !accessoryTransform.isDefault || !expressionTransform.isDefault;
 
   // Decorations applied: hat + accessory + non-default expression.
   int get equippedCount {
@@ -99,11 +148,23 @@ class MascotLoadout {
     Object? hat = _sentinel,
     Object? accessory = _sentinel,
     String? expression,
+    ItemTransform? hatTransform,
+    ItemTransform? accessoryTransform,
+    ItemTransform? expressionTransform,
   }) =>
       MascotLoadout(
         hat: hat == _sentinel ? this.hat : hat as String?,
         accessory: accessory == _sentinel ? this.accessory : accessory as String?,
         expression: expression ?? this.expression,
+        hatTransform: hatTransform ?? this.hatTransform,
+        accessoryTransform: accessoryTransform ?? this.accessoryTransform,
+        expressionTransform: expressionTransform ?? this.expressionTransform,
+      );
+
+  MascotLoadout resetTransforms() => copyWith(
+        hatTransform: const ItemTransform(),
+        accessoryTransform: const ItemTransform(),
+        expressionTransform: const ItemTransform(),
       );
 }
 

@@ -211,7 +211,6 @@ class _MascotStudioScreenState extends ConsumerState<MascotStudioScreen>
 
   @override
   Widget build(BuildContext context) {
-    final cs       = Theme.of(context).colorScheme;
     final l10n     = ref.watch(l10nProvider);
     final ms       = ref.watch(mascotProvider).value ?? const MascotState();
     final progress = ref.watch(progressProvider).value ?? const Progress();
@@ -251,13 +250,8 @@ class _MascotStudioScreenState extends ConsumerState<MascotStudioScreen>
         children: [
           // ── Companion selector row ────────────────────────────────────────
           _CompanionSelector(ms: ms),
-          // ── Large mascot preview ──────────────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            color: cs.surfaceContainerLowest,
-            child: _MascotPreview(ms: ms),
-          ),
+          // ── Large mascot preview (interactive — drag/pinch items to arrange) ──
+          _MascotPreview(ms: ms),
           // ── Item grid ────────────────────────────────────────────────────
           Expanded(
             child: TabBarView(
@@ -341,51 +335,205 @@ class _CompanionSelector extends ConsumerWidget {
   }
 }
 
-class _MascotPreview extends StatelessWidget {
+class _MascotPreview extends ConsumerStatefulWidget {
   final MascotState ms;
   const _MascotPreview({required this.ms});
 
   @override
+  ConsumerState<_MascotPreview> createState() => _MascotPreviewState();
+}
+
+class _MascotPreviewState extends ConsumerState<_MascotPreview> {
+  static const _previewH = 280.0;
+  static const _hitSize  = 68.0;
+
+  // Default offsets from preview center for each slot
+  static const _defaults = {
+    'hat':        Offset(0,   -68),
+    'accessory':  Offset(52,   12),
+    'expression': Offset(-52,  52),
+  };
+  static const _fontSizes = {
+    'hat': 40.0, 'accessory': 32.0, 'expression': 28.0,
+  };
+
+  late Map<String, ItemTransform> _liveXf;
+  final Map<String, double> _baseScale = {};
+  final Map<String, double> _baseAngle = {};
+  String? _activeSlot;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncFromProvider();
+  }
+
+  @override
+  void didUpdateWidget(covariant _MascotPreview old) {
+    super.didUpdateWidget(old);
+    if (_activeSlot == null) _syncFromProvider();
+  }
+
+  void _syncFromProvider() {
+    final l = widget.ms.currentLoadout;
+    _liveXf = {
+      'hat':        l.hatTransform,
+      'accessory':  l.accessoryTransform,
+      'expression': l.expressionTransform,
+    };
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs     = Theme.of(context).colorScheme;
-    final mascot = ms.mascot;
+    final mascot = widget.ms.mascot;
     if (mascot == null) return const SizedBox.shrink();
 
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Container(
-          width: 140, height: 140,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [cs.primaryContainer, cs.secondaryContainer],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    final hat = widget.ms.hat;
+    final acc = widget.ms.accessory;
+    final exp = widget.ms.expression;
+    final hasCustom = widget.ms.currentLoadout.anyTransformCustomized;
+    final hasItems  = hat != null || acc != null || exp != null;
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final cx = constraints.maxWidth / 2;
+      const cy = _previewH / 2;
+
+      return Container(
+        width: double.infinity,
+        height: _previewH,
+        color: cs.surfaceContainerLowest,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // Background circle (not interactive)
+            Positioned(
+              left: cx - 70, top: cy - 70,
+              child: Container(
+                width: 140, height: 140,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [cs.primaryContainer, cs.secondaryContainer],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+              ),
             ),
-            shape: BoxShape.circle,
+            // Mascot base — always centered, not interactive
+            Positioned(
+              left: cx - 36, top: cy - 36,
+              child: Text(mascot.emoji,
+                  style: const TextStyle(fontSize: 72, height: 1)),
+            ),
+            // Interactive decoration items
+            if (hat != null) _buildItem('hat', hat.emoji, cx, cy),
+            if (acc != null) _buildItem('accessory', acc.emoji, cx, cy),
+            if (exp != null) _buildItem('expression', exp.emoji, cx, cy),
+            // Hint (when items present but none customised yet)
+            if (hasItems && !hasCustom)
+              const Positioned(
+                left: 0, right: 0, bottom: 6,
+                child: Text(
+                  '✦ drag & pinch items to arrange',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, color: Color(0x66000000)),
+                ),
+              ),
+            // Reset button (when any item has been moved)
+            if (hasCustom)
+              Positioned(
+                right: 12, bottom: 8,
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(mascotProvider.notifier).resetTransforms();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: cs.outlineVariant),
+                    ),
+                    child: Text('↺ Reset',
+                        style: GoogleFonts.fredoka(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onSurface.withValues(alpha: 0.7))),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildItem(String slot, String emoji, double cx, double cy) {
+    final xf   = _liveXf[slot] ?? const ItemTransform();
+    final def  = _defaults[slot]!;
+    final fs   = _fontSizes[slot]!;
+    final isActive = _activeSlot == slot;
+
+    final left = cx + def.dx + xf.dx - _hitSize / 2;
+    final top  = cy + def.dy + xf.dy - _hitSize / 2;
+
+    return Positioned(
+      left: left,
+      top:  top,
+      child: GestureDetector(
+        onScaleStart: (d) {
+          setState(() => _activeSlot = slot);
+          _baseScale[slot] = (_liveXf[slot] ?? const ItemTransform()).scale;
+          _baseAngle[slot] = (_liveXf[slot] ?? const ItemTransform()).angle;
+        },
+        onScaleUpdate: (d) {
+          final cur = _liveXf[slot] ?? const ItemTransform();
+          setState(() {
+            _liveXf[slot] = ItemTransform(
+              dx:    cur.dx + d.focalPointDelta.dx,
+              dy:    cur.dy + d.focalPointDelta.dy,
+              scale: (_baseScale[slot]! * d.scale).clamp(0.5, 3.0),
+              angle: _baseAngle[slot]! + d.rotation,
+            );
+          });
+        },
+        onScaleEnd: (_) {
+          setState(() => _activeSlot = null);
+          ref.read(mascotProvider.notifier)
+              .saveTransform(slot, _liveXf[slot]!);
+        },
+        child: SizedBox(
+          width: _hitSize, height: _hitSize,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              decoration: isActive
+                  ? BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.amber.withValues(alpha: 0.5),
+                          blurRadius: 14,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    )
+                  : null,
+              child: Transform.rotate(
+                angle: xf.angle,
+                child: Transform.scale(
+                  scale: xf.scale,
+                  child: Text(emoji,
+                      style: TextStyle(fontSize: fs, height: 1)),
+                ),
+              ),
+            ),
           ),
         ),
-        if (ms.expression != null)
-          Positioned(
-            bottom: 0,
-            left: MediaQuery.sizeOf(context).width / 2 - 80,
-            child: Text(ms.expression!.emoji,
-                style: const TextStyle(fontSize: 28)),
-          ),
-        Text(mascot.emoji, style: const TextStyle(fontSize: 72, height: 1)),
-        if (ms.hat != null)
-          Positioned(
-            top: 0,
-            child: Text(ms.hat!.emoji,
-                style: const TextStyle(fontSize: 40, height: 1)),
-          ),
-        if (ms.accessory != null)
-          Positioned(
-            right: MediaQuery.sizeOf(context).width / 2 - 100,
-            child: Text(ms.accessory!.emoji,
-                style: const TextStyle(fontSize: 32, height: 1)),
-          ),
-      ],
+      ),
     );
   }
 }
