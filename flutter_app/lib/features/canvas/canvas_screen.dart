@@ -189,6 +189,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       return;
     }
 
+    // Bytes ready — clear the fetch spinner immediately so the image appears as
+    // soon as the codec decodes it (canvas renders during BFS segmentation).
+    if (mounted) setState(() { _isPreloading = false; });
+
     ref.read(canvasProvider.notifier).reset();
     final settings = ref.read(settingsProvider).value;
     final difficulty = widget.args.preloadedDifficulty;
@@ -209,9 +213,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         'source': 'explore',
         'preloaded': true,
       });
-      if (mounted) setState(() { _isPreloading = false; _hintVisible = true; });
+      if (mounted) setState(() { _hintVisible = true; });
     } catch (e) {
-      if (mounted) setState(() { _isPreloading = false; _errorMsg = e.toString(); });
+      if (mounted) setState(() { _errorMsg = e.toString(); });
     }
   }
 
@@ -827,7 +831,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                     message: l10n.t('communityLoadingLb'),
                   ),
                 ),
-              if (!_isPreloading && (_isGenerating || canvas.isProcessing))
+              if (!_isPreloading && (_isGenerating || (canvas.isProcessing && widget.args.source != 'explore')))
                 Positioned.fill(
                   child: LalaLoadingOverlay(
                     message: l10n.t('generating',
@@ -872,7 +876,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                       Positioned.fill(
                           child: LalaLoadingOverlay(
                               message: l10n.t('communityLoadingLb'))),
-                    if (!_isPreloading && (_isGenerating || canvas.isProcessing))
+                    if (!_isPreloading && (_isGenerating || (canvas.isProcessing && widget.args.source != 'explore')))
                       Positioned.fill(
                           child: LalaLoadingOverlay(
                               message: l10n.t('generating',
@@ -903,7 +907,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       description: l10n.t('tipCanvasBody'),
       child: Container(
         color: cs.surfaceContainerLow,
-        child: (canvas.hasImage && !canvas.isProcessing)
+        child: canvas.hasImage
             ? _buildZoomableCanvas(context, canvas)
             : const SizedBox.expand(),
       ),

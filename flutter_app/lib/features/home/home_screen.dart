@@ -1227,7 +1227,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     const settingEmojis = ['🌟', '🎨', '🖍️', '🔢'];
     final settingChips = [diffChip, palChip, cntChip, modeChip];
 
-    final labelWidth = compact ? 90.0 : 108.0;
     final labelFontSize = compact ? 13.0 : 15.0;
     final rowSpacing = compact ? 5.0 : 8.0;
     final outerPadding = compact
@@ -1239,21 +1238,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: List.generate(4, (i) => Padding(
         padding: EdgeInsets.only(bottom: rowSpacing),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            SizedBox(
-              width: labelWidth,
-              child: Text(
-                '${settingEmojis[i]} ${settingLabels[i]}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.fredoka(
-                  fontSize: labelFontSize,
-                  fontWeight: FontWeight.w700,
-                  color: cs.primary.withValues(alpha: 0.85),
-                ),
+            Text(
+              '${settingEmojis[i]} ${settingLabels[i]}',
+              maxLines: 1,
+              style: GoogleFonts.fredoka(
+                fontSize: labelFontSize,
+                fontWeight: FontWeight.w700,
+                color: cs.primary.withValues(alpha: 0.85),
               ),
             ),
-            Flexible(child: settingChips[i]),
+            const SizedBox(width: 8),
+            settingChips[i],
           ],
         ),
       )),
