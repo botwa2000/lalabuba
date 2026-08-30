@@ -276,54 +276,83 @@ class _MyArtTab extends ConsumerWidget {
           else
             Builder(builder: (ctx) {
               final earnedList = kBadges.where((b) => earned.contains(b.id)).toList();
-              return SizedBox(
-                height: 86,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: earnedList.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (_, i) {
-                    final b = earnedList[i];
-                    final cap = '${b.id[0].toUpperCase()}${b.id.substring(1)}';
-                    return GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        context.goNamed('treehouse');
-                      },
-                      child: Container(
-                        width: 74,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 4),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                              colors: [Color(0xFFFFF7E0), Color(0xFFFFE6F2)]),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                              color: const Color(0xFFFFD166), width: 2),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(b.emoji,
-                                style: const TextStyle(fontSize: 26)),
-                            const SizedBox(height: 4),
-                            Flexible(
-                              child: Text(
-                                l10n.t('badge${cap}Title'),
-                                maxLines: 2,
-                                textAlign: TextAlign.center,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.nunito(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700),
-                              ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: 86,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: earnedList.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (_, i) {
+                        final b = earnedList[i];
+                        final cap = '${b.id[0].toUpperCase()}${b.id.substring(1)}';
+                        return GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            context.goNamed('treehouse');
+                          },
+                          child: Container(
+                            width: 74,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 4),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                  colors: [Color(0xFFFFF7E0), Color(0xFFFFE6F2)]),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color: const Color(0xFFFFD166), width: 2),
                             ),
-                          ],
-                        ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(b.emoji,
+                                    style: const TextStyle(fontSize: 26)),
+                                const SizedBox(height: 4),
+                                Flexible(
+                                  child: Text(
+                                    l10n.t('badge${cap}Title'),
+                                    maxLines: 2,
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.nunito(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      context.goNamed('treehouse');
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            l10n.t('seeAllInTreehouse'),
+                            style: GoogleFonts.nunito(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: cs.primary,
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_rounded,
+                              size: 14, color: cs.primary),
+                        ],
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                ],
               );
             }),
           if (nextHint != null)

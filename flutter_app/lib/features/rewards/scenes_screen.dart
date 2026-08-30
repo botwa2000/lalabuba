@@ -246,8 +246,10 @@ class _ScenesScreenState extends ConsumerState<ScenesScreen> {
                         stageW: w,
                         stageH: h,
                       ),
-                    if (placed.isEmpty && hasItems) _hint(l10n.t('sceneHint')),
                     if (!hasItems) _hint(l10n.t('sceneEarnHint')),
+                    if (hasItems && placed.isEmpty) _hint(l10n.t('sceneHint')),
+                    if (hasItems && placed.isNotEmpty)
+                      _hint('☝ drag  ✌ pinch to resize & rotate'),
                   ],
                 ),
               ),

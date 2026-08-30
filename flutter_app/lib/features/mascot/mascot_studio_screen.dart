@@ -431,14 +431,23 @@ class _MascotPreviewState extends ConsumerState<_MascotPreview> {
             if (hat != null) _buildItem('hat', hat.emoji, cx, cy),
             if (acc != null) _buildItem('accessory', acc.emoji, cx, cy),
             if (exp != null) _buildItem('expression', exp.emoji, cx, cy),
-            // Hint (when items present but none customised yet)
-            if (hasItems && !hasCustom)
-              const Positioned(
-                left: 0, right: 0, bottom: 6,
-                child: Text(
-                  '✦ drag & pinch items to arrange',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 11, color: Color(0x66000000)),
+            // Pinch hint — shown whenever items are present so users know
+            // two fingers resize & rotate (not just drag)
+            if (hasItems)
+              Positioned(
+                left: 0, right: 0, top: 8,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.32),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text(
+                      '☝ drag  ✌ pinch to resize & rotate',
+                      style: TextStyle(fontSize: 11, color: Colors.white, height: 1.2),
+                    ),
+                  ),
                 ),
               ),
             // Reset button (when any item has been moved)
