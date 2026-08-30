@@ -440,7 +440,7 @@ class _MascotPreviewState extends ConsumerState<_MascotPreview> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.32),
+                      color: Colors.black.withValues(alpha: 0.72),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: const Text(

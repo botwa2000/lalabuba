@@ -278,6 +278,7 @@ class _MyArtTab extends ConsumerWidget {
               final earnedList = kBadges.where((b) => earned.contains(b.id)).toList();
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
                     height: 86,
