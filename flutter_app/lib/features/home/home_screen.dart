@@ -230,9 +230,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   // ─── Tablet hero (2-column layout) ──────────────────────────────────────────
-  // Left panel (55%): branding + suggestion cards. Right panel (45%): action
-  // controls (pills, prompt, Draw button, settings chips). This makes full use
-  // of tablet screen real-estate instead of centering a narrow single column.
+  // Left (55%): branding + suggestion cards.
+  // Right (45%): action controls — prompt at top, Spacer fills mid, draw+settings
+  // pinned to bottom so the panel has no dead whitespace on tall tablets.
+  //
+  // KEY LAYOUT RULES:
+  //  • Right panel is NOT wrapped in SingleChildScrollView so that Spacer() works.
+  //  • LalaTextField is a DIRECT child of the Column (never inside a Row's Expanded
+  //    or inside LalaShowcase→Showcase) so it gets the full panel width cleanly.
+  //    The Showcase's Expanded-context issue collapses the border-radius 50 field
+  //    to a circle; moving it out of that nesting avoids the bug entirely.
+  //  • Voice + Surprise live in a compact row BELOW the text field.
 
   Widget _buildTabletHero(
     BuildContext context,
@@ -244,13 +252,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     final cs = Theme.of(context).colorScheme;
     final settings = settingsAsync.value;
-    // Always 2 columns so cards are big enough for the emoji to be clearly visible.
-    const cardColumns = 2;
+    final vPad = isLandscape ? 14.0 : 28.0;
 
-    Widget promptRow() => Row(
-          children: [
-            Expanded(
-              child: LalaShowcase(
+    // ── Left: branding + pick divider + card grid (scrollable) ──────────────
+    Widget leftPanel(HomeState home) => SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(28, vPad, 16, vPad),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.t('heroHeading'),
+                style: GoogleFonts.fredoka(
+                  fontSize: isLandscape ? 24 : 30,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildPickDivider(context, l10n),
+              const SizedBox(height: 16),
+              _buildCardGrid(context, home, l10n, _currentLocale,
+                  columns: 2,
+                  cardScale: isLandscape ? 3.5 : 4.0),
+            ],
+          ),
+        );
+
+    // ── Right: action panel (fills height — no scroll view) ─────────────────
+    Widget rightPanel(HomeState home) => Padding(
+          padding: EdgeInsets.fromLTRB(16, vPad, 28, vPad),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Text input — full panel width as a direct column child.
+              // No Row/Expanded/Showcase nesting to avoid width-collapse bug.
+              LalaShowcase(
                 showcaseKey: _scPrompt,
                 title: l10n.t('tipPromptTitle'),
                 description: l10n.t('tipPromptBody'),
@@ -262,79 +298,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onSubmitted: _canDraw ? _onDraw : null,
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            VoiceInputButton(
-              l10n: l10n,
-              locale: _currentLocale,
-              onResult: (text) => _fillSubject(text, source: 'voice'),
-            ),
-            const SizedBox(width: 8),
-            _buildSurprisePill(
-              context,
-              l10n,
-              onTap: () {
-                HapticFeedback.lightImpact();
-                final card = ref.read(homeProvider.notifier).surpriseMe();
-                if (card != null) {
-                  _fillSubject(
-                    card.label(_currentLocale),
-                    englishOverride: card.englishPrompt,
-                  );
-                }
-              },
-            ),
-          ],
-        );
-
-    // ── Left: branding + pick divider + card grid ──
-    Widget leftPanel(HomeState? home) => SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-              28, isLandscape ? 14 : 28, 16, isLandscape ? 14 : 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.t('heroHeading'),
-                style: GoogleFonts.fredoka(
-                  fontSize: isLandscape ? 24 : 28,
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface,
-                ),
+              const SizedBox(height: 10),
+              // Voice mic + Surprise me — compact row below the field
+              Row(
+                children: [
+                  VoiceInputButton(
+                    l10n: l10n,
+                    locale: _currentLocale,
+                    onResult: (text) => _fillSubject(text, source: 'voice'),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildSurprisePill(
+                    context,
+                    l10n,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      final card = ref.read(homeProvider.notifier).surpriseMe();
+                      if (card != null) {
+                        _fillSubject(
+                          card.label(_currentLocale),
+                          englishOverride: card.englishPrompt,
+                        );
+                      }
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              _buildPickDivider(context, l10n),
-              const SizedBox(height: 16),
-              if (home != null)
-                _buildCardGrid(context, home, l10n, _currentLocale,
-                    columns: cardColumns,
-                    cardScale: isLandscape ? 3.5 : 4.0),
-            ],
-          ),
-        );
-
-    // ── Right: action controls (prompt first, then inspiration pills below) ──
-    Widget rightPanel(HomeState? home) => SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-              16, isLandscape ? 14 : 28, 28, isLandscape ? 14 : 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              promptRow(),
-              const SizedBox(height: 14),
-              if (home?.dailyChallenge != null) ...[
+              SizedBox(height: isLandscape ? 12 : 20),
+              // Inspiration pills
+              if (home.dailyChallenge != null) ...[
                 _panelLabel('☀️', l10n.t('dailyWord'), cs),
-                Center(
-                    child: _buildDailyPill(
-                        context, cs, l10n, home!, _currentLocale)),
+                _buildDailyPill(context, cs, l10n, home, _currentLocale),
                 const SizedBox(height: 12),
               ],
               _panelLabel('🌈', l10n.t('weekLabel'), cs),
-              Center(child: _buildWeekScenePill(context, cs, l10n)),
-              SizedBox(height: isLandscape ? 12 : 20),
+              _buildWeekScenePill(context, cs, l10n),
+              // Spacer pushes Draw + settings to the bottom — eliminates dead
+              // whitespace on tall portrait tablets.
+              const Spacer(),
               _buildDrawButton(context, l10n,
-                  height: isLandscape ? 52 : 58, fontSize: 20),
-              const SizedBox(height: 14),
+                  height: isLandscape ? 52 : 60, fontSize: 20),
+              const SizedBox(height: 16),
               _buildSettingsChips(context, cs, l10n, settings, sub,
                   labeled: true),
             ],
@@ -350,7 +354,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             loading: () =>
                 const Center(child: CircularProgressIndicator.adaptive()),
             error: (_, __) => const SizedBox.shrink(),
-            data: (home) => leftPanel(home),
+            data: leftPanel,
           ),
         ),
         VerticalDivider(
@@ -365,7 +369,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             loading: () =>
                 const Center(child: CircularProgressIndicator.adaptive()),
             error: (_, __) => const SizedBox.shrink(),
-            data: (home) => rightPanel(home),
+            data: rightPanel,
           ),
         ),
       ],
