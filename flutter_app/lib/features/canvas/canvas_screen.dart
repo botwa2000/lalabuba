@@ -97,6 +97,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   final _canvasKey = GlobalKey();
   final _transformCtrl = TransformationController();
 
+
   // Whole-screen eyedropper. When the dropper is armed we snapshot the entire
   // page into a bitmap once, then sample that bitmap under the finger — so the
   // child can pick ANY colour visible anywhere on screen (the artwork, a fill
@@ -202,7 +203,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       await ref.read(canvasProvider.notifier).loadImage(
         bytes,
         _minAreaFor(difficulty),
-        showNumbers: settings?.showNumbers ?? false,
+        showNumbers: settings?.showNumbers ?? true,
         palette: paletteColors,
         maxNumbered: _maxNumberedFor(difficulty),
       );
@@ -278,7 +279,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       await ref.read(canvasProvider.notifier).loadImage(
         result.imageBytes,
         minArea,
-        showNumbers: settings?.showNumbers ?? false,
+        showNumbers: settings?.showNumbers ?? true,
         palette: paletteColors,
         maxNumbered: maxNumbered,
       );
@@ -915,14 +916,15 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   }
 
   Widget _buildZoomableCanvas(BuildContext context, CanvasState canvas) {
-    // Lock pan/zoom while painting, drawing OR eyedropping. Leaving scale on lets
-    // the InteractiveViewer's scale recognizer contend with the one-finger
-    // gesture, so the first movement is swallowed by the gesture arena and the
-    // stroke "jumps" — and for the eyedropper the tap was swallowed entirely, so
-    // sampling never fired ("wherever I touch, nothing is picked"). With it off,
-    // taps/strokes/samples register immediately. Zooming is still available via
-    // the zoom buttons.
-    final lockGestures = canvas.mode == DrawMode.paint ||
+    // Lock pan/zoom while tapping, painting, drawing OR eyedropping. With pan
+    // enabled the InteractiveViewer's ScaleGestureRecognizer enters the gesture
+    // arena and can swallow the tap before the child GestureDetector's
+    // TapGestureRecognizer fires — identical to the eyedropper "tap was
+    // swallowed entirely" fix already applied. Tap/fill mode also needs pan
+    // locked so every finger-down resolves as a fill, not a pan attempt.
+    // Zooming is still available via the +/− buttons in the action bar.
+    final lockGestures = canvas.mode == DrawMode.tap ||
+        canvas.mode == DrawMode.paint ||
         canvas.mode == DrawMode.pencil ||
         canvas.mode == DrawMode.eyedropper;
     return InteractiveViewer(
