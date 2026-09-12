@@ -356,7 +356,7 @@ class DrawingConfig {
           undoStackMax: 20,
         ),
         generation: const GenerationConfig(
-          clientTimeoutMs: 80000,
+          clientTimeoutMs: 120000,
           seedRange: 2000000000,
           maxImageBytes: 26214400,
         ),
