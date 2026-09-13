@@ -27,7 +27,11 @@ void bridgeLineGaps(
   int tangentSteps = 4, // pixels walked back along a tip to estimate its heading
 }) {
   final short = w < h ? w : h;
-  final gap = maxGap ?? (short ~/ 100).clamp(4, 24);
+  // Increased from (short/100).clamp(4,24) — Cloudflare coloring templates have
+  // structural open arcs (e.g. a circle that terminates at the subject body)
+  // whose gap spans 20–40px at typical 512px image size. The facing constraint
+  // (faceCos) prevents false merges between non-opposing tips.
+  final gap = maxGap ?? (short ~/ 25).clamp(16, 60);
   if (gap < 2) return;
 
   final skel = zhangSuenThin(mask, w, h);
