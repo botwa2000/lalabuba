@@ -23,7 +23,7 @@ void bridgeLineGaps(
   int w,
   int h, {
   int? maxGap,
-  double faceCos = 0.5, // cos 60° — how closely tips must face to bridge
+  double faceCos = 0.3, // cos 72° (was 0.5/60°) — relaxed so open arc endpoints bridge
   int tangentSteps = 4, // pixels walked back along a tip to estimate its heading
 }) {
   final short = w < h ? w : h;
