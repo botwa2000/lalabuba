@@ -744,12 +744,16 @@ previewCanvas.addEventListener("click", (event) => {
   if (regionId > 0) state.completedRegions.add(regionId);
 
   // Primary fill: use exact region pixels when worker has finished (accurate,
-  // no MAX_FILL cap). Background region is the exception — its pixel set spans
-  // the entire outer white space, so filling it would paint the whole page border.
-  // Instead use BFS from the tap point, bounded by the structural wall mask (which
-  // includes bridge pixels that seal interior pockets like an unenclosed arm).
+  // no MAX_FILL cap). Background region taps are silently ignored — that region
+  // spans the entire exterior white space and filling it would block the main
+  // thread for hundreds of thousands of pixels. Pre-worker taps and line-pixel
+  // taps fall back to BFS (bounded by wallMask, capped at 65% of canvas pixels).
   let fillResult;
-  if (state.regionMap && regionId > 0 && regionId !== state.backgroundRegionId) {
+  if (state.regionMap && regionId === state.backgroundRegionId) {
+    // Exterior background — no fill, undo the premature completedRegions.add above.
+    if (!completedBefore) state.completedRegions.delete(regionId);
+    return;
+  } else if (state.regionMap && regionId > 0) {
     fillResult = fillRegion(regionId, fillColor);
   } else {
     fillResult = floodFillAt(canvasX, canvasY, fillColor);
