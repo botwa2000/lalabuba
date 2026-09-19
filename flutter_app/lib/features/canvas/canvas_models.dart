@@ -114,7 +114,7 @@ class CompositeParams {
 /// freehand strokes added, and freehand strokes erased — and a single undo stack
 /// must reverse whichever came last. (Previously the stack only knew about region
 /// fills, so pencil strokes couldn't be undone and the eraser left them behind.)
-enum CanvasOp { fill, addStroke, eraseStrokes }
+enum CanvasOp { fill, addStroke, eraseStrokes, pixelFill }
 
 class CanvasAction {
   final CanvasOp op;
@@ -129,22 +129,44 @@ class CanvasAction {
   final List<Stroke> strokes;
   final List<int> strokeIndices;
 
+  // pixelFill: a bounded BFS flood fill of a background pocket (see
+  // CanvasController.floodFillAt), which edits raw composite pixels rather
+  // than a discrete numbered region. [pixelIndices] are the touched pixel
+  // indices (row*width+col); [previousRgba] holds their original 4 bytes
+  // each, in the same order, so undo can restore them exactly.
+  final List<int> pixelIndices;
+  final Uint8List? previousRgba;
+
   const CanvasAction.fill({required this.regionId, required this.previousColor})
       : op = CanvasOp.fill,
         strokes = const [],
-        strokeIndices = const [];
+        strokeIndices = const [],
+        pixelIndices = const [],
+        previousRgba = null;
 
   const CanvasAction.addStroke()
       : op = CanvasOp.addStroke,
         regionId = -1,
         previousColor = null,
         strokes = const [],
-        strokeIndices = const [];
+        strokeIndices = const [],
+        pixelIndices = const [],
+        previousRgba = null;
 
   const CanvasAction.eraseStrokes(this.strokes, this.strokeIndices)
       : op = CanvasOp.eraseStrokes,
         regionId = -1,
-        previousColor = null;
+        previousColor = null,
+        pixelIndices = const [],
+        previousRgba = null;
+
+  const CanvasAction.pixelFill(
+      {required this.pixelIndices, required this.previousRgba})
+      : op = CanvasOp.pixelFill,
+        regionId = -1,
+        previousColor = null,
+        strokes = const [],
+        strokeIndices = const [];
 }
 
 class CanvasState {

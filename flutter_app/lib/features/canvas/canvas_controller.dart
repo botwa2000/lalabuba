@@ -395,11 +395,25 @@ class CanvasNotifier extends Notifier<CanvasState> {
     final cb = argb & 0xFF;
 
     final buf = _compositeBuf ??= Uint8List.fromList(orig);
+    // Tapping an already-fully-filled pocket with the same colour again is a
+    // no-op — mirrors fillRegion's `prev == activeColor` short-circuit and
+    // avoids pushing a pointless (but harmless) undo entry.
+    final startO = startIdx * 4;
+    if (buf[startO] == cr && buf[startO + 1] == cg && buf[startO + 2] == cb &&
+        buf[startO + 3] == 255) {
+      return;
+    }
     final gen = ++_compositeGen;
 
     final visited = Uint8List(w * h);
     final queue = List<int>.filled(w * h, 0);
     int head = 0, tail = 0;
+
+    // Undo capture: this is a raw pixel edit (not a discrete numbered region),
+    // so — unlike fillRegion — undo needs a snapshot of exactly the pixels
+    // touched, taken before each is overwritten below.
+    final touchedIdx = <int>[];
+    final prevBytes = <int>[];
 
     visited[startIdx] = 1;
     queue[tail++] = startIdx;
@@ -407,6 +421,12 @@ class CanvasNotifier extends Notifier<CanvasState> {
     while (head < tail) {
       final i = queue[head++];
       final o = i * 4;
+      touchedIdx.add(i);
+      prevBytes
+        ..add(buf[o])
+        ..add(buf[o + 1])
+        ..add(buf[o + 2])
+        ..add(buf[o + 3]);
       buf[o] = cr;
       buf[o + 1] = cg;
       buf[o + 2] = cb;
@@ -431,6 +451,39 @@ class CanvasNotifier extends Notifier<CanvasState> {
     }
 
     final img = await _rgbaToImage(buf, w, h);
+    if (gen != _compositeGen || state.detection != d) return;
+    final action = CanvasAction.pixelFill(
+      pixelIndices: touchedIdx,
+      previousRgba: Uint8List.fromList(prevBytes),
+    );
+    state = state.copyWith(
+      compositeImage: img,
+      compositeRgba: buf,
+      undoStack: _pushUndo(state.undoStack, action),
+    );
+  }
+
+  /// Undo counterpart to [floodFillAt]: restores exactly the pixels a
+  /// background-pocket fill touched, from the snapshot taken at fill time.
+  /// Mirrors [_applyRegionComposite]'s generation-guarded async pattern.
+  Future<void> _restorePixels(List<int> pixelIndices, Uint8List previousRgba) async {
+    final s = state;
+    final d = s.detection;
+    final orig = s.originalRgba;
+    if (d == null || orig == null) return;
+    final buf = _compositeBuf ??= Uint8List.fromList(orig);
+
+    final gen = ++_compositeGen;
+    for (var k = 0; k < pixelIndices.length; k++) {
+      final o = pixelIndices[k] * 4;
+      final po = k * 4;
+      buf[o] = previousRgba[po];
+      buf[o + 1] = previousRgba[po + 1];
+      buf[o + 2] = previousRgba[po + 2];
+      buf[o + 3] = previousRgba[po + 3];
+    }
+
+    final img = await _rgbaToImage(buf, d.width, d.height);
     if (gen != _compositeGen || state.detection != d) return;
     state = state.copyWith(compositeImage: img, compositeRgba: buf);
   }
@@ -515,6 +568,9 @@ class CanvasNotifier extends Notifier<CanvasState> {
         }
         state = s.copyWith(strokes: strokes, undoStack: remaining);
         _recomputeCoverage();
+      case CanvasOp.pixelFill:
+        state = s.copyWith(undoStack: remaining);
+        unawaited(_restorePixels(action.pixelIndices, action.previousRgba!));
     }
   }
 
