@@ -1,0 +1,76 @@
+{
+  "difficulties": {
+    "easy": {
+      "minArea": 2000,
+      "maxRegions": 10,
+      "colorCount": 6,
+      "resolution": 1024
+    },
+    "medium": {
+      "minArea": 800,
+      "maxRegions": 18,
+      "colorCount": 8,
+      "resolution": 1024
+    },
+    "hard": {
+      "minArea": 300,
+      "maxRegions": 30,
+      "colorCount": 12,
+      "resolution": 1024
+    },
+    "extreme": {
+      "minArea": 80,
+      "maxRegions": 48,
+      "colorCount": 99,
+      "resolution": 1024
+    }
+  },
+  "detection": {
+    "outlineMask": {
+      "globalDark": 100,
+      "localMargin": 22,
+      "adaptiveCeil": 165,
+      "weakMargin": 8,
+      "weakCeil": 212
+    },
+    "lineBridge": {
+      "maxGapMin": 4,
+      "maxGapMax": 20,
+      "faceCos": 0.5,
+      "tangentSteps": 4
+    },
+    "trappedBall": {
+      "maxRMin": 2,
+      "maxRMax": 7,
+      "decayNumerator": 2,
+      "decayDenominator": 3,
+      "finalPassRadius": 1
+    },
+    "regionFilter": {
+      "absoluteFloor": 30,
+      "promoteFloor": 50,
+      "rescueFloor": 5
+    },
+    "bfsDarkThreshold": 80,
+    "bfsFloodCapRatio": 0.65,
+    "workerTimeoutMs": 90000,
+    "snapRadius": {
+      "web": 16,
+      "flutter": 12
+    }
+  },
+  "completion": {
+    "freeCoverageRatio": 0.9,
+    "freehandCoverThreshold": 0.45,
+    "tinyRegionAutoRatio": 0.0005
+  },
+  "canvas": {
+    "maxDisplayEdgePx": 2048,
+    "undoStackMax": 20
+  },
+  "generation": {
+    "clientTimeoutMs": 150000,
+    "seedRange": 2000000000,
+    "maxImageBytes": 26214400
+  }
+}

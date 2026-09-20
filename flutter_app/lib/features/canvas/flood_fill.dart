@@ -291,7 +291,7 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   }
 
   // Rebuild Region list with new sorted IDs (label at the interior point)
-  final sortedRegions = List.generate(
+  var sortedRegions = List.generate(
     rawRegions.length,
     (i) => Region(
       id: i,
@@ -318,7 +318,160 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
     }
   }
   // Fallback: largest region (id=0 after sort)
-  final backgroundRegionId = bgOrigId >= 0 ? bgOrigId : 0;
+  var backgroundRegionId = bgOrigId >= 0 ? bgOrigId : 0;
+
+  // ── 6b. Thin-wall merge ──
+  // Collapse regions separated only by a thin internal line (striation marks,
+  // detail lines ≤ THIN_WALL_PX wide) into one region, so each visually-enclosed
+  // area gets exactly one number badge and one fill tap covers it completely.
+  // Thick boundary outlines stay separators. Ported from the web engine
+  // (public/js/region-worker.js step 8) — web has had this since it shipped;
+  // Flutter never did, a real capability gap this audit (2026-09-20) found:
+  // Flutter users got measurably worse region quality on images with fine
+  // internal detail lines than web users did. Runs on the pre-watershed
+  // pixelToRegion (wall pixels still -2), using each region's already-computed
+  // interior-point centroid (step 5b) as its representative position.
+  {
+    const thinWallPx = 10;
+
+    // Find all wall-adjacent valid region pairs (both sides of a -2 pixel).
+    final adjPairs = <int>{}; // packed as lo * sortedRegions.length + hi
+    final regionCount = sortedRegions.length;
+    for (var i = 0; i < w * h; i++) {
+      if (pixelToRegion[i] != -2) continue;
+      final x = i % w, y = i ~/ w;
+      final nbrs = <int>[];
+      if (x > 0 && pixelToRegion[i - 1] >= 0) nbrs.add(pixelToRegion[i - 1]);
+      if (x < w - 1 && pixelToRegion[i + 1] >= 0) nbrs.add(pixelToRegion[i + 1]);
+      if (y > 0 && pixelToRegion[i - w] >= 0) nbrs.add(pixelToRegion[i - w]);
+      if (y < h - 1 && pixelToRegion[i + w] >= 0) nbrs.add(pixelToRegion[i + w]);
+      for (var a = 0; a < nbrs.length - 1; a++) {
+        for (var b = a + 1; b < nbrs.length; b++) {
+          if (nbrs[a] == nbrs[b]) continue;
+          final lo = nbrs[a] < nbrs[b] ? nbrs[a] : nbrs[b];
+          final hi = nbrs[a] < nbrs[b] ? nbrs[b] : nbrs[a];
+          adjPairs.add(lo * regionCount + hi);
+        }
+      }
+    }
+
+    // Union-Find over region ids 0..regionCount-1.
+    final ufParent = List<int>.generate(regionCount, (i) => i);
+    int ufFind(int x) {
+      while (ufParent[x] != x) {
+        ufParent[x] = ufParent[ufParent[x]];
+        x = ufParent[x];
+      }
+      return x;
+    }
+
+    void ufUnion(int a, int b) {
+      a = ufFind(a);
+      b = ufFind(b);
+      if (a != b) ufParent[a] = b;
+    }
+
+    // For each adjacent pair, walk a parametric line between centroids (bounded
+    // by `steps` — cannot hang regardless of slope) counting wall pixels
+    // crossed. <= thinWallPx → thin internal line → merge.
+    for (final packed in adjPairs) {
+      final a = packed ~/ regionCount, b = packed % regionCount;
+      // Never merge the background region into a foreground region.
+      if (a == backgroundRegionId || b == backgroundRegionId) continue;
+      final cA = sortedRegions[a].centroid, cB = sortedRegions[b].centroid;
+      final dx = cB.dx - cA.dx, dy = cB.dy - cA.dy;
+      final steps = dx.abs() > dy.abs() ? dx.abs().round() : dy.abs().round();
+      if (steps == 0) {
+        ufUnion(a, b);
+        continue;
+      }
+      var wallPx = 0;
+      for (var t = 0; t <= steps; t++) {
+        final px = (cA.dx + dx * t / steps).round();
+        final py = (cA.dy + dy * t / steps).round();
+        if (px < 0 || px >= w || py < 0 || py >= h) continue;
+        if (pixelToRegion[py * w + px] == -2) wallPx++;
+      }
+      if (wallPx <= thinWallPx) ufUnion(a, b);
+    }
+
+    var hasMerge = false;
+    for (var i = 0; i < regionCount; i++) {
+      if (ufFind(i) != i) {
+        hasMerge = true;
+        break;
+      }
+    }
+
+    if (hasMerge) {
+      // Compact union-find roots into new consecutive ids, preserving size
+      // order isn't required post-merge — downstream code only relies on
+      // `pixelToRegion[i] == regions[i].id` and `regions.length`, not sort
+      // order. Merged pixelCount sums; centroid keeps the larger member's
+      // interior point (still guaranteed to be inside the merged shape,
+      // since it was interior to one of its now-merged parts).
+      final rootToNewId = <int, int>{};
+      for (var i = 0; i < regionCount; i++) {
+        final root = ufFind(i);
+        rootToNewId.putIfAbsent(root, () => rootToNewId.length);
+      }
+      final mergedCount = List<int>.filled(rootToNewId.length, 0);
+      final mergedCentroid = List<Offset?>.filled(rootToNewId.length, null);
+      final mergedBestSize = List<int>.filled(rootToNewId.length, -1);
+      for (var i = 0; i < regionCount; i++) {
+        final newId = rootToNewId[ufFind(i)]!;
+        mergedCount[newId] += sortedRegions[i].pixelCount;
+        if (sortedRegions[i].pixelCount > mergedBestSize[newId]) {
+          mergedBestSize[newId] = sortedRegions[i].pixelCount;
+          mergedCentroid[newId] = sortedRegions[i].centroid;
+        }
+      }
+      final oldToNewId = List<int>.generate(
+          regionCount, (i) => rootToNewId[ufFind(i)]!);
+      for (var i = 0; i < w * h; i++) {
+        final v = pixelToRegion[i];
+        if (v >= 0) pixelToRegion[i] = oldToNewId[v];
+      }
+      final mergedRegions = List.generate(
+        rootToNewId.length,
+        (i) => Region(
+          id: i,
+          centroid: mergedCentroid[i]!,
+          pixelCount: mergedCount[i],
+        ),
+      );
+      final mergedBackgroundId = oldToNewId[backgroundRegionId];
+      final mergedPromoted = promotedNewIds.map((id) => oldToNewId[id]).toSet();
+
+      // Re-sort by size desc: color assignment (step 7 below) relies on
+      // "id order == size order" to number the biggest regions first. The
+      // merge above renumbers by union-find root, not size, so restore the
+      // invariant with one more compacting remap.
+      final order = List<int>.generate(mergedRegions.length, (i) => i)
+        ..sort((a, b) =>
+            mergedRegions[b].pixelCount.compareTo(mergedRegions[a].pixelCount));
+      final finalNewId = List<int>.filled(mergedRegions.length, 0);
+      for (var i = 0; i < order.length; i++) {
+        finalNewId[order[i]] = i;
+      }
+      for (var i = 0; i < w * h; i++) {
+        final v = pixelToRegion[i];
+        if (v >= 0) pixelToRegion[i] = finalNewId[v];
+      }
+      sortedRegions = List.generate(
+        order.length,
+        (i) => Region(
+          id: i,
+          centroid: mergedRegions[order[i]].centroid,
+          pixelCount: mergedRegions[order[i]].pixelCount,
+        ),
+      );
+      backgroundRegionId = finalNewId[mergedBackgroundId];
+      promotedNewIds
+        ..clear()
+        ..addAll(mergedPromoted.map((id) => finalNewId[id]));
+    }
+  }
 
   // ── 7. Color assignment — sequential round-robin, capped to numbered count ──
   // Coloring pages have white/near-white fill regions so nearest-palette would
@@ -338,7 +491,7 @@ RegionDetectionResult detectRegions(RegionDetectParams params) {
   final regionPaletteIndex = <int, int>{};
   if (palette.isNotEmpty) {
     var colorIdx = 0;
-    for (var i = 0; i < rawRegions.length; i++) {
+    for (var i = 0; i < sortedRegions.length; i++) {
       final newId = i;
       if (newId == backgroundRegionId) continue;
       if (promotedNewIds.contains(newId)) continue; // promoted = always free-fill

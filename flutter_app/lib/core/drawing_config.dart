@@ -307,13 +307,13 @@ class DrawingConfig {
               maxRegions: 30,
               colorCount: 12,
               resolution: 1024,
-              skipFreeTiers: true),
+              skipFreeTiers: false),
           'extreme': DifficultyConfig(
               minArea: 80,
               maxRegions: 48,
               colorCount: 99,
               resolution: 1024,
-              skipFreeTiers: true),
+              skipFreeTiers: false),
         },
         detection: const DetectionConfig(
           outlineMask: OutlineMaskConfig(
@@ -356,7 +356,7 @@ class DrawingConfig {
           undoStackMax: 20,
         ),
         generation: const GenerationConfig(
-          clientTimeoutMs: 120000,
+          clientTimeoutMs: 150000,
           seedRange: 2000000000,
           maxImageBytes: 26214400,
         ),

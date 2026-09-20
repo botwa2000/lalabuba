@@ -10,6 +10,12 @@
 //   OUT → { regionMap: ArrayBuffer (Int32), lineMask: ArrayBuffer (Uint8),
 //            backgroundRegionId, regionIds, regionPixelBuffers, gen }
 //   All ArrayBuffers are transferred (zero-copy).
+//
+// detectRegionsWeb() below is a PLAIN, worker-independent function — mirrors
+// flood_fill.dart's detectRegions() (pure function + thin isolate/worker
+// wrapper) so both coloring engines are directly callable from a Node test
+// for cross-platform parity checks (see scripts/test-parity-corpus.mjs),
+// without needing a browser or a real Worker.
 
 import { buildOutlineMask }    from './outline-mask.js?v=323';
 import { bridgeLineGaps }      from './line-bridge.js?v=323';
@@ -17,17 +23,20 @@ import { trappedBallSegment }  from './trapped-ball.js?v=323';
 import { watershedAssign, buildRegionPixels } from './fill-core.js?v=323';
 
 // Fallback detection params match lib/drawing-config.js DEFAULTS.
-const DETECTION_DEFAULTS = {
+export const DETECTION_DEFAULTS = {
   regionFilter: { absoluteFloor: 30, promoteFloor: 50, rescueFloor: 5 },
   workerTimeoutMs: 90000,
 };
 
-self.onmessage = ({ data }) => {
-  const { pixels, width, height, gen, detection } = data;
+// pixels: Uint8ClampedArray|Uint8Array (RGBA), width/height: number,
+// detection: optional overrides (same shape as DETECTION_DEFAULTS).
+// Returns { regionMap, lineMask, wallMask, backgroundRegionId, regionIds, regionPixelBuffers }
+// — same fields region-worker.js posts back, minus the worker-only `gen` tag.
+export function detectRegionsWeb(pixels, width, height, detection) {
   const det = Object.assign({}, DETECTION_DEFAULTS, detection || {});
   const rf  = Object.assign({}, DETECTION_DEFAULTS.regionFilter, (detection || {}).regionFilter || {});
   const n = width * height;
-  const src = new Uint8ClampedArray(pixels);   // pixels is a transferred ArrayBuffer
+  const src = pixels instanceof Uint8ClampedArray ? pixels : new Uint8ClampedArray(pixels);
 
   // 1. Adaptive hysteresis outline mask: seals anti-aliased pin-gaps in line art
   let outlineMask = buildOutlineMask(src, width, height);
@@ -201,12 +210,25 @@ self.onmessage = ({ data }) => {
   //    over the black line art.
   const regionPixels = buildRegionPixels(label, lineMask, [...validIds], width, height);
 
-  // 11. Pack into transferable typed arrays (zero-copy transfer back to main thread)
+  // 11. Region ids + per-region pixel index lists (kept as plain arrays here;
+  //     the worker wrapper below converts to transferable buffers).
   const regionIds = [...regionPixels.keys()];
-  const regionPixelBuffers = regionIds.map(id => new Int32Array(regionPixels.get(id)).buffer);
 
-  self.postMessage(
-    { regionMap: label.buffer, lineMask: lineMask.buffer, wallMask: wallMask.buffer, backgroundRegionId, regionIds, regionPixelBuffers, gen },
-    [label.buffer, lineMask.buffer, wallMask.buffer, ...regionPixelBuffers],
-  );
-};
+  return { regionMap: label, lineMask, wallMask, backgroundRegionId, regionIds, regionPixels };
+}
+
+if (typeof self !== 'undefined') {
+  self.onmessage = ({ data }) => {
+    const { pixels, width, height, gen, detection } = data;
+    const { regionMap, lineMask, wallMask, backgroundRegionId, regionIds, regionPixels } =
+      detectRegionsWeb(pixels, width, height, detection);
+
+    // Pack into transferable typed arrays (zero-copy transfer back to main thread).
+    const regionPixelBuffers = regionIds.map(id => new Int32Array(regionPixels.get(id)).buffer);
+
+    self.postMessage(
+      { regionMap: regionMap.buffer, lineMask: lineMask.buffer, wallMask: wallMask.buffer, backgroundRegionId, regionIds, regionPixelBuffers, gen },
+      [regionMap.buffer, lineMask.buffer, wallMask.buffer, ...regionPixelBuffers],
+    );
+  };
+}
