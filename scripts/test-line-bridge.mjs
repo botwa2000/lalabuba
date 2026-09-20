@@ -50,6 +50,25 @@ console.log('test: (B) does NOT join parallel groove tips');
   check('groove channel stays open', flood(m, idx(7, 14)).has(idx(23, 14)));
 }
 
+// (C) Regression for a real infinite-loop bug (2026-09-20): the internal
+// draw4ConnectedLine() used a single-error-term Bresenham with no axis swap
+// for the steep case (dy > dx), so it never terminated on a steep facing-tip
+// bridge. A real generated image hit this at dx=10,dy=31; this is the same
+// slope class scaled down (dx=3,dy=9) so the test stays fast either way —
+// the point is termination + correctness for ANY slope, not this exact size.
+console.log('test: (C) bridges a STEEP facing gap (dy > dx) without hanging');
+{
+  const m = new Uint8Array(W * H);
+  for (let y = 5; y <= 10; y++) m[idx(10, y)] = 1;  // tip at (10,10), heading down
+  for (let y = 19; y <= 24; y++) m[idx(13, y)] = 1; // tip at (13,19), heading up
+  // (11,13) sits on the intended steep path but in neither original stub column.
+  check('before: mid-path pixel is not yet a wall', m[idx(11, 13)] === 0);
+  bridgeLineGaps(m, W, H, { maxGap: 10 }); // hangs forever pre-fix — the test
+  // completing at all is itself part of what this guards against.
+  check('after: bridge drew through the mid-path pixel', m[idx(11, 13)] === 1);
+  check('after: bridge reaches both original tips', m[idx(10, 10)] === 1 && m[idx(13, 19)] === 1);
+}
+
 console.log('test: zhangSuenThin thins a thick bar to 1px');
 {
   const m = new Uint8Array(W * H);

@@ -103,17 +103,25 @@ function walkBack(skel, endpoint, w, h, steps) {
   return cur;
 }
 
+// Standard "supercover" 4-connected line walk: progress counters (ix, iy)
+// bounded by the axis distances (nx, ny), so it provably terminates in
+// exactly nx+ny steps for ANY slope. The previous single-error-term Bresenham
+// had no axis swap for the steep case (dy > dx) and could fail to converge —
+// confirmed via a real generated image (2026-09-20, ported fix from the
+// identical bug in flutter_app/lib/features/canvas/line_bridge.dart): a steep
+// bridge (dx=10, dy=31) never terminated, hanging region detection past its
+// timeout and leaving the whole drawing uncolourable.
 function draw4ConnectedLine(mask, x0, y0, x1, y1, w, h) {
   let x = x0, y = y0;
-  const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+  const nx = Math.abs(x1 - x0), ny = Math.abs(y1 - y0);
   const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
-  let err = dx - dy;
-  while (true) {
-    if (x >= 0 && x < w && y >= 0 && y < h) mask[y * w + x] = 1;
-    if (x === x1 && y === y1) break;
-    const e2 = 2 * err;
-    if (e2 - dy > dx - e2) { err -= dy; x += sx; }
-    else { err += dx; y += sy; }
+  const plot = () => { if (x >= 0 && x < w && y >= 0 && y < h) mask[y * w + x] = 1; };
+  plot();
+  let ix = 0, iy = 0;
+  while (ix < nx || iy < ny) {
+    if ((1 + 2 * ix) * ny <= (1 + 2 * iy) * nx) { x += sx; ix++; }
+    else { y += sy; iy++; }
+    plot();
   }
 }
 

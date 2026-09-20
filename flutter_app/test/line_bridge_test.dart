@@ -88,6 +88,37 @@ void main() {
     });
   });
 
+  // Regression for a real infinite-loop bug (2026-09-20): the internal
+  // _draw4ConnectedLine() used a single-error-term Bresenham with no axis
+  // swap for the steep case (dy > dx), so it never terminated on a steep
+  // facing-tip bridge. A real generated image hit this at dx=10, dy=31 (see
+  // test/fixtures/regression_corpus/); this is the same slope class scaled
+  // down so the test stays fast — the point is termination + correctness for
+  // ANY slope, not this exact size. Mirrors scripts/test-line-bridge.mjs (C).
+  group('bridgeLineGaps (C) bridges a STEEP facing gap (dy > dx)', () {
+    Uint8List build() {
+      final m = Uint8List(w * h);
+      for (var y = 5; y <= 10; y++) {
+        m[idx(10, y)] = 1; // tip at (10,10), heading down
+      }
+      for (var y = 19; y <= 24; y++) {
+        m[idx(13, y)] = 1; // tip at (13,19), heading up
+      }
+      return m;
+    }
+
+    test('bridges the steep gap without hanging, through the correct path', () {
+      final m = build();
+      // (11,13) sits on the intended steep path but in neither original stub.
+      expect(m[idx(11, 13)], 0, reason: 'sanity: not a wall before bridging');
+      bridgeLineGaps(m, w, h, maxGap: 10); // hangs forever pre-fix — the test
+      // completing at all is itself part of what this guards against.
+      expect(m[idx(11, 13)], 1, reason: 'bridge must draw through the mid-path pixel');
+      expect(m[idx(10, 10)], 1);
+      expect(m[idx(13, 19)], 1);
+    });
+  });
+
   group('zhangSuenThin', () {
     test('thins a thick bar to a 1-px skeleton', () {
       // A 5-px-tall horizontal bar → a single-row skeleton.
