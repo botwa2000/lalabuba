@@ -338,6 +338,8 @@ These have broken in the past — test explicitly after any related change:
 - [ ] **Mobile hero overflow**: suggestion cards don't overflow at 390px portrait
 - [ ] **Brush lock**: locked at 0 completions, unlocked at exactly 3rd
 - [ ] **floodFillAt dark-pixel**: tapping on line dot finds adjacent fill area
+- [ ] **Region detection completes on dense/textured art** (2026-09-20): generate on Hard/Extreme with a subject likely to produce thick solid fills or fine texture lines (stripes, scales, feathers); confirm numbers appear and tap-to-fill works within ~1s, on BOTH platforms. Root cause was a genuine infinite loop in the line-bridging step's Bresenham line-draw for steep slopes (dy > dx) — present identically in the Dart AND JS ports, silently hung past the 60s isolate/worker timeout leaving the image uncolourable with zero errors shown. Permanent regression guard: `flutter_app/test/region_detection_regression_corpus_test.dart` runs on every push (`flutter-ci.yml`) against real problem images in `flutter_app/test/fixtures/regression_corpus/` — any future real-image regression must add its fixture there, not just a synthetic mimic. Cross-engine parity check: `scripts/test-parity-corpus.mjs` (manual for now, see `docs/MODULE_ARCHITECTURE.md`).
+- [ ] **Client config fallback matches server defaults** (2026-09-20): `flutter_app/test/drawing_config_defaults_test.dart` (run in `flutter-ci.yml`) catches drift between `lib/drawing-config.js` DEFAULTS and Flutter's offline fallback. Regenerate the snapshot (`node scripts/generate-config-snapshot.mjs`) after any change to server DEFAULTS, then re-run the test.
 
 ---
 
@@ -348,6 +350,7 @@ These have broken in the past — test explicitly after any related change:
 | Date | Version | Scope | Result | Notes |
 |---|---|---|---|---|
 | 2026-06-27 | v228 | Numbers fix, dense fill, brush lock | Code-traced | Visual QA clean; real-device dense-image not yet verified |
+| 2026-09-20 | web: commit 7a10d27; Flutter: 1.0.19+10079 | Full E2E: generation (Hard difficulty) → numbers → tap-to-fill → undo → free-mode toggle → freehand, both platforms | **Tested** (real device/browser, not code-traced) | Android: Galaxy S25 Ultra emulator, fresh debug APK install, real generation via Cloudflare tier (octopus-bus, hard). Web: Chrome on lalabuba.com prod, real generation via HuggingFace/nscale fallback tier (elephant, hard) — first live confirmation the tier's quality gate (added today, see image-providers.js) actually runs. Both: numbers/tap-fill/undo/mode-switch verified working, zero console errors, zero crashes. One pre-existing (not a regression) rough edge noted: a single oddly-shaped small region on a fine-detail image needed a precise tap — large regions unaffected. Fixed same-session: the line-bridge infinite-loop bug (see §8) that would have made this exact test impossible before today. |
 
 ---
 
