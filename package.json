@@ -4,7 +4,8 @@
   "private": true,
   "description": "Kid-friendly coloring page generator with optional color-by-number overlays.",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node scripts/test-fill-core.mjs && node scripts/test-outline-mask.mjs && node scripts/test-trapped-ball.mjs && node scripts/test-line-bridge.mjs && node scripts/test-completion-core.mjs && node scripts/test-novita-circuit-breaker.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -15,12 +15,18 @@ else
 fi
 
 cd "$DIR"
-echo "[0/5] ensure data dirs"; mkdir -p "$DIR/data/images/c" "$DIR/data/images/g"
-echo "[1/5] pull origin/$BR"; git fetch -q origin "$BR"; git checkout -f -B "$BR" "origin/$BR"
-echo "[2/5] build $IMG";      docker build -t "$IMG" . >/dev/null
-echo "[3/5] deploy $NAME";    docker stack deploy -c "$STACK" "$NAME" >/dev/null
-echo "[4/5] update service";  docker service update --force --image "$IMG" "${NAME}_app" >/dev/null
-echo "[5/5] health check"
+echo "[0/6] ensure data dirs"; mkdir -p "$DIR/data/images/c" "$DIR/data/images/g"
+echo "[1/6] pull origin/$BR"; git fetch -q origin "$BR"; git checkout -f -B "$BR" "origin/$BR"
+# Gate the deploy on the Node test suite — this used to be the actual common
+# deploy path (both CI and a direct SSH-triggered deploy end up here) with
+# ZERO automated testing, so a broken server-side change (e.g. the 2026-09-20
+# HuggingFace-fallback bug) could reach dev/prod on nothing but a health-check
+# that only proves the process boots, not that generation actually works.
+echo "[2/6] npm test";       npm test
+echo "[3/6] build $IMG";      docker build -t "$IMG" . >/dev/null
+echo "[4/6] deploy $NAME";    docker stack deploy -c "$STACK" "$NAME" >/dev/null
+echo "[5/6] update service";  docker service update --force --image "$IMG" "${NAME}_app" >/dev/null
+echo "[6/6] health check"
 # Retry for ~60s instead of a single probe after a fixed sleep — the app needs a
 # moment to boot, and /api/health now also fails on malformed secrets. On failure
 # roll the service back to the previous (known-good) image instead of leaving the

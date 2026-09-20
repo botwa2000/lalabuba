@@ -135,23 +135,37 @@ int _walkBack(Uint8List skel, int endpoint, int w, int h, int steps) {
 
 // Draw a 4-connected line (so it is a watertight barrier for the 4-connected
 // region grower) from (x0,y0) to (x1,y1), setting mask pixels to wall.
+//
+// Steps ONE axis per iteration (so consecutive pixels stay edge-adjacent) but
+// picks which axis via two explicit progress counters (ix, iy) bounded by the
+// axis distances (nx, ny) rather than an unbounded error accumulator. This is
+// the standard "supercover" 4-connected line walk: the loop condition is
+// `ix < nx || iy < ny`, so it provably terminates in exactly nx+ny steps for
+// ANY slope. The previous single-error-term version had no axis swap for the
+// steep case (dy > dx) and could fail to converge — confirmed via a real
+// generated image (2026-09-20): a steep bridge (dx=10, dy=31) hung forever,
+// stalling region detection past its 60s isolate timeout and leaving the
+// whole drawing uncolourable (see test/fixtures/regression_corpus/).
 void _draw4ConnectedLine(Uint8List mask, int x0, int y0, int x1, int y1, int w, int h) {
   var x = x0, y = y0;
-  final dx = (x1 - x0).abs(), dy = (y1 - y0).abs();
+  final nx = (x1 - x0).abs(), ny = (y1 - y0).abs();
   final sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
-  var err = dx - dy;
-  while (true) {
+  void plot() {
     if (x >= 0 && x < w && y >= 0 && y < h) mask[y * w + x] = 1;
-    if (x == x1 && y == y1) break;
-    final e2 = 2 * err;
-    // Step ONE axis per iteration so consecutive pixels stay 4-connected.
-    if (e2 - dy > dx - e2) {
-      err -= dy;
+  }
+  plot();
+  var ix = 0, iy = 0;
+  while (ix < nx || iy < ny) {
+    // Compare how far along each axis we'd be after one more step on it;
+    // take whichever keeps us closest to the true line (ties favour x).
+    if ((1 + 2 * ix) * ny <= (1 + 2 * iy) * nx) {
       x += sx;
+      ix++;
     } else {
-      err += dx;
       y += sy;
+      iy++;
     }
+    plot();
   }
 }
 

@@ -1,0 +1,52 @@
+name: Node — CI Tests
+# Runs automatically on every push that touches server-side code.
+# Mirrors flutter-ci.yml's role for the web/server side: these test scripts
+# (scripts/test-*.mjs, scripts/test-*.js) existed for a while with NO CI
+# wiring at all — package.json had no "test" script and neither deploy-dev.yml
+# nor deploy-prod.yml ran them, so a broken server-side path (e.g. the
+# 2026-09-20 HuggingFace fallback bug, or the window-is-not-defined bug this
+# same audit found in test-completion-core.mjs itself) could ship silently.
+# This workflow — plus the "npm test" gate added to deploy-dev.yml — closes
+# that gap.
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'server.js'
+      - 'api/**'
+      - 'lib/**'
+      - 'public/js/**'
+      - 'scripts/test-*.mjs'
+      - 'scripts/test-*.js'
+      - 'package.json'
+      - '.github/workflows/node-ci.yml'
+  pull_request:
+    paths:
+      - 'server.js'
+      - 'api/**'
+      - 'lib/**'
+      - 'public/js/**'
+      - 'scripts/test-*.mjs'
+      - 'scripts/test-*.js'
+      - 'package.json'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Node test suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --omit=dev --no-audit --no-fund
+
+      - name: Run test suite
+        run: npm test

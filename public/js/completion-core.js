@@ -44,7 +44,10 @@ export function freeComplete(total, coloured, cfg) {
 export const COVER_THRESHOLD = 0.45;
 
 export function isCovered(coveredPixels, totalPixels, threshold) {
-  const t = threshold ?? (window.DRAWING_CONFIG?.completion?.freehandCoverThreshold ?? COVER_THRESHOLD);
+  const configThreshold = typeof window !== 'undefined'
+    ? window.DRAWING_CONFIG?.completion?.freehandCoverThreshold
+    : undefined;
+  const t = threshold ?? (configThreshold ?? COVER_THRESHOLD);
   return totalPixels > 0 && coveredPixels / totalPixels >= t;
 }
 

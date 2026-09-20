@@ -10,6 +10,7 @@ import 'canvas_models.dart';
 import 'flood_fill.dart';
 import 'stroke_mask.dart';
 import '../../core/drawing_config_service.dart';
+import '../../shared/services/analytics_service.dart';
 
 /// Thrown when a region-detection run is abandoned because a newer image load
 /// superseded it — lets the awaiting frame unwind and free its buffers.
@@ -111,10 +112,29 @@ class CanvasNotifier extends Notifier<CanvasState> {
       // so this async frame (and its captured ~8 MB of image buffers) unwinds and
       // is GC'd, instead of awaiting a future that never completes (a leak).
       return;
-    } catch (_) {
+    } catch (e, st) {
       // Isolate crashed, timed out, or OOM'd — clear the processing flag so the
       // canvas shows the image (without region numbers) instead of hanging forever.
+      //
+      // This used to be a SILENT failure — the app just quietly showed an
+      // uncolourable image and nothing ever told anyone. That silence is what
+      // let region-detection performance/correctness regressions ship
+      // undetected for months (see region_detection_regression_corpus_test.dart
+      // for the fix history). Report it so a real-world pathological image
+      // that isn't in the corpus yet shows up in telemetry instead of only in
+      // a confused user's bug report weeks later.
       _killDetectIsolate();
+      unawaited(AnalyticsService.recordError(
+        e,
+        st,
+        fatal: false,
+      ));
+      unawaited(AnalyticsService.track('region_detection_failed', {
+        'width': params.width,
+        'height': params.height,
+        'minArea': minArea,
+        'error': e.toString(),
+      }));
       if (gen == _detectGen) {
         state = state.copyWith(isProcessing: false);
       }

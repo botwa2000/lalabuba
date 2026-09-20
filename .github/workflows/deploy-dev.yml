@@ -2,6 +2,11 @@ name: deploy-dev
 # Auto-deploy the dev branch to dev.lalabuba.com on every push.
 # Requires repo secrets: HETZNER_HOST, HETZNER_SSH_KEY (a private key whose public
 # half is in the server's authorized_keys).
+#
+# The "test" job gates "deploy" — previously this workflow deployed straight
+# from push with ZERO automated testing (the Node test scripts under scripts/
+# existed but nothing ever ran them). Fail closed: a broken server-side path
+# no longer reaches even dev without a human explicitly overriding it.
 on:
   push:
     branches: [dev]
@@ -12,7 +17,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    name: Run Node test suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install --omit=dev --no-audit --no-fund
+      - name: Run test suite
+        run: npm test
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Deploy over SSH
