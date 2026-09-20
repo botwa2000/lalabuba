@@ -1,6 +1,17 @@
 #!/usr/bin/env node
 // make-social-pins.js — Pinterest pin compositor (1000×1500 px)
 // Layout: accent bar → headline → big colored image → before/after strip → pill
+// (unchanged from the proven v1 layout — see docs/social-content/manifest.md)
+//
+// v2 fix (2026-09-20): all text used to render via SVG <text font-family="Segoe
+// UI, Arial, sans-serif">, which depends on HOST fonts — a sibling pipeline
+// (Bonifatus), built the same way, shipped ten misspelled German words to a
+// live account and had to be deleted. Every string here now goes through
+// scripts/social-lib.js's renderText(), which loads a bundled .ttf directly
+// via sharp/Pango (bypasses fontconfig/host-font lookup entirely) and wraps
+// with Pango's real text-layout engine instead of a guessed heuristic. See
+// social-lib.js's header comment for the full investigation.
+//
 // Usage: node scripts/make-social-pins.js
 //        node scripts/make-social-pins.js dinosaur  (single topic)
 
@@ -8,6 +19,7 @@
 const sharp = require('../node_modules/sharp');
 const path  = require('path');
 const fs    = require('fs');
+const { FONTS, renderText, assertFits, roundedRectShadow, arrow } = require('./social-lib');
 
 const ROOT = path.join(__dirname, '..');
 const LIB  = path.join(ROOT, 'docs', 'coloring-page-library');
@@ -50,6 +62,18 @@ const PINS = [
     accentHex: '#1565C0',   // deep blue
     accentLight: '#BBDEFB', // light blue
     keyword: 'rocket coloring pages for kids free printable',
+  },
+  {
+    id: 'butterfly',
+    // Checked by hand against the standing rule (manifest.md: "never use
+    // library images containing rendered text/letters for pins") — this is a
+    // clean butterfly-on-a-flower line drawing, no rendered text anywhere.
+    src: 'butterfly-easy-351931874.png', // 1024×1024 PNG
+    headline1: 'Butterfly',
+    headline2: 'Coloring Pages',
+    accentHex: '#AD1457',   // deep pink/magenta
+    accentLight: '#F8BBD0', // light pink
+    keyword: 'butterfly coloring pages for kids free printable',
   },
   // schultuete RETIRED (2026-08-09): a Schultüte pin already posted 8/5; flood-fill
   // consistently leaked through outline gaps. Manifest row removed; file deleted.
@@ -227,74 +251,72 @@ function autoColorize(rawBuf, width, height, { skipExterior = false, faceZones =
 // ─── Layout constants ─────────────────────────────────────────────────────────
 const W = 1000, H = 1500;
 
-// ─── SVG helpers ──────────────────────────────────────────────────────────────
-function escapeXml(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+// ─── Text-block builders (all glyphs via social-lib's renderText — bundled
+// font file loaded directly through Pango, never a host-font lookup) ─────────
+
+async function accentBarLayers(accentHex) {
+  const barSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="80"><rect width="${W}" height="80" fill="${escXml(accentHex)}"/></svg>`;
+  const barBuf = await sharp(Buffer.from(barSvg)).png().toBuffer();
+  const { buffer, width, height } = await renderText('🖍 lalabuba.com', FONTS.bodyExtraBold, 22, '#ffffff', { letterSpacing: 1 });
+  assertFits({ width, height }, W - 80, 70, 'pin accent bar label');
+  return [
+    { input: barBuf, top: 0, left: 0 },
+    { input: buffer, top: Math.round((80 - height) / 2), left: Math.round((W - width) / 2) },
+  ];
 }
 
-function svgAccentBar(accentHex) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="80">
-    <rect width="${W}" height="80" fill="${escapeXml(accentHex)}"/>
-    <text x="500" y="52" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="600"
-      fill="white" text-anchor="middle" letter-spacing="2">🖍 lalabuba.com</text>
-  </svg>`;
+async function headlineLayers(line1, line2, accentHex) {
+  const l1 = await renderText(line1, FONTS.displayBold, 60, accentHex, { maxWidth: W - 80, align: 'center' });
+  const l2 = await renderText(line2, FONTS.bodySemi, 40, '#333333', { maxWidth: W - 80, align: 'center' });
+  assertFits(l1, W - 40, 150, 'pin headline1');
+  assertFits(l2, W - 40, 100, 'pin headline2');
+  const y1 = 118;
+  const y2 = y1 + l1.height + 14;
+  return [
+    { input: l1.buffer, top: y1, left: Math.round((W - l1.width) / 2) },
+    { input: l2.buffer, top: y2, left: Math.round((W - l2.width) / 2) },
+  ];
 }
 
-function svgHeadline(line1, line2, accentHex) {
-  // l1 big, l2 slightly smaller, both centered
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="220">
-    <text x="500" y="90" font-family="Segoe UI, Arial, sans-serif" font-size="82"
-      font-weight="800" fill="${escapeXml(accentHex)}" text-anchor="middle">${escapeXml(line1)}</text>
-    <text x="500" y="170" font-family="Segoe UI, Arial, sans-serif" font-size="56"
-      font-weight="600" fill="#333333" text-anchor="middle">${escapeXml(line2)}</text>
-  </svg>`;
+async function pillLayers(accentHex, y) {
+  const { buffer: textBuf, width: tw, height: th } = await renderText('🖍 lalabuba.com', FONTS.bodyExtraBold, 22, '#ffffff', { letterSpacing: 1 });
+  const padX = 40, padY = 16;
+  const pillW = tw + padX * 2, pillH = th + padY * 2;
+  const { buffer: boxBuf, pad } = await roundedRectShadow(pillW, pillH, pillH / 2, accentHex);
+  const x = Math.round((W - pillW) / 2);
+  return [
+    { input: boxBuf, top: y - pad, left: x - pad },
+    { input: textBuf, top: y + padY, left: x + padX },
+  ];
 }
 
-function svgPrintLabel() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="20">
-    <text x="0" y="15" font-family="Segoe UI, Arial, sans-serif" font-size="13"
-      font-weight="700" fill="#222222">Ausdrucken &amp; Ausmalen</text>
-  </svg>`;
+async function labelLayer(text, bold, color, centerX, y) {
+  const font = bold ? FONTS.bodyBold : FONTS.bodySemi;
+  const { buffer, width, height } = await renderText(text, font, 15, color);
+  return { layer: { input: buffer, top: y, left: Math.round(centerX - width / 2) }, height };
 }
 
-function svgBeforeLabel(x, y) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="20">
-    <text x="60" y="15" font-family="Segoe UI, Arial, sans-serif" font-size="14"
-      font-weight="600" fill="#555555" text-anchor="middle">BEFORE</text>
-  </svg>`;
+async function arrowLayer(x, y, size = 34) {
+  const buf = await arrow('right', size, '#888888');
+  return { input: buf, top: y, left: x };
 }
 
-function svgAfterLabel(x, y) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="20">
-    <text x="60" y="15" font-family="Segoe UI, Arial, sans-serif" font-size="14"
-      font-weight="700" fill="#222222" text-anchor="middle">AFTER</text>
-  </svg>`;
+async function ctaTextLayers(x, y) {
+  const l1 = await renderText('Type · Color · Play!', FONTS.bodyBold, 24, '#222222');
+  const l2 = await renderText('100% Free · No account · No ads', FONTS.bodyRegular, 17, '#555555');
+  const l3 = await renderText('AI-generated coloring for kids', FONTS.bodyRegular, 17, '#555555');
+  return [
+    { input: l1.buffer, top: y, left: x },
+    { input: l2.buffer, top: y + l1.height + 10, left: x },
+    { input: l3.buffer, top: y + l1.height + 10 + l2.height + 4, left: x },
+  ];
 }
 
-function svgArrow() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="130">
-    <text x="25" y="75" font-family="Segoe UI, Arial, sans-serif" font-size="36"
-      fill="#888888" text-anchor="middle">→</text>
-  </svg>`;
-}
-
-function svgCtaText() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="130">
-    <text x="0" y="38" font-family="Segoe UI, Arial, sans-serif" font-size="32"
-      font-weight="700" fill="#222222">Type · Color · Play!</text>
-    <text x="0" y="78" font-family="Segoe UI, Arial, sans-serif" font-size="22"
-      font-weight="400" fill="#555555">100% Free · No account · No ads</text>
-    <text x="0" y="115" font-family="Segoe UI, Arial, sans-serif" font-size="22"
-      font-weight="400" fill="#555555">AI-generated coloring for kids</text>
-  </svg>`;
-}
-
-function svgPill(accentHex) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="70">
-    <rect x="0" y="5" width="360" height="60" rx="30" ry="30" fill="${escapeXml(accentHex)}"/>
-    <text x="180" y="43" font-family="Segoe UI, Arial, sans-serif" font-size="28"
-      font-weight="700" fill="white" text-anchor="middle" letter-spacing="1">🖍 lalabuba.com</text>
-  </svg>`;
+async function printLabelLayer(x, y) {
+  const { buffer, width, height } = await renderText('Ausdrucken & Ausmalen', FONTS.bodyBold, 15, '#222222');
+  return { input: buffer, top: y, left: x };
 }
 
 // ─── Main compositor ───────────────────────────────────────────────────────────
@@ -372,7 +394,7 @@ async function makePin(cfg) {
   // y positions:
   // 0-80:    accent bar
   // 80-120:  spacer
-  // 120-340: headline (SVG 220px)
+  // 120-340: headline
   // 340-360: spacer
   // 360-1300: main colored image (940×940 max) — centered horizontally
   // 1300-1310: spacer
@@ -387,21 +409,18 @@ async function makePin(cfg) {
   const thumbY    = stripY + 15;
   const labelY    = thumbY + thumbH + 4;
   const arrowX    = 35 + thumbW + 8;
-  const arrowY    = stripY + 15;
+  const arrowY    = stripY + 15 + Math.round(thumbH / 2) - 17;
   const colorThX  = arrowX + 50 + 8;
   const colorThY  = thumbY;
   const ctaX      = colorThX + thumbW + 20;
   const ctaY      = stripY;
 
   const layers = [
-    // accent bar
-    { input: Buffer.from(svgAccentBar(cfg.accentHex)), top: 0,    left: 0 },
-    // headline
-    { input: Buffer.from(svgHeadline(cfg.headline1, cfg.headline2, cfg.accentHex)), top: 100, left: 0 },
+    ...(await accentBarLayers(cfg.accentHex)),
+    ...(await headlineLayers(cfg.headline1, cfg.headline2, cfg.accentHex)),
     // hero image: blank line art (noFill) or flood-filled art (default)
     { input: cfg.noFill ? lineArtPngBuf : coloredBuf, top: imgY, left: imgX },
-    // pill (centered)
-    { input: Buffer.from(svgPill(cfg.accentHex)), top: 1425, left: Math.round((W - 360) / 2) },
+    ...(await pillLayers(cfg.accentHex, 1440)),
   ];
 
   if (cfg.noFill) {
@@ -409,18 +428,20 @@ async function makePin(cfg) {
     const printCtaX = 35 + thumbW + 20;
     layers.push(
       { input: lineThumbBuf, top: thumbY, left: 35 },
-      { input: Buffer.from(svgPrintLabel()), top: labelY, left: 35 },
-      { input: Buffer.from(svgCtaText()), top: ctaY, left: printCtaX },
+      await printLabelLayer(35, labelY),
+      ...(await ctaTextLayers(printCtaX, ctaY)),
     );
   } else {
     // Standard before→after strip
+    const beforeLabel = await labelLayer('BEFORE', false, '#555555', 35 + thumbW / 2, labelY);
+    const afterLabel = await labelLayer('AFTER', true, '#222222', colorThX + thumbW / 2, labelY);
     layers.push(
       { input: lineThumbBuf, top: thumbY, left: 35 },
-      { input: Buffer.from(svgBeforeLabel()), top: labelY, left: 35 },
-      { input: Buffer.from(svgArrow()), top: arrowY, left: arrowX },
+      beforeLabel.layer,
+      await arrowLayer(arrowX, arrowY),
       { input: colorThumbBuf, top: colorThY, left: colorThX },
-      { input: Buffer.from(svgAfterLabel()), top: labelY, left: colorThX },
-      { input: Buffer.from(svgCtaText()), top: ctaY, left: ctaX },
+      afterLabel.layer,
+      ...(await ctaTextLayers(ctaX, ctaY)),
     );
   }
 

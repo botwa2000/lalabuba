@@ -1,7 +1,22 @@
 # Lalabuba Social Content Manifest
 
-Generated: 2026-08-08  
-Generator scripts: `scripts/make-social-pins.js`, `scripts/make-social-carousel.js`, `scripts/make-social-videos.js`
+Generated: 2026-08-08 · Updated: 2026-09-20 (pins v2 + carousel v2 rewrite)  
+Generator scripts: `scripts/make-social-pins.js`, `scripts/make-social-carousel.js`, `scripts/make-social-videos.js`, `scripts/social-lib.js` (shared text/callout rendering)
+
+---
+
+## Text rendering (applies to Phases 1 & 2, since 2026-09-20)
+
+All text in pins and the how-it-works-v2 carousel renders through
+`scripts/social-lib.js`'s `renderText()`, which loads a bundled `.ttf`
+directly via `sharp`/Pango (`flutter_app/google_fonts/`) — never an SVG
+`<text font-family="...">` host-font lookup. A sibling pipeline (Bonifatus),
+built the exact same way with SVG text, shipped ten misspelled German words
+to a live account and had to be deleted. Regression fixture:
+`scripts/test-social-diacritics.js` → `docs/social-content/diacritics-regression-fixture.png`
+(committed; run the test whenever `social-lib.js` or the bundled fonts
+change). Wrapping also goes through Pango's real text-layout engine
+(`sharp.text({width, wrap:'word'})`) instead of SVG's non-wrapping `<text>`.
 
 ---
 
@@ -17,6 +32,7 @@ Layout: accent brand bar → keyword headline → colored "after" image (flood-f
 | `pin_cat.png` | Cat (EN) | Cat Coloring Pages | `cat-easy-1005447403.png` | Deep Orange |
 | `pin_unicorn.png` | Unicorn (EN) | Unicorn Coloring Pages | `unicorn-easy-282889560.jpg` | Deep Purple |
 | `pin_rocket.png` | Rocket (EN) | Rocket Coloring Pages | `rocket-easy-1224668489.png` | Deep Blue |
+| `pin_butterfly.png` | Butterfly (EN) | Butterfly Coloring Pages | `butterfly-easy-351931874.png` | Deep Pink/Magenta |
 | ~~`pin_schultuete.png`~~ | ~~Schultüte (DE)~~ | RETIRED 2026-08-09 — duplicate of pin already posted 8/5; flood-fill leaked through outline gaps on all attempts. Do not rebuild. | — | — |
 | `pin_einschulung.png` | Einschulung (DE) | Einschulung Ausmalbilder | `einschulung-easy-1520158737.png` | Deep Teal |
 
@@ -28,20 +44,43 @@ Layout: accent brand bar → keyword headline → colored "after" image (flood-f
 
 ---
 
-## Phase 2 — How-To Carousel
+## Phase 2 — How-To Carousel (v2)
 
-Format: 1080×1350 px PNG (4:5 portrait, Instagram standard)  
-Location: `docs/social-content/carousels/how-it-works/`
+Format: generated at BOTH target sizes from the same layout logic — never one
+cropped into the other:
+- Instagram: 1080×1350 px PNG (4:5) → `docs/social-content/carousels/how-it-works-v2/ig/`
+- Pinterest: 1000×1500 px PNG (2:3) → `docs/social-content/carousels/how-it-works-v2/pin/`
+
+**v2 rewrite (2026-09-20)** fixed three defects in the original
+`carousels/how-it-works/` (v1, superseded but left on disk, not deleted):
+1. v1's bottom gradient text band laid the headline ON TOP of the screenshot,
+   slicing through the idea-card grid on one slide and the coloring canvas on
+   another. v2 uses a strict header-zone (solid color, text) / content-zone
+   (screenshot, always fully visible, never occluded) split.
+2. v1's SVG `<text font-family="...">` depended on host fonts — see the "Text
+   rendering" section above.
+3. v1's SVG `<text>` never wrapped. v2 wraps via Pango and checks every
+   headline with `assertFits()`.
+
+Also fixed during the v2 build (found by viewing every rendered frame, not
+just running the script): screenshot crop windows must be measured by
+pixel-scanning the actual source PNG, not by eyeballing the *displayed*
+screenshot's coordinates and multiplying by the display scale factor — that
+approach was off by hundreds of pixels on one slide and silently dropped a
+whole feature row on another. And any slide with a card/grid tall enough to
+reach the footer pill's territory needs that pill height explicitly reserved
+out of its layout bound (not just its size budget) — centering a shrunk
+budget only returns half the saved space as clearance below.
 
 | File | Slide | Content |
 |------|-------|---------|
-| `slide_01_hook.png` | Hook | Fully colored dinosaur — "Turn Any Idea Into a Coloring Page" |
-| `slide_02_type.png` | Step 1 | Flutter app home — "Type What You Want" |
-| `slide_03_generate.png` | Step 2 | Loading state — "AI Creates It Instantly" |
-| `slide_04_color.png` | Step 3 | Color canvas with monkey — "Color It Your Way" |
+| `slide_01_hook.png` | Hook | Fully colored triceratops — "Type Any Idea." |
+| `slide_02_step1.png` | Step 1 | Real app screenshot (search + settings panel) — "Type What You Want" |
+| `slide_03_step2.png` | Step 2 | Real app screenshot (loading animation) — "AI Draws It Instantly" |
+| `slide_04_step3.png` | Step 3 | Real app screenshot (color-by-number canvas) — "Color By Number" |
 | `slide_05_cta.png` | CTA | 2×2 grid of colored art — "Kids Love It!" |
 
-**Sources slides 2-4:** Real Flutter app screenshots (`store_assets/raw/phone_*.png`)  
+**Sources slides 2-4:** Real Flutter app screenshots (`store_assets/raw/phone_*.png`), cropped by pixel-verified y-ranges (see comments in `slideStep1`/`slideStep2`/`slideStep3` in the script) — never a generic "top N%" crop.  
 **Regenerate:** `node scripts/make-social-carousel.js`
 
 ---
@@ -91,20 +130,25 @@ Poster frames: `docs/social-content/videos/posters/` (1080×1350, cropped from c
 ```
 docs/social-content/
 ├── manifest.md                           ← this file
+├── diacritics-regression-fixture.png     ← committed test fixture, see "Text rendering" above
 ├── pins/
 │   ├── pin_dinosaur.png                  (1000×1500)
 │   ├── pin_cat.png                       (1000×1500)
 │   ├── pin_unicorn.png                   (1000×1500)
 │   ├── pin_rocket.png                    (1000×1500)
+│   ├── pin_butterfly.png                 (1000×1500)
 │   └── pin_einschulung.png               (1000×1500)
 │   ⚠  pin_schultuete.png                RETIRED — deleted 2026-08-09
 ├── carousels/
-│   └── how-it-works/
-│       ├── slide_01_hook.png             (1080×1350)
-│       ├── slide_02_type.png             (1080×1350)
-│       ├── slide_03_generate.png         (1080×1350)
-│       ├── slide_04_color.png            (1080×1350)
-│       └── slide_05_cta.png             (1080×1350)
+│   ├── how-it-works/                     ← v1, SUPERSEDED (see Phase 2), left on disk
+│   │   ├── slide_01_hook.png             (1080×1350)
+│   │   ├── slide_02_type.png             (1080×1350)
+│   │   ├── slide_03_generate.png         (1080×1350)
+│   │   ├── slide_04_color.png            (1080×1350)
+│   │   └── slide_05_cta.png              (1080×1350)
+│   └── how-it-works-v2/                  ← current
+│       ├── ig/  (1080×1350 × 5 slides)
+│       └── pin/ (1000×1500 × 5 slides)
 └── videos/
     ├── 01_type_to_page.mp4               (1080×1920, 16s)
     ├── 02_satisfying_coloring.mp4        (1080×1920, 22s)
