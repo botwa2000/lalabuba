@@ -146,4 +146,7 @@ workflows:
           # Use the interpreter codemagic-cli-tools runs on (it ships PyJWT + cryptography).
           PY=$(head -1 "$(command -v app-store-connect)" | sed 's/^#!//')
           $PY -c "import jwt" 2>/dev/null || { PY=python3; $PY -m pip install --quiet pyjwt cryptography; }
-          $PY scripts/asc_submit_review.py
+          set -o pipefail
+          { echo "interpreter: $PY"; $PY scripts/asc_submit_review.py; } 2>&1 | tee "$CM_BUILD_DIR/asc_submit.log"
+    artifacts:
+      - $CM_BUILD_DIR/asc_submit.log
