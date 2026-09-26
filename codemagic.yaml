@@ -2,7 +2,7 @@ workflows:
   # ── Flutter iOS release — manual only ────────────────────────────────────────
   # Triggered via Codemagic API by Claude when a Flutter release is approved.
   # workflowId to use in API call: "flutter-release"
-  flutter-release:
+  flutter-release: &flutter_release
     name: Lalabuba Flutter iOS — TestFlight
     max_build_duration: 60
     instance_type: mac_mini_m2
@@ -122,3 +122,17 @@ workflows:
         auth: integration
         submit_to_testflight: true
         submit_to_app_store: false
+
+  # ── Flutter iOS App Store (production) release — manual only ──────────────────
+  # Identical build to flutter-release (YAML merge), but after the TestFlight upload
+  # it also submits the build for App Store review and auto-releases on approval.
+  # workflowId to use in API call: "flutter-appstore"
+  flutter-appstore:
+    <<: *flutter_release
+    name: Lalabuba Flutter iOS — App Store
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: true
+        release_type: AFTER_APPROVAL
