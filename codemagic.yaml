@@ -150,3 +150,27 @@ workflows:
           { echo "interpreter: $PY"; $PY scripts/asc_submit_review.py; } 2>&1 | tee "$CM_BUILD_DIR/asc_submit.log"
     artifacts:
       - $CM_BUILD_DIR/asc_submit.log
+
+  # ── iOS customer reviews report — manual only ────────────────────────────────
+  # Lists every written App Store review (all territories) via the ASC API.
+  # workflowId to use in API call: "appstore-reviews"
+  appstore-reviews:
+    name: Lalabuba iOS — Customer reviews report
+    max_build_duration: 15
+    instance_type: mac_mini_m2
+    triggering:
+      events: []
+    integrations:
+      app_store_connect: Bonistock ASC
+    environment:
+      vars:
+        APP_STORE_APPLE_ID: "6761691648"
+    scripts:
+      - name: List customer reviews
+        script: |
+          PY=$(head -1 "$(command -v app-store-connect)" | sed 's/^#!//')
+          $PY -c "import jwt" 2>/dev/null || { PY=python3; $PY -m pip install --quiet pyjwt cryptography; }
+          set -o pipefail
+          $PY scripts/asc_reviews.py 2>&1 | tee "$CM_BUILD_DIR/asc_reviews.log"
+    artifacts:
+      - $CM_BUILD_DIR/asc_reviews.log
