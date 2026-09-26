@@ -2,7 +2,7 @@ workflows:
   # ── Flutter iOS release — manual only ────────────────────────────────────────
   # Triggered via Codemagic API by Claude when a Flutter release is approved.
   # workflowId to use in API call: "flutter-release"
-  flutter-release: &flutter_release
+  flutter-release:
     name: Lalabuba Flutter iOS — TestFlight
     max_build_duration: 60
     instance_type: mac_mini_m2
@@ -123,16 +123,27 @@ workflows:
         submit_to_testflight: true
         submit_to_app_store: false
 
-  # ── Flutter iOS App Store (production) release — manual only ──────────────────
-  # Identical build to flutter-release (YAML merge), but after the TestFlight upload
-  # it also submits the build for App Store review and auto-releases on approval.
-  # workflowId to use in API call: "flutter-appstore"
-  flutter-appstore:
-    <<: *flutter_release
-    name: Lalabuba Flutter iOS — App Store
-    publishing:
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
-        submit_to_app_store: true
-        release_type: AFTER_APPROVAL
+  # ── iOS App Store review submission — manual only ────────────────────────────
+  # Submits the pubspec version's newest processed build for App Store review
+  # (auto-release after approval), setting "What's New" on every localization
+  # from flutter_app/store/whats_new.json. Waits for processing, so the release
+  # pipeline triggers it alongside flutter-release with NOT_BEFORE=<dispatch time>.
+  # Idempotent. workflowId to use in API call: "appstore-submit"
+  appstore-submit:
+    name: Lalabuba iOS — Submit to App Store review
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    triggering:
+      events: []
+    integrations:
+      app_store_connect: Bonistock ASC
+    environment:
+      vars:
+        APP_STORE_APPLE_ID: "6761691648"
+    scripts:
+      - name: Submit version for App Store review
+        script: |
+          # Use the interpreter codemagic-cli-tools runs on (it ships PyJWT + cryptography).
+          PY=$(head -1 "$(command -v app-store-connect)" | sed 's/^#!//')
+          $PY -c "import jwt" 2>/dev/null || { PY=python3; $PY -m pip install --quiet pyjwt cryptography; }
+          $PY scripts/asc_submit_review.py

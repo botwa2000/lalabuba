@@ -4,9 +4,10 @@ name: Flutter — Store Release (manual, Claude-triggered)
 #   POST /repos/botwa2000/lalabuba/actions/workflows/flutter-release.yml/dispatches
 #   { "ref": "main", "inputs": { "platform": "android", "track": "internal" } }
 #
-# For iOS: Claude separately triggers the Codemagic "flutter-release" workflow via
-#   POST https://api.codemagic.io/builds
-#   { "appId": "69d2bd72c09ad496ab57741d", "workflowId": "flutter-release", "branch": "main" }
+# For iOS the ios-trigger job starts the Codemagic "flutter-release" workflow
+# (build + TestFlight). With track=production it ALSO starts "appstore-submit",
+# which waits for that new build to finish processing and submits it for App
+# Store review (What's New from flutter_app/store/whats_new.json).
 
 on:
   workflow_dispatch:
@@ -138,25 +139,28 @@ jobs:
           fi
           echo "Codemagic token present (length: ${#CM_TOKEN})"
 
-      - name: Trigger Codemagic iOS workflow
+      - name: Trigger Codemagic iOS workflows
         env:
           CM_TOKEN: ${{ secrets.CODEMAGIC_API_TOKEN }}
-          # track=production → flutter-appstore (TestFlight + App Store review,
-          # auto-release on approval); any other track → flutter-release (TestFlight only).
-          CM_WORKFLOW: ${{ inputs.track == 'production' && 'flutter-appstore' || 'flutter-release' }}
+          # production → TestFlight build + App Store review submission; else TestFlight only.
+          CM_WORKFLOWS: ${{ inputs.track == 'production' && 'flutter-release appstore-submit' || 'flutter-release' }}
         run: |
-          echo "Codemagic workflow: $CM_WORKFLOW"
-          resp=$(curl -s -w "\n%{http_code}" -X POST \
-            -H "x-auth-token: $CM_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data "{\"appId\": \"69d2bd72c09ad496ab57741d\", \"workflowId\": \"$CM_WORKFLOW\", \"branch\": \"main\"}" \
-            https://api.codemagic.io/builds)
-          code=$(echo "$resp" | tail -n1)
-          body=$(echo "$resp" | sed '$d')
-          echo "HTTP $code"
-          echo "$body"
-          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
-            echo "::error::Codemagic build trigger failed (HTTP $code)"
-            exit 1
-          fi
-          echo "Codemagic $CM_WORKFLOW triggered successfully"
+          # appstore-submit only accepts builds uploaded after this moment.
+          NOT_BEFORE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          for wf in $CM_WORKFLOWS; do
+            echo "Codemagic workflow: $wf"
+            resp=$(curl -s -w "\n%{http_code}" -X POST \
+              -H "x-auth-token: $CM_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "{\"appId\": \"69d2bd72c09ad496ab57741d\", \"workflowId\": \"$wf\", \"branch\": \"main\", \"environment\": {\"variables\": {\"NOT_BEFORE\": \"$NOT_BEFORE\"}}}" \
+              https://api.codemagic.io/builds)
+            code=$(echo "$resp" | tail -n1)
+            body=$(echo "$resp" | sed '$d')
+            echo "HTTP $code"
+            echo "$body"
+            if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+              echo "::error::Codemagic $wf trigger failed (HTTP $code)"
+              exit 1
+            fi
+            echo "Codemagic $wf triggered successfully"
+          done

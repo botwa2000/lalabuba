@@ -1,0 +1,15 @@
+{
+  "_comment": "App Store 'What's New' text per language prefix, used by scripts/asc_submit_review.py for every App Store version localization. Update before each production release. 'en' is the fallback.",
+  "en": "Smoother coloring and more reliable tap-to-fill on detailed pictures, faster picture creation, and many small fixes and improvements.",
+  "de": "Flüssigeres Ausmalen und zuverlässigeres Füllen bei detailreichen Bildern, schnellere Bilderstellung sowie viele kleine Verbesserungen.",
+  "es": "Coloreado más fluido y relleno más fiable en dibujos detallados, creación de dibujos más rápida y muchas pequeñas mejoras.",
+  "fr": "Coloriage plus fluide et remplissage plus fiable sur les dessins détaillés, création d'images plus rapide et de nombreuses petites améliorations.",
+  "it": "Colorazione più fluida e riempimento più affidabile sui disegni dettagliati, creazione più veloce e tanti piccoli miglioramenti.",
+  "nl": "Soepeler kleuren en betrouwbaarder invullen bij gedetailleerde tekeningen, sneller plaatjes maken en veel kleine verbeteringen.",
+  "pl": "Płynniejsze kolorowanie i pewniejsze wypełnianie szczegółowych obrazków, szybsze tworzenie kolorowanek i wiele drobnych ulepszeń.",
+  "pt": "Pintura mais suave e preenchimento mais fiável em desenhos detalhados, criação de desenhos mais rápida e muitas pequenas melhorias.",
+  "ru": "Более плавное раскрашивание и надёжная заливка на детальных картинках, более быстрое создание раскрасок и множество мелких улучшений.",
+  "tr": "Detaylı resimlerde daha akıcı boyama ve daha güvenilir doldurma, daha hızlı resim oluşturma ve birçok küçük iyileştirme.",
+  "hi": "विस्तृत चित्रों में ज़्यादा आसान रंग भरना और भरोसेमंद फ़िल, तेज़ चित्र निर्माण और कई छोटे सुधार।",
+  "zh": "更流畅的涂色体验，细节丰富的图片填色更可靠，生成图片更快，并包含多项小改进。"
+}
