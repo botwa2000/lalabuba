@@ -33,8 +33,26 @@ IN_REVIEW = {"WAITING_FOR_REVIEW", "IN_REVIEW", "PENDING_DEVELOPER_RELEASE",
              "PROCESSING_FOR_APP_STORE", "READY_FOR_SALE", "PENDING_APPLE_RELEASE"}
 
 
+def private_key():
+    # Same value forms codemagic-cli-tools accepts: PEM (possibly with literal
+    # "\n" escapes), "@env:VAR", "@file:PATH", or a bare base64 key body.
+    key = os.environ["APP_STORE_CONNECT_PRIVATE_KEY"].strip()
+    while key.startswith("@env:") or key.startswith("@file:"):
+        ref = key.split(":", 1)[1]
+        key = (os.environ[ref] if key.startswith("@env:")
+               else open(os.path.expanduser(ref), encoding="utf-8").read()).strip()
+    # Rebuild clean PEM framing: the body may arrive with newlines turned into
+    # spaces or "\n" escapes, which cryptography rejects as MalformedFraming.
+    key = key.replace("\\n", "\n").strip().strip('"')
+    body = re.sub(r"-----(BEGIN|END)[A-Z ]*-----", "", key)
+    body = "".join(body.split())
+    return ("-----BEGIN PRIVATE KEY-----\n"
+            + "\n".join(body[i:i + 64] for i in range(0, len(body), 64))
+            + "\n-----END PRIVATE KEY-----\n")
+
+
 def token():
-    key = os.environ["APP_STORE_CONNECT_PRIVATE_KEY"]
+    key = private_key()
     now = int(time.time())
     return jwt.encode(
         {"iss": os.environ["APP_STORE_CONNECT_ISSUER_ID"], "iat": now,
