@@ -2,7 +2,7 @@
 
 ## Project overview
 Lalabuba is a kids AI coloring web app. Vanilla JS ES modules + HTML5 Canvas.
-Server: `server.js` — runs on Hetzner via Docker Swarm. `api/generate-image.js` is a legacy reference file only (not deployed).
+Server: `server.js` — runs on Hetzner via Docker Swarm. `api/*.js` are LIVE route handlers, not legacy: `server.js` requires `api/generate-image.js` and routes `/api/generate-image` to it. That handler holds the bot gates (Turnstile for web; `X-App-Key` for no-Origin/native callers, staged via `APP_API_KEY` + `APP_API_KEY_ENFORCE`) — treat it as security-critical in review.
 Mobile: Flutter → iOS (Codemagic) + Android (GitHub Actions).
 
 ## CSS versioning

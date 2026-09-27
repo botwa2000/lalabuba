@@ -84,13 +84,30 @@ jobs:
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
           echo "pubspec version → ${VERSION}"
 
+      # X-App-Key for /api/generate-image (native bot gate). Empty secret → the app
+      # simply omits the header (pre-rollout behaviour); the server logs, not blocks,
+      # until APP_API_KEY_ENFORCE=true. Never hardcode this value.
+      - name: Check APP_API_KEY secret
+        env:
+          APP_API_KEY: ${{ secrets.APP_API_KEY }}
+        run: |
+          if [ -z "$APP_API_KEY" ]; then
+            echo "::warning::APP_API_KEY secret is unset — this build will NOT send X-App-Key and will be blocked once the server enforces it."
+          else
+            echo "APP_API_KEY present (length: ${#APP_API_KEY})"
+          fi
+
       - name: Build release App Bundle (AAB)
         working-directory: flutter_app
-        run: flutter build appbundle --release
+        env:
+          APP_API_KEY: ${{ secrets.APP_API_KEY }}
+        run: flutter build appbundle --release --dart-define=APP_API_KEY="$APP_API_KEY"
 
       - name: Build signed release APK (sideload artifact)
         working-directory: flutter_app
-        run: flutter build apk --release
+        env:
+          APP_API_KEY: ${{ secrets.APP_API_KEY }}
+        run: flutter build apk --release --dart-define=APP_API_KEY="$APP_API_KEY"
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
@@ -142,17 +159,24 @@ jobs:
       - name: Trigger Codemagic iOS workflows
         env:
           CM_TOKEN: ${{ secrets.CODEMAGIC_API_TOKEN }}
+          # Forwarded to Codemagic's `flutter build ipa --dart-define` (see codemagic.yaml).
+          APP_API_KEY: ${{ secrets.APP_API_KEY }}
           # production → TestFlight build + App Store review submission; else TestFlight only.
           CM_WORKFLOWS: ${{ inputs.track == 'production' && 'flutter-release appstore-submit' || 'flutter-release' }}
         run: |
           # appstore-submit only accepts builds uploaded after this moment.
           NOT_BEFORE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          [ -n "$APP_API_KEY" ] || echo "::warning::APP_API_KEY secret is unset — the iOS build will NOT send X-App-Key."
           for wf in $CM_WORKFLOWS; do
             echo "Codemagic workflow: $wf"
+            # jq builds the JSON so the key is escaped correctly and never echoed.
+            payload=$(jq -nc --arg wf "$wf" --arg nb "$NOT_BEFORE" --arg key "$APP_API_KEY" \
+              '{appId: "69d2bd72c09ad496ab57741d", workflowId: $wf, branch: "main",
+                environment: {variables: {NOT_BEFORE: $nb, APP_API_KEY: $key}}}')
             resp=$(curl -s -w "\n%{http_code}" -X POST \
               -H "x-auth-token: $CM_TOKEN" \
               -H "Content-Type: application/json" \
-              --data "{\"appId\": \"69d2bd72c09ad496ab57741d\", \"workflowId\": \"$wf\", \"branch\": \"main\", \"environment\": {\"variables\": {\"NOT_BEFORE\": \"$NOT_BEFORE\"}}}" \
+              --data "$payload" \
               https://api.codemagic.io/builds)
             code=$(echo "$resp" | tail -n1)
             body=$(echo "$resp" | sed '$d')

@@ -72,8 +72,13 @@ workflows:
           # pipefail keeps the step failing on error while still writing the log.
           set -o pipefail
           echo ">>> building IPA with CFBundleVersion (--build-number) = ${BUILD_CODE}"
+          # APP_API_KEY arrives as a build variable from the GitHub flutter-release
+          # trigger (sourced from the APP_API_KEY repo secret). Empty → the app omits
+          # X-App-Key, which the server blocks once APP_API_KEY_ENFORCE=true.
+          [ -n "${APP_API_KEY:-}" ] || echo "WARNING: APP_API_KEY is unset — this build will NOT send X-App-Key"
           flutter build ipa --release --verbose \
             --build-number="${BUILD_CODE}" \
+            --dart-define=APP_API_KEY="${APP_API_KEY:-}" \
             --export-options-plist="$CM_BUILD_DIR/export_options.plist" 2>&1 | tee "$CM_BUILD_DIR/flutter_build_ipa.log"
 
       - name: Upload dSYMs to Firebase Crashlytics

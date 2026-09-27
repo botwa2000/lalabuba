@@ -1,5 +1,6 @@
-const fs   = require("fs");
-const path = require("path");
+const fs     = require("fs");
+const path   = require("path");
+const crypto = require("crypto");
 const { sanitizeSubject, isSafeSubject } = require("../lib/content-safety");
 const { buildPrompt, generateImage } = require("../lib/image-providers");
 const { translateToEnglish } = require("../lib/translate");
@@ -89,6 +90,36 @@ async function verifyTurnstile(token, ip) {
   return false;
 }
 
+// ─── Native app-key gate ──────────────────────────────────────────────────────
+// Requests with no web Origin (Flutter's Dio sends none — but so does curl) skip
+// Turnstile, so they must present X-App-Key matching APP_API_KEY (a Swarm secret).
+// Rollout is staged because shipped app builds predate the key:
+//   APP_API_KEY unset                → gate inactive (no key to compare against)
+//   APP_API_KEY set, ENFORCE != true → LOG-ONLY: bad/missing keys are logged, allowed
+//   APP_API_KEY set, ENFORCE == true → bad/missing keys are rejected with 403
+// Returns true when the request may proceed.
+let _warnedEnforceWithoutKey = false;
+function checkAppKey(req, ip) {
+  const appKey  = process.env.APP_API_KEY;
+  const enforce = process.env.APP_API_KEY_ENFORCE === "true";
+  if (!appKey) {
+    if (enforce && !_warnedEnforceWithoutKey) {
+      _warnedEnforceWithoutKey = true;
+      console.error("SECURITY: APP_API_KEY_ENFORCE=true but APP_API_KEY is unset — native requests are NOT gated");
+    }
+    return true;
+  }
+  const sent = req.headers["x-app-key"];
+  const a = Buffer.from(String(sent || ""));
+  const b = Buffer.from(appKey);
+  if (a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
+
+  const reason = sent ? "mismatch" : "absent";
+  const ua = String(req.headers["user-agent"] || "(none)").slice(0, 160);
+  console.warn(`[app-key] ${enforce ? "BLOCKED" : "would-block"} reason=${reason} ip=${ip} ua=${JSON.stringify(ua)}`);
+  return !enforce;
+}
+
 const ALLOWED_ORIGINS = [
   "https://lalabuba.com",
   "https://www.lalabuba.com",
@@ -144,13 +175,9 @@ module.exports = async (req, res) => {
     const isNative = !origin;
 
     if (isNative) {
-      // Optional app-key gate for native callers. When APP_API_KEY is set in the
-      // environment, native requests must present a matching X-App-Key header
-      // (the Flutter build injects it via --dart-define). This closes the
-      // "curl with no Origin skips every check" hole. If APP_API_KEY is unset
-      // the gate is inactive, preserving the current behaviour.
-      const appKey = process.env.APP_API_KEY;
-      if (appKey && req.headers['x-app-key'] !== appKey) {
+      // No Origin → no Turnstile, so this is the only bot gate for native callers.
+      // See checkAppKey for the staged (unset → log-only → enforce) rollout.
+      if (!checkAppKey(req, ip)) {
         res.status(403).json({ error: "Request blocked — please update the app and try again." });
         return;
       }
