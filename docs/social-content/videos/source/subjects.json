@@ -1,0 +1,58 @@
+[
+  {
+    "name": "dragon",
+    "prompt": "dragon",
+    "difficulty": "easy",
+    "line": "subject_dragon_line.png",
+    "colour": "subject_dragon_colour.png"
+  },
+  {
+    "name": "octopus",
+    "prompt": "octopus",
+    "difficulty": "easy",
+    "line": "subject_octopus_line.png",
+    "colour": "subject_octopus_colour.png"
+  },
+  {
+    "name": "robot",
+    "prompt": "robot",
+    "difficulty": "easy",
+    "line": "subject_robot_line.png",
+    "colour": "subject_robot_colour.png"
+  },
+  {
+    "name": "butterfly",
+    "prompt": "butterfly",
+    "difficulty": "easy",
+    "line": "subject_butterfly_line.png",
+    "colour": "subject_butterfly_colour.png"
+  },
+  {
+    "name": "penguin",
+    "prompt": "penguin",
+    "difficulty": "easy",
+    "line": "subject_penguin_line.png",
+    "colour": "subject_penguin_colour.png"
+  },
+  {
+    "name": "castle",
+    "prompt": "castle",
+    "difficulty": "easy",
+    "line": "subject_castle_line.png",
+    "colour": "subject_castle_colour.png"
+  },
+  {
+    "name": "racecar",
+    "prompt": "race car",
+    "difficulty": "easy",
+    "line": "subject_racecar_line.png",
+    "colour": "subject_racecar_colour.png"
+  },
+  {
+    "name": "mermaid",
+    "prompt": "mermaid",
+    "difficulty": "easy",
+    "line": "subject_mermaid_line.png",
+    "colour": "subject_mermaid_colour.png"
+  }
+]
