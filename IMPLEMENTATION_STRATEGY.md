@@ -92,7 +92,7 @@
 | Secure local storage | `flutter_app/lib/shared/services/storage_service.dart` (`flutter_secure_storage`) | Store gamification/progress JSON + entitlement cache here |
 | Web coloring-complete hook | `public/js/main.js:34-36` (`celebrationShown` when all regions done) | Gamification + journal-save fire here |
 | Web `saveArtwork()` w/ metadata | `public/js/gallery.js:24` (subject, difficulty, colorCount, completedRegions, dataURLs) | Web journal/collection extends this |
-| Server bot/abuse gates | `api/generate-image.js`: per-IP in-memory rate limit (~38-54), Turnstile (web), `APP_API_KEY` (native), Blob storage | Add durable per-identity quota + entitlement check after these gates |
+| Server bot/abuse gates | `api/generate-image.js`: durable per-IP limit + daily budget (`lib/rate-limit.js`), Turnstile (web), Firebase App Check (native), Blob storage | Add per-identity quota + entitlement check after these gates |
 | Parental gate i18n keys | `parentalGateTitle/Prompt/Wrong/Continue` already translated | Reuse; add new keys alongside |
 | Legal pages | `public/{privacy,terms,impressum,about,contact,features}.html` | Add: subscription terms, kids-privacy addendum, data-deletion |
 
@@ -201,7 +201,7 @@ Introduce a single declarative map: every palette / sticker pack / content pack 
 - Never touch card data (Apple/Google/Stripe Checkout only). RevenueCat for receipts.
 - **Verify webhook signatures** (`api/revenuecat-webhook.js`).
 - Server is the **single authority** for paid entitlement and for the hard generation cap; client values are advisory.
-- Preserve existing Turnstile + `APP_API_KEY` + IP rate-limit gates; layer the new KV quota after them.
+- Preserve existing Turnstile + App Check + durable IP rate-limit gates; layer the new quota after them.
 - Secrets stay in env / `bonifatus-secrets` (never committed): `REVENUECAT_SECRET`, `STRIPE_SECRET`, `KV_*`. Add to `.env.example` as placeholders only.
 
 ---
@@ -232,7 +232,7 @@ Introduce a single declarative map: every palette / sticker pack / content pack 
 ## 8. Dependencies & infra to add
 - Hetzner: **Redis** container for quota/entitlement/analytics.
 - Flutter: `purchases_flutter`, `printing`, `pdf` (all dormant until `monetizationEnabled`).
-- Env (placeholders only in `.env.example`): `REDIS_URL`, `REVENUECAT_SECRET`, `STRIPE_SECRET`, `APP_API_KEY` (already referenced).
+- Env (placeholders only in `.env.example`): `REDIS_URL`, `REVENUECAT_SECRET`, `STRIPE_SECRET`.
 
 ## 9. QA / verification plan
 - **Web:** bump `?v=NNN` (currently 187 → 188), Playwright at desktop/390/844 across hero + coloring + journal + parent-gate states; confirm completion → counter increments, journal persists across reload, parental gate blocks Parent Zone, free cap enforced **server-side** (simulate spoofed device id → still capped).

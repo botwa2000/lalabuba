@@ -2,7 +2,7 @@
 const db   = require("../../lib/db");
 const auth = require("../../lib/community-auth");
 
-const rateLimiter = auth.makeRateLimiter(120, auth.HOUR);
+const rateLimiter = auth.makeRateLimiter("community:weekly-theme", 120, auth.HOUR);
 
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
@@ -14,8 +14,8 @@ module.exports = async (req, res) => {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed." });
 
-  const ip = (req.headers["cf-connecting-ip"] || req.socket?.remoteAddress || "unknown").toString().trim();
-  if (rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+  const ip = auth.clientIp(req);
+  if (await rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
   const enabled = await db.getConfigBool("weekly_theme_enabled", false);
   if (!enabled) return res.status(200).json({ active: false });

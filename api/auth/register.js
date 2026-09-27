@@ -6,16 +6,16 @@ const auth     = require("../../lib/auth");
 const email    = require("../../lib/email");
 const commAuth = require("../../lib/community-auth");
 
-const rateLimiter    = commAuth.makeRateLimiter(10, commAuth.HOUR);
-const emailRateLimiter = commAuth.makeRateLimiter(3, commAuth.HOUR);
+const rateLimiter    = commAuth.makeRateLimiter("auth:register", 10, commAuth.HOUR);
+const emailRateLimiter = commAuth.makeRateLimiter("auth:otp-email", 3, commAuth.HOUR);
 
 module.exports = async (req, res) => {
   setCors(res);
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed." });
 
-  const ip = (req.headers["cf-connecting-ip"] || req.socket?.remoteAddress || "unknown").toString().trim();
-  if (rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+  const ip = commAuth.clientIp(req);
+  if (await rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
   const { email: rawEmail, password, deviceUuid, lang } = req.body || {};
 
@@ -63,7 +63,7 @@ module.exports = async (req, res) => {
   }
 
   // Send OTP (respect rate limit per email)
-  if (!emailRateLimiter(normalEmail)) {
+  if (!await emailRateLimiter(normalEmail)) {
     await db.query(
       "UPDATE email_otp_codes SET used_at = NOW() WHERE email = $1 AND used_at IS NULL AND expires_at > NOW()",
       [normalEmail]

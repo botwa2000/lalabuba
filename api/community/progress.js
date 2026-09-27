@@ -3,7 +3,7 @@ const db         = require("../../lib/db");
 const auth       = require("../../lib/auth");
 const commAuth   = require("../../lib/community-auth");
 
-const rateLimiter = commAuth.makeRateLimiter(120, commAuth.HOUR);
+const rateLimiter = commAuth.makeRateLimiter("community:progress", 120, commAuth.HOUR);
 
 // DB column → response key mappings for integer fields.
 const INT_COLS = [
@@ -98,8 +98,8 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: "Method not allowed." });
   }
 
-  const ip = (req.headers["cf-connecting-ip"] || req.socket?.remoteAddress || "unknown").toString().trim();
-  if (rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+  const ip = commAuth.clientIp(req);
+  if (await rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
   const uuid = commAuth.requireDeviceUuid(req, res);
   if (!uuid) return;

@@ -31,10 +31,6 @@ const FALLBACK = {
   generation: {
     clientTimeoutMs: 80000,
   },
-  providers: {
-    rateLimitMax:      15,
-    rateLimitWindowMs: 3_600_000,
-  },
 };
 
 export function getDrawingConfig() {

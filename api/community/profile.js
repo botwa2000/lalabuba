@@ -4,8 +4,8 @@ const auth             = require("../../lib/community-auth");
 const { isValidNickname } = require("../../lib/nicknames");
 const { isValidAvatar }   = require("../../lib/avatar");
 
-const getRateLimiter  = auth.makeRateLimiter(60,  auth.HOUR);
-const postRateLimiter = auth.makeRateLimiter(5,   auth.HOUR);
+const getRateLimiter  = auth.makeRateLimiter("community:profile-get", 60,  auth.HOUR);
+const postRateLimiter = auth.makeRateLimiter("community:profile-post", 5,   auth.HOUR);
 
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
@@ -16,13 +16,13 @@ module.exports = async (req, res) => {
   }
   if (req.method === "OPTIONS") return res.status(204).end();
 
-  const ip = (req.headers["cf-connecting-ip"] || req.socket?.remoteAddress || "unknown").toString().trim();
+  const ip = auth.clientIp(req);
   const uuid = auth.requireDeviceUuid(req, res);
   if (!uuid) return;
 
   // ── GET own profile ─────────────────────────────────────────────────────────
   if (req.method === "GET") {
-    if (getRateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+    if (await getRateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
     await auth.upsertProfile(uuid);
     const { rows } = await db.query(
       `SELECT nickname, avatar_index, family_id, total_completed, current_streak,
@@ -46,7 +46,7 @@ module.exports = async (req, res) => {
 
   // ── POST upsert nickname + avatar ────────────────────────────────────────────
   if (req.method === "POST") {
-    if (postRateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+    if (await postRateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
     const body = req.body || {};
     const nickname    = typeof body.nickname === "string" ? body.nickname.trim() : null;
@@ -122,7 +122,7 @@ module.exports = async (req, res) => {
 
   // ── DELETE profile + all associated data ────────────────────────────────────
   if (req.method === "DELETE") {
-    if (getRateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+    if (await getRateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
     const fs   = require("fs");
     const path = require("path");
     const DATA_DIR = path.join(__dirname, "..", "..", "data");

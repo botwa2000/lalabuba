@@ -12,7 +12,6 @@ import 'models/family_model.dart';
 
 class CommunityService {
   final Dio _dio;
-  static const String _appApiKey = String.fromEnvironment('APP_API_KEY');
 
   CommunityService(AppConfig config)
       : _dio = Dio(BaseOptions(
@@ -26,7 +25,6 @@ class CommunityService {
     return {
       'Content-Type': 'application/json',
       'X-Device-ID': id,
-      if (_appApiKey.isNotEmpty) 'X-App-Key': _appApiKey,
       if (withConsent) 'X-Parental-Consent': 'yes',
     };
   }

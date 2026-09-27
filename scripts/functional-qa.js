@@ -2,9 +2,11 @@
 // Tests: nav buttons, hero UI, account creation, OTP flow, child profiles, all difficulties, coloring
 // Usage: node scripts/functional-qa.js
 //
-// Turnstile bypass: page.route() strips the Origin header so the server classifies
-// browser requests as native (Flutter-style). APP_API_KEY is not set, so native requests
-// skip all auth. This gives real Novita image generation with zero server changes.
+// Generation auth: page.route() relays /api/generate-image from Node.js as a native
+// request carrying a REAL Firebase App Check token, minted by exchanging the registered
+// QA debug token (APP_CHECK_DEBUG_TOKEN in .env / env). No bypass: the server verifies
+// it exactly like a Play Integrity / App Attest token, so QA keeps working when
+// App Check enforcement is on. Real Novita image generation.
 
 'use strict';
 const { chromium } = require('playwright');
@@ -121,20 +123,38 @@ async function click(locator) {
   }
 }
 
-// ── Turnstile bypass ──────────────────────────────────────────────────────────
-// The browser always adds Origin to cross-origin fetch requests — CDP can't suppress it.
-// Solution: intercept via page.route() and replay from Node.js (no browser, no Origin).
-// Server sees request with no Origin header → classifies as native/Flutter → skips Turnstile.
-// APP_API_KEY is not set → native path requires no additional auth → real Novita generation.
+// ── App Check-authenticated generation relay ─────────────────────────────────
+// Headless browsers cannot pass Turnstile, so generation is replayed from Node.js
+// as a native request with a genuine App Check token (debug-token exchange).
+const APP_CHECK_ANDROID_APP = '1:909101543003:android:ba790ba5e3f72132cb197e';
+let _appCheck = { token: null, exp: 0 };
+async function appCheckToken() {
+  if (_appCheck.token && Date.now() < _appCheck.exp) return _appCheck.token;
+  const fs = require('fs');
+  const envFile = path.join(__dirname, '..', '.env');
+  const fromFile = fs.existsSync(envFile)
+    ? (fs.readFileSync(envFile, 'utf8').match(/^APP_CHECK_DEBUG_TOKEN=(.+)$/m) || [])[1] : null;
+  const debugToken = (process.env.APP_CHECK_DEBUG_TOKEN || fromFile || '').trim();
+  if (!debugToken) throw new Error('APP_CHECK_DEBUG_TOKEN not set (env or .env) - register one in Firebase App Check');
+  const gs = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'flutter_app', 'android', 'app', 'google-services.json'), 'utf8'));
+  const apiKey = gs.client[0].api_key[0].current_key;
+  const r = await fetch(`https://firebaseappcheck.googleapis.com/v1/projects/lalabuba-app/apps/${APP_CHECK_ANDROID_APP}:exchangeDebugToken?key=${apiKey}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ debugToken }) });
+  const j = await r.json();
+  if (!j.token) throw new Error(`App Check debug-token exchange failed (HTTP ${r.status})`);
+  _appCheck = { token: j.token, exp: Date.now() + (parseInt(j.ttl, 10) - 300) * 1000 };
+  return j.token;
+}
+
 async function enableGenerationBypass(page) {
   await page.route('**/api/generate-image', async route => {
     const request = route.request();
     const postData = request.postData();
-    console.log(`  🔄 Relaying via Node.js (no Origin)…`);
+    console.log(`  🔄 Relaying via Node.js with App Check token…`);
     try {
       const response = await fetch(request.url(), {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', 'x-firebase-appcheck': await appCheckToken() },
         body: postData,
       });
       const buffer = Buffer.from(await response.arrayBuffer());
@@ -841,8 +861,8 @@ async function testLpNav() {
 }
 
 // ── PHASE 6: Android emulator — real generation ───────────────────────────────
-// Flutter Dio sends no Origin header → server treats as native → no Turnstile.
-// APP_API_KEY is not set → native requests pass with no X-App-Key required.
+// Flutter sends an App Check token. The emulator build must be a debug build run with
+// --dart-define=APP_CHECK_DEBUG_TOKEN=<registered token> so the debug provider attests.
 // Extreme: requires completing Easy+Medium+Hard first (FlutterSecureStorage = no adb inject).
 // We test Easy generation to verify the full pipeline, then attempt Extreme after 3 completions.
 async function testAndroidEmulator() {
@@ -1003,7 +1023,7 @@ async function run() {
   console.log(`\n🧪 Lalabuba functional QA — ${new Date().toISOString()}`);
   console.log(`   Target: ${BASE}`);
   console.log(`   Test account: ${TEST_EMAIL}`);
-  console.log(`   Turnstile bypass: page.route strips Origin → native path (no APP_API_KEY configured)\n`);
+  console.log(`   Generation auth: Node relay with App Check token (debug-token exchange)\n`);
 
   browser = await chromium.launch({
     executablePath: CHROME,

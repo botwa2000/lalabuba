@@ -2,8 +2,8 @@
 const db   = require("../../lib/db");
 const auth = require("../../lib/community-auth");
 
-const getRateLimiter  = auth.makeRateLimiter(30,  auth.HOUR);
-const postRateLimiter = auth.makeRateLimiter(20,  auth.HOUR);
+const getRateLimiter  = auth.makeRateLimiter("community:family-get", 30,  auth.HOUR);
+const postRateLimiter = auth.makeRateLimiter("community:family-post", 20,  auth.HOUR);
 
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
@@ -14,7 +14,7 @@ module.exports = async (req, res) => {
   }
   if (req.method === "OPTIONS") return res.status(204).end();
 
-  const ip   = (req.headers["cf-connecting-ip"] || req.socket?.remoteAddress || "unknown").toString().trim();
+  const ip   = auth.clientIp(req);
   const uuid = auth.requireDeviceUuid(req, res);
   if (!uuid) return;
 
@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
 
   // ── GET — return own family members ──────────────────────────────────────────
   if (req.method === "GET") {
-    if (getRateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+    if (await getRateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
     const { rows: profileRows } = await db.query(
       "SELECT family_id FROM profiles WHERE device_uuid = $1",
@@ -76,7 +76,7 @@ module.exports = async (req, res) => {
 
   // ── POST — create / join / leave ─────────────────────────────────────────────
   if (req.method === "POST") {
-    if (postRateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+    if (await postRateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
     const body    = req.body || {};
     const action  = body.action;

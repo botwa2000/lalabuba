@@ -4,15 +4,15 @@ const auth = require("../../lib/auth");
 const commAuth = require("../../lib/community-auth");
 
 // Stricter rate limit on login to resist brute-force
-const rateLimiter = commAuth.makeRateLimiter(20, commAuth.HOUR);
+const rateLimiter = commAuth.makeRateLimiter("auth:login", 20, commAuth.HOUR);
 
 module.exports = async (req, res) => {
   setCors(res);
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed." });
 
-  const ip = (req.headers["cf-connecting-ip"] || req.socket?.remoteAddress || "unknown").toString().trim();
-  if (rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+  const ip = commAuth.clientIp(req);
+  if (await rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
   const { email, password, deviceUuid } = req.body || {};
 

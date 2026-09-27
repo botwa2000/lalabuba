@@ -1,10 +1,13 @@
-const fs     = require("fs");
-const path   = require("path");
-const crypto = require("crypto");
+const fs   = require("fs");
+const path = require("path");
+const { clientIp } = require("../lib/client-ip");
+const rateLimit = require("../lib/rate-limit");
+const authStats = require("../lib/auth-stats");
+const { verifyAppCheckToken } = require("../lib/app-check");
+const { getSecurityConfig } = require("../lib/security-config");
 const { sanitizeSubject, isSafeSubject } = require("../lib/content-safety");
 const { buildPrompt, generateImage } = require("../lib/image-providers");
 const { translateToEnglish } = require("../lib/translate");
-const { getDrawingConfigSync } = require("../lib/drawing-config");
 
 const HF_TOKEN = process.env.HF_TOKEN;
 const HF_MODEL = process.env.HF_MODEL || "black-forest-labs/FLUX.1-schnell";
@@ -32,27 +35,6 @@ function cleanupOldLocalImages() {
   } catch (err) {
     console.error("Local image cleanup error (non-fatal):", err.message);
   }
-}
-
-// ─── Rate limiting (per serverless instance) ─────────────────────────────────
-const rateLimitMap = new Map();
-
-function isRateLimited(ip) {
-  const cfg = getDrawingConfigSync().providers ?? {};
-  const maxReqs = cfg.rateLimitMax    ?? 15;
-  const window  = cfg.rateLimitWindowMs ?? 3_600_000;
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + window });
-    if (rateLimitMap.size > 5000) {
-      for (const [k, v] of rateLimitMap) if (now > v.resetAt) rateLimitMap.delete(k);
-    }
-    return false;
-  }
-  if (entry.count >= maxReqs) return true;
-  entry.count++;
-  return false;
 }
 
 // ─── Turnstile verification ───────────────────────────────────────────────────
@@ -90,34 +72,45 @@ async function verifyTurnstile(token, ip) {
   return false;
 }
 
-// ─── Native app-key gate ──────────────────────────────────────────────────────
-// Requests with no web Origin (Flutter's Dio sends none — but so does curl) skip
-// Turnstile, so they must present X-App-Key matching APP_API_KEY (a Swarm secret).
-// Rollout is staged because shipped app builds predate the key:
-//   APP_API_KEY unset                → gate inactive (no key to compare against)
-//   APP_API_KEY set, ENFORCE != true → LOG-ONLY: bad/missing keys are logged, allowed
-//   APP_API_KEY set, ENFORCE == true → bad/missing keys are rejected with 403
-// Returns true when the request may proceed.
-let _warnedEnforceWithoutKey = false;
-function checkAppKey(req, ip) {
-  const appKey  = process.env.APP_API_KEY;
-  const enforce = process.env.APP_API_KEY_ENFORCE === "true";
-  if (!appKey) {
-    if (enforce && !_warnedEnforceWithoutKey) {
-      _warnedEnforceWithoutKey = true;
-      console.error("SECURITY: APP_API_KEY_ENFORCE=true but APP_API_KEY is unset — native requests are NOT gated");
-    }
-    return true;
+// ─── Request authentication ───────────────────────────────────────────────────
+// Every generation must carry a PROOF, never an absence:
+//   web    (has Origin)  → Cloudflare Turnstile token
+//   native (no Origin)   → Firebase App Check token (Play Integrity / App Attest)
+// A native request with no App Check token is an "unattested" legacy app build:
+// allowed + counted while security_config.appCheck.enforce is false (monitor),
+// rejected once it is true. A present-but-invalid token is always rejected.
+// Returns { ok } or { ok:false, status, error }.
+async function authenticate(req, body, ip, sec) {
+  if (req.headers.origin) {
+    const ok = await verifyTurnstile(body.turnstileToken, ip);
+    authStats.record(ok ? "web_turnstile_ok" : "web_turnstile_fail");
+    return ok ? { ok: true } : { ok: false, status: 403, error: "Bot check failed — please try again." };
   }
-  const sent = req.headers["x-app-key"];
-  const a = Buffer.from(String(sent || ""));
-  const b = Buffer.from(appKey);
-  if (a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
 
-  const reason = sent ? "mismatch" : "absent";
-  const ua = String(req.headers["user-agent"] || "(none)").slice(0, 160);
-  console.warn(`[app-key] ${enforce ? "BLOCKED" : "would-block"} reason=${reason} ip=${ip} ua=${JSON.stringify(ua)}`);
-  return !enforce;
+  const token = req.headers["x-firebase-appcheck"];
+  const enforce = sec.appCheck.enforce === true;
+  if (!token) {
+    authStats.record(enforce ? "native_unattested_blocked" : "native_unattested_allowed");
+    return enforce
+      ? { ok: false, status: 403, error: "Please update Lalabuba to the latest version to keep drawing." }
+      : { ok: true };
+  }
+
+  const result = await verifyAppCheckToken(String(token), sec.appCheck);
+  if (result.ok) {
+    authStats.record("native_attested");
+    return { ok: true };
+  }
+  if (result.reason === "unavailable") {
+    // Google's keys could not be loaded at all — not the caller's fault.
+    authStats.record("native_attest_unavailable");
+    return enforce
+      ? { ok: false, status: 503, error: "Security check is temporarily unavailable — please try again in a moment." }
+      : { ok: true };
+  }
+  authStats.record("native_attest_invalid");
+  console.warn(`[app-check] rejected token reason=${result.reason} ip=${ip}`);
+  return { ok: false, status: 403, error: "Request blocked — please update the app and try again." };
 }
 
 const ALLOWED_ORIGINS = [
@@ -145,48 +138,23 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Client IP for rate limiting. Behind Cloudflare, `cf-connecting-ip` is set by
-  // Cloudflare and CANNOT be forged by the client (Cloudflare overwrites it).
-  // The old `x-real-ip`/`x-forwarded-for` headers are client-controllable on this
-  // Hetzner/Swarm stack (no trusted proxy overwrites them), so a caller could
-  // rotate them per request to dodge the per-IP limit — they are no longer trusted.
-  const ip = (req.headers['cf-connecting-ip']
-    || req.socket?.remoteAddress
-    || 'unknown').toString().trim();
-  if (isRateLimited(ip)) {
+  const ip  = clientIp(req);
+  const sec = await getSecurityConfig();
+  const perIp = await rateLimit.consume("generate:ip", ip, sec.generate.perIpLimit, sec.generate.perIpWindowMs);
+  if (perIp.limited) {
+    authStats.record("rate_limited");
     res.status(429).json({ error: "Too many requests — please wait a while before trying again." });
     return;
   }
 
   try {
     const body = req.body || {};
-    const clientOrigin = req.headers.origin || '(native)';
-    const clientIp    = req.headers['cf-connecting-ip'] || req.socket?.remoteAddress || 'unknown';
-    console.log(`[generate] ${clientIp} origin=${clientOrigin} subject=${JSON.stringify(body.subject)} diff=${body.difficulty}`);
+    console.log(`[generate] ${ip} origin=${req.headers.origin || '(native)'} appcheck=${req.headers['x-firebase-appcheck'] ? 'yes' : 'no'} subject=${JSON.stringify(body.subject)} diff=${body.difficulty}`);
 
-    // Native vs. web classification.
-    //
-    // A native request is one with no web Origin (Flutter's Dio sends none) or
-    // an explicit native WebView origin. Crucially, X-Device-ID is NO LONGER a
-    // bypass — a browser script could set that header at will to skip the bot
-    // check, so the Turnstile gate now applies to every request carrying a web
-    // Origin regardless of any custom headers.
-    // Flutter's Dio HTTP client sends no Origin header — absence of Origin = native/Flutter request.
-    const isNative = !origin;
-
-    if (isNative) {
-      // No Origin → no Turnstile, so this is the only bot gate for native callers.
-      // See checkAppKey for the staged (unset → log-only → enforce) rollout.
-      if (!checkAppKey(req, ip)) {
-        res.status(403).json({ error: "Request blocked — please update the app and try again." });
-        return;
-      }
-    } else {
-      const ok = await verifyTurnstile(body.turnstileToken, ip);
-      if (!ok) {
-        res.status(403).json({ error: "Bot check failed — please try again." });
-        return;
-      }
+    const auth = await authenticate(req, body, ip, sec);
+    if (!auth.ok) {
+      res.status(auth.status).json({ error: auth.error });
+      return;
     }
     const subject    = sanitizeSubject(body.subject);
     const difficulty = ["easy", "medium", "hard", "extreme"].includes(body.difficulty) ? body.difficulty : "medium";
@@ -204,6 +172,16 @@ module.exports = async (req, res) => {
 
     if (!isSafeSubject(subject)) {
       res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
+      return;
+    }
+
+    // Global daily spend cap across every caller (hard UTC-day window). Counted
+    // only for requests that passed auth + validation, i.e. real generations.
+    const budget = await rateLimit.consume("generate:budget", "global", sec.generate.dailyBudget, 86_400_000, { fixed: true });
+    if (budget.limited) {
+      authStats.record("budget_exhausted");
+      console.error(`[generate] daily budget exhausted (${sec.generate.dailyBudget}) — refusing generation`);
+      res.status(503).json({ error: "Lalabuba is very busy today — please try again tomorrow! 🎨" });
       return;
     }
 
@@ -257,3 +235,6 @@ module.exports = async (req, res) => {
     });
   }
 };
+
+// Exposed for scripts/test-request-security.js only.
+module.exports._authenticate = authenticate;

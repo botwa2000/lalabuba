@@ -1344,6 +1344,9 @@ const server = http.createServer(async (req, res) => {
   if (p === "/api/admin/drawing-config") {
     return require("./api/admin/drawing-config")(req, res);
   }
+  if (p === "/api/admin/security") {
+    return require("./api/admin/security")(req, res);
+  }
 
   // ── Serve generated images (coloring shares + gallery + community shared) ──
   const imgMatch = p.match(/^\/img\/(c|g|s)\/([A-Za-z0-9_.-]+)$/);
@@ -1546,7 +1549,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       if (req.method === "POST") {
-        if (docsAuth.isSendLimited(ip)) {
+        if (await docsAuth.isSendLimited(ip)) {
           serveHtmlDoc(429, renderLoginPage({ rateLimited: true }));
           return;
         }
@@ -1569,7 +1572,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         const { code, state } = docsAuth.generateOtp();
-        docsAuth.recordSend(ip);
+        await docsAuth.recordSend(ip);
         res.setHeader("Set-Cookie", docsAuth.otpCookieHeader(state, isHttps));
 
         try {
@@ -1586,7 +1589,7 @@ const server = http.createServer(async (req, res) => {
 
     // POST /docs/verify → validate OTP, issue session
     if ((p === "/docs/verify" || p === "/docs/verify/") && req.method === "POST") {
-      if (docsAuth.isVerifyLimited(ip)) {
+      if (await docsAuth.isVerifyLimited(ip)) {
         serveHtmlDoc(429, renderOtpPage({ rateLimited: true }));
         return;
       }
@@ -1596,7 +1599,7 @@ const server = http.createServer(async (req, res) => {
       const otpState  = docsAuth.getOtpCookie(req);
 
       if (docsAuth.validateOtp(code, otpState)) {
-        docsAuth.clearVerifyFails(ip);
+        await docsAuth.clearVerifyFails(ip);
         res.setHeader("Set-Cookie", [
           docsAuth.sessionCookieHeader(docsAuth.generateSession(), isHttps),
           docsAuth.clearOtpCookieHeader(),
@@ -1604,7 +1607,7 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(302, { Location: "/docs/internal" });
         res.end();
       } else {
-        docsAuth.recordVerifyFail(ip);
+        await docsAuth.recordVerifyFail(ip);
         serveHtmlDoc(401, renderOtpPage({ error: true }));
       }
       return;
@@ -1929,6 +1932,7 @@ const server = http.createServer(async (req, res) => {
   await db.runMigrations();
   gallery.backfillSlugs();
   db.cleanupExpiredArtworks().catch(err => console.error("[cleanup]", err.message));
+  require("./lib/rate-limit").startPruning();
   setInterval(() => db.cleanupExpiredArtworks().catch(() => {}), 24 * 60 * 60 * 1000);
 
   // Hourly generation health check — generates a real test image, logs result.

@@ -1,24 +1,11 @@
 "use strict";
 
-// ─── Rate limiting (per serverless instance) ─────────────────────────────────
-const rateLimitMap = new Map();
-const RATE_LIMIT_MAX    = 3;
-const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
+const { clientIp } = require("../lib/client-ip");
+const rateLimit = require("../lib/rate-limit");
 
-function isRateLimited(ip) {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    if (rateLimitMap.size > 5000) {
-      for (const [k, v] of rateLimitMap) if (now > v.resetAt) rateLimitMap.delete(k);
-    }
-    return false;
-  }
-  if (entry.count >= RATE_LIMIT_MAX) return true;
-  entry.count++;
-  return false;
-}
+// Durable, shared rate limit (lib/rate-limit.js): 3 messages per IP per hour.
+const RATE_LIMIT_MAX    = 3;
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000;
 
 // ─── Turnstile verification ───────────────────────────────────────────────────
 async function verifyTurnstile(token, ip) {
@@ -72,13 +59,8 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Client IP for rate limiting. Behind Cloudflare, `cf-connecting-ip` is set by
-  // Cloudflare and cannot be forged; the old x-real-ip/x-forwarded-for headers are
-  // client-controllable on this stack and are no longer trusted (anti-spoof).
-  const ip = (req.headers['cf-connecting-ip']
-    || req.socket?.remoteAddress
-    || 'unknown').toString().trim();
-  if (isRateLimited(ip)) {
+  const ip = clientIp(req);
+  if ((await rateLimit.consume("contact:ip", ip, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW)).limited) {
     res.status(429).json({ error: "Too many messages — please wait a while before trying again." });
     return;
   }

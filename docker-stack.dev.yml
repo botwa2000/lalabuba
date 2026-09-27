@@ -10,9 +10,6 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: "3000"
-      # Native X-App-Key gate: "false" = log-only, "true" = reject. Flip only after a
-      # mobile build carrying APP_API_KEY is live (see checkAppKey in api/generate-image.js).
-      APP_API_KEY_ENFORCE: "false"
       IMAGE_PROVIDER: huggingface
     volumes:
       - /opt/lalabuba-dev/data:/app/data
@@ -29,9 +26,6 @@ services:
       - lalabuba_dev_JWT_SECRET
       - lalabuba_dev_BREVO_API_KEY
       - lalabuba_dev_DOCS_SECRET
-      # Uncomment together with the matching entry below ONLY after the secret exists
-      # (deploy.sh secrets dev); an external secret that is missing fails the deploy.
-      # - lalabuba_dev_APP_API_KEY
     deploy:
       replicas: 1
       update_config:
@@ -62,4 +56,3 @@ secrets:
   lalabuba_dev_JWT_SECRET: { external: true }
   lalabuba_dev_BREVO_API_KEY: { external: true }
   lalabuba_dev_DOCS_SECRET: { external: true }
-  # lalabuba_dev_APP_API_KEY: { external: true }

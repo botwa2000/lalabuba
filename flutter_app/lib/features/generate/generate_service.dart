@@ -6,17 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/app_config.dart';
 import '../../core/di/providers.dart';
 import '../../core/drawing_config_service.dart';
+import '../../shared/services/app_check_service.dart';
 import '../../shared/services/device_id_service.dart';
 import 'generate_models.dart';
 
 class GenerateService {
   final Dio _dio;
-
-  // Optional shared key gating the native API path. Injected at build time via
-  // --dart-define=APP_API_KEY=... and matched server-side against APP_API_KEY.
-  // Empty by default, so the X-App-Key header is simply omitted until both
-  // sides are configured (the server gate is inactive when its env is unset).
-  static const String _appApiKey = String.fromEnvironment('APP_API_KEY');
 
   GenerateService(AppConfig config)
       : _dio = Dio(BaseOptions(
@@ -33,6 +28,8 @@ class GenerateService {
     int? seed,
   }) async {
     final deviceId = await DeviceIdService.getDeviceId();
+    // Attestation proof for the server's bot gate (null if unavailable).
+    final appCheckToken = await AppCheckService.token();
     final effectiveSeed = seed ?? _newSeed();
     final resolution =
         DrawingConfigService.instance.difficulties[difficulty]?.resolution ??
@@ -70,7 +67,7 @@ class GenerateService {
           headers: {
             'Content-Type': 'application/json',
             'X-Device-ID': deviceId,
-            if (_appApiKey.isNotEmpty) 'X-App-Key': _appApiKey,
+            if (appCheckToken != null) 'X-Firebase-AppCheck': appCheckToken,
           },
         ),
       );

@@ -2,7 +2,7 @@
 
 ## Project overview
 Lalabuba is a kids AI coloring web app. Vanilla JS ES modules + HTML5 Canvas.
-Server: `server.js` — runs on Hetzner via Docker Swarm. `api/*.js` are LIVE route handlers, not legacy: `server.js` requires `api/generate-image.js` and routes `/api/generate-image` to it. That handler holds the bot gates (Turnstile for web; `X-App-Key` for no-Origin/native callers, staged via `APP_API_KEY` + `APP_API_KEY_ENFORCE`) — treat it as security-critical in review.
+Server: `server.js` — runs on Hetzner via Docker Swarm. `api/*.js` are LIVE route handlers, not legacy: `server.js` requires `api/generate-image.js` and routes `/api/generate-image` to it. That handler holds the bot gates (Turnstile for web, Firebase App Check for native; enforcement + limits in `lib/security-config.js`, controlled via `/api/admin/security`) — treat it as security-critical in review. Origin only accepts Cloudflare (Authenticated Origin Pulls, `deploy/nginx/lalabuba.com.conf`), which is what makes `CF-Connecting-IP` trustworthy — always derive client IPs via `lib/client-ip.js`, and rate-limit only via the durable `lib/rate-limit.js`.
 Mobile: Flutter → iOS (Codemagic) + Android (GitHub Actions).
 
 ## CSS versioning

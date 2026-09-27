@@ -3,7 +3,7 @@ const { getAllNicknames } = require("../../lib/nicknames");
 const { AVATARS }         = require("../../lib/avatar");
 const auth                = require("../../lib/community-auth");
 
-const rateLimiter = auth.makeRateLimiter(60, auth.HOUR);
+const rateLimiter = auth.makeRateLimiter("community:nicknames", 60, auth.HOUR);
 
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
@@ -15,8 +15,8 @@ module.exports = async (req, res) => {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed." });
 
-  const ip = (req.headers["cf-connecting-ip"] || req.socket?.remoteAddress || "unknown").toString().trim();
-  if (rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+  const ip = auth.clientIp(req);
+  if (await rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
   // Cache-friendly — this list never changes at runtime.
   res.setHeader("Cache-Control", "public, max-age=3600");

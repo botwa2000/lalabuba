@@ -7,9 +7,9 @@ const { sanitizeSubject, isSafeSubject } = require("../../lib/content-safety");
 
 const gallery = require("../../lib/gallery");
 
-const browseLimiter  = auth.makeRateLimiter(60,  auth.HOUR);
-const uploadLimiter  = auth.makeRateLimiter(10,  auth.HOUR);
-const deleteLimiter  = auth.makeRateLimiter(20,  auth.HOUR);
+const browseLimiter  = auth.makeRateLimiter("community:artwork-browse", 60,  auth.HOUR);
+const uploadLimiter  = auth.makeRateLimiter("community:artwork-upload", 10,  auth.HOUR);
+const deleteLimiter  = auth.makeRateLimiter("community:artwork-delete", 20,  auth.HOUR);
 
 const SHARED_IMG_DIR = path.join(__dirname, "../../data/images/s");
 
@@ -27,7 +27,7 @@ function corsHeaders(req, res) {
 
 // ── GET /api/community/gallery ───────────────────────────────────────────────
 async function handleGallery(req, res, ip) {
-  if (browseLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+  if (await browseLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
   const enabled = await db.getConfigBool("community_enabled", true);
   if (!enabled) return res.status(503).json({ error: "Community gallery is currently unavailable." });
@@ -129,7 +129,7 @@ async function handleGallery(req, res, ip) {
 
 // ── POST /api/community/artwork ──────────────────────────────────────────────
 async function handleUpload(req, res, ip, uuid) {
-  if (uploadLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+  if (await uploadLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
   const communityEnabled = await db.getConfigBool("community_enabled", true);
   const sharingEnabled   = await db.getConfigBool("sharing_enabled",   true);
@@ -240,7 +240,7 @@ async function handleUpload(req, res, ip, uuid) {
 
 // ── DELETE /api/community/artwork/:id ────────────────────────────────────────
 async function handleDelete(req, res, ip, uuid, artworkId) {
-  if (deleteLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+  if (await deleteLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
   const id = parseInt(artworkId);
   if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid artwork id." });
@@ -268,7 +268,7 @@ module.exports = async (req, res, artworkId) => {
   corsHeaders(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
 
-  const ip = (req.headers["cf-connecting-ip"] || req.socket?.remoteAddress || "unknown").toString().trim();
+  const ip = auth.clientIp(req);
 
   if (req.method === "GET") return handleGallery(req, res, ip);
 

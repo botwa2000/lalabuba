@@ -2,7 +2,7 @@
 const db   = require("../../lib/db");
 const auth = require("../../lib/community-auth");
 
-const rateLimiter = auth.makeRateLimiter(20, auth.HOUR);
+const rateLimiter = auth.makeRateLimiter("community:report", 20, auth.HOUR);
 
 module.exports = async (req, res, artworkId) => {
   const origin = req.headers.origin;
@@ -14,11 +14,11 @@ module.exports = async (req, res, artworkId) => {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed." });
 
-  const ip   = (req.headers["cf-connecting-ip"] || req.socket?.remoteAddress || "unknown").toString().trim();
+  const ip   = auth.clientIp(req);
   const uuid = auth.requireDeviceUuid(req, res);
   if (!uuid) return;
 
-  if (rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+  if (await rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
   const id = parseInt(artworkId);
   if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid artwork id." });

@@ -4,7 +4,7 @@ const db       = require("../../lib/db");
 const email    = require("../../lib/email");
 const commAuth = require("../../lib/community-auth");
 
-const emailRateLimiter = commAuth.makeRateLimiter(3, commAuth.HOUR);
+const emailRateLimiter = commAuth.makeRateLimiter("auth:otp-email", 3, commAuth.HOUR);
 
 module.exports = async (req, res) => {
   setCors(res);
@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
   const normalEmail = rawEmail.trim().toLowerCase();
   const safeLang    = /^[a-z]{2,3}$/.test(lang || "") ? lang : "en";
 
-  if (emailRateLimiter(normalEmail)) {
+  if (await emailRateLimiter(normalEmail)) {
     return res.status(429).json({ error: "Too many OTP requests. Please wait before trying again.", code: "RATE_LIMIT" });
   }
 

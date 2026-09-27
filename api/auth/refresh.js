@@ -3,15 +3,15 @@ const db   = require("../../lib/db");
 const auth = require("../../lib/auth");
 const commAuth = require("../../lib/community-auth");
 
-const rateLimiter = commAuth.makeRateLimiter(60, commAuth.HOUR);
+const rateLimiter = commAuth.makeRateLimiter("auth:refresh", 60, commAuth.HOUR);
 
 module.exports = async (req, res) => {
   setCors(res);
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed." });
 
-  const ip = (req.headers["cf-connecting-ip"] || req.socket?.remoteAddress || "unknown").toString().trim();
-  if (rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
+  const ip = commAuth.clientIp(req);
+  if (await rateLimiter(ip)) return res.status(429).json({ error: "Too many requests." });
 
   const { refreshToken } = req.body || {};
   if (!refreshToken || typeof refreshToken !== "string") {

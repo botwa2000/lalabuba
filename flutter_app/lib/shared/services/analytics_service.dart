@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'app_check_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import '../../firebase_options.dart';
@@ -39,6 +40,8 @@ class AnalyticsService {
   static Future<void> _initFirebase() async {
     try {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      // Attestation first: generate requests need an App Check token.
+      await AppCheckService.activate();
       if (!kIsWeb) {
         await FirebaseCrashlytics.instance
             .setCrashlyticsCollectionEnabled(!kDebugMode);

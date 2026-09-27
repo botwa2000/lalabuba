@@ -59,6 +59,7 @@ dependencies:
   speech_to_text: ^7.3.0
   printing: ^5.14.2
   pdf: ^3.11.3
+  firebase_app_check: ^0.4.8
 
 dev_dependencies:
   flutter_test:
