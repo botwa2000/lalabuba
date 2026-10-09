@@ -315,22 +315,22 @@ async function testHero(page) {
   }
 
   // Difficulty pills — Easy/Medium/Hard (Extreme stays locked for new user)
-  console.log('  Testing difficulty pills…');
+  console.log('  Testing difficulty level cards…');
   for (const diff of ['easy', 'medium', 'hard']) {
-    const pill = page.locator(`.diff-pill[data-diff="${diff}"]`);
+    const pill = page.locator(`.level-card[data-diff="${diff}"]`);
     if (await pill.count() > 0) {
       await click(pill);
       await page.waitForTimeout(200);
       const active = await pill.evaluate(el =>
-        el.classList.contains('active') || el.getAttribute('aria-pressed') === 'true'
+        el.classList.contains('selected')
       );
       console.log(`  ${active ? '✅' : '⚠️'} ${diff} pill active=${active}`);
     }
   }
-  const extremePill = page.locator('.diff-pill[data-diff="extreme"]');
+  const extremePill = page.locator('.level-card[data-diff="extreme"]');
   if (await extremePill.count() > 0) {
     const disabled = await extremePill.evaluate(el => el.disabled);
-    const locked = await extremePill.evaluate(el => el.classList.contains('diff-pill--locked'));
+    const locked = await extremePill.evaluate(el => el.classList.contains('level-card--locked'));
     console.log(`  🔒 Extreme pill: disabled=${disabled}, locked-class=${locked} (expected: both true for new user)`);
   }
   await snap(page, 'difficulty-pills');
@@ -394,7 +394,7 @@ async function testDraw(page) {
   await page.waitForTimeout(500);
 
   await page.fill('#subject', 'bunny');
-  await click(page.locator('.diff-pill[data-diff="easy"]'));
+  await click(page.locator('.level-card[data-diff="easy"]'));
   await page.waitForTimeout(200);
   await snap(page, 'before-draw');
 
@@ -446,16 +446,16 @@ async function testAllDifficulties() {
       await enableGenerationBypass(page);
       await page.waitForTimeout(500);
 
-      const extremePill = page.locator('.diff-pill[data-diff="extreme"]');
+      const extremePill = page.locator('.level-card[data-diff="extreme"]');
       if (await extremePill.count() > 0) {
         const disabled = await extremePill.evaluate(el => el.disabled);
-        const locked   = await extremePill.evaluate(el => el.classList.contains('diff-pill--locked'));
+        const locked   = await extremePill.evaluate(el => el.classList.contains('level-card--locked'));
         console.log(`  🔒 Extreme pill after unlock: disabled=${disabled}, locked=${locked} (expected: both false)`);
       }
     }
 
     await page.fill('#subject', subject);
-    const pill = page.locator(`.diff-pill[data-diff="${diff}"]`);
+    const pill = page.locator(`.level-card[data-diff="${diff}"]`);
     if (await pill.count() > 0) await click(pill);
     else {
       // Fall back to the difficulty select dropdown
@@ -795,7 +795,7 @@ async function testMobilePortrait() {
   await enableGenerationBypass(page);
   await page.waitForTimeout(800);
 
-  const mobileExtremePill = page.locator('.diff-pill[data-diff="extreme"]');
+  const mobileExtremePill = page.locator('.level-card[data-diff="extreme"]');
   if (await mobileExtremePill.count() > 0) {
     const disabledAfterUnlock = await mobileExtremePill.evaluate(el => el.disabled);
     console.log(`  🔒 Mobile Extreme pill disabled after unlock: ${disabledAfterUnlock} (expected: false)`);
