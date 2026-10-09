@@ -75,6 +75,50 @@ const PINS = [
     accentLight: '#F8BBD0', // light pink
     keyword: 'butterfly coloring pages for kids free printable',
   },
+  {
+    id: 'dragon',
+    src: 'dragon-easy-3432101.png', // 1024×1024 PNG — bold closed outlines, no text
+    headline1: 'Dragon',
+    headline2: 'Coloring Pages',
+    accentHex: '#B71C1C',   // deep red
+    accentLight: '#FFCDD2', // light red
+    keyword: 'dragon coloring pages for kids free printable',
+  },
+  {
+    id: 'princess',
+    src: 'princess-easy-315278375.png', // 1024×1024 PNG — no text
+    headline1: 'Princess',
+    headline2: 'Coloring Pages',
+    accentHex: '#A15C00',   // deep gold
+    accentLight: '#FFE9B3', // light gold
+    keyword: 'princess coloring pages for kids free printable',
+    // Face/ear/neck pinned to skin tone — palette cycling gave a purple face.
+    forcedColors: [
+      { fx: 0.42, fy: 0.30, color: [255, 222, 196] }, // face
+      { fx: 0.33, fy: 0.28, color: [255, 222, 196] }, // ear
+      { fx: 0.43, fy: 0.39, color: [255, 222, 196] }, // neck
+    ],
+  },
+  {
+    id: 'mermaid',
+    src: 'mermaid-easy-1969590692.jpg', // 1024×1024 JPG — no text
+    headline1: 'Mermaid',
+    headline2: 'Coloring Pages',
+    accentHex: '#3949AB',   // indigo
+    accentLight: '#C5CAE9', // light indigo
+    keyword: 'mermaid coloring pages for kids free printable',
+    // Face/ear/arms pinned to skin tone — palette cycling gave a green face.
+    forcedColors: [
+      { fx: 0.45, fy: 0.33, color: [255, 222, 196] }, // face
+      { fx: 0.27, fy: 0.38, color: [255, 222, 196] }, // ear
+      { fx: 0.34, fy: 0.56, color: [255, 222, 196] }, // left arm
+      { fx: 0.54, fy: 0.59, color: [255, 222, 196] }, // right hand
+      { fx: 0.415, fy: 0.532, color: [255, 222, 196] }, // shoulder
+      { fx: 0.468, fy: 0.484, color: [240, 120, 130] }, // tongue
+    ],
+    // Tail scales are each < 400 px, so the default threshold left them white.
+    fillZones: [{ x1: 0.29, y1: 0.69, x2: 0.53, y2: 0.97, minRegion: 40, color: [77, 182, 172] }],
+  },
   // schultuete RETIRED (2026-08-09): a Schultüte pin already posted 8/5; flood-fill
   // consistently leaked through outline gaps. Manifest row removed; file deleted.
 
@@ -114,9 +158,10 @@ const PALETTE = [
 //                          pixels stay white so the card background shows through
 //   faceZones   {Array} — [{x1,y1,x2,y2}] in display-px space; any region whose
 //                          bounding-box centre falls inside a zone is left white
+//   fillZones   {Array} — [{x1,y1,x2,y2,minRegion,color}] fractional; see Phase 1
 //   seeds       {Array} — [{fx,fy,color:[r,g,b],bounds:{x1,y1,x2,y2}}] fractional
 //                          seed fills run after main BFS; bounds are 0-1 fractions
-function autoColorize(rawBuf, width, height, { skipExterior = false, faceZones = [], seeds = [], forcedColors = [] } = {}) {
+function autoColorize(rawBuf, width, height, { skipExterior = false, faceZones = [], seeds = [], forcedColors = [], fillZones = [] } = {}) {
   const n   = width * height;
   const pix = new Uint8ClampedArray(rawBuf.buffer, rawBuf.byteOffset, rawBuf.length);
   const out = Buffer.from(rawBuf);
@@ -183,7 +228,11 @@ function autoColorize(rawBuf, width, height, { skipExterior = false, faceZones =
       }
     }
 
-    if (region.length < 400) continue;
+    // fillZones: a region whose bbox lies wholly inside a zone uses that zone's
+    // smaller size threshold and fixed colour (e.g. tiny mermaid-tail scales)
+    const zone = fillZones.find(z => minX >= z.x1 * width && maxX <= z.x2 * width &&
+                                     minY >= z.y1 * height && maxY <= z.y2 * height);
+    if (region.length < (zone ? zone.minRegion : 400)) continue;
 
     // Skip regions whose bounding box OVERLAPS any face/skin exclusion zone
     // (overlap test is reliable even for large regions that span zone boundaries)
@@ -198,6 +247,7 @@ function autoColorize(rawBuf, width, height, { skipExterior = false, faceZones =
         if (regionSet.has(fs.idx)) { assignedColor = fs.color; break; }
       }
     }
+    if (assignedColor === null && zone) assignedColor = zone.color;
     const [cr, cg, cb] = assignedColor !== null ? assignedColor : PALETTE[colorIdx++ % PALETTE.length];
     for (const idx of region) {
       const o = idx << 2;
@@ -356,6 +406,7 @@ async function makePin(cfg) {
       faceZones:     cfg.faceZones     || [],
       seeds:         cfg.seeds         || [],
       forcedColors:  cfg.forcedColors  || [],
+      fillZones:     cfg.fillZones     || [],
     });
     coloredBuf = await sharp(coloredRaw, { raw: { width: dispW, height: dispH, channels: 4 } })
       .png({ compressionLevel: 6 })
@@ -386,6 +437,7 @@ async function makePin(cfg) {
       faceZones:    cfg.faceZones    || [],
       seeds:        cfg.seeds        || [],
       forcedColors: cfg.forcedColors || [],
+      fillZones:    cfg.fillZones    || [],
     }),
     { raw: { width: dispW, height: dispH, channels: 4 } }
   ).resize(thumbW, thumbH, { fit: 'fill' }).png().toBuffer();

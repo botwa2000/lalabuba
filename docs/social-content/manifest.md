@@ -1,6 +1,6 @@
 # Lalabuba Social Content Manifest
 
-Generated: 2026-08-08 · Updated: 2026-09-20 (pins v2 + carousel v2 rewrite)  
+Generated: 2026-08-08 · Updated: 2026-10-09 (dragon/princess/mermaid pins)  
 Generator scripts: `scripts/make-social-pins.js`, `scripts/make-social-carousel.js`, `scripts/make-social-videos.js`, `scripts/social-lib.js` (shared text/callout rendering)
 
 ---
@@ -33,6 +33,9 @@ Layout: accent brand bar → keyword headline → colored "after" image (flood-f
 | `pin_unicorn.png` | Unicorn (EN) | Unicorn Coloring Pages | `unicorn-easy-282889560.jpg` | Deep Purple |
 | `pin_rocket.png` | Rocket (EN) | Rocket Coloring Pages | `rocket-easy-1224668489.png` | Deep Blue |
 | `pin_butterfly.png` | Butterfly (EN) | Butterfly Coloring Pages | `butterfly-easy-351931874.png` | Deep Pink/Magenta |
+| `pin_dragon.png` | Dragon (EN) | Dragon Coloring Pages | `dragon-easy-3432101.png` | Deep Red |
+| `pin_princess.png` | Princess (EN) | Princess Coloring Pages | `princess-easy-315278375.png` | Deep Gold (skin-tone `forcedColors` on face/ear/neck) |
+| `pin_mermaid.png` | Mermaid (EN) | Mermaid Coloring Pages | `mermaid-easy-1969590692.jpg` | Indigo (skin-tone `forcedColors`; teal tail scales via `fillZones`) |
 | ~~`pin_schultuete.png`~~ | ~~Schultüte (DE)~~ | RETIRED 2026-08-09 — duplicate of pin already posted 8/5; flood-fill leaked through outline gaps on all attempts. Do not rebuild. | — | — |
 | `pin_einschulung.png` | Einschulung (DE) | Einschulung Ausmalbilder | `einschulung-easy-1520158737.png` | Deep Teal |
 
