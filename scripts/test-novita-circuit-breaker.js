@@ -1,20 +1,22 @@
-// Regression test for the Novita circuit breaker in lib/image-providers.js
-// (added 2026-09-19 after Novita's generate endpoint was confirmed to hang
-// indefinitely — see project-image-generation-providers memory). Verifies:
-//   1. The first NOVITA_BREAKER_THRESHOLD consecutive Novita failures use the
-//      FULL adaptive timeout (nothing shortened prematurely).
-//   2. Once the threshold is hit, the circuit "opens" and subsequent Novita
-//      calls get only the short NOVITA_BREAKER_PROBE_MS timeout instead.
-//   3. A single Novita success closes the circuit again (self-heals).
-// Mocks global.fetch end-to-end and drives everything through the public
-// generateImage() — no internals are exported just for this test.
+// Regression test for the half-open Novita circuit breaker in lib/image-providers.js.
+// Verifies:
+//   1. The first NOVITA_BREAKER_THRESHOLD consecutive failures use the FULL timeout.
+//   2. Once open, requests inside the cooldown skip Novita instantly (no fetch).
+//   3. After the cooldown, ONE half-open trial gets the FULL timeout — concurrent
+//      requests keep skipping while it is in flight.
+//   4. A trial against a slow-but-healthy Novita (answers after longer than the
+//      old 10s-style probe would have allowed) succeeds and CLOSES the circuit.
+//      This is the 2026-10-09 prod bug: probes shorter than Novita's normal
+//      latency could never succeed, so the circuit stayed open forever.
+//   5. After closing, the next failure uses the full timeout again (real reset).
+// Mocks global.fetch end-to-end and drives everything through generateImage().
 // Run: node scripts/test-novita-circuit-breaker.js
 process.env.CF_ACCOUNT_ID = 'dummy-account';
 process.env.CF_API_TOKEN = 'dummy-token';
 process.env.NOVITA_API_KEY = 'dummy-novita';
 process.env.NOVITA_BREAKER_THRESHOLD = '2';
-process.env.NOVITA_BREAKER_PROBE_MS = '150'; // short so this test runs fast
-process.env.NOVITA_TIMEOUT_MS = '600'; // "full" timeout, but still fast for a test — must stay clearly > the 150ms probe
+process.env.NOVITA_BREAKER_COOLDOWN_MS = '300';
+process.env.NOVITA_TIMEOUT_MS = '600'; // "full" timeout, short so the test runs fast
 delete process.env.TOGETHER_API_KEY;
 
 const { generateImage } = require('../lib/image-providers.js');
@@ -24,124 +26,86 @@ function check(name, cond) {
   if (cond) { console.log(`  ok   ${name}`); }
   else { console.log(`  FAIL ${name}`); failures++; }
 }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-function neverResolvingFetch(url, opts) {
-  // Simulates Novita's confirmed real-world behaviour: the request just
-  // hangs until the caller's AbortSignal fires — never resolves or rejects
-  // on its own. abortAfter()'s timer is what ends it.
-  return new Promise((_resolve, reject) => {
+// Novita that hangs until the caller aborts (real-world outage behaviour).
+function hang(opts) {
+  return new Promise((_res, reject) => {
     opts.signal.addEventListener('abort', () => {
-      const e = new Error('This operation was aborted');
-      e.name = 'AbortError';
-      reject(e);
+      const e = new Error('This operation was aborted'); e.name = 'AbortError'; reject(e);
     });
   });
 }
 
-async function main() {
-  let novitaCallTimeouts = []; // measured elapsed ms per Novita call
+const WHITE_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64');
 
-  global.fetch = async (url, opts) => {
-    const u = String(url);
-    if (u.includes('pollinations')) {
-      return { ok: false, status: 429, text: async () => 'rate limited' };
-    }
-    if (u.includes('cloudflare.com')) {
-      // Fail Cloudflare too so every call is forced through to Novita.
-      return { ok: false, status: 403, json: async () => ({}) };
-    }
-    if (u.includes('novita.ai')) {
-      const t0 = Date.now();
-      try {
-        await neverResolvingFetch(url, opts);
-      } finally {
-        novitaCallTimeouts.push(Date.now() - t0);
-      }
-      throw new Error('unreachable');
-    }
-    if (u.includes('huggingface.co')) {
-      return { ok: false, status: 404, text: async () => 'Not Found' };
-    }
-    throw new Error('unexpected fetch: ' + u);
-  };
+let novitaCalls = [];          // elapsed ms of each Novita generate call
+let novitaMode = 'hang';       // 'hang' | 'slow-ok'
 
-  const warnings = [];
-  const origWarn = console.warn;
-  console.warn = (...args) => { warnings.push(args.join(' ')); };
-
-  // Call 1 and 2: circuit starts CLOSED, so Novita should get the FULL
-  // adaptive timeout (>> the 150ms probe) both times.
-  for (let i = 1; i <= 2; i++) {
-    warnings.length = 0;
-    try {
-      await generateImage(`test subject ${i}`, 512, 512, 42 + i, { difficulty: 'medium' });
-    } catch { /* expected — everything fails, including the final fallback */ }
-    check(`call ${i}: circuit NOT reported open`, !warnings.some(w => w.includes('circuit OPEN')));
+global.fetch = async (url, opts) => {
+  const u = String(url);
+  if (u.includes('pollinations')) return { ok: false, status: 429, text: async () => 'x' };
+  if (u.includes('cloudflare.com')) return { ok: false, status: 403, json: async () => ({}) };
+  if (u.includes('novita.ai/fake.png')) {
+    return { ok: true, headers: { get: () => null },
+      arrayBuffer: async () => WHITE_PNG.buffer.slice(WHITE_PNG.byteOffset, WHITE_PNG.byteOffset + WHITE_PNG.byteLength) };
   }
-  check('calls 1-2 waited the full (unshortened) timeout, not the 150ms probe',
-    novitaCallTimeouts.every(ms => ms > 400));
-
-  // Call 3: threshold (2) reached — circuit should now be OPEN, using the
-  // short probe timeout instead of the full one.
-  novitaCallTimeouts.length = 0;
-  warnings.length = 0;
-  try {
-    await generateImage('test subject 3', 512, 512, 45, { difficulty: 'medium' });
-  } catch { /* expected */ }
-  check('call 3: circuit reported OPEN', warnings.some(w => w.includes('circuit OPEN')));
-  check('call 3: Novita aborted near the 150ms probe timeout (not the full budget)',
-    novitaCallTimeouts.length === 1 && novitaCallTimeouts[0] < 300);
-
-  // Call 4: Novita now succeeds — the circuit should close again.
-  global.fetch = async (url, opts) => {
-    const u = String(url);
-    if (u.includes('pollinations')) return { ok: false, status: 429, text: async () => 'x' };
-    if (u.includes('cloudflare.com')) return { ok: false, status: 403, json: async () => ({}) };
-    if (u.includes('novita.ai') && u.includes('flux-1-schnell')) {
+  if (u.includes('novita.ai')) {
+    const t0 = Date.now();
+    try {
+      if (novitaMode === 'hang') await hang(opts);
+      await sleep(400); // slow but healthy: longer than a short probe, shorter than the full timeout
       return { ok: true, json: async () => ({ images: [{ image_url: 'https://novita.ai/fake.png' }] }) };
-    }
-    if (u.includes('novita.ai/fake.png')) {
-      // A 1x1 white PNG — passes the quality gate trivially for this test.
-      const png = Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-        'base64'
-      );
-      return { ok: true, headers: { get: () => null }, arrayBuffer: async () => png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength) };
-    }
-    throw new Error('unexpected fetch: ' + u);
-  };
-  warnings.length = 0;
-  try {
-    await generateImage('test subject 4', 512, 512, 46, { difficulty: 'medium' });
-  } catch { /* the 1x1 PNG will likely fail the quality gate and fall to lastResort/error — that's fine, we only care about the breaker state */ }
+    } finally { novitaCalls.push(Date.now() - t0); }
+  }
+  if (u.includes('huggingface.co')) return { ok: false, status: 404, text: async () => 'x' };
+  throw new Error('unexpected fetch: ' + u);
+};
 
-  // Call 5: back to a hanging Novita — circuit should need the FULL
-  // threshold again (i.e. it actually reset, not just decremented).
-  global.fetch = async (url, opts) => {
-    const u = String(url);
-    if (u.includes('pollinations')) return { ok: false, status: 429, text: async () => 'x' };
-    if (u.includes('cloudflare.com')) return { ok: false, status: 403, json: async () => ({}) };
-    if (u.includes('novita.ai')) {
-      const t0 = Date.now();
-      try { await neverResolvingFetch(url, opts); } finally { novitaCallTimeouts.push(Date.now() - t0); }
-      throw new Error('unreachable');
-    }
-    if (u.includes('huggingface.co')) return { ok: false, status: 404, text: async () => 'x' };
-    throw new Error('unexpected fetch: ' + u);
-  };
-  novitaCallTimeouts.length = 0;
-  warnings.length = 0;
-  try {
-    await generateImage('test subject 5', 512, 512, 47, { difficulty: 'medium' });
-  } catch { /* expected */ }
-  check('call 5 (after a success): circuit closed again, full timeout used',
-    !warnings.some(w => w.includes('circuit OPEN')) &&
-    novitaCallTimeouts.length === 1 && novitaCallTimeouts[0] > 400);
+const warnings = [], logs = [];
+const origWarn = console.warn, origLog = console.log;
+console.warn = (...a) => { warnings.push(a.join(' ')); };
+console.log = (...a) => { const s = a.join(' '); if (/^\s+(ok|FAIL) /.test(s) || s.includes('checks')) origLog(s); else logs.push(s); };
+const gen = (i) => generateImage(`test subject ${i}`, 512, 512, 40 + i, { difficulty: 'medium' }).catch(() => {});
+const reset = () => { novitaCalls = []; warnings.length = 0; logs.length = 0; };
 
-  console.warn = origWarn;
+(async () => {
+  // 1. Calls 1-2: closed → full timeout.
+  reset();
+  await gen(1); await gen(2);
+  check('calls 1-2: circuit not reported open', !warnings.some(w => w.includes('circuit OPEN') || w.includes('HALF-OPEN')));
+  check('calls 1-2: Novita waited the full timeout', novitaCalls.length === 2 && novitaCalls.every(ms => ms > 500));
 
+  // 2. Call 3 immediately: open, inside cooldown → skipped, no Novita fetch.
+  reset();
+  await gen(3);
+  check('call 3: circuit OPEN, skipped', warnings.some(w => w.includes('circuit OPEN') && w.includes('skipping')));
+  check('call 3: Novita not called at all', novitaCalls.length === 0);
+
+  // 3. After cooldown: half-open trial gets the FULL timeout; a concurrent call skips.
+  await sleep(350);
+  reset();
+  await Promise.all([gen(4), gen(5)]);
+  check('calls 4+5: exactly one half-open trial', warnings.filter(w => w.includes('HALF-OPEN')).length === 1);
+  check('calls 4+5: concurrent call skipped (trial in flight)', warnings.some(w => w.includes('trial in flight')));
+  check('calls 4+5: only one Novita request, with the full timeout', novitaCalls.length === 1 && novitaCalls[0] > 500);
+
+  // 4. Slow-but-healthy Novita: trial succeeds and closes the circuit.
+  await sleep(350);
+  novitaMode = 'slow-ok';
+  reset();
+  await gen(6);
+  check('call 6: slow-but-healthy trial succeeded → circuit CLOSED', logs.some(l => l.includes('circuit CLOSED')));
+
+  // 5. Next failure: closed again → full timeout, no open/half-open warning.
+  novitaMode = 'hang';
+  reset();
+  await gen(7);
+  check('call 7: circuit closed, full timeout used',
+    !warnings.some(w => w.includes('circuit OPEN') || w.includes('HALF-OPEN')) && novitaCalls.length === 1 && novitaCalls[0] > 500);
+
+  console.warn = origWarn; console.log = origLog;
   console.log(failures === 0 ? '\nAll checks passed.' : `\n${failures} check(s) FAILED.`);
   process.exit(failures === 0 ? 0 : 1);
-}
-
-main();
+})();
