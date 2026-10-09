@@ -22,7 +22,10 @@ echo "[1/6] pull origin/$BR"; git fetch -q origin "$BR"; git checkout -f -B "$BR
 # ZERO automated testing, so a broken server-side change (e.g. the 2026-09-20
 # HuggingFace-fallback bug) could reach dev/prod on nothing but a health-check
 # that only proves the process boots, not that generation actually works.
-echo "[2/6] npm test";       npm test
+# The checkout has no node_modules of its own (and .dockerignore keeps it out of
+# the image), so install the locked deps first — otherwise any test that needs a
+# dependency (e.g. test-request-security.js → jsonwebtoken) fails the gate.
+echo "[2/6] npm ci + test";  npm ci --no-audit --no-fund --loglevel=error; npm test
 echo "[3/6] build $IMG";      docker build -t "$IMG" . >/dev/null
 echo "[4/6] deploy $NAME";    docker stack deploy -c "$STACK" "$NAME" >/dev/null
 echo "[5/6] update service";  docker service update --force --image "$IMG" "${NAME}_app" >/dev/null

@@ -1,6 +1,7 @@
 // Comprehensive functional QA for lalabuba.com
 // Tests: nav buttons, hero UI, account creation, OTP flow, child profiles, all difficulties, coloring
-// Usage: node scripts/functional-qa.js
+// Usage: node scripts/functional-qa.js            (prod)
+//        QA_ENV=dev node scripts/functional-qa.js (dev.lalabuba.com + dev DB)
 //
 // Generation auth: page.route() relays /api/generate-image from Node.js as a native
 // request carrying a REAL Firebase App Check token, minted by exchanging the registered
@@ -14,7 +15,8 @@ const { execSync, spawnSync } = require('child_process');
 const path = require('path');
 const fs   = require('fs');
 
-const BASE    = 'https://lalabuba.com';
+const QA_ENV  = process.env.QA_ENV === 'dev' ? 'dev' : 'prod';
+const BASE    = QA_ENV === 'dev' ? 'https://dev.lalabuba.com' : 'https://lalabuba.com';
 const OUT_DIR = path.join(__dirname, '..', 'public', 'mockups');
 const CHROME  = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const _homeDir = process.env.HOME || process.env.USERPROFILE || 'C:/Users/Alexa';
@@ -47,7 +49,7 @@ function dbQueryEmail(sql, email) {
   const nodeScript =
     `const {Pool}=require("pg");` +
     `const fs=require("fs");` +
-    `const url=fs.readFileSync("/run/secrets/lalabuba_prod_DATABASE_URL","utf8").trim();` +
+    `const url=fs.readFileSync("/run/secrets/lalabuba_${QA_ENV}_DATABASE_URL","utf8").trim();` +
     `const p=new Pool({connectionString:url});` +
     `p.query("${sql}",[process.env.TEST_EMAIL])` +
     `.then(r=>{console.log(r.rows[0]?r.rows[0].code:"");p.end();process.exit(0)})` +
@@ -55,7 +57,7 @@ function dbQueryEmail(sql, email) {
 
   const remoteCmd =
     `docker exec -e TEST_EMAIL=${email} ` +
-    `$(docker ps -q --filter name=lalabuba-prod_app) ` +
+    `$(docker ps -q --filter name=lalabuba-${QA_ENV}_app) ` +
     `node -e '${nodeScript}'`;
 
   const result = spawnSync('ssh', [
