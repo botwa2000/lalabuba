@@ -4,7 +4,9 @@ workflows:
   # workflowId to use in API call: "flutter-release"
   flutter-release:
     name: Lalabuba Flutter iOS — TestFlight
-    max_build_duration: 60
+    # 30 (was 60): builds take ~3-15 min on M2; a 60-min cap sat in the free-tier
+    # queue for 1h+ while a 15-min workflow got a machine in seconds (2026-10-09).
+    max_build_duration: 30
     instance_type: mac_mini_m2
 
     triggering:
