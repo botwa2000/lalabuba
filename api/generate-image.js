@@ -226,7 +226,9 @@ module.exports = async (req, res) => {
     }
     res.setHeader("Access-Control-Expose-Headers", exposedHeaders.join(", "));
     res.status(200).send(generated.buffer);
+    require("./health-deep").noteGeneration(true);
   } catch (error) {
+    require("./health-deep").noteGeneration(false);
     // Log the real error server-side; never echo provider URLs, status bodies,
     // or stack details (which may contain keys/internal hosts) to the client.
     console.error("generate-image error:", error && error.message ? error.message : error);

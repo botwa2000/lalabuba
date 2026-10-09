@@ -1935,14 +1935,34 @@ const server = http.createServer(async (req, res) => {
   require("./lib/rate-limit").startPruning();
   setInterval(() => db.cleanupExpiredArtworks().catch(() => {}), 24 * 60 * 60 * 1000);
 
-  // Hourly generation health check — generates a real test image, logs result.
-  // Helps catch provider outages (quota, auth, dark-image quality regressions) quickly.
-  // Runs 5 min after boot (avoids hammering during startup/restarts), then every hour.
+  // Hourly generation health log. Real user generations are the primary
+  // signal (reported by api/generate-image.js); a synthetic test image is only
+  // generated when no real generation has succeeded in REAL_OK_WINDOW_MS, and
+  // at most once per SYNTHETIC_MIN_GAP_MS — the old every-hour synthetic run
+  // spent 24 of Cloudflare's ~35-40 free daily images (2026-10-09).
+  const REAL_OK_WINDOW_MS    = 3 * 60 * 60 * 1000;
+  const SYNTHETIC_MIN_GAP_MS = 6 * 60 * 60 * 1000;
+  let lastSyntheticAt = 0;
+  let lastLogged = { ok: 0, fail: 0 };
   const runDeepHealthLog = async () => {
     try {
+      const real = healthDeepHandler.realTrafficStats();
+      const okDelta = real.ok - lastLogged.ok, failDelta = real.fail - lastLogged.fail;
+      lastLogged = { ok: real.ok, fail: real.fail };
+      const now = Date.now();
+      if (real.lastOkAt && now - real.lastOkAt < REAL_OK_WINDOW_MS) {
+        const tag = failDelta > okDelta ? "[health-WARN]" : "[health-ok]";
+        console.log(`${tag} real traffic: last success ${Math.round((now - real.lastOkAt) / 60000)}m ago, last hour ok=${okDelta} fail=${failDelta}`);
+        return;
+      }
+      if (now - lastSyntheticAt < SYNTHETIC_MIN_GAP_MS) {
+        console.log(`[health-idle] no recent real success (last hour ok=${okDelta} fail=${failDelta}); synthetic check ran ${Math.round((now - lastSyntheticAt) / 60000)}m ago`);
+        return;
+      }
+      lastSyntheticAt = now;
       const result = await healthDeepHandler.runHealthCheck(true /* force refresh */);
       const tag = result.status === "ok" ? "[health-ok]" : "[health-WARN]";
-      console.log(`${tag} generation=${result.generationMs}ms quality=${JSON.stringify(result.quality)} providers=${JSON.stringify(result.providers)}`);
+      console.log(`${tag} synthetic generation=${result.generationMs}ms quality=${JSON.stringify(result.quality)} providers=${JSON.stringify(result.providers)}`);
       if (result.status !== "ok") {
         console.error(`[health-ALERT] status=${result.status} error=${result.error}`);
       }
@@ -1950,10 +1970,9 @@ const server = http.createServer(async (req, res) => {
       console.error("[health-ALERT] deep health check threw:", err.message);
     }
   };
-  setTimeout(() => {
-    runDeepHealthLog();
-    setInterval(runDeepHealthLog, 60 * 60 * 1000);
-  }, 5 * 60 * 1000);
+  // First run an hour after boot (not 5 min) so deploys/restarts don't each
+  // spend a provider image; then hourly.
+  setInterval(runDeepHealthLog, 60 * 60 * 1000);
   server.listen(PORT, HOST, () => {
     console.log(`Lalabuba server listening on http://${HOST}:${PORT}`);
   });

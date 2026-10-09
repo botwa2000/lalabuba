@@ -10,6 +10,7 @@ delete process.env.TOGETHER_API_KEY;
 delete process.env.HF_TOKEN;
 
 const { generateImage } = require('../lib/image-providers.js');
+const HEDGE = require('../lib/drawing-config.js').DEFAULTS?.providers?.novitaHedge ?? 2;
 let failures = 0;
 const check = (n, c) => { console.log(`  ${c ? 'ok  ' : 'FAIL'} ${n}`); if (!c) failures++; };
 
@@ -44,12 +45,12 @@ console.warn = () => {}; console.log = (...a) => { const s = a.join(' '); if (/^
 (async () => {
   await generateImage('cat', 512, 512, 1, { difficulty: 'easy' }).catch(() => {});
   check('rejected Cloudflare image retried 3 times', cfCalls === 3);
-  check('falls through to Novita after the retries', novitaCalls === 1);
+  check('falls through to Novita after the retries', novitaCalls === HEDGE);
 
   cfCalls = 0; novitaCalls = 0; cfMode = 'quota';
   await generateImage('cat', 512, 512, 2, { difficulty: 'easy' }).catch(() => {});
   check('quota error exits the Cloudflare tier after 1 call', cfCalls === 1);
-  check('quota error still reaches Novita', novitaCalls === 1);
+  check('quota error still reaches Novita', novitaCalls === HEDGE);
 
   console.warn = origWarn; console.log = origLog;
   console.log(failures === 0 ? '\nAll checks passed.' : `\n${failures} check(s) FAILED.`);

@@ -13,6 +13,18 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 let _cachedResult = null;
 let _cachedAt     = 0;
 
+// Passive signal from real traffic: api/generate-image.js reports every
+// outcome here, so the scheduled health log can rely on real generations and
+// only spend a synthetic one when there has been no recent real success.
+// (The synthetic check used to run every hour — 24 images/day out of
+// Cloudflare's ~35-40 free daily images, starving real users; 2026-10-09.)
+const _real = { lastOkAt: 0, lastFailAt: 0, ok: 0, fail: 0 };
+function noteGeneration(ok) {
+  if (ok) { _real.lastOkAt = Date.now(); _real.ok++; }
+  else    { _real.lastFailAt = Date.now(); _real.fail++; }
+}
+function realTrafficStats() { return { ..._real }; }
+
 // Run a real generation test and return a structured result.
 async function runHealthCheck(force = false) {
   const now = Date.now();
@@ -108,3 +120,5 @@ module.exports = async (req, res) => {
 
 // Allow server.js to run the health check on a schedule and log results.
 module.exports.runHealthCheck = runHealthCheck;
+module.exports.noteGeneration = noteGeneration;
+module.exports.realTrafficStats = realTrafficStats;

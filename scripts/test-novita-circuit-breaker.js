@@ -20,6 +20,8 @@ process.env.NOVITA_TIMEOUT_MS = '600'; // "full" timeout, short so the test runs
 delete process.env.TOGETHER_API_KEY;
 
 const { generateImage } = require('../lib/image-providers.js');
+// Each Novita attempt is hedged into HEDGE parallel requests (providers.novitaHedge).
+const HEDGE = require('../lib/drawing-config.js').DEFAULTS?.providers?.novitaHedge ?? 2;
 
 let failures = 0;
 function check(name, cond) {
@@ -55,7 +57,12 @@ global.fetch = async (url, opts) => {
     const t0 = Date.now();
     try {
       if (novitaMode === 'hang') await hang(opts);
-      await sleep(400); // slow but healthy: longer than a short probe, shorter than the full timeout
+      // slow but healthy: longer than a short probe, shorter than the full
+      // timeout — and, like a real fetch, it honours abort (hedge losers).
+      await new Promise((res, rej) => {
+        const t = setTimeout(res, 400);
+        opts.signal.addEventListener('abort', () => { clearTimeout(t); const e = new Error('aborted'); e.name = 'AbortError'; rej(e); });
+      });
       return { ok: true, json: async () => ({ images: [{ image_url: 'https://novita.ai/fake.png' }] }) };
     } finally { novitaCalls.push(Date.now() - t0); }
   }
@@ -75,7 +82,7 @@ const reset = () => { novitaCalls = []; warnings.length = 0; logs.length = 0; };
   reset();
   await gen(1); await gen(2);
   check('calls 1-2: circuit not reported open', !warnings.some(w => w.includes('circuit OPEN') || w.includes('HALF-OPEN')));
-  check('calls 1-2: Novita waited the full timeout', novitaCalls.length === 2 && novitaCalls.every(ms => ms > 500));
+  check('calls 1-2: Novita waited the full timeout', novitaCalls.length === 2 * HEDGE && novitaCalls.every(ms => ms > 500));
 
   // 2. Call 3 immediately: open, inside cooldown → skipped, no Novita fetch.
   reset();
@@ -89,7 +96,7 @@ const reset = () => { novitaCalls = []; warnings.length = 0; logs.length = 0; };
   await Promise.all([gen(4), gen(5)]);
   check('calls 4+5: exactly one half-open trial', warnings.filter(w => w.includes('HALF-OPEN')).length === 1);
   check('calls 4+5: concurrent call skipped (trial in flight)', warnings.some(w => w.includes('trial in flight')));
-  check('calls 4+5: only one Novita request, with the full timeout', novitaCalls.length === 1 && novitaCalls[0] > 500);
+  check('calls 4+5: only the one (hedged) trial hit Novita, with the full timeout', novitaCalls.length === HEDGE && novitaCalls.every(ms => ms > 500));
 
   // 4. Slow-but-healthy Novita: trial succeeds and closes the circuit.
   await sleep(350);
@@ -103,7 +110,30 @@ const reset = () => { novitaCalls = []; warnings.length = 0; logs.length = 0; };
   reset();
   await gen(7);
   check('call 7: circuit closed, full timeout used',
-    !warnings.some(w => w.includes('circuit OPEN') || w.includes('HALF-OPEN')) && novitaCalls.length === 1 && novitaCalls[0] > 500);
+    !warnings.some(w => w.includes('circuit OPEN') || w.includes('HALF-OPEN')) && novitaCalls.length === HEDGE && novitaCalls.every(ms => ms > 500));
+
+  // 6. Hedge: one hedged request stalls, the other answers fast → the
+  //    generation returns promptly and the stalled request is aborted.
+  if (HEDGE > 1) {
+    reset();
+    let n = 0, stalledAborted = false;
+    const prevFetch = global.fetch;
+    global.fetch = async (url, opts) => {
+      const u = String(url);
+      if (u.includes('novita.ai') && !u.includes('fake.png')) {
+        if (n++ === 0) { try { await hang(opts); } catch (e) { stalledAborted = true; throw e; } }
+        return { ok: true, json: async () => ({ images: [{ image_url: 'https://novita.ai/fake.png' }] }) };
+      }
+      return prevFetch(url, opts);
+    };
+    const t0 = Date.now();
+    await gen(8);
+    const took = Date.now() - t0;
+    await sleep(20);
+    check('hedge: fast request wins without waiting for the stalled one', took < 500);
+    check('hedge: stalled request aborted after the win', stalledAborted);
+    global.fetch = prevFetch;
+  }
 
   console.warn = origWarn; console.log = origLog;
   console.log(failures === 0 ? '\nAll checks passed.' : `\n${failures} check(s) FAILED.`);
