@@ -1,15 +1,15 @@
 {
   "_comment": "App Store 'What's New' text per language prefix, used by scripts/asc_submit_review.py for every App Store version localization. Update before each production release. 'en' is the fallback.",
-  "en": "Smoother coloring and more reliable tap-to-fill on detailed pictures, faster picture creation, and many small fixes and improvements.",
-  "de": "Flüssigeres Ausmalen und zuverlässigeres Füllen bei detailreichen Bildern, schnellere Bilderstellung sowie viele kleine Verbesserungen.",
-  "es": "Coloreado más fluido y relleno más fiable en dibujos detallados, creación de dibujos más rápida y muchas pequeñas mejoras.",
-  "fr": "Coloriage plus fluide et remplissage plus fiable sur les dessins détaillés, création d'images plus rapide et de nombreuses petites améliorations.",
-  "it": "Colorazione più fluida e riempimento più affidabile sui disegni dettagliati, creazione più veloce e tanti piccoli miglioramenti.",
-  "nl": "Soepeler kleuren en betrouwbaarder invullen bij gedetailleerde tekeningen, sneller plaatjes maken en veel kleine verbeteringen.",
-  "pl": "Płynniejsze kolorowanie i pewniejsze wypełnianie szczegółowych obrazków, szybsze tworzenie kolorowanek i wiele drobnych ulepszeń.",
-  "pt": "Pintura mais suave e preenchimento mais fiável em desenhos detalhados, criação de desenhos mais rápida e muitas pequenas melhorias.",
-  "ru": "Более плавное раскрашивание и надёжная заливка на детальных картинках, более быстрое создание раскрасок и множество мелких улучшений.",
-  "tr": "Detaylı resimlerde daha akıcı boyama ve daha güvenilir doldurma, daha hızlı resim oluşturma ve birçok küçük iyileştirme.",
-  "hi": "विस्तृत चित्रों में ज़्यादा आसान रंग भरना और भरोसेमंद फ़िल, तेज़ चित्र निर्माण और कई छोटे सुधार।",
-  "zh": "更流畅的涂色体验，细节丰富的图片填色更可靠，生成图片更快，并包含多项小改进。"
+  "en": "Tap-to-fill now colours the whole area right up to the lines, even on long thin stripes and detailed pictures. Pictures are created more reliably, plus security and stability improvements.",
+  "de": "Tippen zum Ausfüllen färbt jetzt die ganze Fläche bis an die Linien – auch bei langen, schmalen Streifen und detailreichen Bildern. Zuverlässigere Bilderstellung sowie Verbesserungen bei Sicherheit und Stabilität.",
+  "es": "Tocar para rellenar ahora colorea toda la zona hasta las líneas, incluso en franjas largas y estrechas y en dibujos detallados. Creación de dibujos más fiable y mejoras de seguridad y estabilidad.",
+  "fr": "Le remplissage d'un simple toucher colorie désormais toute la zone jusqu'aux traits, même sur les bandes longues et étroites et les dessins détaillés. Création d'images plus fiable, et améliorations de sécurité et de stabilité.",
+  "it": "Il riempimento con un tocco ora colora tutta l'area fino alle linee, anche su strisce lunghe e sottili e sui disegni dettagliati. Creazione dei disegni più affidabile e miglioramenti di sicurezza e stabilità.",
+  "nl": "Tikken om te vullen kleurt nu het hele vlak tot aan de lijnen, ook bij lange smalle strepen en gedetailleerde tekeningen. Betrouwbaarder plaatjes maken en verbeteringen in veiligheid en stabiliteit.",
+  "pl": "Wypełnianie dotknięciem koloruje teraz cały obszar aż do linii, także w długich, wąskich paskach i szczegółowych obrazkach. Bardziej niezawodne tworzenie kolorowanek oraz poprawki bezpieczeństwa i stabilności.",
+  "pt": "Tocar para preencher agora pinta toda a área até às linhas, mesmo em faixas longas e estreitas e em desenhos detalhados. Criação de desenhos mais fiável e melhorias de segurança e estabilidade.",
+  "ru": "Заливка касанием теперь закрашивает всю область до самых линий — даже длинные узкие полосы и детальные картинки. Более надёжное создание раскрасок, а также улучшения безопасности и стабильности.",
+  "tr": "Dokunarak doldurma artık uzun ince şeritlerde ve detaylı resimlerde bile tüm alanı çizgilere kadar boyar. Daha güvenilir resim oluşturma, ayrıca güvenlik ve kararlılık iyileştirmeleri.",
+  "hi": "टैप करके रंग भरना अब पूरे हिस्से को रेखाओं तक रंगता है — लंबी पतली पट्टियों और विस्तृत चित्रों में भी। चित्र बनाना ज़्यादा भरोसेमंद, साथ ही सुरक्षा और स्थिरता में सुधार।",
+  "zh": "点击填色现在会把整个区域涂满到线条边缘，长条细窄区域和细节丰富的图片也不例外。图片生成更可靠，并改进了安全性和稳定性。"
 }
