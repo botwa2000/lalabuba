@@ -21,6 +21,10 @@ workflows:
       vars:
         APP_STORE_APPLE_ID: "6761691648"
       flutter: stable
+      # Pinned (not "latest"): when Codemagic moves "latest" to a new Xcode whose
+      # image the free mac_mini_m2 pool doesn't carry yet, builds sit in "queued"
+      # indefinitely (2026-10-09: 1.0.21 queued 1h+). 26.6 built every release so far.
+      xcode: "26.6"
 
     scripts:
       - name: Compute CFBundleVersion (must exceed latest TestFlight)
@@ -146,6 +150,7 @@ workflows:
     integrations:
       app_store_connect: Bonistock ASC
     environment:
+      xcode: "26.6"   # pinned — see flutter-release
       vars:
         APP_STORE_APPLE_ID: "6761691648"
     scripts:
@@ -171,6 +176,7 @@ workflows:
     integrations:
       app_store_connect: Bonistock ASC
     environment:
+      xcode: "26.6"   # pinned — see flutter-release
       vars:
         APP_STORE_APPLE_ID: "6761691648"
     scripts:
