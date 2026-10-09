@@ -41,17 +41,32 @@ export function trappedBallSegment(outlineMask, width, height, radii) {
   const layer = new Int32Array(n);
   let nextId = 0;
 
+  // Cores are labelled 8-CONNECTED. In a diagonal corridor whose width is
+  // close to the ball size, the eroded core is a diagonal staircase whose
+  // pixels touch only at corners; 4-connectivity cut every stair step into its
+  // own region, so one visually-enclosed stripe became a stack of separately
+  // fillable bands (taps stopped mid-area with no line there — 2026-10-09
+  // train cow-catcher report). Diagonal joining is safe here: every core pixel
+  // is > r (>= 1) away from any wall, so a diagonal step between two core
+  // pixels can never cross a line.
   function labelCore(s, r) {
     let head = 0, tail = 0;
     q[tail++] = s;
     label[s] = nextId;
     while (head < tail) {
       const i = q[head++];
-      const x = i % w;
-      if (x > 0)         { const nb = i - 1; if (work[nb] === 1 && label[nb] === -1 && dist[nb] > r) { label[nb] = nextId; q[tail++] = nb; } }
-      if (x < w - 1)     { const nb = i + 1; if (work[nb] === 1 && label[nb] === -1 && dist[nb] > r) { label[nb] = nextId; q[tail++] = nb; } }
-      if (i - w >= 0)    { const nb = i - w; if (work[nb] === 1 && label[nb] === -1 && dist[nb] > r) { label[nb] = nextId; q[tail++] = nb; } }
-      if (i + w < n)     { const nb = i + w; if (work[nb] === 1 && label[nb] === -1 && dist[nb] > r) { label[nb] = nextId; q[tail++] = nb; } }
+      const x = i % w, y = (i / w) | 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        const ny = y + dy;
+        if (ny < 0 || ny >= h) continue;
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = x + dx;
+          if (nx < 0 || nx >= w) continue;
+          const nb = ny * w + nx;
+          if (work[nb] === 1 && label[nb] === -1 && dist[nb] > r) { label[nb] = nextId; q[tail++] = nb; }
+        }
+      }
     }
     nextId++;
   }
@@ -133,7 +148,77 @@ export function trappedBallSegment(outlineMask, width, height, radii) {
     nextId++;
   }
 
+  mergeCorridorSplits(label, outlineMask, w, h, dist);
   return label;
+}
+
+// Re-join regions that trapped-ball split where a white corridor merely
+// NARROWS between two continuous lines (no line ends there). A ball of radius
+// r cannot pass a neck narrower than 2r+1, so every narrowing of a stripe, rail
+// or spoke became a separate region — taps then stopped mid-area at an
+// invisible edge (2026-10-09 train report: 600 of 639 touching pairs in that
+// image were such splits). Rule: two touching regions (no wall between them)
+// are merged when their shared border is at least half as wide as the
+// smaller region's widest point — nothing visually separates them then. A real leak
+// through a broken line is a narrow opening relative to the regions it joins,
+// so it stays split. The background (outer white space) is never merged, so an
+// open outline can't flood into it.
+// A corridor may pinch to about half its widest width between continuous
+// lines and still read as one area; a leak through a broken line is a much
+// narrower opening. Measured on the 2026-10-09 train image: 633 of 639
+// touching pairs had border/width >= 0.5, all of them corridor splits.
+const CORRIDOR_MERGE_RATIO = 0.5;
+
+export function mergeCorridorSplits(label, outlineMask, w, h, distBuf) {
+  const n = w * h;
+  const free = new Uint8Array(n);
+  for (let i = 0; i < n; i++) free[i] = outlineMask[i] === 1 ? 0 : 1;
+  const dist = distBuf && distBuf.length === n ? distBuf : new Int32Array(n);
+  chebyshevDistance(free, w, h, dist);
+
+  let maxId = -1;
+  for (let i = 0; i < n; i++) if (label[i] > maxId) maxId = label[i];
+  if (maxId < 1) return;
+  const maxD = new Int32Array(maxId + 1);
+  for (let i = 0; i < n; i++) { const s = label[i]; if (s >= 0 && dist[i] > maxD[s]) maxD[s] = dist[i]; }
+
+  let bg = -1;
+  outer: for (let dy = 1; dy <= 4 && dy < h; dy++) for (let dx = 1; dx <= 4 && dx < w; dx++) {
+    const id = label[dy * w + dx]; if (id >= 0) { bg = id; break outer; }
+  }
+
+  // Contact = number of distinct pixels of the lower-id region that touch the
+  // other region (4-neighbour) — one side only, so a diagonal border is not
+  // double-counted.
+  const contact = new Map();
+  for (let i = 0; i < n; i++) {
+    const a = label[i];
+    if (a < 0) continue;
+    const x = i % w;
+    let b1 = -1, b2 = -1, b3 = -1; // distinct higher-id neighbours of this pixel
+    for (let k = 0; k < 4; k++) {
+      const nb = k === 0 ? (x > 0 ? i - 1 : -1) : k === 1 ? (x < w - 1 ? i + 1 : -1) : k === 2 ? i - w : i + w;
+      if (nb < 0 || nb >= n) continue;
+      const b = label[nb];
+      if (b <= a || b === b1 || b === b2 || b === b3) continue;
+      if (b1 < 0) b1 = b; else if (b2 < 0) b2 = b; else b3 = b;
+      const key = a * (maxId + 1) + b;
+      contact.set(key, (contact.get(key) || 0) + 1);
+    }
+  }
+
+  const parent = new Int32Array(maxId + 1);
+  for (let i = 0; i <= maxId; i++) parent[i] = i;
+  const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+  let merged = false;
+  for (const [key, c] of contact) {
+    const a = Math.floor(key / (maxId + 1)), b = key % (maxId + 1);
+    if (a === bg || b === bg) continue;
+    const diam = 2 * Math.min(maxD[a], maxD[b]);
+    if (c >= CORRIDOR_MERGE_RATIO * diam) { const ra = find(a), rb = find(b); if (ra !== rb) { parent[ra] = rb; merged = true; } }
+  }
+  if (!merged) return;
+  for (let i = 0; i < n; i++) if (label[i] >= 0) label[i] = find(label[i]);
 }
 
 // Descending ball radii for an image of size w×h. The largest seals the biggest

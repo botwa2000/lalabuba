@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lalabuba/features/canvas/trapped_ball.dart';
@@ -142,6 +143,46 @@ void main() {
       }
       // tiny images still yield a sane sequence ending at 1
       expect(ballRadiiFor(40, 40).last, 1);
+    });
+  });
+
+  // 2026-10-09 train report (parity with scripts/test-trapped-ball.mjs): a
+  // diagonal stripe between two continuous lines, whose width wobbles around
+  // the ball size, used to be cut into a stack of separately-fillable bands.
+  group('wobbling diagonal stripe between continuous lines', () {
+    const w = 200, h = 200;
+    final mask = Uint8List(w * h);
+    int idx(int x, int y) => y * w + x;
+    for (var x = 0; x < w; x++) {
+      mask[idx(x, 0)] = 1;
+      mask[idx(x, h - 1)] = 1;
+    }
+    for (var y = 0; y < h; y++) {
+      mask[idx(0, y)] = 1;
+      mask[idx(w - 1, y)] = 1;
+    }
+    double cx(int y) => 40 + y * 0.6;
+    double hw(int y) => 4.5 + 1.5 * math.sin(y / 6);
+    for (var y = 1; y < h - 1; y++) {
+      for (var x = 1; x < w - 1; x++) {
+        final d = x - cx(y), half = hw(y);
+        if ((d > -half - 2 && d <= -half) || (d >= half && d < half + 2)) {
+          mask[idx(x, y)] = 1;
+        }
+      }
+    }
+    final label = trappedBallSegment(mask, w, h);
+    final ids = <int>{};
+    for (var y = 10; y < h - 10; y++) {
+      final id = label[idx(cx(y).round(), y)];
+      if (id >= 0) ids.add(id);
+    }
+    test('whole stripe is a single region', () {
+      expect(ids.length, 1, reason: 'got ${ids.length} regions along the stripe');
+    });
+    test('stripe stays distinct from the areas beside it', () {
+      expect(ids.contains(label[idx(5, 100)]), isFalse);
+      expect(ids.contains(label[idx(w - 6, 100)]), isFalse);
     });
   });
 }

@@ -19,7 +19,7 @@
 
 import { buildOutlineMask }    from './outline-mask.js?v=323';
 import { bridgeLineGaps }      from './line-bridge.js?v=323';
-import { trappedBallSegment }  from './trapped-ball.js?v=323';
+import { trappedBallSegment }  from './trapped-ball.js?v=341';
 import { watershedAssign, buildRegionPixels } from './fill-core.js?v=323';
 
 // Fallback detection params match lib/drawing-config.js DEFAULTS.

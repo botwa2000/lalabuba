@@ -15,7 +15,7 @@ import { bounce, sparkleBurst, sparkleAt, playComplete } from './fx.js';
 import { fillRegionCore, watershedAssign, buildRegionPixels } from './fill-core.js?v=323';
 import { buildOutlineMask } from './outline-mask.js?v=323';
 import { bridgeLineGaps }   from './line-bridge.js?v=323';
-import { trappedBallSegment } from './trapped-ball.js?v=323';
+import { trappedBallSegment } from './trapped-ball.js?v=341';
 
 // ─── Off-thread segmentation worker ─────────────────────────────────────────
 // precomputeRegions() can block the main thread for 200ms–10s on complex images
@@ -29,7 +29,7 @@ function _getWorker() {
   if (_worker) return _worker;
   try {
     // ES module workers: supported on Chrome 80+, Firefox 114+, Safari 15+, iOS 15+.
-    _worker = new Worker(new URL('./region-worker.js?v=327', import.meta.url), { type: 'module' });
+    _worker = new Worker(new URL('./region-worker.js?v=341', import.meta.url), { type: 'module' });
   } catch { _worker = null; }
   return _worker;
 }

@@ -55,39 +55,32 @@ Int32List trappedBallSegment(
   final layer = Int32List(n);
   var nextId = 0;
 
+  // Cores are labelled 8-CONNECTED (parity with trapped-ball.js). In a
+  // diagonal corridor whose width is close to the ball size, the eroded core is
+  // a diagonal staircase whose pixels touch only at corners; 4-connectivity cut
+  // every stair step into its own region, so one visually-enclosed stripe
+  // became a stack of separately fillable bands. Diagonal joining is safe:
+  // every core pixel is > r (>= 1) away from any wall, so a diagonal step
+  // between two core pixels can never cross a line.
   void labelCore(int s, int r) {
     var head = 0, tail = 0;
     q[tail++] = s;
     label[s] = nextId;
     while (head < tail) {
       final i = q[head++];
-      final x = i % w;
-      if (x > 0) {
-        final nb = i - 1;
-        if (work[nb] == 1 && label[nb] == -1 && dist[nb] > r) {
-          label[nb] = nextId;
-          q[tail++] = nb;
-        }
-      }
-      if (x < w - 1) {
-        final nb = i + 1;
-        if (work[nb] == 1 && label[nb] == -1 && dist[nb] > r) {
-          label[nb] = nextId;
-          q[tail++] = nb;
-        }
-      }
-      if (i - w >= 0) {
-        final nb = i - w;
-        if (work[nb] == 1 && label[nb] == -1 && dist[nb] > r) {
-          label[nb] = nextId;
-          q[tail++] = nb;
-        }
-      }
-      if (i + w < n) {
-        final nb = i + w;
-        if (work[nb] == 1 && label[nb] == -1 && dist[nb] > r) {
-          label[nb] = nextId;
-          q[tail++] = nb;
+      final x = i % w, y = i ~/ w;
+      for (var dy = -1; dy <= 1; dy++) {
+        final ny = y + dy;
+        if (ny < 0 || ny >= h) continue;
+        for (var dx = -1; dx <= 1; dx++) {
+          if (dx == 0 && dy == 0) continue;
+          final nx = x + dx;
+          if (nx < 0 || nx >= w) continue;
+          final nb = ny * w + nx;
+          if (work[nb] == 1 && label[nb] == -1 && dist[nb] > r) {
+            label[nb] = nextId;
+            q[tail++] = nb;
+          }
         }
       }
     }
@@ -262,7 +255,112 @@ Int32List trappedBallSegment(
     nextId++;
   }
 
+  mergeCorridorSplits(label, outlineMask, w, h, dist);
   return label;
+}
+
+/// A corridor may pinch to about half its widest width between continuous
+/// lines and still read as one area (parity with trapped-ball.js).
+const double corridorMergeRatio = 0.5;
+
+/// Re-join regions that trapped-ball split where a white corridor merely
+/// NARROWS between two continuous lines (no line ends there). Parity twin of
+/// trapped-ball.js mergeCorridorSplits — see its comment for the 2026-10-09
+/// train report. Two touching regions (no wall between them) are merged when
+/// their shared border is at least half as wide as the smaller region's
+/// widest point; a real leak through a broken line is a narrow opening, so it stays
+/// split. The background (outer white space) is never merged.
+void mergeCorridorSplits(
+    Int32List label, Uint8List outlineMask, int w, int h, Int32List dist) {
+  final n = w * h;
+  final free = Uint8List(n);
+  for (var i = 0; i < n; i++) {
+    free[i] = outlineMask[i] == 1 ? 0 : 1;
+  }
+  chebyshevDistance(free, w, h, dist);
+
+  var maxId = -1;
+  for (var i = 0; i < n; i++) {
+    if (label[i] > maxId) maxId = label[i];
+  }
+  if (maxId < 1) return;
+  final maxD = Int32List(maxId + 1);
+  for (var i = 0; i < n; i++) {
+    final s = label[i];
+    if (s >= 0 && dist[i] > maxD[s]) maxD[s] = dist[i];
+  }
+
+  var bg = -1;
+  outer:
+  for (var dy = 1; dy <= 4 && dy < h; dy++) {
+    for (var dx = 1; dx <= 4 && dx < w; dx++) {
+      final id = label[dy * w + dx];
+      if (id >= 0) {
+        bg = id;
+        break outer;
+      }
+    }
+  }
+
+  // Contact = distinct pixels of the lower-id region touching the other region.
+  final contact = <int, int>{};
+  for (var i = 0; i < n; i++) {
+    final a = label[i];
+    if (a < 0) continue;
+    final x = i % w;
+    var b1 = -1, b2 = -1, b3 = -1;
+    for (var k = 0; k < 4; k++) {
+      final nb = k == 0
+          ? (x > 0 ? i - 1 : -1)
+          : k == 1
+              ? (x < w - 1 ? i + 1 : -1)
+              : k == 2
+                  ? i - w
+                  : i + w;
+      if (nb < 0 || nb >= n) continue;
+      final b = label[nb];
+      if (b <= a || b == b1 || b == b2 || b == b3) continue;
+      if (b1 < 0) {
+        b1 = b;
+      } else if (b2 < 0) {
+        b2 = b;
+      } else {
+        b3 = b;
+      }
+      final key = a * (maxId + 1) + b;
+      contact[key] = (contact[key] ?? 0) + 1;
+    }
+  }
+
+  final parent = Int32List(maxId + 1);
+  for (var i = 0; i <= maxId; i++) {
+    parent[i] = i;
+  }
+  int find(int x) {
+    while (parent[x] != x) {
+      parent[x] = parent[parent[x]];
+      x = parent[x];
+    }
+    return x;
+  }
+
+  var merged = false;
+  contact.forEach((key, c) {
+    final a = key ~/ (maxId + 1), b = key % (maxId + 1);
+    if (a == bg || b == bg) return;
+    final diam = 2 * (maxD[a] < maxD[b] ? maxD[a] : maxD[b]);
+    if (c >= corridorMergeRatio * diam) {
+      final ra = find(a), rb = find(b);
+      if (ra != rb) {
+        parent[ra] = rb;
+        merged = true;
+      }
+    }
+  });
+  if (!merged) return;
+  for (var i = 0; i < n; i++) {
+    if (label[i] >= 0) label[i] = find(label[i]);
+  }
 }
 
 /// Descending ball radii for an image of size w×h. The largest seals the biggest

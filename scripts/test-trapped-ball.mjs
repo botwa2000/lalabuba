@@ -88,6 +88,35 @@ console.log('test: trapped-ball thin regions stay fillable (B)');
   check('corridor distinct from lower chamber', label[idx(10, 9)] !== mid);
 }
 
+// ── 2026-10-09 train report: wobbling diagonal stripe must be ONE region ─────
+// Two continuous diagonal lines bound a stripe whose width wobbles around the
+// ball size. Trapped-ball used to cut it at every narrowing (and 4-connected
+// core labelling cut every diagonal stair step), so one visually-enclosed
+// stripe became a stack of bands that each needed a separate tap.
+console.log('test: wobbling diagonal stripe between continuous lines is one region');
+{
+  const W = 200, H = 200, mask = new Uint8Array(W * H);
+  const idx = (x, y) => y * W + x;
+  for (let x = 0; x < W; x++) { mask[idx(x, 0)] = 1; mask[idx(x, H - 1)] = 1; }
+  for (let y = 0; y < H; y++) { mask[idx(0, y)] = 1; mask[idx(W - 1, y)] = 1; }
+  // Stripe centre runs diagonally; half-width wobbles 3..6 px; walls 2 px thick.
+  const cx = (y) => 40 + y * 0.6;
+  const hw = (y) => 4.5 + 1.5 * Math.sin(y / 6);
+  for (let y = 1; y < H - 1; y++) {
+    for (let x = 1; x < W - 1; x++) {
+      const d = x - cx(y), half = hw(y);
+      if ((d > -half - 2 && d <= -half) || (d >= half && d < half + 2)) mask[idx(x, y)] = 1;
+    }
+  }
+  const label = trappedBallSegment(mask, W, H);
+  const ids = new Set();
+  for (let y = 10; y < H - 10; y++) { const id = label[idx(Math.round(cx(y)), y)]; if (id >= 0) ids.add(id); }
+  check('whole stripe is a single region', ids.size === 1, `got ${ids.size} regions along the stripe`);
+  const left = label[idx(5, 100)], right = label[idx(W - 6, 100)];
+  check('stripe stays distinct from the area left of it', !ids.has(left));
+  check('stripe stays distinct from the area right of it', !ids.has(right));
+}
+
 // ── ballRadiiFor ───────────────────────────────────────────────────────────────
 console.log('test: ballRadiiFor descending, ends at 1, scales with size');
 {
