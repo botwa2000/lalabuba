@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,7 @@ import '../community/screens/community_gallery_screen.dart';
 import '../community/widgets/nickname_picker.dart';
 import 'print_book.dart';
 import '../../services/account_service.dart';
+import '../../shared/services/review_prompt_service.dart';
 import '../../shared/widgets/parental_gate.dart';
 
 final galleryImagesProvider = FutureProvider<List<File>>((ref) async {
@@ -521,6 +523,7 @@ class _GalleryFullScreenState extends ConsumerState<_GalleryFullScreen> {
     } catch (_) {}
 
     if (!mounted) return;
+    final gatePassed = withConsent;
     if (withConsent) {
       final ok = await showParentalGate(context, l10n);
       if (!ok || !mounted) return;
@@ -564,6 +567,8 @@ class _GalleryFullScreenState extends ConsumerState<_GalleryFullScreen> {
           duration: const Duration(seconds: 3),
         ),
       );
+      // A grown-up just passed the gate and the share succeeded.
+      if (gatePassed) unawaited(ReviewPromptService.instance.onParentActionSucceeded());
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

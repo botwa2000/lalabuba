@@ -29,6 +29,7 @@ import '../../features/community/community_service.dart';
 import '../../features/community/widgets/nickname_picker.dart';
 import '../../features/community/widgets/share_type_picker.dart';
 import '../../shared/services/analytics_service.dart';
+import '../../shared/services/review_prompt_service.dart';
 import '../../shared/services/storage_service.dart';
 import '../../shared/widgets/lala_color_swatch.dart';
 import '../../shared/widgets/lala_loading_overlay.dart';
@@ -309,6 +310,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       }
     } catch (e, stack) {
       AnalyticsService.recordError(e, stack);
+      ReviewPromptService.instance.recordError();
       AnalyticsService.track('image_generate_failed', {
         'subject': _subject,
         'difficulty': difficulty,
@@ -1870,6 +1872,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final progress =
         ref.read(progressProvider).value ?? const Progress();
 
+    // Count toward store-review eligibility. Never prompts here — the child is
+    // the one celebrating (see ReviewPromptService).
+    unawaited(ReviewPromptService.instance.recordCompletion());
+
     // Fire-and-forget: sync completion to server so leaderboard stays current.
     try {
       final svc = ref.read(communityServiceProvider);
@@ -2109,6 +2115,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     if (!mounted) return;
 
     // 2. If sharing not enabled yet, require parental gate
+    final gatePassed = withConsent;
     if (withConsent) {
       final ok = await showParentalGate(context, l10n);
       if (!ok || !mounted) return;
@@ -2186,6 +2193,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
       context.goNamed('journal');
+      // A grown-up just passed the gate and the share succeeded.
+      if (gatePassed) unawaited(ReviewPromptService.instance.onParentActionSucceeded());
     } on DioException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars();

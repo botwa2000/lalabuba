@@ -60,6 +60,7 @@ dependencies:
   printing: ^5.14.2
   pdf: ^3.11.3
   firebase_app_check: ^0.4.8
+  in_app_review: ^2.0.12
 
 dev_dependencies:
   flutter_test:

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/l10n/l10n_service.dart';
 import '../../core/di/providers.dart' show themeModeProvider;
 import '../../services/account_service.dart';
+import '../../shared/services/review_prompt_service.dart';
 import '../../shared/services/storage_service.dart';
 import '../../shared/widgets/parental_gate.dart';
 import '../community/community_service.dart';
@@ -375,6 +377,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.t('communityProfileUpdated'))),
         );
+        if (withConsent) {
+          unawaited(ReviewPromptService.instance.onParentActionSucceeded());
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -391,6 +396,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final ok = await showParentalGate(context, l10n);
     if (!ok) return;
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  // Store page, not the in-app review card: always works, never spends the
+  // OS prompt quota, and it leaves the app — so it sits behind the gate.
+  Future<void> _rateApp(BuildContext context, L10n l10n) async {
+    final ok = await showParentalGate(context, l10n);
+    if (!ok) return;
+    await ReviewPromptService.instance.openStoreListing();
   }
 
   Widget _buildAboutSection(BuildContext context, L10n l10n) {
@@ -411,6 +424,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       style: GoogleFonts.nunito(fontSize: 14),
                     ),
                     leading: const Icon(Icons.info_outline_rounded),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    title: Text(l10n.t('settingsRateApp'),
+                        style: GoogleFonts.nunito(fontSize: 14)),
+                    leading: const Icon(Icons.star_outline_rounded),
+                    trailing: const Icon(Icons.open_in_new_rounded, size: 16),
+                    onTap: () => _rateApp(ctx, l10n),
                   ),
                   const Divider(height: 1),
                   ListTile(

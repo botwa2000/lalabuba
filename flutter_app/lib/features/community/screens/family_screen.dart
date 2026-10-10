@@ -1,10 +1,12 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../community_service.dart';
 import '../models/family_model.dart';
 import '../widgets/community_artwork_card.dart' show avatarEmoji;
+import '../../../shared/services/review_prompt_service.dart';
 import '../../../shared/widgets/parental_gate.dart';
 import '../../../core/di/providers.dart';
 
@@ -56,6 +58,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
             content: Text(l10n.t('familyCreatedMsg', {'code': result.familyCode})),
           ),
         );
+        // Gate passed + family created: a grown-up moment.
+        unawaited(ReviewPromptService.instance.onParentActionSucceeded());
       }
     } catch (e) {
       if (mounted) {
@@ -124,6 +128,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.t('familyJoinedMsg'))),
         );
+        unawaited(ReviewPromptService.instance.onParentActionSucceeded());
       }
     } catch (e) {
       if (mounted) {
