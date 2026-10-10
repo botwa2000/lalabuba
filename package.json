@@ -5,12 +5,14 @@
   "description": "Kid-friendly coloring page generator with optional color-by-number overlays.",
   "scripts": {
     "start": "node server.js",
-    "test": "node scripts/test-fill-core.mjs && node scripts/test-outline-mask.mjs && node scripts/test-trapped-ball.mjs && node scripts/test-line-bridge.mjs && node scripts/test-completion-core.mjs && node scripts/test-novita-circuit-breaker.js && node scripts/test-cloudflare-retry.js && node scripts/test-request-security.js"
+    "test": "node scripts/test-fill-core.mjs && node scripts/test-outline-mask.mjs && node scripts/test-trapped-ball.mjs && node scripts/test-line-bridge.mjs && node scripts/test-completion-core.mjs && node scripts/test-novita-circuit-breaker.js && node scripts/test-cloudflare-retry.js && node scripts/test-request-security.js && node scripts/test-social.mjs",
+    "social:plan": "node scripts/social/runner.mjs --plan"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "yaml": "^2.9.1"
   }
 }

@@ -1,0 +1,88 @@
+# Social posting queue — read by the `social` service (scripts/social/runner.mjs)
+# from GitHub main on every tick. Approving = committing + pushing; no redeploy.
+#
+# ── THE RULE ───────────────────────────────────────────────────────────────────
+# A human chooses and approves every post. The service only chooses the minute.
+#   • Only entries with   approved: "YYYY-MM-DD XX"   (date + Alex's initials) post.
+#   • `approved` is set ONLY by Alex, by hand. No script and no Claude session ever
+#     writes it — drafted entries always land without it.
+#   • ≤ 1 post per account (brand × platform) per Berlin day — a code constant.
+#   • Never the same image twice on a platform; never a repeated title or
+#     destination link on an account (checked against `history` + the ledger).
+#   • `date:` → posts only that day (a missed date is reported, never posted late).
+#     No date → posts on the first free day, in file order.
+#   • Nothing approved → nothing posts. There is no fallback content.
+#
+# See the 7-day plan before approving:   npm run social:plan
+#
+# ── FIELDS ─────────────────────────────────────────────────────────────────────
+#   id           unique, stable (used for dedupe — never reuse one)
+#   brand        lalabuba | bonifatus
+#   platform     pinterest | instagram
+#   image        /path on the brand's site, or https:// URL (Instagram: .jpg only)
+#   images       Instagram carousel: list of 2–10 .jpg (instead of image)
+#   title        Pinterest title (≤100). Instagram: internal label for dedupe.
+#   description  Pinterest description (≤800) / Instagram caption (≤2200, ≤30 #)
+#   link         Pinterest destination (required). Not used on Instagram.
+#   alt          alt text (Pinterest ≤500)
+#   board        Pinterest board name or numeric id
+#   date         optional YYYY-MM-DD
+#   approved     "YYYY-MM-DD XX" — Alex only
+#   notes        free text, ignored
+# Quote every value that contains ": " or starts with a special character.
+
+posts:
+  # ── Drafts (unapproved) — the three Lalabuba pins never posted anywhere.
+  #    Assets inspected at full size 2026-10-10: clean, 1000×1500, live on lalabuba.com.
+  - id: lb-pin-dragon-1
+    brand: lalabuba
+    platform: pinterest
+    image: /social/pins/pin_dragon.jpg
+    board: Coloring Pages for Kids
+    title: "Dragon Coloring Pages – Free Printable for Kids"
+    description: "A friendly baby dragon with rainbow wings, ready to print and color. Type any word on lalabuba.com and the AI draws a brand-new coloring page in seconds – free, no account, no ads."
+    link: https://lalabuba.com/en/coloring-pages/dragon/
+    alt: "Cute cartoon baby dragon with big eyes and rainbow wings, shown as blank line art and colored in, with the lalabuba.com logo."
+
+  - id: lb-pin-mermaid-1
+    brand: lalabuba
+    platform: pinterest
+    image: /social/pins/pin_mermaid.jpg
+    board: Coloring Pages for Kids
+    title: "Mermaid Coloring Pages – Free Printable for Kids"
+    description: "A smiling little mermaid with flowing rainbow hair, ready to print and color. Type any word on lalabuba.com and the AI draws a brand-new coloring page in seconds – free, no account, no ads."
+    link: https://lalabuba.com/en/coloring-pages/mermaid/
+    alt: "Cartoon mermaid girl with long rainbow hair and a scaly tail among bubbles, shown as blank line art and colored in, with the lalabuba.com logo."
+
+  - id: lb-pin-princess-1
+    brand: lalabuba
+    platform: pinterest
+    image: /social/pins/pin_princess.jpg
+    board: Coloring Pages for Kids
+    title: "Princess Coloring Pages – Free Printable for Kids"
+    description: "A little princess with a crown and a magic wand, ready to print and color. Type any word on lalabuba.com and the AI draws a brand-new coloring page in seconds – free, no account, no ads."
+    link: https://lalabuba.com/en/coloring-pages/princess/
+    alt: "Cartoon princess in a ball gown holding a star wand, shown as blank line art and colored in, with the lalabuba.com logo."
+
+# ── Posted outside this service (by hand, before it existed). Read-only input to
+#    dedupe and the daily ceiling. Source: docs/growth-checkin-log.md (local).
+history:
+  # Lalabuba Pinterest — board "Coloring Pages for Kids"
+  - { platform: pinterest, brand: lalabuba, date: 2026-08-29, title: "Einschulung Ausmalbild – kostenlos ausdrucken für Kinder", link: "https://lalabuba.com/de/ausmalbilder/einschulung/", image: /social/pins/pin_einschulung.jpg }
+  - { platform: pinterest, brand: lalabuba, date: 2026-09-05, title: "Dinosaur Coloring Pages – Free Printable for Kids", link: "https://lalabuba.com/en/coloring-pages/dinosaur/", image: /social/pins/pin_dinosaur.jpg }
+  - { platform: pinterest, brand: lalabuba, date: 2026-09-14, title: "Stegosaurus Coloring Pages – Free Printable for Kids", link: "https://lalabuba.com/en/coloring-pages/dinosaur/" }
+  - { platform: pinterest, brand: lalabuba, date: 2026-09-20, title: "Unicorn Coloring Pages - Free Printable for Kids", link: "https://lalabuba.com/en/coloring-pages/unicorn/" }
+  - { platform: pinterest, brand: lalabuba, date: 2026-09-20, title: "Unicorn Coloring Pages – Free Printable for Kids", link: "https://lalabuba.com/en/coloring-pages/unicorn/", image: /social/pins/pin_unicorn.jpg }
+  - { platform: pinterest, brand: lalabuba, date: 2026-09-20, title: "Cute Unicorn with Flowing Mane - Free Coloring Page to Print" }
+  - { platform: pinterest, brand: lalabuba, date: 2026-10-09, title: "Rocket Coloring Pages – Free Printable for Kids", link: "https://lalabuba.com/en/coloring-pages/rocket/", image: /social/pins/pin_rocket.jpg }
+  - { platform: pinterest, brand: lalabuba, date: 2026-10-09, title: "Butterfly Coloring Pages – Free Printable for Kids", link: "https://lalabuba.com/en/coloring-pages/butterfly/" }
+  - { platform: pinterest, brand: lalabuba, date: 2026-10-09, title: "Cat Coloring Pages – Free Printable for Kids", link: "https://lalabuba.com/en/coloring-pages/cat/", image: /social/pins/pin_cat.jpg }
+  # Bonifatus Pinterest — board "Taschengeld & Kinderfinanzen"
+  - { platform: pinterest, brand: bonifatus, date: 2026-09-18, title: "Taschengeldtabelle 2026 – DJI-Richtwerte für alle Altersstufen", link: "https://bonifatus.com/tools/allowance-calculator" }
+  - { platform: pinterest, brand: bonifatus, date: 2026-10-03, title: "5 Regeln für faires Zeugnisgeld", link: "https://bonifatus.com/tools/grade-reward-calculator" }
+  - { platform: pinterest, brand: bonifatus, date: 2026-10-09, title: "Zeugnisgeld: Wie viel ist fair?", link: "https://bonifatus.com/de/ratgeber/zeugnisgeld" }
+  - { platform: pinterest, brand: bonifatus, date: 2026-10-09, title: "Taschengeldtabelle 2025: die neuen DJI-Werte", link: "https://bonifatus.com/de/ratgeber/taschengeld-tabelle" }
+  - { platform: pinterest, brand: bonifatus, date: 2026-10-09, title: "Noten belohnen – ja oder nein? Was Studien zeigen", link: "https://bonifatus.com/de/ratgeber/schulnoten-belohnen" }
+  # Lalabuba Instagram — same art posted as images (blocks re-posting those pin images)
+  - { platform: instagram, brand: lalabuba, date: 2026-09-19, title: "Unicorn pin", image: /social/pins/pin_unicorn.jpg }
+  - { platform: instagram, brand: lalabuba, date: 2026-10-09, title: "Butterfly pin" }
