@@ -161,6 +161,19 @@ enforcement-off) lives in the local memory `reference-flutter-testing.md` and
 
 ---
 
+## Social posting (`queue.yaml` → `social` service)
+
+`scripts/social/runner.mjs` runs as the `social` service in `docker-stack.prod.yml`
+and publishes **only** `queue.yaml` entries carrying a human `approved: "YYYY-MM-DD XX"` stamp.
+- **Never write, edit, or copy an `approved:` value** — not even when asked to "queue" posts.
+  Drafted entries always land without it; approval is Alex's hand edit.
+- Never raise `MAX_POSTS_PER_ACCOUNT_PER_DAY` (1) or set `SOCIAL_LIVE=1` without Alex's explicit say-so.
+- Check `npm run social:plan` (7-day dry run) after any queue change. Setup: `docs/pinterest-api-setup.md`.
+- The private growth docs (`docs/growth-checkin-log.md`, `docs/instagram-*.md`, strategy docs) are
+  gitignored on purpose — this repo is public. Never force-add them.
+
+---
+
 ## Deployment — Hetzner
 
 > Full migration plan: `MIGRATION.md`. Strategy detail: `IMPLEMENTATION_STRATEGY.md`.
