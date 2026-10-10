@@ -35,3 +35,16 @@ public/mockups/
 # Generated coloring images (stored on Docker volume on Hetzner; never committed).
 data/images/
 data/gallery.json
+
+# Growth / social-ops working docs — internal strategy, personal account emails and
+# Meta business/app IDs. This repo is PUBLIC: these stay local, never committed.
+docs/GROWTH-STRATEGY.md
+docs/PROMPT-*.md
+docs/VIDEO-SERIES-STRATEGY.md
+docs/WORKING-PREFERENCES.md
+docs/growth-checkin-log.md
+docs/instagram-api-setup.md
+docs/instagram-strategy.md
+
+# Python bytecode
+__pycache__/
