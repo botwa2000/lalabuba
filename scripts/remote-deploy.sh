@@ -16,6 +16,11 @@ fi
 
 cd "$DIR"
 echo "[0/6] ensure data dirs"; mkdir -p "$DIR/data/images/c" "$DIR/data/images/g"
+# Social runner state (ledger + encrypted tokens): owned by the container's
+# `node` user (uid 1000), private to it.
+if [ "$ENV" = "prod" ]; then
+  mkdir -p "$DIR/data/social"; chown 1000:1000 "$DIR/data/social"; chmod 700 "$DIR/data/social"
+fi
 echo "[1/6] pull origin/$BR"; git fetch -q origin "$BR"; git checkout -f -B "$BR" "origin/$BR"
 # Gate the deploy on the Node test suite — this used to be the actual common
 # deploy path (both CI and a direct SSH-triggered deploy end up here) with
@@ -29,6 +34,12 @@ echo "[2/6] npm ci + test";  npm ci --no-audit --no-fund --loglevel=error; npm t
 echo "[3/6] build $IMG";      docker build -t "$IMG" . >/dev/null
 echo "[4/6] deploy $NAME";    docker stack deploy -c "$STACK" "$NAME" >/dev/null
 echo "[5/6] update service";  docker service update --force --image "$IMG" "${NAME}_app" >/dev/null
+# Same image tag → `stack deploy` alone would not restart the social runner on
+# the new build. --detach: its stop can take up to stop_grace_period while a
+# publish finishes; don't hold the app health check hostage to that.
+if docker service inspect "${NAME}_social" >/dev/null 2>&1; then
+  docker service update --detach --force --image "$IMG" "${NAME}_social" >/dev/null
+fi
 echo "[6/6] health check"
 # Retry for ~60s instead of a single probe after a fixed sleep — the app needs a
 # moment to boot, and /api/health now also fails on malformed secrets. On failure

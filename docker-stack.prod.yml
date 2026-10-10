@@ -42,6 +42,49 @@ services:
       retries: 3
       start_period: 15s
 
+  # Social posting runner (scripts/social/runner.mjs). Same image, own process.
+  # Gets ONLY the social secrets — never the app database or image-provider keys.
+  # Publishes only human-approved queue.yaml entries, ≤1/account/day. SOCIAL_LIVE
+  # stays "0" (log "would post" only) until Alex has reviewed a full-week plan.
+  social:
+    image: lalabuba:prod
+    command: ["node", "scripts/social/runner.mjs"]
+    environment:
+      APP_ENV: prod
+      NODE_ENV: production
+      SOCIAL_LIVE: "0"
+      SOCIAL_QUEUE_URL: https://raw.githubusercontent.com/botwa2000/lalabuba/main/queue.yaml
+      SOCIAL_DATA_DIR: /app/data/social
+    volumes:
+      - /opt/lalabuba/data/social:/app/data/social
+    secrets:
+      - lalabuba_prod_IG_LALABUBA_USER_ID
+      - lalabuba_prod_IG_LALABUBA_TOKEN
+      - lalabuba_prod_IG_BONIFATUS_USER_ID
+      - lalabuba_prod_IG_BONIFATUS_TOKEN
+      - lalabuba_prod_PINTEREST_APP_ID
+      - lalabuba_prod_PINTEREST_APP_SECRET
+      - lalabuba_prod_PINTEREST_LALABUBA_REFRESH_TOKEN
+      - lalabuba_prod_PINTEREST_BONIFATUS_REFRESH_TOKEN
+      - lalabuba_prod_SOCIAL_TOKEN_KEY
+      - lalabuba_prod_SOCIAL_ALERT_EMAIL
+      - lalabuba_prod_BREVO_API_KEY      # alert emails only
+    stop_grace_period: 6m   # never kill it mid-publish (IG container wait ≤5 min)
+    deploy:
+      replicas: 1
+      update_config:
+        order: stop-first   # never two runners → never a double post
+      restart_policy:
+        condition: any
+        delay: 30s
+    healthcheck:
+      # The runner touches this every tick (2 min); stale > 10 min = wedged.
+      test: ["CMD-SHELL", "test $$(( $$(date +%s) - $$(stat -c %Y /app/data/social/heartbeat) )) -lt 600"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
 secrets:
   lalabuba_prod_DATABASE_URL: { external: true }
   lalabuba_prod_HF_TOKEN: { external: true }
@@ -53,3 +96,13 @@ secrets:
   lalabuba_prod_JWT_SECRET: { external: true }
   lalabuba_prod_BREVO_API_KEY: { external: true }
   lalabuba_prod_DOCS_SECRET: { external: true }
+  lalabuba_prod_IG_LALABUBA_USER_ID: { external: true }
+  lalabuba_prod_IG_LALABUBA_TOKEN: { external: true }
+  lalabuba_prod_IG_BONIFATUS_USER_ID: { external: true }
+  lalabuba_prod_IG_BONIFATUS_TOKEN: { external: true }
+  lalabuba_prod_PINTEREST_APP_ID: { external: true }
+  lalabuba_prod_PINTEREST_APP_SECRET: { external: true }
+  lalabuba_prod_PINTEREST_LALABUBA_REFRESH_TOKEN: { external: true }
+  lalabuba_prod_PINTEREST_BONIFATUS_REFRESH_TOKEN: { external: true }
+  lalabuba_prod_SOCIAL_TOKEN_KEY: { external: true }
+  lalabuba_prod_SOCIAL_ALERT_EMAIL: { external: true }

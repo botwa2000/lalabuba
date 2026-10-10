@@ -34,16 +34,27 @@ case "$NAME" in
 esac
 
 SN="lalabuba_${ENV}_${NAME}"
-SVC="lalabuba_${ENV}_app"
+# Stack services are named <stack>_<service>, stack = lalabuba-<env>.
+SERVICES="lalabuba-${ENV}_app lalabuba-${ENV}_social"
+
+uses() {  # does service $1 mount secret $SN?
+  docker service inspect "$1" --format '{{range .Spec.TaskTemplate.ContainerSpec.Secrets}}{{.SecretName}} {{end}}' 2>/dev/null     | tr ' ' '
+' | grep -qx "$SN"
+}
 
 if docker secret inspect "$SN" >/dev/null 2>&1; then
-  # Same-named external secret: detach → remove → recreate → reattach so the
-  # stack file's `external` reference keeps working and the fix survives deploys.
-  docker service update --secret-rm "$SN" "$SVC" >/dev/null 2>&1 || true
+  # Same-named external secret: detach from every service using it → remove →
+  # recreate → reattach, so the stack file's `external` reference keeps working.
+  attached=""
+  for svc in $SERVICES; do
+    if uses "$svc"; then docker service update --secret-rm "$SN" "$svc" >/dev/null; attached="$attached $svc"; fi
+  done
   docker secret rm "$SN" >/dev/null
   printf '%s' "$VAL" | docker secret create "$SN" - >/dev/null
-  docker service update --secret-add "source=$SN,target=$SN" "$SVC" >/dev/null 2>&1 || true
-  echo "rotated $SN (len ${#VAL})"
+  for svc in $attached; do
+    docker service update --secret-add "source=$SN,target=$SN" "$svc" >/dev/null
+  done
+  echo "rotated $SN (len ${#VAL})${attached:+ — reattached to$attached}"
 else
   printf '%s' "$VAL" | docker secret create "$SN" - >/dev/null
   echo "created $SN (len ${#VAL}) — redeploy to attach"

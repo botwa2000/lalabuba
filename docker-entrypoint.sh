@@ -48,4 +48,9 @@ if [ -d /run/secrets ]; then
   done
 fi
 
+# A stack service may pass its own command (e.g. the `social` runner); the app
+# service passes none and gets the web server.
+if [ "$#" -gt 0 ]; then
+  exec "$@"
+fi
 exec node server.js
