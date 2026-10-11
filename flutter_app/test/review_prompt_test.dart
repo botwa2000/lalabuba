@@ -25,29 +25,22 @@ class _FakeReviewer implements StoreReviewer {
   Future<void> openStoreListing() async => listings++;
 }
 
-/// [n] completions, one per day starting at t0.
-ReviewState _completed(int n, {int perDay = 1}) {
+ReviewState _completed(int n) {
   var s = const ReviewState();
   for (var i = 0; i < n; i++) {
-    s = s.withCompletion(_t0 + (i ~/ perDay) * _day);
+    s = s.withCompletion();
   }
   return s;
 }
 
 void main() {
   group('ReviewPolicy — first ask', () {
-    test('not before 3 completions', () {
-      expect(ReviewPolicy.shouldAsk(_completed(2), _t0 + 10 * _day, sessionHadError: false), isFalse);
+    test('not before 2 completions', () {
+      expect(ReviewPolicy.shouldAsk(_completed(1), _t0, sessionHadError: false), isFalse);
     });
-    test('3 completions on one day is not enough (needs 2 distinct days)', () {
-      final s = _completed(3, perDay: 3);
-      expect(s.distinctDays, 1);
-      expect(ReviewPolicy.shouldAsk(s, _t0 + 10 * _day, sessionHadError: false), isFalse);
-    });
-    test('needs 3 days since the first completion', () {
-      final s = _completed(3); // days 0,1,2
-      expect(ReviewPolicy.shouldAsk(s, _t0 + 2 * _day, sessionHadError: false), isFalse);
-      expect(ReviewPolicy.shouldAsk(s, _t0 + 3 * _day, sessionHadError: false), isTrue);
+    test('2 completions qualify at once — gate moments are too rare to wait for days', () {
+      // Same-day share consent right after the 2nd picture must not be wasted.
+      expect(ReviewPolicy.shouldAsk(_completed(2), _t0, sessionHadError: false), isTrue);
     });
     test('an error this session blocks it', () {
       expect(ReviewPolicy.shouldAsk(_completed(3), _t0 + 5 * _day, sessionHadError: true), isFalse);
@@ -59,17 +52,17 @@ void main() {
       final asked = _completed(3).withAsk(_t0 + 5 * _day);
       var s = asked;
       for (var i = 0; i < 9; i++) {
-        s = s.withCompletion(_t0 + 6 * _day);
+        s = s.withCompletion();
       }
       expect(ReviewPolicy.shouldAsk(s, _t0 + 60 * _day, sessionHadError: false), isFalse, reason: '9 more');
-      s = s.withCompletion(_t0 + 6 * _day);
+      s = s.withCompletion();
       expect(ReviewPolicy.shouldAsk(s, _t0 + 34 * _day, sessionHadError: false), isFalse, reason: '<30 days');
       expect(ReviewPolicy.shouldAsk(s, _t0 + 35 * _day, sessionHadError: false), isTrue);
     });
     test('never a third ask', () {
       var s = _completed(3).withAsk(_t0).withAsk(_t0);
       for (var i = 0; i < 100; i++) {
-        s = s.withCompletion(_t0 + i * _day);
+        s = s.withCompletion();
       }
       expect(ReviewPolicy.shouldAsk(s, _t0 + 400 * _day, sessionHadError: false), isFalse);
     });
@@ -86,7 +79,6 @@ void main() {
         now += _day;
       }
       expect(store.s.completions, 5);
-      expect(store.s.distinctDays, 5);
       expect(r.requests, 0);
     });
 

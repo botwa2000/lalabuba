@@ -21,9 +21,11 @@ import 'storage_service.dart';
 /// - "Rate Lalabuba" in Settings (behind the gate) opens the store page
 ///   directly — always works, never consumes the OS quota.
 class ReviewPolicy {
-  static const firstAskMinCompletions = 3;
-  static const firstAskMinDistinctDays = 2;
-  static const firstAskMinAge = Duration(days: 3);
+  // Gate moments are scarce (share consent and family setup each happen about
+  // once), so the first ask only needs proof the app was actually used —
+  // a stricter bar (days of use) meant most parents passed their only gate
+  // before qualifying and were never asked at all.
+  static const firstAskMinCompletions = 2;
   static const secondAskMoreCompletions = 10;
   static const secondAskMinGap = Duration(days: 30);
   static const maxAsks = 2;
@@ -31,12 +33,7 @@ class ReviewPolicy {
   /// Pure decision. [now] in epoch ms.
   static bool shouldAsk(ReviewState s, int nowMs, {required bool sessionHadError}) {
     if (sessionHadError || s.asks >= maxAsks) return false;
-    if (s.asks == 0) {
-      return s.completions >= firstAskMinCompletions &&
-          s.distinctDays >= firstAskMinDistinctDays &&
-          s.firstCompletionMs > 0 &&
-          nowMs - s.firstCompletionMs >= firstAskMinAge.inMilliseconds;
-    }
+    if (s.asks == 0) return s.completions >= firstAskMinCompletions;
     return s.completions - s.completionsAtLastAsk >= secondAskMoreCompletions &&
         nowMs - s.lastAskMs >= secondAskMinGap.inMilliseconds;
   }
@@ -45,43 +42,26 @@ class ReviewPolicy {
 @immutable
 class ReviewState {
   final int completions;
-  final int distinctDays;
-  final String lastDay; // yyyy-mm-dd of the last counted completion
-  final int firstCompletionMs;
   final int asks;
   final int lastAskMs;
   final int completionsAtLastAsk;
 
   const ReviewState({
     this.completions = 0,
-    this.distinctDays = 0,
-    this.lastDay = '',
-    this.firstCompletionMs = 0,
     this.asks = 0,
     this.lastAskMs = 0,
     this.completionsAtLastAsk = 0,
   });
 
-  /// Count one completed picture at [nowMs] (local calendar day).
-  ReviewState withCompletion(int nowMs) {
-    final d = DateTime.fromMillisecondsSinceEpoch(nowMs);
-    final day = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-    return ReviewState(
-      completions: completions + 1,
-      distinctDays: day == lastDay ? distinctDays : distinctDays + 1,
-      lastDay: day,
-      firstCompletionMs: firstCompletionMs == 0 ? nowMs : firstCompletionMs,
-      asks: asks,
-      lastAskMs: lastAskMs,
-      completionsAtLastAsk: completionsAtLastAsk,
-    );
-  }
+  ReviewState withCompletion() => ReviewState(
+        completions: completions + 1,
+        asks: asks,
+        lastAskMs: lastAskMs,
+        completionsAtLastAsk: completionsAtLastAsk,
+      );
 
   ReviewState withAsk(int nowMs) => ReviewState(
         completions: completions,
-        distinctDays: distinctDays,
-        lastDay: lastDay,
-        firstCompletionMs: firstCompletionMs,
         asks: asks + 1,
         lastAskMs: nowMs,
         completionsAtLastAsk: completions,
@@ -106,9 +86,6 @@ class _SecureReviewStore implements ReviewStore {
   @override
   Future<ReviewState> load() async => ReviewState(
         completions: await StorageService.readInt('${_k}completions', 0),
-        distinctDays: await StorageService.readInt('${_k}days', 0),
-        lastDay: await StorageService.read('${_k}last_day') ?? '',
-        firstCompletionMs: await StorageService.readInt('${_k}first_ms', 0),
         asks: await StorageService.readInt('${_k}asks', 0),
         lastAskMs: await StorageService.readInt('${_k}last_ask_ms', 0),
         completionsAtLastAsk: await StorageService.readInt('${_k}at_last_ask', 0),
@@ -117,9 +94,6 @@ class _SecureReviewStore implements ReviewStore {
   @override
   Future<void> save(ReviewState s) async {
     await StorageService.writeInt('${_k}completions', s.completions);
-    await StorageService.writeInt('${_k}days', s.distinctDays);
-    await StorageService.write('${_k}last_day', s.lastDay);
-    await StorageService.writeInt('${_k}first_ms', s.firstCompletionMs);
     await StorageService.writeInt('${_k}asks', s.asks);
     await StorageService.writeInt('${_k}last_ask_ms', s.lastAskMs);
     await StorageService.writeInt('${_k}at_last_ask', s.completionsAtLastAsk);
@@ -155,7 +129,7 @@ class ReviewPromptService {
   /// A picture was completed. Counts only — never prompts (the child is here).
   Future<void> recordCompletion() async {
     try {
-      await _store.save((await _store.load()).withCompletion(_clock()));
+      await _store.save((await _store.load()).withCompletion());
     } catch (_) {}
   }
 
