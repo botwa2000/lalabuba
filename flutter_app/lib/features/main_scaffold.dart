@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class MainScaffold extends StatelessWidget {
+import '../core/l10n/l10n_service.dart';
+
+class MainScaffold extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   const MainScaffold({super.key, required this.navigationShell});
@@ -15,7 +18,8 @@ class MainScaffold extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
@@ -26,22 +30,22 @@ class MainScaffold extends StatelessWidget {
           NavigationDestination(
             icon: Text('✨', style: GoogleFonts.nunito(fontSize: 22, height: 1)),
             selectedIcon: Text('✨', style: GoogleFonts.nunito(fontSize: 26, height: 1)),
-            label: 'Draw',
+            label: l10n.t('navDraw'),
           ),
           NavigationDestination(
             icon: Text('🔍', style: GoogleFonts.nunito(fontSize: 22, height: 1)),
             selectedIcon: Text('🔍', style: GoogleFonts.nunito(fontSize: 26, height: 1)),
-            label: 'Explore',
+            label: l10n.t('navExplore'),
           ),
           NavigationDestination(
             icon: Text('📓', style: GoogleFonts.nunito(fontSize: 22, height: 1)),
             selectedIcon: Text('📓', style: GoogleFonts.nunito(fontSize: 26, height: 1)),
-            label: 'Journal',
+            label: l10n.t('navJournal'),
           ),
           NavigationDestination(
             icon: Text('🌳', style: GoogleFonts.nunito(fontSize: 22, height: 1)),
             selectedIcon: Text('🌳', style: GoogleFonts.nunito(fontSize: 26, height: 1)),
-            label: 'Treehouse',
+            label: l10n.t('navTreehouse'),
           ),
         ],
       ),

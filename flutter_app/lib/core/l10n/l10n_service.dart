@@ -1,5 +1,4 @@
-﻿import 'dart:async';
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,8 +63,12 @@ final initialL10nProvider = Provider<L10n?>((ref) => null);
 class LocaleNotifier extends AsyncNotifier<L10n> {
   static const _storage = FlutterSecureStorage();
 
+  // Deliberately touches no other provider: a ref.read(initialL10nProvider)
+  // here SIGSEGV'd the AOT release build on every cold start (1.0.22 RC,
+  // inside Riverpod's addDependentSubscription). l10nProvider bridges the
+  // gap with the preloaded locale until this settles to the same value.
   @override
-  FutureOr<L10n> build() => ref.read(initialL10nProvider) ?? loadInitial();
+  Future<L10n> build() => loadInitial();
 
   /// Saved language, else the device language. Safe once the binding exists.
   static Future<L10n> loadInitial() async {
