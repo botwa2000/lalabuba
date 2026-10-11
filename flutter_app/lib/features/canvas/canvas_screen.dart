@@ -789,7 +789,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               await ref.read(narrationProvider.notifier).toggle();
               if (ref.read(narrationProvider).value ?? false) {
                 final locale =
-                    ref.read(localeProvider).value?.locale ?? 'en';
+                    ref.read(l10nProvider).locale;
                 ref
                     .read(narrationProvider.notifier)
                     .speak(l10n.t('narratePraise'), locale);
@@ -1058,7 +1058,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   void _narrateRegion(int regionId) {
     final pi = ref.read(canvasProvider).detection?.regionPaletteIndex[regionId];
     if (pi == null) return; // numberless / free-fill region — nothing to read
-    final locale = ref.read(localeProvider).value?.locale ?? 'en';
+    final locale = ref.read(l10nProvider).locale;
     ref.read(narrationProvider.notifier).speak('${pi + 1}', locale);
   }
 
@@ -1832,7 +1832,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
     // Read-aloud praise the moment the picture is finished (no-op unless the
     // child has narration on). Parity with the web speak(narratePraise) call.
-    final locale = ref.read(localeProvider).value?.locale ?? 'en';
+    final locale = ref.read(l10nProvider).locale;
     ref.read(narrationProvider.notifier).speak(l10n.t('narratePraise'), locale);
 
     // 1. Persist the finished artwork to the in-app Journal. We write to the app

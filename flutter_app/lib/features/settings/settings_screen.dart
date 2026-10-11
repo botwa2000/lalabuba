@@ -34,7 +34,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildDisplaySection(BuildContext context, L10n l10n) {
     final themeMode = ref.watch(themeModeProvider);
-    final currentLocale = ref.watch(localeProvider).value?.locale ?? 'en';
+    final currentLocale = ref.watch(l10nProvider).locale;
     final cs = Theme.of(context).colorScheme;
 
     return Column(

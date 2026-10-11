@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app.dart';
 import 'core/config/app_config.dart';
 import 'core/drawing_config_service.dart';
+import 'core/l10n/l10n_service.dart';
 import 'shared/services/analytics_service.dart';
 
 void main() async {
@@ -37,9 +38,12 @@ void main() async {
 
   // Fetch remote drawing parameters before the first screen renders.
   // Falls back silently to hard-coded defaults on any network / parse error,
-  // so this never blocks startup on offline devices.
+  // so this never blocks startup on offline devices. The UI language loads in
+  // parallel so the first frame is translated (no raw-key flash).
+  final l10nFuture = LocaleNotifier.loadInitial();
   await DrawingConfigService.initialize(
       appConfig?.apiBaseUrl ?? 'https://lalabuba.com');
+  final initialL10n = await l10nFuture;
 
   // Fire-and-forget: analytics (Firebase + PostHog) init is heavy on first
   // launch and blocks the main thread long enough to ANR on slower devices.
@@ -53,5 +57,8 @@ void main() async {
     }
   }());
 
-  runApp(const ProviderScope(child: LalabubaApp()));
+  runApp(ProviderScope(
+    overrides: [initialL10nProvider.overrideWithValue(initialL10n)],
+    child: const LalabubaApp(),
+  ));
 }

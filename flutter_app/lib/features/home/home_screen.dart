@@ -114,7 +114,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   String get _currentLocale =>
-      ref.read(localeProvider).value?.locale ?? 'en';
+      ref.read(l10nProvider).locale;
 
   @override
   Widget build(BuildContext context) {
@@ -1346,7 +1346,7 @@ class _SettingsSheetBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final currentLocale = ref.watch(localeProvider).value?.locale ?? 'en';
+    final currentLocale = ref.watch(l10nProvider).locale;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

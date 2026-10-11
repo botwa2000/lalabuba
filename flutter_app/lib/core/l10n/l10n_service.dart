@@ -1,4 +1,5 @@
-﻿import 'dart:convert';
+﻿import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,13 +56,24 @@ class L10n {
 
 // ─── Riverpod providers ──────────────────────────────────────────────────────
 
+/// The locale resolved before runApp (main.dart overrides this), so the very
+/// first frame is already translated instead of flashing raw keys. Null in
+/// tests/other scopes, which fall back to loading asynchronously.
+final initialL10nProvider = Provider<L10n?>((ref) => null);
+
 class LocaleNotifier extends AsyncNotifier<L10n> {
   static const _storage = FlutterSecureStorage();
 
   @override
-  Future<L10n> build() async {
-    final saved = await _storage.read(key: _kLangKey) ?? _deviceLocale();
-    return L10n.load(saved);
+  FutureOr<L10n> build() => ref.read(initialL10nProvider) ?? loadInitial();
+
+  /// Saved language, else the device language. Safe once the binding exists.
+  static Future<L10n> loadInitial() async {
+    String? saved;
+    try {
+      saved = await _storage.read(key: _kLangKey);
+    } catch (_) {}
+    return L10n.load(saved ?? _deviceLocale());
   }
 
   Future<void> setLocale(String locale) async {
@@ -69,9 +81,7 @@ class LocaleNotifier extends AsyncNotifier<L10n> {
     state = AsyncData(await L10n.load(locale));
   }
 
-  String _deviceLocale() {
-    // WidgetsBinding.instance.platformDispatcher.locale returns the device locale
-    // This is safe to call after runApp
+  static String _deviceLocale() {
     try {
       final tag = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
       return _supportedLocales.contains(tag) ? tag : 'en';
@@ -83,9 +93,12 @@ class LocaleNotifier extends AsyncNotifier<L10n> {
 
 final localeProvider = AsyncNotifierProvider<LocaleNotifier, L10n>(LocaleNotifier.new);
 
-// Convenience: synchronous access once loaded, falls back to key if not ready
+// Synchronous access. Until the notifier resolves, the locale preloaded before
+// runApp is used, so no frame ever shows raw keys or the wrong language.
 final l10nProvider = Provider<L10n>((ref) {
-  return ref.watch(localeProvider).value ?? L10n('en', const {});
+  return ref.watch(localeProvider).value ??
+      ref.watch(initialL10nProvider) ??
+      L10n('en', const {});
 });
 
 const supportedLocales = _supportedLocales;
