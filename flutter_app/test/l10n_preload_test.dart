@@ -15,10 +15,15 @@ void main() {
     expect(c.read(l10nProvider).locale, 'de');
   });
 
-  // The bottom tab bar is on every screen: each locale carries its own labels
-  // instead of falling back to English.
-  test('every locale translates the four tab labels', () {
-    const keys = ['navDraw', 'navExplore', 'navJournal', 'navTreehouse'];
+  // The tab bar and the generation-error screen are seen by every child: each
+  // locale carries its own text instead of falling back to English.
+  test('every locale translates the tab labels and generation errors', () {
+    const keys = [
+      'navDraw', 'navExplore', 'navJournal', 'navTreehouse',
+      // every key GenerateError can carry (generate_service.dart _mapError)
+      'generationError', 'networkError', 'contentSafetyError',
+      'generationBlockedError', 'accountRateLimitError',
+    ];
     for (final lang in supportedLocales) {
       final raw = File('assets/i18n/$lang.json').readAsStringSync();
       final map = jsonDecode(raw.replaceFirst('\uFEFF', '')) as Map<String, dynamic>;

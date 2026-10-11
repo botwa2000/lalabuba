@@ -131,6 +131,7 @@
   "contentSafetyError": "Lütfen çocuklar için eğlenceli bir konu seç — hayvanlar, araçlar, fantastik yaratıklar, yiyecek…",
   "networkError": "Bağlantı hatası — ağını kontrol et",
   "generationError": "Çizim servisi şu an meşgul — biraz sonra tekrar dene! 🎨",
+  "generationBlockedError": "Bu çizim engellendi — lütfen uygulamayı güncelleyip tekrar dene",
   "backConfirmTitle": "Bu çizimi bırak?",
   "backConfirmBody": "Boyama ilerlermen kaybolacak.",
   "backConfirmLeave": "Bırak",

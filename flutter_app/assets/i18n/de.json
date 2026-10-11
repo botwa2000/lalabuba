@@ -133,6 +133,7 @@
   "contentSafetyError": "Bitte wähle ein kindgerechtes Thema — Tiere, Fahrzeuge, Fantasiewesen, Essen…",
   "networkError": "Verbindungsfehler — bitte überprüfe dein Netzwerk",
   "generationError": "Der Zeichendienst ist gerade beschäftigt — bitte versuche es in einem Moment! 🎨",
+  "generationBlockedError": "Etwas hat dieses Bild blockiert – bitte aktualisiere die App und versuche es noch einmal",
   "backConfirmTitle": "Zeichnung verlassen?",
   "backConfirmBody": "Dein Fortschritt beim Ausmalen geht verloren.",
   "backConfirmLeave": "Verlassen",

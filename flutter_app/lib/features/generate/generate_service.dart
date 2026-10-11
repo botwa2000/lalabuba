@@ -95,7 +95,7 @@ class GenerateService {
       );
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) {
-        throw 'Drawing took too long — please try again';
+        throw const GenerateError('generationError');
       }
       throw _mapError(e);
     } finally {
@@ -105,20 +105,34 @@ class GenerateService {
 
   int _newSeed() => Random().nextInt(2147483647);
 
-  String _mapError(DioException e) {
+  GenerateError _mapError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
-      return 'Drawing took too long — please try again';
+      return const GenerateError('generationError');
     }
     if (e.type == DioExceptionType.connectionError) {
-      return 'No internet connection — please check your network';
+      return const GenerateError('networkError');
     }
     final status = e.response?.statusCode;
-    if (status == 400) return 'Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…';
-    if (status == 403) return 'Request blocked — please update the app and try again';
-    if (status == 429) return 'Too many requests — please wait a moment and try again';
-    return 'Something went wrong — please try again${status != null ? ' (HTTP $status)' : ''}';
+    final key = switch (status) {
+      400 => 'contentSafetyError',
+      403 => 'generationBlockedError',
+      429 => 'accountRateLimitError',
+      _ => 'generationError',
+    };
+    return GenerateError(key, status);
   }
+}
+
+/// A failed generation, as an l10n key the canvas translates for the child.
+/// toString keeps the HTTP status for analytics/crash reports.
+class GenerateError {
+  final String key;
+  final int? status;
+  const GenerateError(this.key, [this.status]);
+
+  @override
+  String toString() => status == null ? key : '$key (HTTP $status)';
 }
 
 final generateServiceProvider = Provider<GenerateService>((ref) {

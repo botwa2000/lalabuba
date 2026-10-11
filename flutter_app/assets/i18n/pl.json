@@ -131,6 +131,7 @@
   "contentSafetyError": "Wybierz temat odpowiedni dla dzieci — zwierzęta, pojazdy, fantastyczne stwory, jedzenie…",
   "networkError": "Błąd połączenia — sprawdź swoją sieć",
   "generationError": "Usługa rysowania jest teraz zajęta — spróbuj ponownie za chwilę! 🎨",
+  "generationBlockedError": "Coś zablokowało ten rysunek — zaktualizuj aplikację i spróbuj ponownie",
   "backConfirmTitle": "Opuścić ten rysunek?",
   "backConfirmBody": "Twój postęp kolorowania zostanie utracony.",
   "backConfirmLeave": "Opuść",

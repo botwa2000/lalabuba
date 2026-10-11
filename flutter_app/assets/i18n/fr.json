@@ -131,6 +131,7 @@
   "contentSafetyError": "Choisis un sujet adapté aux enfants — animaux, véhicules, créatures fantastiques, nourriture…",
   "networkError": "Erreur de connexion — vérifie ton réseau",
   "generationError": "Le service de dessin est occupé — réessaie dans un moment ! 🎨",
+  "generationBlockedError": "Quelque chose a bloqué ce dessin — mets l'app à jour et réessaie",
   "backConfirmTitle": "Quitter ce dessin ?",
   "backConfirmBody": "Ta progression sera perdue.",
   "backConfirmLeave": "Quitter",

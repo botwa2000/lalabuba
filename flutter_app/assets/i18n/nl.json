@@ -131,6 +131,7 @@
   "contentSafetyError": "Kies een leuk onderwerp voor kinderen — dieren, voertuigen, fantasiewezens, eten…",
   "networkError": "Verbindingsfout — controleer je netwerk",
   "generationError": "De tekenservice is nu druk — probeer het zo opnieuw! 🎨",
+  "generationBlockedError": "Iets heeft deze tekening geblokkeerd — werk de app bij en probeer het opnieuw",
   "backConfirmTitle": "Deze tekening verlaten?",
   "backConfirmBody": "Je kleurvoortgang gaat verloren.",
   "backConfirmLeave": "Verlaten",

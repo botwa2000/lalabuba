@@ -131,6 +131,7 @@
   "contentSafetyError": "Elige un tema divertido para niños — animales, vehículos, criaturas fantásticas, comida…",
   "networkError": "Error de conexión — comprueba tu red",
   "generationError": "El servicio de dibujo está ocupado — ¡inténtalo en un momento! 🎨",
+  "generationBlockedError": "Algo bloqueó este dibujo: actualiza la app e inténtalo de nuevo",
   "backConfirmTitle": "¿Salir de este dibujo?",
   "backConfirmBody": "Tu progreso de coloreo se perderá.",
   "backConfirmLeave": "Salir",

@@ -179,7 +179,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         }
       } catch (e) {
         debugPrint('LALABUBA_PATH: _renderPreloaded fetch failed: $e');
-        if (mounted) setState(() { _isPreloading = false; _errorMsg = e.toString(); });
+        if (mounted) setState(() { _isPreloading = false; _errorMsg = e is GenerateError ? e.key : 'generationError'; });
         return;
       }
     } else {
@@ -187,7 +187,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     }
 
     if (bytes.isEmpty) {
-      if (mounted) setState(() { _isPreloading = false; _errorMsg = 'Empty image data'; });
+      if (mounted) setState(() { _isPreloading = false; _errorMsg = 'generationError'; });
       return;
     }
 
@@ -217,7 +217,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       });
       if (mounted) setState(() { _hintVisible = true; });
     } catch (e) {
-      if (mounted) setState(() { _errorMsg = e.toString(); });
+      debugPrint('LALABUBA_PATH: _renderPreloaded load failed: $e');
+      if (mounted) setState(() { _errorMsg = e is GenerateError ? e.key : 'generationError'; });
     }
   }
 
@@ -309,6 +310,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         });
       }
     } catch (e, stack) {
+      debugPrint('LALABUBA_PATH: _generate failed: $e');
       AnalyticsService.recordError(e, stack);
       ReviewPromptService.instance.recordError();
       AnalyticsService.track('image_generate_failed', {
@@ -318,7 +320,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       });
       if (mounted) {
         setState(() {
-          _errorMsg = e.toString();
+          _errorMsg = e is GenerateError ? e.key : 'generationError';
         });
       }
     } finally {
@@ -1739,7 +1741,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               const Text('😔', style: TextStyle(fontSize: 48)),
               const SizedBox(height: 16),
               Text(
-                _errorMsg ?? 'Something went wrong',
+                l10n.t(_errorMsg ?? 'generationError'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.nunito(fontSize: 15),
               ),

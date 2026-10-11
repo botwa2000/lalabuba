@@ -175,6 +175,7 @@
   "contentSafetyError": "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…",
   "networkError": "Connection error — please check your network and try again",
   "generationError": "The drawing service is busy right now — please try again in a moment! 🎨",
+  "generationBlockedError": "Something blocked this drawing — please update the app and try again",
   "backConfirmTitle": "Leave this drawing?",
   "backConfirmBody": "Your coloring progress will be lost.",
   "backConfirmLeave": "Leave",
