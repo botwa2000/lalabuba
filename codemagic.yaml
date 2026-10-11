@@ -190,3 +190,50 @@ workflows:
           $PY scripts/asc_reviews.py 2>&1 | tee "$CM_BUILD_DIR/asc_reviews.log"
     artifacts:
       - $CM_BUILD_DIR/asc_reviews.log
+
+  # ── iOS store-review check on a simulator — manual only ──────────────────────
+  # Runs integration_test/review_prompt_device_test.dart against the REAL
+  # in_app_review plugin on an iPhone simulator and screenshots the system
+  # review card + the App Store listing opened by "Rate Lalabuba" (Debug
+  # simulator builds always show the card; TestFlight never does, which is why
+  # this is the iOS proof). workflowId to use in API call: "ios-review-check"
+  ios-review-check:
+    name: Lalabuba iOS — review prompt on simulator
+    max_build_duration: 40
+    instance_type: mac_mini_m2
+    triggering:
+      events: []
+    working_directory: flutter_app
+    environment:
+      flutter: stable
+      xcode: "26.6"   # pinned — see flutter-release
+    scripts:
+      - name: Get Flutter dependencies
+        script: flutter pub get
+      - name: Boot an iPhone simulator
+        script: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for r,v in sorted(d.items(), reverse=True) if 'iOS' in r for x in v if x['name'].startswith('iPhone')))")
+          echo "simulator: $UDID"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          echo "SIM_UDID=$UDID" >> $CM_ENV
+      - name: Run the review check, screenshotting the simulator
+        script: |
+          SHOTS="$CM_BUILD_DIR/review_shots"; LOG="$CM_BUILD_DIR/review_check.log"
+          mkdir -p "$SHOTS"
+          flutter test integration_test/review_prompt_device_test.dart -d "$SIM_UDID" > "$LOG" 2>&1 &
+          PID=$!
+          n=0
+          while kill -0 $PID 2>/dev/null; do
+            if grep -q "REVIEW_CHECK requested" "$LOG" && [ $n -lt 40 ]; then
+              n=$((n+1)); xcrun simctl io "$SIM_UDID" screenshot "$SHOTS/$(printf %02d $n).png" >/dev/null 2>&1
+            fi
+            sleep 1
+          done
+          wait $PID; RC=$?
+          grep REVIEW_CHECK "$LOG" || true
+          tail -20 "$LOG"
+          exit $RC
+    artifacts:
+      - $CM_BUILD_DIR/review_shots/*.png
+      - $CM_BUILD_DIR/review_check.log
