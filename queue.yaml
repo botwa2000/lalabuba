@@ -32,18 +32,9 @@
 # Quote every value that contains ": " or starts with a special character.
 
 posts:
-  # ── Drafts (unapproved) — the three Lalabuba pins never posted anywhere.
+  # ── Drafts (unapproved) — the two Lalabuba pins never posted anywhere
+  #    (dragon was posted by hand 2026-10-10; see history).
   #    Assets inspected at full size 2026-10-10: clean, 1000×1500, live on lalabuba.com.
-  - id: lb-pin-dragon-1
-    brand: lalabuba
-    platform: pinterest
-    image: /social/pins/pin_dragon.jpg
-    board: Coloring Pages for Kids
-    title: "Dragon Coloring Pages – Free Printable for Kids"
-    description: "A friendly baby dragon with rainbow wings, ready to print and color. Type any word on lalabuba.com and the AI draws a brand-new coloring page in seconds – free, no account, no ads."
-    link: https://lalabuba.com/en/coloring-pages/dragon/
-    alt: "Cute cartoon baby dragon with big eyes and rainbow wings, shown as blank line art and colored in, with the lalabuba.com logo."
-
   - id: lb-pin-mermaid-1
     brand: lalabuba
     platform: pinterest
@@ -77,6 +68,9 @@ history:
   - { platform: pinterest, brand: lalabuba, date: 2026-10-09, title: "Rocket Coloring Pages – Free Printable for Kids", link: "https://lalabuba.com/en/coloring-pages/rocket/", image: /social/pins/pin_rocket.jpg }
   - { platform: pinterest, brand: lalabuba, date: 2026-10-09, title: "Butterfly Coloring Pages – Free Printable for Kids", link: "https://lalabuba.com/en/coloring-pages/butterfly/" }
   - { platform: pinterest, brand: lalabuba, date: 2026-10-09, title: "Cat Coloring Pages – Free Printable for Kids", link: "https://lalabuba.com/en/coloring-pages/cat/", image: /social/pins/pin_cat.jpg }
+  # Posted by hand 2026-10-10 AFTER this queue existed — recorded so dedupe and the
+  # daily ceiling see it. Its lb-pin-dragon-1 draft was removed from posts.
+  - { platform: pinterest, brand: lalabuba, date: 2026-10-10, title: "Dragon Coloring Pages – Free Printable for Kids", link: "https://lalabuba.com/en/coloring-pages/dragon/", image: /social/pins/pin_dragon.jpg }
   # Bonifatus Pinterest — board "Taschengeld & Kinderfinanzen"
   - { platform: pinterest, brand: bonifatus, date: 2026-09-18, title: "Taschengeldtabelle 2026 – DJI-Richtwerte für alle Altersstufen", link: "https://bonifatus.com/tools/allowance-calculator" }
   - { platform: pinterest, brand: bonifatus, date: 2026-10-03, title: "5 Regeln für faires Zeugnisgeld", link: "https://bonifatus.com/tools/grade-reward-calculator" }
