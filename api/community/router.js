@@ -5,6 +5,7 @@ const profileHandler     = require("./profile");
 const artworkHandler     = require("./artwork");
 const starHandler        = require("./star");
 const reportHandler      = require("./report");
+const reportContentHandler = require("./report-content");
 const leaderboardHandler = require("./leaderboard");
 const progressHandler    = require("./progress");
 const familyHandler      = require("./family");
@@ -31,6 +32,7 @@ module.exports = async (req, res, p) => {
     if (p === "/api/community/family")         return await familyHandler(req, res);
     if (p === "/api/community/notifications")  return await notificationsHandler(req, res);
     if (p === "/api/community/weekly-theme")   return await weeklyThemeHandler(req, res);
+    if (p === "/api/community/report-content") return await reportContentHandler(req, res);
 
     let m;
     // Variations must be checked before the generic artwork ID pattern.

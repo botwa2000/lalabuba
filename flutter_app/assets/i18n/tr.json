@@ -483,5 +483,15 @@
   "mascotStudioTitle": "Maskot Stüdyosu",
   "mascotHats": "🎩 Hats",
   "mascotAccessories": "💎 Accessories",
-  "mascotExpressions": "😊 Expressions"
+  "mascotExpressions": "😊 Expressions",
+  "reportPictureBtn": "Resmi bildir",
+  "reportPictureTitle": "Bu resimde bir sorun mu var?",
+  "reportPictureBody": "Bize söyle, Lalabuba'dan bir yetişkin kontrol etsin. Resimleri bir bilgisayar yapıyor, bu yüzden bazen yanlış çıkabiliyor.",
+  "reportReasonScary": "Çok korkutucu",
+  "reportReasonInappropriate": "Çocuklara uygun değil",
+  "reportReasonWrong": "Benim fikrime benzemiyor",
+  "reportReasonOther": "Başka bir şey",
+  "reportPictureThanks": "Bize söylediğin için teşekkürler! Bir yetişkin bu resmi kontrol edecek.",
+  "reportPictureNewOne": "Yenisini çiz",
+  "reportPictureError": "Gönderilemedi — lütfen tekrar dene."
 }

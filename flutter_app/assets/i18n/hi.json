@@ -483,5 +483,15 @@
   "mascotStudioTitle": "मैस्कट स्टूडियो",
   "mascotHats": "🎩 Hats",
   "mascotAccessories": "💎 Accessories",
-  "mascotExpressions": "😊 Expressions"
+  "mascotExpressions": "😊 Expressions",
+  "reportPictureBtn": "चित्र की रिपोर्ट करें",
+  "reportPictureTitle": "क्या इस चित्र में कुछ गड़बड़ है?",
+  "reportPictureBody": "हमें बताओ, Lalabuba का कोई बड़ा इसे जाँचेगा। चित्र कंप्यूटर बनाता है, इसलिए कभी-कभी गलत बन जाते हैं।",
+  "reportReasonScary": "बहुत डरावना",
+  "reportReasonInappropriate": "बच्चों के लिए ठीक नहीं",
+  "reportReasonWrong": "मेरे आइडिया जैसा नहीं दिखता",
+  "reportReasonOther": "कुछ और",
+  "reportPictureThanks": "बताने के लिए धन्यवाद! एक बड़ा इस चित्र को जाँचेगा।",
+  "reportPictureNewOne": "नया बनाओ",
+  "reportPictureError": "भेज नहीं पाए — कृपया फिर से कोशिश करो।"
 }

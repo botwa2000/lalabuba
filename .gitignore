@@ -34,6 +34,7 @@ public/mockups/
 
 # Generated coloring images (stored on Docker volume on Hetzner; never committed).
 data/images/
+data/reports/
 data/gallery.json
 
 # Growth / social-ops working docs — internal strategy, personal account emails and

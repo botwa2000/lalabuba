@@ -15,6 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:gal/gal.dart';
@@ -40,6 +41,7 @@ import 'stroke_mask.dart';
 import 'canvas_painter.dart';
 import 'narration_service.dart';
 import 'completion_celebration.dart';
+import 'report_content_sheet.dart';
 import '../rewards/crayon_packs.dart';
 import '../rewards/scenes.dart';
 import '../../core/drawing_config_service.dart';
@@ -89,6 +91,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   bool _celebrationShown = false;
   String _subject = '';
   int? _currentSeed;
+  // The AI picture currently on the canvas — what the 🚩 report sends so the
+  // team reviews exactly the image the child saw.
+  String? _imageUrl;
+  Uint8List? _imageBytes;
+  // Pictures already reported this session (by seed/url) — the flag shows a
+  // "thanks" state instead of re-opening the sheet.
+  final Set<String> _reported = {};
   // Timestamps for analytics duration tracking.
   DateTime? _generateStart;
   DateTime? _coloringStart;
@@ -190,6 +199,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       if (mounted) setState(() { _isPreloading = false; _errorMsg = 'generationError'; });
       return;
     }
+    _imageUrl = widget.args.preloadedUrl;
+    _imageBytes = bytes;
 
     // Bytes ready — clear the fetch spinner immediately so the image appears as
     // soon as the codec decodes it (canvas renders during BFS segmentation).
@@ -252,6 +263,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       _celebrationShown = false; // arm the celebration for the new image
     });
     ref.read(canvasProvider.notifier).reset();
+    _imageUrl = null;
+    _imageBytes = null;
 
     final difficulty = settings?.difficulty ?? 'medium';
     final colorCount = settings?.colorCount ?? 12;
@@ -278,6 +291,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         settings?.palette ?? 'classic',
         colorCount,
       );
+      _imageUrl = result.imageUrl;
+      _imageBytes = result.imageBytes;
       await ref.read(canvasProvider.notifier).loadImage(
         result.imageBytes,
         minArea,
@@ -797,6 +812,18 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                     .speak(l10n.t('narratePraise'), locale);
               }
             },
+          );
+        }),
+        // Report this AI picture (Play AI-Generated Content policy): always on
+        // the coloring screen so a child or parent can flag it in-app.
+        Builder(builder: (_) {
+          final ready = ref.watch(canvasProvider).isReady;
+          final done = _reported.contains(_reportKey());
+          return IconButton(
+            key: const ValueKey('report_picture_btn'),
+            icon: Text(done ? '✅' : '🚩', style: const TextStyle(fontSize: 19)),
+            tooltip: l10n.t('reportPictureBtn'),
+            onPressed: ready && !_isGenerating ? _reportPicture : null,
           );
         }),
         IconButton(
@@ -2089,6 +2116,66 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       unawaited(
           ref.read(progressProvider.notifier).recordShare().then(_toastBadges));
     } catch (_) {}
+  }
+
+  String _reportKey() => '${_currentSeed ?? ''}|${_imageUrl ?? ''}|$_subject';
+
+  Future<void> _reportPicture() async {
+    final l10n = ref.read(l10nProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    final key = _reportKey();
+    if (_reported.contains(key)) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(l10n.t('reportPictureThanks'))));
+      return;
+    }
+    final reason = await showReportContentSheet(context, l10n);
+    if (reason == null || !mounted) return;
+
+    try {
+      final svc = ref.read(communityServiceProvider);
+      String? version;
+      try {
+        final info = await PackageInfo.fromPlatform();
+        version = '${info.version}+${info.buildNumber}';
+      } catch (_) {}
+      await svc.reportContent(
+        reason: reason,
+        subject: _subject,
+        seed: _currentSeed,
+        difficulty: widget.args.preloadedBytes != null || widget.args.preloadedUrl != null
+            ? widget.args.preloadedDifficulty
+            : ref.read(settingsProvider).value?.difficulty,
+        source: widget.args.source,
+        imageUrl: _imageUrl,
+        imageBytes: _imageBytes,
+        platform: Platform.operatingSystem,
+        appVersion: version,
+      );
+      AnalyticsService.track('content_reported', {
+        'subject': _subject,
+        'reason': reason,
+        'source': widget.args.source,
+      });
+      if (!mounted) return;
+      setState(() => _reported.add(key));
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: Text(l10n.t('reportPictureThanks')),
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: l10n.t('reportPictureNewOne'),
+            onPressed: () => _generate(),
+          ),
+        ));
+    } catch (_) {
+      if (!mounted) return;
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(l10n.t('reportPictureError'))));
+    }
   }
 
   Future<void> _shareToCommunity(CanvasState canvas) async {

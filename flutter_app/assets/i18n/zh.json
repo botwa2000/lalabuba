@@ -483,5 +483,15 @@
   "mascotStudioTitle": "吉祥物工作室",
   "mascotHats": "🎩 Hats",
   "mascotAccessories": "💎 Accessories",
-  "mascotExpressions": "😊 Expressions"
+  "mascotExpressions": "😊 Expressions",
+  "reportPictureBtn": "举报图片",
+  "reportPictureTitle": "这张图片有问题吗？",
+  "reportPictureBody": "告诉我们，Lalabuba 的大人会来检查。图片是电脑画的，所以有时会画错。",
+  "reportReasonScary": "太吓人了",
+  "reportReasonInappropriate": "不适合小朋友",
+  "reportReasonWrong": "不像我想要的",
+  "reportReasonOther": "其他问题",
+  "reportPictureThanks": "谢谢你告诉我们！大人会检查这张图片。",
+  "reportPictureNewOne": "再画一张",
+  "reportPictureError": "发送失败，请再试一次。"
 }

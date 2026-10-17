@@ -1344,6 +1344,9 @@ const server = http.createServer(async (req, res) => {
   if (p === "/api/admin/drawing-config") {
     return require("./api/admin/drawing-config")(req, res);
   }
+  if (p === "/api/admin/content-reports") {
+    return require("./api/admin/content-reports")(req, res);
+  }
   if (p === "/api/admin/security") {
     return require("./api/admin/security")(req, res);
   }

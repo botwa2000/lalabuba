@@ -1,4 +1,4 @@
-﻿{
+{
   "heroHeading": "Was wollen wir zeichnen? ✨",
   "heroSub": "Deine Fantasie… gezeichnet von Lalabuba",
   "tagline": "Zeichne · Färbe · Liebe es 🌈",
@@ -483,5 +483,15 @@
   "mascotStudioTitle": "Maskottchen-Studio",
   "mascotHats": "🎩 Hats",
   "mascotAccessories": "💎 Accessories",
-  "mascotExpressions": "😊 Expressions"
+  "mascotExpressions": "😊 Expressions",
+  "reportPictureBtn": "Bild melden",
+  "reportPictureTitle": "Stimmt mit diesem Bild etwas nicht?",
+  "reportPictureBody": "Sag es uns, und ein Erwachsener bei Lalabuba schaut es sich an. Die Bilder macht ein Computer, darum gehen sie manchmal schief.",
+  "reportReasonScary": "Zu gruselig",
+  "reportReasonInappropriate": "Nicht gut für Kinder",
+  "reportReasonWrong": "Sieht nicht aus wie meine Idee",
+  "reportReasonOther": "Etwas anderes",
+  "reportPictureThanks": "Danke, dass du es uns sagst! Ein Erwachsener prüft dieses Bild.",
+  "reportPictureNewOne": "Neues malen",
+  "reportPictureError": "Senden fehlgeschlagen – bitte versuch es noch mal."
 }

@@ -212,6 +212,40 @@ class CommunityService {
     );
   }
 
+  /// Flag an AI-generated picture (coloring screen) as offensive. The server
+  /// keeps a private copy of the picture for review: [imageUrl] when it is one
+  /// of ours, otherwise [imageBytes] (sent only if small enough). Idempotent per
+  /// device + picture. Reason is one of scary | inappropriate | wrong | other.
+  Future<void> reportContent({
+    required String reason,
+    required String subject,
+    int? seed,
+    String? difficulty,
+    String? source,
+    String? imageUrl,
+    Uint8List? imageBytes,
+    String? platform,
+    String? appVersion,
+  }) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/api/community/report-content',
+      data: {
+        'reason': reason,
+        'subject': subject,
+        if (seed != null) 'seed': seed,
+        if (difficulty != null) 'difficulty': difficulty,
+        if (source != null) 'source': source,
+        if (imageUrl != null) 'imageUrl': imageUrl,
+        // Server caps evidence at ~900 KB; base64 inflates by 4/3.
+        if (imageUrl == null && imageBytes != null && imageBytes.length <= 650 * 1024)
+          'imageData': base64Encode(imageBytes),
+        if (platform != null) 'platform': platform,
+        if (appVersion != null) 'appVersion': appVersion,
+      },
+      options: Options(headers: await _headers()),
+    );
+  }
+
   Future<void> deleteArtwork(int artworkId) async {
     await _dio.delete<Map<String, dynamic>>(
       '/api/community/artwork/$artworkId',

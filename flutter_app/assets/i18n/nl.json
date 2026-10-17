@@ -483,5 +483,15 @@
   "mascotStudioTitle": "Mascotte Studio",
   "mascotHats": "🎩 Hats",
   "mascotAccessories": "💎 Accessories",
-  "mascotExpressions": "😊 Expressions"
+  "mascotExpressions": "😊 Expressions",
+  "reportPictureBtn": "Plaatje melden",
+  "reportPictureTitle": "Klopt er iets niet met dit plaatje?",
+  "reportPictureBody": "Vertel het ons en een volwassene bij Lalabuba kijkt ernaar. De plaatjes worden door een computer gemaakt, dus soms gaat het mis.",
+  "reportReasonScary": "Te eng",
+  "reportReasonInappropriate": "Niet geschikt voor kinderen",
+  "reportReasonWrong": "Lijkt niet op mijn idee",
+  "reportReasonOther": "Iets anders",
+  "reportPictureThanks": "Bedankt dat je het zegt! Een volwassene controleert dit plaatje.",
+  "reportPictureNewOne": "Teken een nieuwe",
+  "reportPictureError": "Versturen mislukt — probeer het opnieuw."
 }

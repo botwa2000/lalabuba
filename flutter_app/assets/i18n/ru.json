@@ -483,5 +483,15 @@
   "mascotStudioTitle": "Студия Талисмана",
   "mascotHats": "🎩 Hats",
   "mascotAccessories": "💎 Accessories",
-  "mascotExpressions": "😊 Expressions"
+  "mascotExpressions": "😊 Expressions",
+  "reportPictureBtn": "Пожаловаться на картинку",
+  "reportPictureTitle": "С этой картинкой что-то не так?",
+  "reportPictureBody": "Расскажи нам, и взрослый из Lalabuba её проверит. Картинки рисует компьютер, поэтому иногда они получаются неудачными.",
+  "reportReasonScary": "Слишком страшно",
+  "reportReasonInappropriate": "Не для детей",
+  "reportReasonWrong": "Не похоже на мою идею",
+  "reportReasonOther": "Другое",
+  "reportPictureThanks": "Спасибо, что сказал(а)! Взрослый проверит эту картинку.",
+  "reportPictureNewOne": "Нарисовать новую",
+  "reportPictureError": "Не удалось отправить — попробуй ещё раз."
 }

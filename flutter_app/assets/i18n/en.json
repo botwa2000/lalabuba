@@ -1,4 +1,4 @@
-﻿{
+{
   "celebTitle": "Well done! 🎉",
   "celebMsg": "You colored the whole picture!",
   "celebJournalSaved": "✨ Added to your Journal!",
@@ -485,5 +485,15 @@
   "mascotStudioTitle": "Mascot Studio",
   "mascotHats": "🎩 Hats",
   "mascotAccessories": "💎 Accessories",
-  "mascotExpressions": "😊 Expressions"
+  "mascotExpressions": "😊 Expressions",
+  "reportPictureBtn": "Report picture",
+  "reportPictureTitle": "Something wrong with this picture?",
+  "reportPictureBody": "Tell us and a grown-up at Lalabuba will check it. Pictures are made by a computer, so sometimes they come out wrong.",
+  "reportReasonScary": "Too scary",
+  "reportReasonInappropriate": "Not OK for kids",
+  "reportReasonWrong": "Doesn't look like my idea",
+  "reportReasonOther": "Something else",
+  "reportPictureThanks": "Thanks for telling us! A grown-up will check this picture.",
+  "reportPictureNewOne": "Draw a new one",
+  "reportPictureError": "Couldn't send — please try again."
 }

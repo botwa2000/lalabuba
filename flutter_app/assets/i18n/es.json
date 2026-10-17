@@ -483,5 +483,15 @@
   "mascotStudioTitle": "Estudio de Mascota",
   "mascotHats": "🎩 Hats",
   "mascotAccessories": "💎 Accessories",
-  "mascotExpressions": "😊 Expressions"
+  "mascotExpressions": "😊 Expressions",
+  "reportPictureBtn": "Reportar imagen",
+  "reportPictureTitle": "¿Algo va mal con esta imagen?",
+  "reportPictureBody": "Cuéntanoslo y un adulto de Lalabuba la revisará. Las imágenes las hace un ordenador, así que a veces salen mal.",
+  "reportReasonScary": "Da demasiado miedo",
+  "reportReasonInappropriate": "No es para niños",
+  "reportReasonWrong": "No se parece a mi idea",
+  "reportReasonOther": "Otra cosa",
+  "reportPictureThanks": "¡Gracias por avisarnos! Un adulto revisará esta imagen.",
+  "reportPictureNewOne": "Dibujar otra",
+  "reportPictureError": "No se pudo enviar — inténtalo de nuevo."
 }

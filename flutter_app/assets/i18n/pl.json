@@ -483,5 +483,15 @@
   "mascotStudioTitle": "Studio Maskotki",
   "mascotHats": "🎩 Hats",
   "mascotAccessories": "💎 Accessories",
-  "mascotExpressions": "😊 Expressions"
+  "mascotExpressions": "😊 Expressions",
+  "reportPictureBtn": "Zgłoś obrazek",
+  "reportPictureTitle": "Coś jest nie tak z tym obrazkiem?",
+  "reportPictureBody": "Powiedz nam, a dorosły z Lalabuby go sprawdzi. Obrazki robi komputer, więc czasem wychodzą źle.",
+  "reportReasonScary": "Zbyt straszny",
+  "reportReasonInappropriate": "Nie dla dzieci",
+  "reportReasonWrong": "Nie wygląda jak mój pomysł",
+  "reportReasonOther": "Coś innego",
+  "reportPictureThanks": "Dziękujemy, że nam mówisz! Dorosły sprawdzi ten obrazek.",
+  "reportPictureNewOne": "Narysuj nowy",
+  "reportPictureError": "Nie udało się wysłać — spróbuj ponownie."
 }

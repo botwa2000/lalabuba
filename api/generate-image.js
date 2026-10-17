@@ -5,7 +5,8 @@ const rateLimit = require("../lib/rate-limit");
 const authStats = require("../lib/auth-stats");
 const { verifyAppCheckToken } = require("../lib/app-check");
 const { getSecurityConfig } = require("../lib/security-config");
-const { sanitizeSubject, isSafeSubject } = require("../lib/content-safety");
+const { sanitizeSubject, isSafeSubject, isAdminBlockedSubject } = require("../lib/content-safety");
+const db = require("../lib/db");
 const { buildPrompt, generateImage } = require("../lib/image-providers");
 const { translateToEnglish } = require("../lib/translate");
 
@@ -16,6 +17,15 @@ const IMAGE_PROVIDER = process.env.IMAGE_PROVIDER || "huggingface";
 // Shared coloring images stored locally; expire after 7 days.
 const COLORING_DIR  = path.join(__dirname, "../data/images/c");
 const SHARE_TTL_MS  = 7 * 24 * 60 * 60 * 1000;
+
+async function loadAdminBlockedSubjects() {
+  try {
+    const list = JSON.parse((await db.getConfig("blocked_subjects", "[]")) || "[]");
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
 
 function ensureColoringDir() {
   if (!fs.existsSync(COLORING_DIR)) fs.mkdirSync(COLORING_DIR, { recursive: true });
@@ -175,6 +185,14 @@ module.exports = async (req, res) => {
       return;
     }
 
+    // Subjects an admin blocked after reviewing in-app content reports
+    // (api/admin/content-reports.js). Config is cached in-process for 60s.
+    const adminBlocked = await loadAdminBlockedSubjects();
+    if (isAdminBlockedSubject(subject, adminBlocked)) {
+      res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
+      return;
+    }
+
     // Global daily spend cap across every caller (hard UTC-day window). Counted
     // only for requests that passed auth + validation, i.e. real generations.
     const budget = await rateLimit.consume("generate:budget", "global", sec.generate.dailyBudget, 86_400_000, { fixed: true });
@@ -190,7 +208,7 @@ module.exports = async (req, res) => {
     // runs on the raw subject, but a banned concept written in a language/spelling
     // the blocklist doesn't cover could pass and only become obvious once
     // translated to English — this closes that bypass before it reaches the model.
-    if (!isSafeSubject(englishSubject)) {
+    if (!isSafeSubject(englishSubject) || isAdminBlockedSubject(englishSubject, adminBlocked)) {
       res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
       return;
     }
