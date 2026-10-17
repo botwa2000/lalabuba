@@ -1,15 +1,15 @@
 {
   "_comment": "App Store 'What's New' text per language prefix, used by scripts/asc_submit_review.py for every App Store version localization. Update before each production release. 'en' is the fallback.",
-  "en": "The app now shows your language right from the first screen. Grown-ups can rate Lalabuba from Settings. Stability improvements.",
-  "de": "Die App zeigt deine Sprache jetzt schon ab dem ersten Bildschirm. Erwachsene können Lalabuba in den Einstellungen bewerten. Verbesserungen der Stabilität.",
-  "es": "La app ahora muestra tu idioma desde la primera pantalla. Los adultos pueden valorar Lalabuba desde Ajustes. Mejoras de estabilidad.",
-  "fr": "L'app affiche désormais ta langue dès le premier écran. Les adultes peuvent noter Lalabuba depuis les Réglages. Améliorations de stabilité.",
-  "it": "L'app ora mostra la tua lingua fin dalla prima schermata. Gli adulti possono valutare Lalabuba dalle Impostazioni. Miglioramenti di stabilità.",
-  "nl": "De app toont je taal nu al vanaf het eerste scherm. Volwassenen kunnen Lalabuba beoordelen via Instellingen. Verbeteringen in stabiliteit.",
-  "pl": "Aplikacja pokazuje teraz twój język już od pierwszego ekranu. Dorośli mogą ocenić Lalabuba w Ustawieniach. Poprawki stabilności.",
-  "pt": "A app agora mostra o teu idioma logo desde o primeiro ecrã. Os adultos podem avaliar a Lalabuba nas Definições. Melhorias de estabilidade.",
-  "ru": "Приложение теперь показывает твой язык с самого первого экрана. Взрослые могут оценить Lalabuba в настройках. Улучшения стабильности.",
-  "tr": "Uygulama artık dilini ilk ekrandan itibaren gösteriyor. Yetişkinler Lalabuba'yı Ayarlar'dan değerlendirebilir. Kararlılık iyileştirmeleri.",
-  "hi": "ऐप अब पहली स्क्रीन से ही आपकी भाषा दिखाता है। बड़े लोग सेटिंग्स से Lalabuba को रेटिंग दे सकते हैं। स्थिरता में सुधार।",
-  "zh": "应用现在从第一个页面起就显示你的语言。家长可以在设置中为 Lalabuba 评分。稳定性改进。"
+  "en": "New: if a picture looks wrong or scary, tap the 🚩 flag on the coloring screen to tell us, and a grown-up at Lalabuba will check it. Pictures are drawn more reliably. Stability improvements.",
+  "de": "Neu: Wenn ein Bild seltsam oder gruselig aussieht, tippe auf die 🚩-Flagge beim Ausmalen und sag es uns – ein Erwachsener bei Lalabuba schaut es sich an. Bilder werden zuverlässiger gezeichnet. Verbesserungen der Stabilität.",
+  "es": "Nuevo: si una imagen se ve mal o da miedo, toca la bandera 🚩 en la pantalla de colorear para avisarnos y un adulto de Lalabuba la revisará. Las imágenes se dibujan de forma más fiable. Mejoras de estabilidad.",
+  "fr": "Nouveau : si une image semble bizarre ou effrayante, touche le drapeau 🚩 sur l'écran de coloriage pour nous le dire, et un adulte de Lalabuba la vérifiera. Les images sont dessinées de façon plus fiable. Améliorations de stabilité.",
+  "it": "Novità: se un'immagine sembra sbagliata o paurosa, tocca la bandierina 🚩 nella schermata da colorare per dircelo e un adulto di Lalabuba la controllerà. Le immagini vengono disegnate in modo più affidabile. Miglioramenti di stabilità.",
+  "nl": "Nieuw: lijkt een plaatje niet goed of eng, tik dan op het 🚩-vlaggetje bij het kleuren om het ons te laten weten, en een volwassene bij Lalabuba kijkt ernaar. Plaatjes worden betrouwbaarder getekend. Verbeteringen in stabiliteit.",
+  "pl": "Nowość: jeśli obrazek wygląda źle lub strasznie, dotknij flagi 🚩 na ekranie kolorowania, aby nam powiedzieć, a dorosły z Lalabuby go sprawdzi. Obrazki rysują się bardziej niezawodnie. Poprawki stabilności.",
+  "pt": "Novo: se uma imagem parecer errada ou assustadora, toca na bandeira 🚩 no ecrã de colorir para nos avisar e um adulto da Lalabuba vai verificá-la. As imagens são desenhadas de forma mais fiável. Melhorias de estabilidade.",
+  "ru": "Новое: если картинка выглядит неправильно или страшно, нажми флажок 🚩 на экране раскрашивания, и взрослый из Lalabuba её проверит. Картинки рисуются надёжнее. Улучшения стабильности.",
+  "tr": "Yeni: Bir resim yanlış ya da korkutucu görünüyorsa boyama ekranındaki 🚩 bayrağına dokunarak bize söyle, Lalabuba'dan bir yetişkin kontrol edecek. Resimler artık daha güvenilir çiziliyor. Kararlılık iyileştirmeleri.",
+  "hi": "नया: अगर कोई चित्र गलत या डरावना लगे, तो रंग भरने वाली स्क्रीन पर 🚩 झंडे पर टैप करके हमें बताओ, Lalabuba का कोई बड़ा उसे जाँचेगा। चित्र अब ज़्यादा भरोसेमंद तरीके से बनते हैं। स्थिरता में सुधार।",
+  "zh": "新功能：如果图片看起来不对或很吓人，在涂色页面点击 🚩 小旗告诉我们，Lalabuba 的大人会来检查。图片绘制更加稳定可靠。稳定性改进。"
 }
