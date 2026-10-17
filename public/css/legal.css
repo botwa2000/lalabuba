@@ -264,7 +264,8 @@ strong { color: var(--lp-ink); }
 /* ─── Related topics grid ────────────────────────────────────────────────── */
 .lp-related-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  /* 160px fits the longest German label ("🕯️ Adventskalender" ≈ 162px incl. padding) */
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 10px;
   margin-top: 16px;
 }

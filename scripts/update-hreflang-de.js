@@ -12,6 +12,7 @@ const DE_TOPICS = {
   meerjungfrau: 'mermaid', rakete: 'rocket',
   // seasonal
   schultuete: null, einschulung: null,
+  weihnachten: null, nikolaus: null, adventskalender: null, schneemann: null,
 };
 
 const EN_TO_DE = Object.fromEntries(
@@ -21,15 +22,15 @@ const EN_TO_DE = Object.fromEntries(
 function buildDeTopicHreflang(deSlug, enTopic) {
   const lines = [
     `  <link rel="alternate" hreflang="de" href="https://lalabuba.com/ausmalbilder/${deSlug}/"/>`,
-    `  <link rel="alternate" hreflang="en" href="https://lalabuba.com/coloring-pages/${enTopic}/"/>`,
   ];
-  if (enTopic) {
-    for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
-      const slug = cfg.topicSlugs[enTopic];
-      if (slug) lines.push(`  <link rel="alternate" hreflang="${cfg.htmlLang}" href="https://lalabuba.com/${cfg.root}/${slug}/"/>`);
-    }
+  // Seasonal pages (enTopic null) exist only in German — no EN/x-default alternate.
+  if (!enTopic) return lines.join('\n');
+  lines.push(`  <link rel="alternate" hreflang="en" href="https://lalabuba.com/coloring-pages/${enTopic}/"/>`);
+  for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
+    const slug = cfg.topicSlugs[enTopic];
+    if (slug) lines.push(`  <link rel="alternate" hreflang="${cfg.htmlLang}" href="https://lalabuba.com/${cfg.root}/${slug}/"/>`);
   }
-  lines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/coloring-pages/${enTopic || deSlug}/"/>`);
+  lines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/coloring-pages/${enTopic}/"/>`);
   return lines.join('\n');
 }
 
@@ -71,7 +72,7 @@ updateFile(path.join(ausmalDir, 'index.html'), buildDeHubHreflang());
 for (const [deSlug, enTopic] of Object.entries(DE_TOPICS)) {
   const filePath = path.join(ausmalDir, deSlug, 'index.html');
   if (!fs.existsSync(filePath)) { console.warn(`  MISSING: ${filePath}`); continue; }
-  updateFile(filePath, buildDeTopicHreflang(deSlug, enTopic || deSlug));
+  updateFile(filePath, buildDeTopicHreflang(deSlug, enTopic));
 }
 
 console.log('Done.');
