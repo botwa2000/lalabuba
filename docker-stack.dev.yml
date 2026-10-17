@@ -18,6 +18,7 @@ services:
       - lalabuba_dev_HF_TOKEN
       - lalabuba_dev_TOGETHER_API_KEY
       - lalabuba_dev_NOVITA_API_KEY
+      - lalabuba_dev_DEEPINFRA_API_KEY
       - lalabuba_dev_CF_ACCOUNT_ID
       - lalabuba_dev_CF_API_TOKEN
       - lalabuba_dev_TURNSTILE_SECRET_KEY
@@ -49,6 +50,7 @@ secrets:
   lalabuba_dev_HF_TOKEN: { external: true }
   lalabuba_dev_TOGETHER_API_KEY: { external: true }
   lalabuba_dev_NOVITA_API_KEY: { external: true }
+  lalabuba_dev_DEEPINFRA_API_KEY: { external: true }
   lalabuba_dev_CF_ACCOUNT_ID: { external: true }
   lalabuba_dev_CF_API_TOKEN: { external: true }
   lalabuba_dev_TURNSTILE_SECRET_KEY: { external: true }

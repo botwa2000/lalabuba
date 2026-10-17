@@ -69,7 +69,8 @@ async function runHealthCheck(force = false) {
     generationMs: providerMs,
     quality: qualityResult,
     providers: {
-      pollinations: "free (no key)",
+      deepinfra:    process.env.DEEPINFRA_API_KEY ? "configured" : "not configured",
+      pollinations: "off by default (keyless endpoint returns 402)",
       together:     process.env.TOGETHER_API_KEY ? "configured" : "not configured",
       cloudflare:   process.env.CF_ACCOUNT_ID ? "configured" : "not configured",
       novita:       process.env.NOVITA_API_KEY ? "configured" : "not configured",

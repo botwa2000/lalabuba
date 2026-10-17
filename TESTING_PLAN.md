@@ -291,6 +291,8 @@ For quadrant definitions see `docs/screen-quadrants.md`.
 
 ### 6.1 Image generation
 
+- [ ] 🔴 DeepInfra tier 1 (all difficulties): fresh drawing < 5 s; `[quality] DeepInfra(attempt 1/3)` in `docker service logs`; quality rejection retried with a fresh seed, then Cloudflare — `node scripts/test-deepinfra-tier.js`
+- [ ] 🔴 Every tier's output (incl. PNG tiers) is binarized + enclosed-region checked — a frame/medallion/silhouette never reaches the canvas
 - [ ] Novita provider: successful generation < 15 s
 - [ ] Together provider: fires if Novita fails (waterfall)
 - [ ] Demo provider: returns SVG butterfly instantly (local test only)
