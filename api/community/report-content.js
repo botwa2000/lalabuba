@@ -66,10 +66,17 @@ async function saveEvidence(imagePath, imageData) {
     }
   }
   if (!buffer) return null;
-  if (!fs.existsSync(REPORTS_DIR)) fs.mkdirSync(REPORTS_DIR, { recursive: true });
-  const filename = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${ext === "jpeg" ? "jpg" : ext}`;
-  fs.writeFileSync(path.join(REPORTS_DIR, filename), buffer);
-  return filename;
+  // Never let a storage problem lose the report itself — the row still records
+  // subject/seed/image_path, so the picture can be regenerated for review.
+  try {
+    if (!fs.existsSync(REPORTS_DIR)) fs.mkdirSync(REPORTS_DIR, { recursive: true });
+    const filename = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${ext === "jpeg" ? "jpg" : ext}`;
+    fs.writeFileSync(path.join(REPORTS_DIR, filename), buffer);
+    return filename;
+  } catch (err) {
+    console.error("[content-report] evidence save failed:", err.message);
+    return null;
+  }
 }
 
 module.exports = async (req, res) => {

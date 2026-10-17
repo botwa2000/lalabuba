@@ -36,17 +36,8 @@ class _ReportContentSheet extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            // No hand-drawn grabber: the app theme sets showDragHandle.
             children: [
-              Center(
-                child: Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(
-                    color: cs.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
               Text(
                 l10n.t('reportPictureTitle'),
                 textAlign: TextAlign.center,
