@@ -276,6 +276,7 @@ For quadrant definitions see `docs/screen-quadrants.md`.
 - [ ] Sound on/off works
 - [ ] Share works (Android share sheet)
 - [ ] All difficulty levels generate images
+- [ ] 🔴 🚩 Report picture (canvas app bar, Play AI-Generated Content policy): enabled once the image is ready; sheet shows 4 reasons; submit → thanks snackbar + "Draw a new one"; flag turns ✅; row in `content_reports` + evidence file in `data/reports/` (also for Explore pictures)
 
 ### 5.6 iOS Native App (Codemagic)
 
@@ -296,6 +297,8 @@ For quadrant definitions see `docs/screen-quadrants.md`.
 - [ ] Server returns correct Content-Type (`image/png` or `image/jpeg`)
 - [ ] Turnstile token validated server-side (401 on fake token in browser)
 - [ ] Rate-limiting: > 5 req/min returns 429
+- [ ] Cloudflare 8007 (NSFW false positive) retried on its own budget; 4006 (daily allocation) skips tier until 00:00 UTC — `node scripts/test-cloudflare-retry.js`
+- [ ] 🔴 Content reports: `POST /api/community/report-content` (401 without X-Device-ID, 400 bad reason); `/api/admin/content-reports` lists/serves evidence/blocks subject; blocked subject → 400 on `/api/generate-image` — `node scripts/test-content-reports.js`
 
 ### 6.2 Cloudflare Turnstile
 
