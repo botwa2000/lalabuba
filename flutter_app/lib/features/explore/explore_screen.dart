@@ -4,60 +4,75 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/di/providers.dart';
+import '../../core/l10n/l10n_service.dart';
 import '../../core/router/app_router.dart';
 import '../canvas/canvas_screen.dart';
 
 // ── Data models ────────────────────────────────────────────────────────────────
 
-class _GalleryEntry {
+class GalleryEntry {
   final String id;
-  final String subject;
+  final String subject; // English generation subject (used for "again" prompts)
+  final String label; // localised caption from ?lang=, falls back to subject
   final String url; // absolute https://lalabuba.com/img/g/...
   final String date;
-  const _GalleryEntry(
+  const GalleryEntry(
       {required this.id,
       required this.subject,
+      required this.label,
       required this.url,
       required this.date});
 
-  factory _GalleryEntry.fromJson(Map<String, dynamic> j, String baseUrl) {
+  factory GalleryEntry.fromJson(Map<String, dynamic> j, String baseUrl) {
     final raw = j['url'] as String? ?? '';
     final url =
         raw.startsWith('/') ? '$baseUrl$raw' : raw;
-    return _GalleryEntry(
+    final subject = j['subject'] as String? ?? '';
+    final label = (j['label'] as String?)?.trim() ?? '';
+    return GalleryEntry(
       id: j['id'] as String? ?? '',
-      subject: j['subject'] as String? ?? '',
+      subject: subject,
+      label: label.isNotEmpty ? label : subject,
       url: url,
       date: j['date'] as String? ?? '',
     );
   }
 }
 
-class _TopicImages {
-  final List<_GalleryEntry> easy;
-  final List<_GalleryEntry> medium;
-  final List<_GalleryEntry> hard;
-  const _TopicImages(
+class TopicImages {
+  final List<GalleryEntry> easy;
+  final List<GalleryEntry> medium;
+  final List<GalleryEntry> hard;
+  const TopicImages(
       {required this.easy, required this.medium, required this.hard});
+}
+
+class ExploreTopic {
+  final String id;
+  final String emoji;
+  final String name; // already localised
+  const ExploreTopic(this.id, this.emoji, this.name);
 }
 
 // ── Topic metadata ─────────────────────────────────────────────────────────────
 
-const _topics = [
-  ('dragon', '🐉', 'Dragon'),
-  ('unicorn', '🦄', 'Unicorn'),
-  ('butterfly', '🦋', 'Butterfly'),
-  ('dinosaur', '🦕', 'Dinosaur'),
-  ('cat', '🐱', 'Cat'),
-  ('princess', '👸', 'Princess'),
-  ('mermaid', '🧜', 'Mermaid'),
-  ('rocket', '🚀', 'Rocket'),
+// Offline fallback only — the live list (and any topic added later) comes from
+// /api/gallery/topics, so a new topic needs no app release. Names via l10n.
+const _bundledTopics = [
+  ('dragon', '🐉'),
+  ('unicorn', '🦄'),
+  ('butterfly', '🦋'),
+  ('dinosaur', '🦕'),
+  ('cat', '🐱'),
+  ('princess', '👸'),
+  ('mermaid', '🧜'),
+  ('rocket', '🚀'),
+  ('car', '🚗'),
 ];
 
-// ── Provider ───────────────────────────────────────────────────────────────────
+// ── Providers ──────────────────────────────────────────────────────────────────
 
-final _topicImagesProvider =
-    FutureProvider.family<_TopicImages, String>((ref, topic) async {
+Future<(Dio, String)> _galleryDio(Ref ref) async {
   final config = await ref.read(appConfigProvider.future);
   final baseUrl = config.apiBaseUrl.replaceFirst(RegExp(r'/$'), '');
   final dio = Dio(BaseOptions(
@@ -65,27 +80,70 @@ final _topicImagesProvider =
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
   ));
-  final resp = await dio.get('/api/gallery', queryParameters: {'topic': topic});
+  return (dio, baseUrl);
+}
+
+/// Topic list in the app language. Falls back to the bundled list when offline.
+final exploreTopicsProvider =
+    FutureProvider.family<List<ExploreTopic>, String>((ref, lang) async {
+  final l10n = ref.read(l10nProvider);
+  final bundled = [
+    for (final (id, emoji) in _bundledTopics)
+      ExploreTopic(id, emoji, l10n.t('topic_$id')),
+  ];
+  try {
+    final (dio, _) = await _galleryDio(ref);
+    final resp =
+        await dio.get('/api/gallery/topics', queryParameters: {'lang': lang});
+    final list = ((resp.data as Map<String, dynamic>)['topics'] as List?)
+            ?.cast<Map<String, dynamic>>() ??
+        const <Map<String, dynamic>>[];
+    final topics = [
+      for (final j in list)
+        if ((j['id'] as String?)?.isNotEmpty == true)
+          ExploreTopic(j['id'] as String, j['emoji'] as String? ?? '🎨',
+              j['name'] as String? ?? l10n.t('topic_${j['id']}')),
+    ];
+    return topics.isEmpty ? bundled : topics;
+  } catch (_) {
+    return bundled;
+  }
+});
+
+/// Pre-drawn pictures for one topic, captioned in the given language.
+final exploreTopicImagesProvider =
+    FutureProvider.family<TopicImages, (String, String)>((ref, args) async {
+  final (topic, lang) = args;
+  final (dio, baseUrl) = await _galleryDio(ref);
+  final resp = await dio
+      .get('/api/gallery', queryParameters: {'topic': topic, 'lang': lang});
   final data = resp.data as Map<String, dynamic>;
-  List<_GalleryEntry> parse(String key) =>
+  List<GalleryEntry> parse(String key) =>
       ((data[key] as List<dynamic>?) ?? [])
           .cast<Map<String, dynamic>>()
-          .map((j) => _GalleryEntry.fromJson(j, baseUrl))
+          .map((j) => GalleryEntry.fromJson(j, baseUrl))
           .toList();
-  return _TopicImages(
+  return TopicImages(
       easy: parse('easy'), medium: parse('medium'), hard: parse('hard'));
 });
 
 // Colour per topic — gives each card a distinct warm accent.
-const _topicColors = [
-  Color(0xFFFF6B6B), // dragon — coral red
-  Color(0xFF7C6DFF), // unicorn — purple
-  Color(0xFF4ECDC4), // butterfly — teal
-  Color(0xFF45B7D1), // dinosaur — sky blue
-  Color(0xFFFF9F43), // cat — amber
-  Color(0xFFFF78AC), // princess — pink
-  Color(0xFF26de81), // mermaid — sea green
-  Color(0xFF778CA3), // rocket — slate
+const _topicColors = {
+  'dragon': Color(0xFFFF6B6B), // coral red
+  'unicorn': Color(0xFF7C6DFF), // purple
+  'butterfly': Color(0xFF4ECDC4), // teal
+  'dinosaur': Color(0xFF45B7D1), // sky blue
+  'cat': Color(0xFFFF9F43), // amber
+  'princess': Color(0xFFFF78AC), // pink
+  'mermaid': Color(0xFF26de81), // sea green
+  'rocket': Color(0xFF778CA3), // slate
+  'car': Color(0xFFE84393), // raspberry
+};
+const _fallbackColors = [
+  Color(0xFFFF6B6B),
+  Color(0xFF7C6DFF),
+  Color(0xFF4ECDC4),
+  Color(0xFFFF9F43),
 ];
 
 // ── Hub screen ─────────────────────────────────────────────────────────────────
@@ -96,6 +154,9 @@ class ExploreScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = ref.watch(l10nProvider);
+    final topics = ref.watch(exploreTopicsProvider(l10n.locale)).value ??
+        const <ExploreTopic>[];
     final width = MediaQuery.sizeOf(context).width;
     final columns = width >= 900
         ? 4
@@ -104,7 +165,7 @@ class ExploreScreen extends ConsumerWidget {
             : 2;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Explore',
+        title: Text(l10n.t('navExplore'),
             style: GoogleFonts.fredoka(
                 fontSize: 22, fontWeight: FontWeight.w700)),
         backgroundColor: cs.surface,
@@ -113,22 +174,24 @@ class ExploreScreen extends ConsumerWidget {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: _ExploreHeader(cs: cs),
+            child: _ExploreHeader(cs: cs, l10n: l10n),
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             sliver: SliverGrid(
               delegate: SliverChildBuilderDelegate(
                 (ctx, i) {
-                  final (slug, emoji, name) = _topics[i];
+                  final t = topics[i];
                   return _TopicCard(
-                    slug: slug,
-                    emoji: emoji,
-                    name: name,
-                    accent: _topicColors[i % _topicColors.length],
+                    slug: t.id,
+                    emoji: t.emoji,
+                    name: t.name,
+                    cta: l10n.t('exploreColorNow'),
+                    accent: _topicColors[t.id] ??
+                        _fallbackColors[i % _fallbackColors.length],
                   );
                 },
-                childCount: _topics.length,
+                childCount: topics.length,
               ),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: columns,
@@ -146,7 +209,8 @@ class ExploreScreen extends ConsumerWidget {
 
 class _ExploreHeader extends StatelessWidget {
   final ColorScheme cs;
-  const _ExploreHeader({required this.cs});
+  final L10n l10n;
+  const _ExploreHeader({required this.cs, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +235,7 @@ class _ExploreHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '🎨 Ready-to-Color Pictures!',
+                  l10n.t('exploreHeaderTitle'),
                   style: GoogleFonts.fredoka(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -180,7 +244,7 @@ class _ExploreHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Pick a topic, tap a picture, and start coloring right away — no waiting, just fun!',
+                  l10n.t('exploreHeaderBody'),
                   style: GoogleFonts.nunito(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -203,11 +267,13 @@ class _TopicCard extends StatelessWidget {
   final String slug;
   final String emoji;
   final String name;
+  final String cta;
   final Color accent;
   const _TopicCard(
       {required this.slug,
       required this.emoji,
       required this.name,
+      required this.cta,
       required this.accent});
 
   @override
@@ -252,7 +318,7 @@ class _TopicCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Color now →',
+              cta,
               style: GoogleFonts.nunito(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -281,10 +347,12 @@ class ExploreTopicScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final imagesAsync = ref.watch(_topicImagesProvider(topic));
+    final l10n = ref.watch(l10nProvider);
+    final imagesAsync =
+        ref.watch(exploreTopicImagesProvider((topic, l10n.locale)));
     return Scaffold(
       appBar: AppBar(
-        title: Text('$emoji $name Coloring Pages',
+        title: Text('$emoji ${l10n.t('exploreTopicTitle', {'name': name})}',
             style: GoogleFonts.fredoka(
                 fontSize: 20, fontWeight: FontWeight.w700)),
         backgroundColor: cs.surface,
@@ -296,7 +364,7 @@ class ExploreTopicScreen extends ConsumerWidget {
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('Could not load gallery — check your connection.',
+            child: Text(l10n.t('exploreLoadError'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.nunito(
                     fontSize: 16, color: cs.onSurfaceVariant)),
@@ -315,12 +383,12 @@ class ExploreTopicScreen extends ConsumerWidget {
                   children: [
                     Text(emoji, style: const TextStyle(fontSize: 56)),
                     const SizedBox(height: 16),
-                    Text('More $name pages coming soon — check back!',
+                    Text(l10n.t('exploreEmpty'),
                         textAlign: TextAlign.center,
                         style: GoogleFonts.nunito(
                             fontSize: 16, color: cs.onSurfaceVariant)),
                     const SizedBox(height: 12),
-                    Text('In the meantime, use the Draw screen to create your own!',
+                    Text(l10n.t('exploreEmptyHint'),
                         textAlign: TextAlign.center,
                         style: GoogleFonts.nunito(
                             fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.7))),
@@ -333,17 +401,17 @@ class ExploreTopicScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             children: [
               if (images.easy.isNotEmpty) ...[
-                _DiffHeading('Easy 🌟'),
+                _DiffHeading(l10n.t('diffEasy')),
                 _ImageGrid(entries: images.easy, difficulty: 'easy'),
                 const SizedBox(height: 16),
               ],
               if (images.medium.isNotEmpty) ...[
-                _DiffHeading('Medium 🌟🌟'),
+                _DiffHeading(l10n.t('diffMedium')),
                 _ImageGrid(entries: images.medium, difficulty: 'medium'),
                 const SizedBox(height: 16),
               ],
               if (images.hard.isNotEmpty) ...[
-                _DiffHeading('Hard 🌟🌟🌟'),
+                _DiffHeading(l10n.t('diffHard')),
                 _ImageGrid(entries: images.hard, difficulty: 'hard'),
                 const SizedBox(height: 8),
               ],
@@ -374,7 +442,7 @@ class _DiffHeading extends StatelessWidget {
 }
 
 class _ImageGrid extends StatelessWidget {
-  final List<_GalleryEntry> entries;
+  final List<GalleryEntry> entries;
   final String difficulty;
   const _ImageGrid({required this.entries, required this.difficulty});
 
@@ -397,7 +465,7 @@ class _ImageGrid extends StatelessWidget {
 }
 
 class _GalleryCard extends StatelessWidget {
-  final _GalleryEntry entry;
+  final GalleryEntry entry;
   final String difficulty;
   const _GalleryCard({required this.entry, required this.difficulty});
 
@@ -446,7 +514,7 @@ class _GalleryCard extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  entry.subject,
+                  entry.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.nunito(
@@ -469,7 +537,7 @@ class _GalleryCard extends StatelessWidget {
     context.pushNamed('canvas',
         extra: CanvasScreenArgs(
           subject: entry.subject,
-          displayLabel: entry.subject,
+          displayLabel: entry.label,
           source: 'explore',
           preloadedUrl: entry.url,
           preloadedDifficulty: difficulty,

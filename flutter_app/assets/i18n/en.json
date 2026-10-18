@@ -495,5 +495,21 @@
   "reportReasonOther": "Something else",
   "reportPictureThanks": "Thanks for telling us! A grown-up will check this picture.",
   "reportPictureNewOne": "Draw a new one",
-  "reportPictureError": "Couldn't send — please try again."
+  "reportPictureError": "Couldn't send — please try again.",
+  "exploreHeaderTitle": "🎨 Ready-to-Color Pictures!",
+  "exploreHeaderBody": "Pick a topic, tap a picture, and start coloring right away — no waiting, just fun!",
+  "exploreColorNow": "Color now →",
+  "exploreTopicTitle": "{name} Coloring Pages",
+  "exploreLoadError": "Could not load the pictures — check your connection.",
+  "exploreEmpty": "More pictures coming soon — check back!",
+  "exploreEmptyHint": "In the meantime, use the Draw screen to create your own!",
+  "topic_dragon": "Dragon",
+  "topic_unicorn": "Unicorn",
+  "topic_butterfly": "Butterfly",
+  "topic_dinosaur": "Dinosaur",
+  "topic_cat": "Cat",
+  "topic_princess": "Princess",
+  "topic_mermaid": "Mermaid",
+  "topic_rocket": "Rocket",
+  "topic_car": "Car"
 }
