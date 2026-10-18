@@ -45,7 +45,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const DE_TOPIC_MAP = {
   drache: "dragon", einhorn: "unicorn", schmetterling: "butterfly",
   dinosaurier: "dinosaur", katze: "cat", prinzessin: "princess",
-  meerjungfrau: "mermaid", rakete: "rocket",
+  meerjungfrau: "mermaid", rakete: "rocket", auto: "car",
   schultuete: "schultuete", einschulung: "einschulung",
   weihnachten: "weihnachten", nikolaus: "nikolaus",
   adventskalender: "adventskalender", schneemann: "schneemann",
@@ -57,7 +57,7 @@ const EN_TO_DE_SLUG = Object.fromEntries(Object.entries(DE_TOPIC_MAP).map(([de, 
 const DE_TOPIC_NAMES = {
   dragon: 'Drachen', unicorn: 'Einhorn', butterfly: 'Schmetterling',
   dinosaur: 'Dinosaurier', cat: 'Katze', princess: 'Prinzessin',
-  mermaid: 'Meerjungfrau', rocket: 'Rakete',
+  mermaid: 'Meerjungfrau', rocket: 'Rakete', car: 'Auto',
   schultuete: 'Schultüte', einschulung: 'Einschulung',
   weihnachten: 'Weihnachten', nikolaus: 'Nikolaus',
   adventskalender: 'Adventskalender', schneemann: 'Schneemann',
@@ -423,7 +423,7 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
 
   const meta        = gallery.TOPIC_META[topic];
   const isDE   = lang === "de";
-  const subject     = isDE ? gallery.deSubjectLabel(entry.subject || topic) : (entry.subject || topic);
+  const subject     = gallery.subjectLabel(lang, entry.subject || topic);
   const subjectTitle = subject.charAt(0).toUpperCase() + subject.slice(1);
 
   const i18nCfg = (!isDE && lang !== "en") ? i18n.LANGS[lang] : null;
@@ -434,7 +434,7 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
 
   if (i18nCfg) {
     // One of the 10 i18n languages (fr/es/pt/ru/it/nl/pl/tr/zh/hi)
-    const t        = i18nCfg.t;
+    const t        = i18n.topicT(i18nCfg.t, topic);
     const root     = i18nCfg.root;
     const langSlug = i18nCfg.topicSlugs[topic] || topic;
     htmlLang       = i18nCfg.htmlLang;
@@ -522,12 +522,15 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
     ]},
   ]});
 
+  const cardT = isDE ? DE_GALLERY_T
+    : i18nCfg ? { ...i18n.topicT(i18nCfg.t, topic), subjectLabel: (s) => gallery.subjectLabel(lang, s) }
+    : null;
   const allImages = ["easy","medium","hard"].flatMap(d => (topicImages[d]||[]).map(e => ({...e,difficulty:d})));
   const related   = allImages.filter(e => e.slug !== imageSlug).slice(0, 4);
   const relatedHtml = related.length ? `
   <section class="lp-section gallery-section">
     <h2 class="section-heading">${moreLabel}</h2>
-    <div class="gallery-grid">${related.map(e => galleryCardHtml(e, meta, isDE ? DE_GALLERY_T : null, { basePath })).join("")}</div>
+    <div class="gallery-grid">${related.map(e => galleryCardHtml(e, meta, cardT, { basePath })).join("")}</div>
   </section>` : "";
 
   const html = `<!doctype html>
@@ -566,7 +569,7 @@ ${buildNav({ lang: htmlLang, breadcrumbs: [
 <main class="lp-main lp-image-page">
   <div class="lp-image-hero">
     <a href="${colorHref}" class="lp-coloring-img-link" title="${colorLabel}">
-      <img src="${entry.url}" alt="${subjectTitle} ${isDE ? "Ausmalbild" : "coloring page"} — ${diffLabel}" class="lp-coloring-img" width="800" height="800" loading="eager"/>
+      <img src="${entry.url}" alt="${subjectTitle} ${isDE ? "Ausmalbild" : (i18nCfg?.t.altSuffix || "coloring page")} — ${diffLabel}" class="lp-coloring-img" width="800" height="800" loading="eager"/>
     </a>
     <div class="lp-image-actions">
       <a href="${colorHref}" class="lp-btn lp-btn-primary">✏️ ${colorLabel}</a>
@@ -667,6 +670,12 @@ function hubHreflangMap() {
   return m;
 }
 // Topic pages: each lang links to its own topic page (or hub if no topic slug exists).
+// Topic name in any supported language (EN/DE/the 10 i18n languages).
+function topicDisplayName(lang, enTopic) {
+  if (lang === "de") return DE_TOPIC_NAMES[enTopic] || gallery.TOPIC_META[enTopic]?.name || enTopic;
+  return i18n.LANGS[lang]?.t.topicNames[enTopic] || gallery.TOPIC_META[enTopic]?.name || enTopic;
+}
+
 function topicHreflangMap(enTopic) {
   const m = { en: `https://lalabuba.com/en/coloring-pages/${enTopic}/` };
   const deSlug = EN_TO_DE_SLUG[enTopic];
@@ -804,7 +813,8 @@ ${buildNav({ lang, breadcrumbs: [{ label: t.hubH1 }], hreflangMap: hubHreflangMa
 async function serveI18nTopic(res, lang, enTopic) {
   const cfg = i18n.LANGS[lang];
   if (!cfg || !gallery.TOPIC_META[enTopic]) return sendJson(res, 404, { error: 'Not found' });
-  const { root, htmlLang, t } = cfg;
+  const { root, htmlLang } = cfg;
+  const t = { ...i18n.topicT(cfg.t, enTopic), subjectLabel: (s) => gallery.subjectLabel(lang, s) };
   const topicSlug  = cfg.topicSlugs[enTopic] || enTopic;
   const topicName  = t.topicNames[enTopic] || enTopic;
   const canon      = `https://lalabuba.com/${root}/${topicSlug}/`;
@@ -1383,14 +1393,26 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ── Gallery API ────────────────────────────────────────────────────────────
+  // Evergreen topics (seasonal ones are DE-web-only) with names in the app's language.
+  if (p === "/api/gallery/topics" && req.method === "GET") {
+    const lang = parsedUrl.searchParams.get("lang") || "en";
+    const topics = gallery.TOPICS.filter(id => !gallery.TOPIC_META[id].seasonal)
+      .map(id => ({ id, emoji: gallery.TOPIC_META[id].emoji, name: topicDisplayName(lang, id) }));
+    return sendJson(res, 200, { topics });
+  }
+
   if (p === "/api/gallery" && req.method === "GET") {
     const topic      = parsedUrl.searchParams.get("topic");
     const difficulty = parsedUrl.searchParams.get("difficulty");
+    // ?lang= adds a localised `label` to each entry (app Explore grid)
+    const lang       = parsedUrl.searchParams.get("lang");
+    const labelled   = (list) => lang ? list.map(e => ({ ...e, label: gallery.subjectLabel(lang, e.subject) })) : list;
     if (topic && difficulty) {
-      return sendJson(res, 200, { images: gallery.getImages(topic, difficulty) });
+      return sendJson(res, 200, { images: labelled(gallery.getImages(topic, difficulty)) });
     }
     if (topic) {
-      return sendJson(res, 200, gallery.getAllForTopic(topic));
+      const all = gallery.getAllForTopic(topic);
+      return sendJson(res, 200, { easy: labelled(all.easy), medium: labelled(all.medium), hard: labelled(all.hard) });
     }
     return sendJson(res, 400, { error: "topic required" });
   }
