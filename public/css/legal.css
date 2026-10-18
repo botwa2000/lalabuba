@@ -614,6 +614,8 @@ nav.legal-nav.lp-branded {
   nav.lp-nav.lp-branded,
   nav.legal-nav.lp-branded { padding: 0 14px; height: 52px; }
   .lp-nav-crumbs { display: none; }
+  /* crumbs were the flex:1 spacer — without them the actions butt against the wordmark */
+  .lp-nav-actions { margin-left: auto; }
   .lp-nav-wordmark { font-size: 1.25rem; }
   #lp-settings-menu { right: 0; left: auto; max-height: 60vh; overflow-y: auto; }
 }
