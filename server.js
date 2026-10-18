@@ -41,27 +41,7 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "127.0.0.1"; // container sets HOST=0.0.0.0
 const PUBLIC_DIR = path.join(__dirname, "public");
 
-// German slug → English topic (for gallery image injection on DE pages)
-const DE_TOPIC_MAP = {
-  drache: "dragon", einhorn: "unicorn", schmetterling: "butterfly",
-  dinosaurier: "dinosaur", katze: "cat", prinzessin: "princess",
-  meerjungfrau: "mermaid", rakete: "rocket", auto: "car",
-  schultuete: "schultuete", einschulung: "einschulung",
-  weihnachten: "weihnachten", nikolaus: "nikolaus",
-  adventskalender: "adventskalender", schneemann: "schneemann",
-};
-// English topic → German slug (inverse)
-const EN_TO_DE_SLUG = Object.fromEntries(Object.entries(DE_TOPIC_MAP).map(([de, en]) => [en, de]));
-
-// German display names for topics (used in gallery section titles on static DE pages)
-const DE_TOPIC_NAMES = {
-  dragon: 'Drachen', unicorn: 'Einhorn', butterfly: 'Schmetterling',
-  dinosaur: 'Dinosaurier', cat: 'Katze', princess: 'Prinzessin',
-  mermaid: 'Meerjungfrau', rocket: 'Rakete', car: 'Auto',
-  schultuete: 'Schultüte', einschulung: 'Einschulung',
-  weihnachten: 'Weihnachten', nikolaus: 'Nikolaus',
-  adventskalender: 'Adventskalender', schneemann: 'Schneemann',
-};
+const { DE_TOPIC_MAP, EN_TO_DE_SLUG, DE_TOPIC_NAMES, topicDisplayName, topicsForLang, topicNavSection, hubCards, fillTopicMarkers } = require("./lib/topic-nav");
 
 // Translations for gallery section injected into DE static pages
 const DE_GALLERY_T = {
@@ -326,6 +306,7 @@ async function serveTopicPageWithGallery(res, topic) {
     ctaHref: `/?s=1&q=${encodeURIComponent(topic)}&d=easy`,
   });
   enhanced = injectUnifiedNav(enhanced, topicNav);
+  enhanced = fillTopicMarkers(enhanced, "en", topic);
 
   serveHtml(res, enhanced);
 }
@@ -348,7 +329,7 @@ function serveDeTopicPageBySlug(res, deSlug) {
     hreflangMap: hasEnPage ? topicHreflangMap(enTopic) : { de: `https://lalabuba.com/de/ausmalbilder/${deSlug}/` },
     ctaHref: hasEnPage ? `/?s=1&q=${encodeURIComponent(enTopic)}&d=easy` : `/?s=1&q=${encodeURIComponent(deTopicName)}&d=easy`,
   });
-  let enhanced = injectUnifiedNav(baseHtml, deNav);
+  let enhanced = fillTopicMarkers(injectUnifiedNav(baseHtml, deNav), "de", enTopic);
   if (enTopic) {
     const topicImages = gallery.getAllForTopic(enTopic);
     const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
@@ -554,7 +535,7 @@ ${hreflangLines.join('\n')}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=302"/>
+  <link rel="stylesheet" href="/css/legal.css?v=304"/>
   <link rel="stylesheet" href="/css/gallery.css?v=302"/>
   <link rel="stylesheet" href="/css/image-page.css?v=302"/>
   <script type="module" src="/js/lp-nav.js"></script>
@@ -587,6 +568,7 @@ ${buildNav({ lang: htmlLang, breadcrumbs: [
     <a href="/?s=1&q=${encodeURIComponent(topic)}&d=${difficulty}" class="lp-generate-link">✨ ${moreLabel} →</a>
   </div>
   ${relatedHtml}
+  ${topicNavSection(lang, topic)}
 </main>
 <footer class="legal-footer">
   <span>© 2026 Lalabuba</span>
@@ -670,12 +652,6 @@ function hubHreflangMap() {
   return m;
 }
 // Topic pages: each lang links to its own topic page (or hub if no topic slug exists).
-// Topic name in any supported language (EN/DE/the 10 i18n languages).
-function topicDisplayName(lang, enTopic) {
-  if (lang === "de") return DE_TOPIC_NAMES[enTopic] || gallery.TOPIC_META[enTopic]?.name || enTopic;
-  return i18n.LANGS[lang]?.t.topicNames[enTopic] || gallery.TOPIC_META[enTopic]?.name || enTopic;
-}
-
 function topicHreflangMap(enTopic) {
   const m = { en: `https://lalabuba.com/en/coloring-pages/${enTopic}/` };
   const deSlug = EN_TO_DE_SLUG[enTopic];
@@ -704,7 +680,7 @@ const HEAD_COMMON = `  <meta name="theme-color" content="#7c4dff"/>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=302"/>
+  <link rel="stylesheet" href="/css/legal.css?v=304"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>`;
 
@@ -742,25 +718,13 @@ function serveI18nHub(res, lang) {
   const { root, htmlLang, t } = cfg;
   const canon = `https://lalabuba.com/${root}/`;
 
-  const topicCards = i18n.TOPICS.map(enTopic => {
-    const slug   = cfg.topicSlugs[enTopic] || enTopic;
-    const name   = t.topicNames[enTopic] || enTopic;
-    const emoji  = i18n.TOPIC_EMOJIS[enTopic] || '🎨';
-    return `<a href="/${root}/${slug}/" class="lp-hub-card">
-        <span class="lp-hub-emoji">${emoji}</span>
-        <span class="lp-hub-name">${name}</span>
-        <span class="lp-hub-cta">${t.topicCta}</span>
-      </a>`;
-  }).join('\n      ');
+  const topics = topicsForLang(lang);
+  const topicCards = hubCards(topics, t.topicCta);
 
   const ldJson = JSON.stringify({
     "@context": "https://schema.org", "@type": "CollectionPage",
     "name": t.hubH1, "description": t.hubDesc, "url": canon,
-    "hasPart": i18n.TOPICS.map(enTopic => ({
-      "@type": "WebPage",
-      "name": `${t.topicNames[enTopic] || enTopic}`,
-      "url": `${canon}${cfg.topicSlugs[enTopic] || enTopic}/`,
-    })),
+    "hasPart": topics.map(tp => ({ "@type": "WebPage", "name": tp.name, "url": `https://lalabuba.com${tp.url}` })),
   });
 
   const html = `<!doctype html>
@@ -832,13 +796,6 @@ async function serveI18nTopic(res, lang, enTopic) {
   const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
   const ogImage  = firstImg ? `https://lalabuba.com${firstImg.url}` : 'https://lalabuba.com/og-image.png';
 
-  const relatedTopics = i18n.TOPICS
-    .filter(et => et !== enTopic)
-    .map(et => {
-      const sl = cfg.topicSlugs[et] || et;
-      const nm = t.topicNames[et] || et;
-      return `<a href="/${root}/${sl}/" class="lp-related-card"><span class="lp-rel-emoji">${i18n.TOPIC_EMOJIS[et]}</span> ${nm}</a>`;
-    }).join('');
 
   const html = `<!doctype html>
 <html lang="${htmlLang}">
@@ -877,10 +834,7 @@ ${buildNav({ lang, breadcrumbs: [{ href: `/${root}/`, label: t.hubH1 ? t.hubH1.s
 </div>
 <div class="legal-content lp-wide">
   ${galSection}
-  <section class="lp-section">
-    <h2 class="section-heading">${t.topicsHeading}</h2>
-    <div class="lp-related-grid">${relatedTopics}</div>
-  </section>
+  ${topicNavSection(lang, enTopic)}
   <section class="lp-section" style="text-align:center">
     <a href="/?s=1&q=${q}&d=easy" class="lp-cta">${t.generateCta(topicName)}</a>
   </section>
@@ -960,7 +914,7 @@ function serveTodayPage(res) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=302"/>
+  <link rel="stylesheet" href="/css/legal.css?v=304"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
@@ -996,14 +950,7 @@ ${buildNav({ lang: 'en', breadcrumbs: [{ href: '/coloring-pages/', label: 'Color
       </div>`).join("")}
     </div>
   </section>
-  <section class="lp-section">
-    <h2 class="section-heading">Browse All Topics</h2>
-    <div class="lp-related-grid">
-      ${Object.entries(gallery.TOPIC_META).map(([slug, m]) =>
-        `<a href="/coloring-pages/${slug}/" class="lp-related-card"><span class="lp-rel-emoji">${m.emoji}</span> ${m.name}</a>`
-      ).join("")}
-    </div>
-  </section>
+  ${topicNavSection("en")}
 </div>
 <footer class="legal-footer">
   <span>© 2026 Lalabuba</span>
@@ -1065,7 +1012,7 @@ function serveDailyPage(res, date, word) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=302"/>
+  <link rel="stylesheet" href="/css/legal.css?v=304"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
@@ -1100,14 +1047,7 @@ ${buildNav({ lang: 'en', breadcrumbs: [{ href: '/coloring-pages/', label: 'Color
       </div>`).join("")}
     </div>
   </section>
-  <section class="lp-section">
-    <h2 class="section-heading">Browse All Topics</h2>
-    <div class="lp-related-grid">
-      ${Object.entries(gallery.TOPIC_META).map(([slug, m]) =>
-        `<a href="/coloring-pages/${slug}/" class="lp-related-card"><span class="lp-rel-emoji">${m.emoji}</span> ${m.name}</a>`
-      ).join("")}
-    </div>
-  </section>
+  ${topicNavSection("en")}
 </div>
 <footer class="legal-footer">
   <span>© 2026 Lalabuba</span>
@@ -1181,7 +1121,7 @@ ${hreflangs}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=303"/>
+  <link rel="stylesheet" href="/css/legal.css?v=304"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
 </head>
@@ -1200,15 +1140,7 @@ ${buildNav({ lang, breadcrumbs: [{ href: `/${root}/`, label: t.imageHubLabel }, 
     <h2 class="section-heading">${wordDisplay} — ${date}</h2>
     ${galleryHtml}
   </section>
-  <section class="lp-section">
-    <h2 class="section-heading">${t.topicsHeading}</h2>
-    <div class="lp-related-grid">
-      ${Object.entries(gallery.TOPIC_META).map(([slug, m]) => {
-        const tSlug = cfg.topicSlugs[slug] || slug;
-        return `<a href="/${root}/${tSlug}/" class="lp-related-card"><span class="lp-rel-emoji">${m.emoji}</span> ${t.topicNames?.[slug] || m.name}</a>`;
-      }).join('')}
-    </div>
-  </section>
+  ${topicNavSection(lang)}
 </div>
 <footer class="legal-footer">
   ${(t.footerLinks(root) || []).map(([href, label]) => `<a href="${href}">${label}</a>`).join('<span class="sep">·</span>')}
@@ -1238,12 +1170,6 @@ function serveGermanDailyPage(res, date, deWord) {
   const firstImg = imgs[0];
   const ogImage  = firstImg ? `https://lalabuba.com${firstImg.url}` : "https://lalabuba.com/og-image.png";
 
-  const relatedHtml = Object.entries(gallery.TOPIC_META)
-    .filter(([, m]) => !m.seasonal)
-    .map(([slug, m]) => {
-      const deSlug = EN_TO_DE_SLUG[slug] || slug;
-      return `<a href="/ausmalbilder/${deSlug}/" class="lp-related-card"><span class="lp-rel-emoji">${m.emoji}</span> ${m.name}</a>`;
-    }).join("");
 
   const html = `<!doctype html>
 <html lang="de">
@@ -1267,7 +1193,7 @@ function serveGermanDailyPage(res, date, deWord) {
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
   <link rel="icon" href="/favicon.png" type="image/png"/>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
-  <link rel="stylesheet" href="/css/legal.css?v=302"/>
+  <link rel="stylesheet" href="/css/legal.css?v=304"/>
   <link rel="stylesheet" href="/css/gallery.css"/>
   <script type="module" src="/js/lp-nav.js"></script>
   <script type="application/ld+json">{
@@ -1300,10 +1226,7 @@ ${buildNav({ lang: 'de', breadcrumbs: [{ href: '/ausmalbilder/', label: 'Ausmalb
       ).join("")}
     </div>
   </section>
-  <section class="lp-section">
-    <h2 class="section-heading">Alle Themen entdecken</h2>
-    <div class="lp-related-grid">${relatedHtml}</div>
-  </section>
+  ${topicNavSection("de")}
 </div>
 <footer class="legal-footer">
   <span>© 2026 Lalabuba</span>
@@ -1396,7 +1319,7 @@ const server = http.createServer(async (req, res) => {
   // Evergreen topics (seasonal ones are DE-web-only) with names in the app's language.
   if (p === "/api/gallery/topics" && req.method === "GET") {
     const lang = parsedUrl.searchParams.get("lang") || "en";
-    const topics = gallery.TOPICS.filter(id => !gallery.TOPIC_META[id].seasonal)
+    const topics = gallery.TOPICS.filter(id => !gallery.TOPIC_META[id].seasonal && gallery.hasImages(id))
       .map(id => ({ id, emoji: gallery.TOPIC_META[id].emoji, name: topicDisplayName(lang, id) }));
     return sendJson(res, 200, { topics });
   }
@@ -1722,6 +1645,7 @@ const server = http.createServer(async (req, res) => {
         html = html.replace(/"item":"https:\/\/lalabuba\.com\/coloring-pages\/"/g, '"item":"https://lalabuba.com/en/coloring-pages/"');
         html = html.replace(/"url":"https:\/\/lalabuba\.com\/coloring-pages\/([^"]+)"/g, '"url":"https://lalabuba.com/en/coloring-pages/$1"');
         html = injectUnifiedNav(html, buildNav({ lang: 'en', breadcrumbs: [{ label: 'Coloring Pages' }], hreflangMap: hubHreflangMap(), ctaHref: '/' }));
+        html = fillTopicMarkers(html, 'en');
         return serveHtml(res, html);
       } catch { /* 404 below */ }
     }
@@ -1760,6 +1684,7 @@ const server = http.createServer(async (req, res) => {
         html = html.replace(/"item":"https:\/\/lalabuba\.com\/ausmalbilder\/"/g, '"item":"https://lalabuba.com/de/ausmalbilder/"');
         html = html.replace(/"url":"https:\/\/lalabuba\.com\/ausmalbilder\/([^"]+)"/g, '"url":"https://lalabuba.com/de/ausmalbilder/$1"');
         html = injectUnifiedNav(html, buildNav({ lang: 'de', breadcrumbs: [{ label: 'Ausmalbilder' }], hreflangMap: hubHreflangMap(), ctaHref: '/' }));
+        html = fillTopicMarkers(html, 'de');
         return serveHtml(res, html);
       } catch { /* 404 below */ }
     }

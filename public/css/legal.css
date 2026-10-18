@@ -284,6 +284,9 @@ strong { color: var(--lp-ink); }
   transition: border-color 0.15s, transform 0.15s;
 }
 .lp-related-card:hover { border-color: var(--lp-purple); transform: translateY(-2px); }
+/* The page's own topic in the shared topic nav: highlighted, not a link. */
+.lp-related-card[aria-current="page"] { border: 2px solid var(--lp-purple); padding: 9px 13px; color: var(--lp-purple); }
+.lp-related-card[aria-current="page"]:hover { transform: none; }
 .lp-rel-emoji { font-size: 1.3rem; flex-shrink: 0; }
 
 /* ─── Hub page card grid ─────────────────────────────────────────────────── */
