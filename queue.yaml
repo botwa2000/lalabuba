@@ -55,6 +55,50 @@ posts:
     link: https://lalabuba.com/en/coloring-pages/princess/
     alt: "Cartoon princess in a ball gown holding a star wand, shown as blank line art and colored in, with the lalabuba.com logo."
 
+  # ── German Christmas season. Drafted 2026-10-18, unapproved.
+  #    Pins read at full size: 1000×1500, ä/ü render, no clipping; images live
+  #    under /social/pins/ once deployed. Seasonal DE pins surface 45–60 days early,
+  #    so these are most valuable approved in late October / early November.
+  - id: lb-pin-weihnachten-1
+    brand: lalabuba
+    platform: pinterest
+    image: /social/pins/pin_weihnachten.jpg
+    board: Coloring Pages for Kids
+    title: "Weihnachten Ausmalbilder – kostenlos ausdrucken für Kinder"
+    description: "Weihnachtsbaum, Weihnachtsmann, Rentierschlitten, Engel und Lebkuchenhaus: 27 fertige Weihnachts-Ausmalbilder in drei Schwierigkeitsstufen – einfach ausdrucken oder direkt am Tablet ausmalen. Kostenlos, ohne Anmeldung, ohne Werbung. #Weihnachten #Ausmalbilder #Malvorlagen #Kinder"
+    link: https://lalabuba.com/de/ausmalbilder/weihnachten/
+    alt: "Ausmalbild eines geschmückten Weihnachtsbaums mit Stern und Geschenken als schwarze Linienzeichnung, mit dem lalabuba.com-Logo."
+
+  - id: lb-pin-nikolaus-1
+    brand: lalabuba
+    platform: pinterest
+    image: /social/pins/pin_nikolaus.jpg
+    board: Coloring Pages for Kids
+    title: "Nikolaus Ausmalbilder – kostenlos ausdrucken für Kinder"
+    description: "Für den 6. Dezember: Nikolaus mit Mitra und Bischofsstab, gefüllte Stiefel, Nikolaus mit Esel und Goldenem Buch. 27 Ausmalbilder in drei Stufen, zum Ausdrucken oder Ausmalen am Tablet. Kostenlos, ohne Anmeldung, ohne Werbung. #Nikolaus #Nikolaustag #Ausmalbilder #Malvorlagen"
+    link: https://lalabuba.com/de/ausmalbilder/nikolaus/
+    alt: "Ausmalbild des heiligen Nikolaus mit Mitra, langem Bart und Bischofsstab als schwarze Linienzeichnung, mit dem lalabuba.com-Logo."
+
+  - id: lb-pin-adventskalender-1
+    brand: lalabuba
+    platform: pinterest
+    image: /social/pins/pin_adventskalender.jpg
+    board: Coloring Pages for Kids
+    title: "Adventskalender Ausmalbilder – kostenlos ausdrucken für Kinder"
+    description: "Ein Bild für jedes Türchen: Adventskranz, Kerzen, Plätzchen, Lebkuchenmann, Weihnachtsstern, Pinguin und Eichhörnchen. 27 Ausmalbilder in drei Stufen – ausdrucken, nummerieren, fertig ist der Mal-Adventskalender. Kostenlos und ohne Anmeldung. #Adventskalender #Advent #Ausmalbilder #Basteln"
+    link: https://lalabuba.com/de/ausmalbilder/adventskalender/
+    alt: "Ausmalbild eines Adventskranzes mit vier Kerzen, Tannenzweigen und Beeren als schwarze Linienzeichnung, mit dem lalabuba.com-Logo."
+
+  - id: lb-pin-schneemann-1
+    brand: lalabuba
+    platform: pinterest
+    image: /social/pins/pin_schneemann.jpg
+    board: Coloring Pages for Kids
+    title: "Schneemann Ausmalbilder – kostenlos ausdrucken für Kinder"
+    description: "Schneemann mit Zylinder und Schal, Schneemann-Familie, Kinder beim Schneemannbauen und ein Schneemann auf Schlittschuhen: 27 Winter-Ausmalbilder in drei Stufen, die auch nach Weihnachten passen. Kostenlos, ohne Anmeldung, ohne Werbung. #Schneemann #Winter #Ausmalbilder #Malvorlagen"
+    link: https://lalabuba.com/de/ausmalbilder/schneemann/
+    alt: "Ausmalbild eines fröhlichen Schneemanns mit Zylinder, Schal und Stockarmen als schwarze Linienzeichnung, mit dem lalabuba.com-Logo."
+
 # ── Posted outside this service (by hand, before it existed). Read-only input to
 #    dedupe and the daily ceiling. Source: docs/growth-checkin-log.md (local).
 history:
