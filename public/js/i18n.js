@@ -4348,7 +4348,7 @@ const TRANSLATIONS = {
     heroHeading: "आज क्या बनाएं? ✨",
     heroSub: "तुम्हारी कल्पना… Lalabuba द्वारा बनाई गई",
     tagline: "बनाओ · रंगो · प्यार करो 🌈",
-    placeholder: "🦋 तितली · 🐉 अजगर · 🏰 महल · 🦄 यूनिकॉर्न…",
+    placeholder: "🦋 तितली · 🐉 ड्रैगन · 🏰 महल · 🦄 यूनिकॉर्न…",
     drawBtn: "बनाओ! ✨",
     colorByNumber: "🔢 नंबर से रंगो",
     moreOptions: "⚙️ अधिक विकल्प",
@@ -4383,7 +4383,7 @@ const TRANSLATIONS = {
     srcBackend: "🖥️ सर्वर", srcDirect: "🌐 सीधा", srcDemo: "🎭 डेमो",
     regenBtn: "🎲 फिर से!",
     helpBtn: "? कैसे काम करता है?",
-    helpLine1: "✏️ कुछ भी लिखो — बिल्ली, अजगर, रॉकेट…",
+    helpLine1: "✏️ कुछ भी लिखो — बिल्ली, ड्रैगन, रॉकेट…",
     helpLine2: "🎨 बनाओ! पर क्लिक करो और AI तुम्हारे लिए रंग पृष्ठ बनाएगा",
     helpLine3: "🔢 नंबर वाले क्षेत्र पर टैप करो, फिर रंग चुनो",
     helpLine4: "🖨️ जब हो जाए तो अपनी कृति प्रिंट करो या सहेजो!",
@@ -4602,13 +4602,13 @@ const COLORING_TOPIC_SLUGS = {
 };
 
 const COLORING_TOPIC_NAMES = {
-  dragon:    {en:'Dragon',de:'Drachen',fr:'Dragon',es:'Dragón',pt:'Dragão',ru:'Дракон',it:'Drago',nl:'Draak',pl:'Smok',tr:'Ejderha',zh:'龙',hi:'अजगर'},
-  unicorn:   {en:'Unicorn',de:'Einhorn',fr:'Licorne',es:'Unicornio',pt:'Unicórnio',ru:'Единорог',it:'Unicorno',nl:'Eenhoorn',pl:'Jednorożec',tr:'Unicorn',zh:'独角兽',hi:'एकसींग'},
+  dragon:    {en:'Dragon',de:'Drachen',fr:'Dragon',es:'Dragón',pt:'Dragão',ru:'Дракон',it:'Drago',nl:'Draak',pl:'Smok',tr:'Ejderha',zh:'龙',hi:'ड्रैगन'},
+  unicorn:   {en:'Unicorn',de:'Einhorn',fr:'Licorne',es:'Unicornio',pt:'Unicórnio',ru:'Единорог',it:'Unicorno',nl:'Eenhoorn',pl:'Jednorożec',tr:'Tek Boynuzlu At',zh:'独角兽',hi:'यूनिकॉर्न'},
   butterfly: {en:'Butterfly',de:'Schmetterling',fr:'Papillon',es:'Mariposa',pt:'Borboleta',ru:'Бабочка',it:'Farfalla',nl:'Vlinder',pl:'Motyl',tr:'Kelebek',zh:'蝴蝶',hi:'तितली'},
   dinosaur:  {en:'Dinosaur',de:'Dinosaurier',fr:'Dinosaure',es:'Dinosaurio',pt:'Dinossauro',ru:'Динозавр',it:'Dinosauro',nl:'Dinosaurus',pl:'Dinozaur',tr:'Dinozor',zh:'恐龙',hi:'डायनासोर'},
   cat:       {en:'Cat',de:'Katze',fr:'Chat',es:'Gato',pt:'Gato',ru:'Кошка',it:'Gatto',nl:'Kat',pl:'Kot',tr:'Kedi',zh:'猫',hi:'बिल्ली'},
   princess:  {en:'Princess',de:'Prinzessin',fr:'Princesse',es:'Princesa',pt:'Princesa',ru:'Принцесса',it:'Principessa',nl:'Prinses',pl:'Księżniczka',tr:'Prenses',zh:'公主',hi:'राजकुमारी'},
-  mermaid:   {en:'Mermaid',de:'Meerjungfrau',fr:'Sirène',es:'Sirena',pt:'Sereia',ru:'Русалка',it:'Sirena',nl:'Zeemeermin',pl:'Syrenka',tr:'Deniz Kızı',zh:'人鱼',hi:'जलपरी'},
+  mermaid:   {en:'Mermaid',de:'Meerjungfrau',fr:'Sirène',es:'Sirena',pt:'Sereia',ru:'Русалка',it:'Sirena',nl:'Zeemeermin',pl:'Syrenka',tr:'Deniz Kızı',zh:'美人鱼',hi:'जलपरी'},
   rocket:    {en:'Rocket',de:'Rakete',fr:'Fusée',es:'Cohete',pt:'Foguete',ru:'Ракета',it:'Razzo',nl:'Raket',pl:'Rakieta',tr:'Roket',zh:'火箭',hi:'रॉकेट'},
 };
 
