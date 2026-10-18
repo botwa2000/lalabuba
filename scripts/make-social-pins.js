@@ -24,6 +24,10 @@ const { FONTS, renderText, assertFits, roundedRectShadow, arrow } = require('./s
 const ROOT = path.join(__dirname, '..');
 const LIB  = path.join(ROOT, 'docs', 'coloring-page-library');
 const OUT  = path.join(ROOT, 'docs', 'social-content', 'pins');
+const PUBLIC_OUT = path.join(ROOT, 'public', 'social', 'pins');
+
+// German CTA lines for DE pins (cfg.ctaLines) — declared before PINS uses it.
+const CTA_DE = ['100 % kostenlos · ohne Anmeldung · ohne Werbung', 'Ausmalbilder für Kinder – mit KI gemalt'];
 
 // ─── Topic configs ────────────────────────────────────────────────────────────
 const PINS = [
@@ -133,6 +137,51 @@ const PINS = [
     // noFill: blank line-art hero — the account's #1 pin format for printable-seekers.
     // Eliminates the entire flood-fill face-color defect class.
     noFill: true,
+  },
+  // ── German Christmas season (2026-10-18) — blank line-art heroes, like einschulung.
+  {
+    id: 'weihnachten',
+    src: 'weihnachten-easy-1267667399.png',
+    headline1: 'Weihnachten',
+    headline2: 'Ausmalbilder',
+    accentHex: '#B71C1C',   // deep red
+    accentLight: '#FFCDD2', // light red
+    keyword: 'Weihnachten Ausmalbilder kostenlos ausdrucken',
+    noFill: true,
+    ctaLines: CTA_DE,
+  },
+  {
+    id: 'nikolaus',
+    src: 'nikolaus-easy-1988436002.png',
+    headline1: 'Nikolaus',
+    headline2: 'Ausmalbilder',
+    accentHex: '#8E1B3A',   // bishop's crimson
+    accentLight: '#F3C6D2', // light crimson
+    keyword: 'Nikolaus Ausmalbilder kostenlos ausdrucken',
+    noFill: true,
+    ctaLines: CTA_DE,
+  },
+  {
+    id: 'adventskalender',
+    src: 'adventskalender-easy-1668680778.png',
+    headline1: 'Adventskalender',
+    headline2: 'Ausmalbilder',
+    accentHex: '#1B5E20',   // fir green
+    accentLight: '#C8E6C9', // light green
+    keyword: 'Adventskalender Ausmalbilder kostenlos ausdrucken',
+    noFill: true,
+    ctaLines: CTA_DE,
+  },
+  {
+    id: 'schneemann',
+    src: 'schneemann-easy-415694242.png',
+    headline1: 'Schneemann',
+    headline2: 'Ausmalbilder',
+    accentHex: '#1565C0',   // winter blue
+    accentLight: '#BBDEFB', // light blue
+    keyword: 'Schneemann Ausmalbilder kostenlos ausdrucken',
+    noFill: true,
+    ctaLines: CTA_DE,
   },
 ];
 
@@ -353,10 +402,15 @@ async function arrowLayer(x, y, size = 34) {
   return { input: buf, top: y, left: x };
 }
 
-async function ctaTextLayers(x, y) {
+// German pins pass cfg.ctaLines; the brand line "Type · Color · Play!" stays.
+const CTA_EN = ['100% Free · No account · No ads', 'AI-generated coloring for kids'];
+
+async function ctaTextLayers(x, y, lines = CTA_EN) {
   const l1 = await renderText('Type · Color · Play!', FONTS.bodyBold, 24, '#222222');
-  const l2 = await renderText('100% Free · No account · No ads', FONTS.bodyRegular, 17, '#555555');
-  const l3 = await renderText('AI-generated coloring for kids', FONTS.bodyRegular, 17, '#555555');
+  const l2 = await renderText(lines[0], FONTS.bodyRegular, 17, '#555555');
+  const l3 = await renderText(lines[1], FONTS.bodyRegular, 17, '#555555');
+  assertFits(l2, W - 220, 40, 'pin cta line 2');
+  assertFits(l3, W - 220, 40, 'pin cta line 3');
   return [
     { input: l1.buffer, top: y, left: x },
     { input: l2.buffer, top: y + l1.height + 10, left: x },
@@ -481,7 +535,7 @@ async function makePin(cfg) {
     layers.push(
       { input: lineThumbBuf, top: thumbY, left: 35 },
       await printLabelLayer(35, labelY),
-      ...(await ctaTextLayers(printCtaX, ctaY)),
+      ...(await ctaTextLayers(printCtaX, ctaY, cfg.ctaLines)),
     );
   } else {
     // Standard before→after strip
@@ -493,7 +547,7 @@ async function makePin(cfg) {
       await arrowLayer(arrowX, arrowY),
       { input: colorThumbBuf, top: colorThY, left: colorThX },
       afterLabel.layer,
-      ...(await ctaTextLayers(ctaX, ctaY)),
+      ...(await ctaTextLayers(ctaX, ctaY, cfg.ctaLines)),
     );
   }
 
@@ -507,6 +561,15 @@ async function makePin(cfg) {
 
   const stat = fs.statSync(outPath);
   console.log(`  ✓ ${path.basename(outPath)} (${Math.round(stat.size / 1024)} KB)`);
+
+  // Instagram's API rejects PNG, and queue.yaml points at the .jpg — export both,
+  // and publish both to public/social/pins/ (served at /social/pins/).
+  const jpgPath = outPath.replace(/\.png$/, '.jpg');
+  await sharp(outPath).jpeg({ quality: 90, chromaSubsampling: '4:4:4' }).toFile(jpgPath);
+  fs.mkdirSync(PUBLIC_OUT, { recursive: true });
+  fs.copyFileSync(outPath, path.join(PUBLIC_OUT, path.basename(outPath)));
+  fs.copyFileSync(jpgPath, path.join(PUBLIC_OUT, path.basename(jpgPath)));
+  console.log(`  ✓ ${path.basename(jpgPath)} (${Math.round(fs.statSync(jpgPath).size / 1024)} KB) + copies in public/social/pins/`);
 }
 
 // ─── Entry ────────────────────────────────────────────────────────────────────
