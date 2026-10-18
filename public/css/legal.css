@@ -272,8 +272,8 @@ strong { color: var(--lp-ink); }
 .lp-related-card {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: 6px;
+  padding: 10px 12px;
   background: var(--lp-surface);
   border: 1px solid var(--lp-border);
   border-radius: 12px;
@@ -285,7 +285,7 @@ strong { color: var(--lp-ink); }
 }
 .lp-related-card:hover { border-color: var(--lp-purple); transform: translateY(-2px); }
 /* The page's own topic in the shared topic nav: highlighted, not a link. */
-.lp-related-card[aria-current="page"] { border: 2px solid var(--lp-purple); padding: 9px 13px; color: var(--lp-purple); }
+.lp-related-card[aria-current="page"] { border: 2px solid var(--lp-purple); padding: 9px 11px; color: var(--lp-purple); }
 .lp-related-card[aria-current="page"]:hover { transform: none; }
 .lp-rel-emoji { font-size: 1.3rem; flex-shrink: 0; }
 
