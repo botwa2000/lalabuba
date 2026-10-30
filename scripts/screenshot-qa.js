@@ -30,9 +30,11 @@ const VIEWPORTS = [
 const MOBILE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
 
 // How long to wait for image generation:
-//   demo mode: SVG is synchronous — 1500ms is plenty
+//   demo mode: /api/generate-image is answered locally with a real gallery
+//              coloring page, but the client first waits up to 15 s for a
+//              Turnstile token that never arrives headless
 //   real mode: Novita/Pollinations can take 30–90s
-const GEN_TIMEOUT_MS = REAL_MODE ? 90000 : 12000;
+const GEN_TIMEOUT_MS = REAL_MODE ? 90000 : 30000;
 const POST_GEN_SETTLE_MS = REAL_MODE ? 4000 : 1500; // extra settle for worker segmentation
 
 async function snap(page, label) {
@@ -40,6 +42,19 @@ async function snap(page, label) {
   await page.screenshot({ path: file, fullPage: false });
   console.log(`  ✓ ${label}.png`);
   return file;
+}
+
+// First easy "cat" page from the public gallery API (cached per run).
+let _fixture = null;
+async function demoFixture(ctx) {
+  if (_fixture) return _fixture;
+  const origin = new URL(TARGET_URL).origin;
+  const list = await (await ctx.request.get(`${origin}/api/gallery?topic=cat`)).json();
+  const entry = (list.easy || list.medium || [])[0];
+  if (!entry) throw new Error('demo fixture: gallery API returned no cat images');
+  const img = await ctx.request.get(origin + entry.url);
+  _fixture = { body: await img.body(), type: img.headers()['content-type'] || 'image/png' };
+  return _fixture;
 }
 
 async function run() {
@@ -71,6 +86,28 @@ async function run() {
       await page.route('**/challenges.cloudflare.com/**', route => route.abort());
     }
 
+    // ── Demo mode: the web client always calls the backend (generate.js has no
+    // demo provider any more), so answer /api/generate-image here with a real
+    // published gallery page — exercises the full render + segmentation path
+    // without an AI call, Turnstile or provider quota.
+    if (!REAL_MODE) {
+      // Headless Chromium never solves Turnstile, and the client won't call the
+      // API without a token. Stub the widget: it reports a token at once
+      // (implicit-render callback = data-callback="onTurnstileSuccess").
+      await page.route('**/turnstile/v0/api.js*', route => route.fulfill({
+        contentType: 'application/javascript',
+        body: `window.turnstile = { getResponse: () => 'qa-demo-token', reset() {}, render() {} };
+               setTimeout(() => window.onTurnstileSuccess && window.onTurnstileSuccess('qa-demo-token'), 50);`,
+      }));
+      const fixture = await demoFixture(ctx);
+      await page.route('**/api/generate-image', route => route.fulfill({
+        status: 200,
+        contentType: fixture.type,
+        headers: { 'X-Image-Seed': '1', 'Access-Control-Expose-Headers': 'X-Image-Seed' },
+        body: fixture.body,
+      }));
+    }
+
     // ── Hero state ─────────────────────────────────────────────────────────
     await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(2000);
@@ -79,9 +116,7 @@ async function run() {
     // ── Configure provider and settings ──────────────────────────────────────
     await page.evaluate((realMode) => {
       if (!realMode) {
-        // Demo mode: bypass Turnstile + switch to demo provider
-        const sel = document.getElementById('provider-select');
-        if (sel) { sel.value = 'demo'; sel.dispatchEvent(new Event('change')); }
+        // Demo mode: /api/generate-image is intercepted (see demoFixture).
       }
       // Hard difficulty to exercise complex region detection
       const diff = document.getElementById('difficulty-select');
