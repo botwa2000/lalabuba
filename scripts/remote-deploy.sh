@@ -16,6 +16,10 @@ fi
 
 cd "$DIR"
 echo "[0/6] ensure data dirs"; mkdir -p "$DIR/data/images/c" "$DIR/data/images/g"
+# The app runs as uid 1000 (node). dev's data dir was root-owned, so every
+# generated image failed to save (EACCES) → no X-Image-Url → no challenge links
+# and no picture ratings on dev. Keep the whole tree owned by the app user.
+chown 1000:1000 "$DIR/data" "$DIR/data/images" "$DIR/data/images/c" "$DIR/data/images/g"
 # Private evidence copies of reported AI pictures (api/community/report-content.js):
 # written by the container's `node` user (uid 1000), never served.
 mkdir -p "$DIR/data/reports"; chown 1000:1000 "$DIR/data/reports"; chmod 700 "$DIR/data/reports"
