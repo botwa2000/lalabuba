@@ -90,6 +90,7 @@ export async function deleteArtwork(id) {
 // ── Gallery modal UI ─────────────────────────────────────────────────────────
 
 import { t } from './i18n.js';
+import { track } from './analytics.js';
 import { BADGES, GROUPS, badgesIn, getProgress } from './progress.js';
 import { CRAYON_PACKS, PALETTES, isPackUnlocked, packById } from './data.js';
 import { getDailyMission, missionProgressCount, missionIsDone } from './daily-mission.js';
@@ -498,6 +499,7 @@ function openScenesModal() {
 }
 
 export async function openGalleryModal(onContinue) {
+  track('gallery_opened');
   const modal = document.getElementById('gallery-modal');
   if (!modal) return;
   modal.classList.remove('hidden');

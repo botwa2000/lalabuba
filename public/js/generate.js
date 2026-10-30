@@ -158,6 +158,16 @@ export async function generatePage(subject, seedOverride = null, isPreDefined = 
   }
 }
 
+// The community ID, only when the visitor accepted analytics (same rule as t.js).
+function consentedInstallId() {
+  try {
+    const p = JSON.parse(localStorage.getItem('lala_cookie_consent') || 'null');
+    if (!p?.analytics) return null;
+    const id = localStorage.getItem('lalabuba-community-id');
+    return id && /^[0-9a-f-]{36}$/.test(id) ? id : null;
+  } catch { return null; }
+}
+
 export async function requestGeneratedImage(subject, difficulty = "medium", seedOverride = null, isPreDefined = false) {
   const provider = 'backend';
   const seed = (seedOverride !== null && Number.isFinite(seedOverride))
@@ -219,6 +229,10 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
           width:  (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).w,
           height: (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).h,
           turnstileToken: state.turnstileToken || undefined,
+          // Stats dashboard (lib/usage.js): where the subject came from + UI language.
+          source: state.generationSource || 'custom',
+          lang: (document.documentElement.lang || '').slice(0, 2) || undefined,
+          installId: consentedInstallId() || undefined,
         }),
       });
     } catch (err) {
@@ -228,6 +242,7 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
       throw err;
     } finally {
       clearTimeout(timeoutId);
+      state.generationSource = null;
     }
 
     if (!response.ok) {

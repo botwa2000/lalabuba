@@ -134,6 +134,8 @@ module.exports = async (req, res) => {
 
     // Delete profile row — FK cascades wipe artworks, stars, reports, family membership
     await db.query("DELETE FROM profiles WHERE device_uuid = $1", [uuid]);
+    // …and the usage statistics recorded for this install (privacy policy §7).
+    await require("../../lib/usage").forgetInstall(uuid);
 
     // Remove artwork image files from disk (best-effort)
     for (const { image_path } of artworks) {

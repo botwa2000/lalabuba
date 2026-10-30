@@ -12,6 +12,10 @@ const { renderFeaturesPage }  = require("./lib/render-features-page");
 const { renderFaqPage }       = require("./lib/render-faq-page");
 const { renderCommunityPage } = require("./lib/render-community-page");
 const docsAuth  = require("./lib/docs-auth");
+const adminAuth = require("./lib/admin-auth");
+const { renderAdminStatsPage } = require("./lib/render-admin-stats");
+const usage = require("./lib/usage");
+const storeImport = require("./lib/store-import");
 const { renderDocsPage, renderLoginPage, renderOtpPage } = require("./lib/render-docs-page");
 const { sendOtp } = require("./lib/email");
 
@@ -73,6 +77,7 @@ const MIME_TYPES = {
 // Route handlers (reused as-is; require ../lib/* relative to ./api).
 const generateHandler  = require("./api/generate-image.js");
 const contactHandler   = require("./api/contact.js");
+const trackHandler     = require("./api/t.js");
 const healthDeepHandler = require("./api/health-deep.js");
 
 function sendJson(res, statusCode, payload) {
@@ -149,7 +154,8 @@ function serveStaticFile(req, res, pathname) {
         "Content-Type": MIME_TYPES[extension] || "application/octet-stream",
         ...(noCache ? { "Cache-Control": "no-store" } : {}),
       });
-      res.end(contents);
+      // Static pages under /mockups are QA screenshots, not visits.
+      res.end(extension === ".html" && !pathname.startsWith("/mockups/") ? withBeacon(contents.toString("utf8")) : contents);
     });
   }
   tryNext(0);
@@ -222,9 +228,24 @@ function injectGalleryIntoHtml(staticHtml, galleryHtml) {
   return staticHtml.slice(0, divCloseIdx) + '\n' + galleryHtml + '\n' + staticHtml.slice(divCloseIdx);
 }
 
+// First-party usage beacon (public/js/t.js) on every served page. Versioned by
+// content hash so a deploy that changes it busts browser caches.
+const BEACON_TAG = (() => {
+  let v = "1";
+  try { v = require("crypto").createHash("sha256").update(fs.readFileSync(path.join(__dirname, "public/js/t.js"))).digest("hex").slice(0, 8); }
+  catch { /* file missing in a stripped test env */ }
+  return `<script src="/js/t.js?v=${v}" defer></script>`;
+})();
+
+function withBeacon(html) {
+  if (typeof html !== "string" || html.includes("/js/t.js")) return html;
+  const i = html.indexOf("</head>");
+  return i === -1 ? html : html.slice(0, i) + BEACON_TAG + html.slice(i);
+}
+
 function serveHtml(res, html) {
   res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-  res.end(html);
+  res.end(withBeacon(html));
 }
 
 // Replace the old <nav class="legal-nav">...</nav> block in static HTML with the
@@ -1241,6 +1262,75 @@ ${buildNav({ lang: 'de', breadcrumbs: [{ href: '/ausmalbilder/', label: 'Ausmalb
   serveHtml(res, html);
 }
 
+const ADMIN_SITE = { name: "Lalabuba Admin", base: "/admin", backHref: "/", backLabel: "← lalabuba.com" };
+
+async function handleAdmin(req, res, p) {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("X-Frame-Options", "DENY");
+  const isHttps = String(req.headers["x-forwarded-proto"] || "").startsWith("https");
+  const ip = adminAuth.clientIp(req);
+  const page = (status, html) => { res.writeHead(status, { "Content-Type": "text/html; charset=utf-8" }); res.end(html); };
+  const redirect = (to, cookies) => {
+    if (cookies) res.setHeader("Set-Cookie", cookies);
+    res.writeHead(302, { Location: to }); res.end();
+  };
+  const formBody = () => new Promise((resolve) => {
+    let body = "";
+    req.on("data", (c) => { body += c; if (body.length > 4096) body = body.slice(0, 4096); });
+    req.on("end", () => resolve(new URLSearchParams(body)));
+  });
+  const route = p.replace(/\/+$/, "") || "/admin";
+
+  if (route === "/admin" && req.method === "GET") return redirect("/admin/stats");
+
+  if (route === "/admin/stats" && req.method === "GET") {
+    if (!adminAuth.isAuthenticated(req)) return redirect("/admin/login");
+    return page(200, renderAdminStatsPage());
+  }
+
+  if (route === "/admin/login") {
+    if (req.method === "GET") return page(200, renderLoginPage({ site: ADMIN_SITE }));
+    if (req.method === "POST") {
+      if (await adminAuth.isSendLimited(ip)) return page(429, renderLoginPage({ rateLimited: true, site: ADMIN_SITE }));
+      const params = await formBody();
+      const email = (params.get("email") || "").trim().toLowerCase();
+      if (!(await adminAuth.verifyTurnstile(params.get("cf-turnstile-response") || "", ip))) {
+        return page(403, renderLoginPage({ error: true, site: ADMIN_SITE }));
+      }
+      // Same response for unknown emails — never reveal which address is allowed.
+      if (adminAuth.isAllowedEmail(email)) {
+        const { code, state } = adminAuth.generateOtp();
+        await adminAuth.recordSend(ip);
+        res.setHeader("Set-Cookie", adminAuth.otpCookieHeader(state, isHttps));
+        try { await sendOtp(email, code, "en"); }
+        catch (err) { console.error("[admin] OTP email send failed:", err.message); }
+      }
+      return page(200, renderOtpPage({ email, site: ADMIN_SITE }));
+    }
+  }
+
+  if (route === "/admin/verify" && req.method === "POST") {
+    if (await adminAuth.isVerifyLimited(ip)) return page(429, renderOtpPage({ rateLimited: true, site: ADMIN_SITE }));
+    const params = await formBody();
+    const code = (params.get("code") || "").replace(/\D/g, "").slice(0, 6);
+    if (adminAuth.validateOtp(code, adminAuth.getOtpCookie(req))) {
+      await adminAuth.clearVerifyFails(ip);
+      console.warn(`[admin] login ok from ${ip}`);
+      return redirect("/admin/stats", [adminAuth.sessionCookieHeader(adminAuth.generateSession(), isHttps), adminAuth.clearOtpCookieHeader()]);
+    }
+    await adminAuth.recordVerifyFail(ip);
+    return page(401, renderOtpPage({ error: true, site: ADMIN_SITE }));
+  }
+
+  if (route === "/admin/logout" && req.method === "GET") {
+    return redirect("/admin/login", [adminAuth.clearSessionCookieHeader(), adminAuth.clearOtpCookieHeader()]);
+  }
+
+  return sendJson(res, 404, { error: "Not found" });
+}
+
 const server = http.createServer(async (req, res) => {
   enhanceRes(res);
   let parsedUrl;
@@ -1283,6 +1373,23 @@ const server = http.createServer(async (req, res) => {
       if (!res.headersSent) res.status(500).json({ error: "Something went wrong — please try again." });
     }
     return;
+  }
+
+  // First-party usage events (web beacon + apps) → lib/usage.js.
+  if (p === "/api/t") {
+    if (req.method === "POST") {
+      try { req.body = await readJsonBody(req, 32_768); }
+      catch { res.statusCode = 400; return res.end(); }
+    }
+    return trackHandler(req, res);
+  }
+  if (p === "/api/admin/stats") {
+    return require("./api/admin/stats")(req, res, parsedUrl);
+  }
+
+  // ── /admin — confidential dashboard, email-OTP login (lib/admin-auth.js) ──
+  if (p === "/admin" || p.startsWith("/admin/")) {
+    return handleAdmin(req, res, p);
   }
 
   // ── Drawing model config ──────────────────────────────────────────────────
@@ -1899,6 +2006,10 @@ const server = http.createServer(async (req, res) => {
   db.cleanupExpiredArtworks().catch(err => console.error("[cleanup]", err.message));
   require("./lib/rate-limit").startPruning();
   setInterval(() => db.cleanupExpiredArtworks().catch(() => {}), 24 * 60 * 60 * 1000);
+  // Usage-stats retention (raw prompts 30 days, events 13 months, salts 2 days).
+  usage.purge();
+  setInterval(() => usage.purge(), 6 * 60 * 60 * 1000);
+  storeImport.start();
 
   // Hourly generation health log. Real user generations are the primary
   // signal (reported by api/generate-image.js); a synthetic test image is only

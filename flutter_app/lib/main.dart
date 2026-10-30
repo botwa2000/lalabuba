@@ -7,7 +7,9 @@ import 'app.dart';
 import 'core/config/app_config.dart';
 import 'core/drawing_config_service.dart';
 import 'core/l10n/l10n_service.dart';
+import 'core/router/app_router.dart';
 import 'shared/services/analytics_service.dart';
+import 'shared/services/usage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,11 +43,14 @@ void main() async {
   // so this never blocks startup on offline devices. The UI language loads in
   // parallel so the first frame is translated (no raw-key flash).
   final l10nFuture = LocaleNotifier.loadInitial();
+  // App version for the X-App-Version header on our API calls (fast, local).
+  await UsageService.prepare();
   await DrawingConfigService.initialize(
       appConfig?.apiBaseUrl ?? 'https://lalabuba.com');
   final initialL10n = await l10nFuture;
+  UsageService.lang = initialL10n.locale;
 
-  // Fire-and-forget: analytics (Firebase + PostHog) init is heavy on first
+  // Fire-and-forget: Firebase (App Check + Crashlytics) init is heavy on first
   // launch and blocks the main thread long enough to ANR on slower devices.
   // runApp must not be gated on it. Dart errors before Crashlytics is ready
   // are an acceptable tradeoff vs a black-screen ANR on every cold start.
@@ -56,6 +61,13 @@ void main() async {
       await AnalyticsService.init();
     }
   }());
+
+  // First-party usage stats (lib/shared/services/usage_service.dart) — off
+  // together with crash reporting when the bundle config disables analytics.
+  if (appConfig?.analyticsEnabled ?? true) {
+    unawaited(UsageService.start(appConfig?.apiBaseUrl ?? 'https://lalabuba.com'));
+    UsageService.attachRouter(appRouter);
+  }
 
   runApp(ProviderScope(
     overrides: [initialL10nProvider.overrideWithValue(initialL10n)],

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../shared/services/usage_service.dart';
 
 const _kLangKey = 'lalabuba_lang';
 const _supportedLocales = ['en','de','ru','fr','es','pt','it','nl','pl','tr','zh','hi'];
@@ -80,6 +81,7 @@ class LocaleNotifier extends AsyncNotifier<L10n> {
   }
 
   Future<void> setLocale(String locale) async {
+    UsageService.lang = locale;
     await _storage.write(key: _kLangKey, value: locale);
     state = AsyncData(await L10n.load(locale));
   }

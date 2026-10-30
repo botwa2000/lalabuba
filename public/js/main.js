@@ -459,6 +459,9 @@ let _pendingEnglishSubject = null;
 // Set true by either daily-word button so a finished daily-word picture credits
 // the Daily Star sticker / mission. Cleared on manual input (see input handler).
 let _pendingIsDaily = false;
+// Where the current subject came from (card | daily | surprise | voice | scene …),
+// sent with the generation for the stats dashboard; typed text = 'custom'.
+let _pendingSource = null;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -474,7 +477,9 @@ form.addEventListener("submit", async (event) => {
   state.lastSubjectIsCustom = !pendingEnglish;
   state.lastSubjectIsDaily = _pendingIsDaily;
   state.lastEnglishSubject = pendingEnglish || subjectInput.value.trim();
+  state.generationSource = _pendingIsDaily ? 'daily' : (_pendingSource || (pendingEnglish ? 'card' : 'custom'));
   _pendingIsDaily = false;
+  _pendingSource = null;
   // Pre-defined: use English original. Custom: use raw input (server will translate).
   const subject = pendingEnglish ?? sanitizeSubject(subjectInput.value);
   if (!subject) {
@@ -786,6 +791,7 @@ previewCanvas.addEventListener("click", (event) => {
 
 // ─── Print button ────────────────────────────────────────────────────────────
 printButton.addEventListener("click", () => {
+  track('print');
   window.print();
 });
 
@@ -947,6 +953,7 @@ regenButton.addEventListener('click', async () => {
   try {
     state.paletteOverride = getSemanticPaletteOrder(subject, paletteSelect.value, PALETTES[paletteSelect.value]);
     renderLegend(); // keep swatches/badges/fill in one consistent order (see submit handler)
+    state.generationSource = 'again';
     await generatePage(subject);
     updateFinishBtnVisibility();
   } catch (error) {
@@ -1633,6 +1640,7 @@ document.getElementById('surprise-button').addEventListener('click', () => {
   const subject = randomCardSubject();
   subjectInput.value = subject;
   _pendingEnglishSubject = subject; // randomCardSubject always returns English
+  _pendingSource = 'surprise';
   subjectInput.focus();
   pulseDraw();
 });
@@ -1666,6 +1674,7 @@ document.getElementById('surprise-button').addEventListener('click', () => {
           subjectInput.value = text.slice(0, 80);
           // The spoken word is in the user's language → treat as a custom subject.
           subjectInput.dispatchEvent(new Event('input', { bubbles: true }));
+          _pendingSource = 'voice';
           subjectInput.focus();
           pulseDraw();
         }
@@ -1707,6 +1716,7 @@ if (_weekScenePill) {
     // _pendingEnglishSubject), which previously leaked English to non-EN kids.
     subjectInput.value = getTranslatedSubject(subject, getCurrentLang());
     _pendingEnglishSubject = subject;
+    _pendingSource = 'scene';
     subjectInput.focus();
     pulseDraw();
   });
@@ -1729,6 +1739,7 @@ if (challengeShareBtn) {
     document.getElementById('share-button').click();
     // Creating/sharing a challenge → credit the Challenger sticker.
     try { toastNewBadges(recordChallengeCreated().newBadges); } catch {}
+    track('challenge_created');
   });
 }
 
@@ -1740,7 +1751,7 @@ const dailyInfoBtn   = document.getElementById('daily-word-info-btn');
 const dailyInfoPopup = document.getElementById('daily-info-popup');
 const { word: dailyWord, seed: dailySeed } = getDailyChallenge();
 // Clear seed override when user manually changes the input
-subjectInput.addEventListener('input', () => { _pendingSeedOverride = null; _pendingEnglishSubject = null; _pendingIsDaily = false; });
+subjectInput.addEventListener('input', () => { _pendingSeedOverride = null; _pendingEnglishSubject = null; _pendingIsDaily = false; _pendingSource = null; });
 
 if (dailyWordRow && dailyWordBtn && dailyWordValue) {
   dailyWordValue.textContent = getTranslatedDailyWord(dailyWord, getCurrentLang());

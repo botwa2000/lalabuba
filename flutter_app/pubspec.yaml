@@ -36,8 +36,7 @@ dependencies:
   # regions where fonts.gstatic.com is blocked (e.g. China / zh locale).
   google_fonts: ^8.2.0
 
-  # Analytics + crash reporting
-  posthog_flutter: ^5.33.0
+  # Crash reporting (usage stats are first-party: lib/shared/services/usage_service.dart)
   firebase_core: ^4.12.1
   firebase_crashlytics: ^5.2.6
 
@@ -61,6 +60,7 @@ dependencies:
   pdf: ^3.11.3
   firebase_app_check: ^0.4.8
   in_app_review: ^2.0.12
+  play_install_referrer: ^0.5.0 # Android install source for the stats dashboard (first open only)
 
 dev_dependencies:
   flutter_test:

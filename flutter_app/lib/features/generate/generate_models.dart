@@ -8,6 +8,10 @@ class GenerationRequest {
   final int seed;
   final String deviceId;
   final String? subscriptionToken;
+  /// Where the subject came from (custom | card | daily | surprise | voice |
+  /// scene | explore | again) and the UI language — for the stats dashboard.
+  final String? source;
+  final String? lang;
 
   const GenerationRequest({
     required this.subject,
@@ -17,6 +21,8 @@ class GenerationRequest {
     required this.seed,
     required this.deviceId,
     this.subscriptionToken,
+    this.source,
+    this.lang,
   });
 
   Map<String, dynamic> toJson() => {
@@ -26,6 +32,8 @@ class GenerationRequest {
         'width': width,
         'height': height,
         'seed': seed,
+        if (source != null) 'source': source,
+        if (lang != null) 'lang': lang,
       };
 }
 

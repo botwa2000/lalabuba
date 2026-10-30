@@ -233,7 +233,9 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     }
   }
 
-  Future<void> _generate({int? seed}) async {
+  /// [again]: a new picture of the same subject (🎲, "Again!", report → new
+  /// one) — reported as source `again` to the stats dashboard.
+  Future<void> _generate({int? seed, bool again = false}) async {
     debugPrint('LALABUBA_PATH: _generate called (source=${widget.args.source}, seed=$seed)');
     // FIX 3: re-entrancy guard. The celebration "Again" callback and the
     // error-retry button can both fire _generate while one is already running,
@@ -283,6 +285,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         difficulty: difficulty,
         colorCount: colorCount,
         seed: seed,
+        source: again ? 'again' : widget.args.source,
       );
 
       final minArea = _minAreaFor(difficulty);
@@ -829,7 +832,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         IconButton(
           icon: const Text('🎲', style: TextStyle(fontSize: 20)),
           tooltip: l10n.t('regenBtn'),
-          onPressed: _isGenerating ? null : () => _generate(),
+          onPressed: _isGenerating ? null : () => _generate(again: true),
         ),
         const SizedBox(width: 4),
       ],
@@ -1953,7 +1956,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       progress: progress,
       newBadges: newBadges,
       onAgain: () {
-        if (mounted) _generate();
+        if (mounted) _generate(again: true);
       },
       onNew: () {
         if (mounted && context.mounted) context.pop();
@@ -2167,7 +2170,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           duration: const Duration(seconds: 6),
           action: SnackBarAction(
             label: l10n.t('reportPictureNewOne'),
-            onPressed: () => _generate(),
+            onPressed: () => _generate(again: true),
           ),
         ));
     } catch (_) {
@@ -2304,6 +2307,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   }
 
   Future<void> _printArtwork(CanvasState canvas) async {
+    AnalyticsService.track('draw_printed', {'source': widget.args.source});
     try {
       final bytes = await _captureCanvas(canvas);
       if (bytes == null) return;
@@ -2395,6 +2399,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                           subject: 'Lalabuba Challenge 🏆',
                           sharePositionOrigin: _shareOrigin(),
                         ));
+                        AnalyticsService.track('challenge_created');
                         // Credit the "challenger" sticker.
                         unawaited(ref
                             .read(progressProvider.notifier)

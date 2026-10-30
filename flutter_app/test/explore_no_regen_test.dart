@@ -61,6 +61,7 @@ class _FakeGenerateService extends GenerateService {
     required String difficulty,
     required int colorCount,
     int? seed,
+    String? source,
   }) async {
     generateCalled = true;
     fail('_generate() was called from source=explore — fix not working');

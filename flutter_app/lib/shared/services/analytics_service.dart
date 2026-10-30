@@ -2,39 +2,42 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'app_check_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:posthog_flutter/posthog_flutter.dart';
 import '../../firebase_options.dart';
+import 'usage_service.dart';
 
-/// Thin wrapper around PostHog (product analytics) and Firebase Crashlytics
-/// (crash reporting). Both are no-op until initialised — safe to call track()
+/// Product events → first-party [UsageService] (our own server, no third-party
+/// analytics SDK). Crash reports → Firebase Crashlytics. Safe to call track()
 /// at any time, even before init() completes.
 ///
 /// Firebase is skipped gracefully when firebase_options.dart is still the stub.
-/// Run `flutterfire configure` once to activate crash reporting.
 class AnalyticsService {
-  static const _phKey = 'phc_miWnhE5M3nnJZkqTuD9pxcRwFKSbkHZnaGSyU4nnWhLW';
-  static const _phHost = 'https://eu.i.posthog.com';
-
   static bool _firebaseReady = false;
-  static bool _posthogReady = false;
+  static bool _enabled = true;
+
+  /// App event name → usage event (server whitelist in lib/usage.js).
+  /// Generations are logged server-side by /api/generate-image, so the
+  /// generate events and settings toggles are intentionally not sent.
+  static const _usageEvents = {
+    'coloring_completed': 'complete',
+    'draw_saved': 'save',
+    'draw_shared': 'share_art',
+    'draw_printed': 'print',
+    'challenge_created': 'challenge_create',
+    'community_shared': 'community_share',
+    'content_reported': 'report_content',
+    'review_prompt_requested': 'review_prompt',
+    'review_store_listing_opened': 'review_store_open',
+    'app_error': 'error',
+    'region_detection_failed': 'error',
+  };
+
+  /// Props forwarded with an event — small enums/numbers only, never the subject.
+  static const _allowedProps = {'difficulty', 'source', 'fatal', 'reason'};
 
   static Future<void> init({bool enabled = true}) async {
+    _enabled = enabled;
     if (!enabled) return;
-    _initPostHog();
     await _initFirebase();
-  }
-
-  static void _initPostHog() {
-    try {
-      final config = PostHogConfig(_phKey)
-        ..host = _phHost
-        ..captureApplicationLifecycleEvents = true
-        ..debug = false;
-      Posthog().setup(config);
-      _posthogReady = true;
-    } catch (e) {
-      debugPrint('[Analytics] PostHog init failed: $e');
-    }
   }
 
   static Future<void> _initFirebase() async {
@@ -56,19 +59,23 @@ class AnalyticsService {
       }
     } catch (_) {
       // firebase_options.dart is still the stub — Crashlytics inactive.
-      // PostHog still works independently.
     }
   }
 
-  /// Capture a product event to PostHog. Fire-and-forget; never throws.
+  /// Record a product event. Fire-and-forget; never throws.
   static Future<void> track(String event, [Map<String, Object>? props]) async {
-    if (!_posthogReady) return;
-    try {
-      await Posthog().capture(eventName: event, properties: props);
-    } catch (_) {}
+    if (!_enabled) return;
+    final name = _usageEvents[event];
+    if (name == null) return;
+    final safe = <String, Object>{
+      for (final e in (props ?? const <String, Object>{}).entries)
+        if (_allowedProps.contains(e.key)) e.key: e.value,
+      if (event == 'region_detection_failed') 'reason': 'region_detection',
+    };
+    UsageService.track(name, props: safe.isEmpty ? null : safe);
   }
 
-  /// Report a caught error to Crashlytics (if active) and PostHog.
+  /// Report a caught error to Crashlytics (if active) and count it.
   static Future<void> recordError(
     Object error,
     StackTrace? stack, {
@@ -79,9 +86,6 @@ class AnalyticsService {
         await FirebaseCrashlytics.instance.recordError(error, stack, fatal: fatal);
       } catch (_) {}
     }
-    await track('app_error', {
-      'error': error.toString().substring(0, error.toString().length.clamp(0, 200)),
-      'fatal': fatal,
-    });
+    await track('app_error', {'fatal': fatal});
   }
 }

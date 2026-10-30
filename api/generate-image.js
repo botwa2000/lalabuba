@@ -3,6 +3,7 @@ const path = require("path");
 const { clientIp } = require("../lib/client-ip");
 const rateLimit = require("../lib/rate-limit");
 const authStats = require("../lib/auth-stats");
+const usage = require("../lib/usage");
 const { verifyAppCheckToken } = require("../lib/app-check");
 const { getSecurityConfig } = require("../lib/security-config");
 const { sanitizeSubject, isSafeSubject, isAdminBlockedSubject } = require("../lib/content-safety");
@@ -109,7 +110,7 @@ async function authenticate(req, body, ip, sec) {
   const result = await verifyAppCheckToken(String(token), sec.appCheck);
   if (result.ok) {
     authStats.record("native_attested");
-    return { ok: true };
+    return { ok: true, appId: result.appId };
   }
   if (result.reason === "unavailable") {
     // Google's keys could not be loaded at all — not the caller's fault.
@@ -135,7 +136,7 @@ module.exports = async (req, res) => {
   if (ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Device-ID, X-Platform, X-App-Version");
   }
 
   if (req.method === "OPTIONS") {
@@ -153,16 +154,22 @@ module.exports = async (req, res) => {
   const perIp = await rateLimit.consume("generate:ip", ip, sec.generate.perIpLimit, sec.generate.perIpWindowMs);
   if (perIp.limited) {
     authStats.record("rate_limited");
+    usage.recordGeneration(req, { outcome: "rate_limited" });
     res.status(429).json({ error: "Too many requests — please wait a while before trying again." });
     return;
   }
 
+  // Filled in as the request progresses so every exit records one generation_log row.
+  const log = { outcome: "fail" };
+  const t0 = Date.now();
   try {
     const body = req.body || {};
     console.log(`[generate] ${ip} origin=${req.headers.origin || '(native)'} appcheck=${req.headers['x-firebase-appcheck'] ? 'yes' : 'no'} subject=${JSON.stringify(body.subject)} diff=${body.difficulty}`);
 
     const auth = await authenticate(req, body, ip, sec);
+    log.appCheckAppId = auth.appId;
     if (!auth.ok) {
+      usage.recordGeneration(req, { ...log, outcome: "blocked" });
       res.status(auth.status).json({ error: auth.error });
       return;
     }
@@ -179,8 +186,11 @@ module.exports = async (req, res) => {
       res.status(400).json({ error: "Please provide a subject to draw." });
       return;
     }
+    log.subjectRaw = subject;
+    log.difficulty = difficulty;
 
     if (!isSafeSubject(subject)) {
+      usage.recordGeneration(req, { ...log, outcome: "unsafe" });
       res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
       return;
     }
@@ -189,6 +199,7 @@ module.exports = async (req, res) => {
     // (api/admin/content-reports.js). Config is cached in-process for 60s.
     const adminBlocked = await loadAdminBlockedSubjects();
     if (isAdminBlockedSubject(subject, adminBlocked)) {
+      usage.recordGeneration(req, { ...log, outcome: "unsafe" });
       res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
       return;
     }
@@ -198,17 +209,20 @@ module.exports = async (req, res) => {
     const budget = await rateLimit.consume("generate:budget", "global", sec.generate.dailyBudget, 86_400_000, { fixed: true });
     if (budget.limited) {
       authStats.record("budget_exhausted");
+      usage.recordGeneration(req, { ...log, outcome: "budget" });
       console.error(`[generate] daily budget exhausted (${sec.generate.dailyBudget}) — refusing generation`);
       res.status(503).json({ error: "Lalabuba is very busy today — please try again tomorrow! 🎨" });
       return;
     }
 
     const englishSubject = await translateToEnglish(subject);
+    log.subjectEn = englishSubject;
     // Re-run the kid-safety check on the TRANSLATED English too. The first check
     // runs on the raw subject, but a banned concept written in a language/spelling
     // the blocklist doesn't cover could pass and only become obvious once
     // translated to English — this closes that bypass before it reaches the model.
     if (!isSafeSubject(englishSubject) || isAdminBlockedSubject(englishSubject, adminBlocked)) {
+      usage.recordGeneration(req, { ...log, outcome: "unsafe" });
       res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
       return;
     }
@@ -245,8 +259,10 @@ module.exports = async (req, res) => {
     res.setHeader("Access-Control-Expose-Headers", exposedHeaders.join(", "));
     res.status(200).send(generated.buffer);
     require("./health-deep").noteGeneration(true);
+    usage.recordGeneration(req, { ...log, outcome: "ok", provider: generated.provider, latencyMs: Date.now() - t0 });
   } catch (error) {
     require("./health-deep").noteGeneration(false);
+    usage.recordGeneration(req, { ...log, outcome: "fail", latencyMs: Date.now() - t0 });
     // Log the real error server-side; never echo provider URLs, status bodies,
     // or stack details (which may contain keys/internal hosts) to the client.
     console.error("generate-image error:", error && error.message ? error.message : error);

@@ -92,9 +92,11 @@ export function loadFromShare() {
         document.getElementById('regen-button').disabled = false;
       } else if (Number.isFinite(seed)) {
         // Legacy share link without stored image — regenerate using seed.
+        state.generationSource = 'challenge';
         await generatePage(q, seed);
       } else {
         // Direct link from coloring-page CTAs (no seed, no cached image) — generate fresh.
+        state.generationSource = 'challenge';
         await generatePage(q);
       }
     } catch (err) {

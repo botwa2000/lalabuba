@@ -5,7 +5,7 @@
   <script>(function(){var t=localStorage.getItem('lalabuba-theme');if(t){document.documentElement.setAttribute('data-theme',t);}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}})();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Privacy Policy — Lalabuba Free AI Coloring Pages</title>
-  <meta name="description" content="Lalabuba's privacy policy. We don't collect personal data. No ads, no accounts, no tracking beyond optional analytics. Safe for kids."/>
+  <meta name="description" content="Lalabuba's privacy policy. We don't collect personal data. No ads, no accounts, no third-party tracking. Safe for kids."/>
   <link rel="canonical" href="https://lalabuba.com/privacy"/>
   <meta property="og:title" content="Privacy Policy — Lalabuba"/>
   <meta property="og:description" content="Lalabuba collects no personal data and requires no account. Learn how we keep your family's data safe."/>
@@ -49,7 +49,7 @@
 <div class="legal-content">
 
 <h1>Privacy Policy</h1>
-<span class="legal-updated">Last updated: June 2026</span>
+<span class="legal-updated">Last updated: October 2026</span>
 
 <p>Lalabuba ("we", "our", "the app") is a free AI coloring page generator for kids and families. This policy explains what information is collected when you use Lalabuba at <a href="https://lalabuba.com">lalabuba.com</a> or via our iOS or Android app.</p>
 
@@ -64,13 +64,24 @@
 
 <h2>2. Information That Is Collected</h2>
 
-<p><strong>Usage analytics (Google Analytics &amp; PostHog):</strong> On our website we use two analytics tools — Google Analytics and PostHog (hosted in the EU) — to understand how the app is used in aggregate, e.g. which features are popular and what languages users prefer. <strong>Both are loaded only after you accept analytics cookies via our consent banner</strong>, and neither runs if you decline. They collect anonymised data such as browser type, device type, and pages visited; we do not send personally identifiable information and PostHog autocapture is disabled. You can withdraw consent at any time by clicking "Cookie settings" in the footer, or opt out of Google Analytics via the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics opt-out browser add-on</a>.</p>
+<p><strong>Anonymous usage statistics (our own, first-party):</strong> To understand how Lalabuba is used and to keep it working well, our own server (Hetzner, Germany) records anonymous usage events: which screens or pages are opened, when a drawing is started or finished, saved, printed or shared, the app version and platform (web, iOS, Android), the interface language, and the country (derived by Cloudflare from the connection, stored as a two-letter code only). We <strong>never</strong> store IP addresses, browser user-agent strings, advertising IDs, names or contact details, and these statistics are <strong>never shared with or sold to anyone</strong>, never used for advertising, and never used to track you across other apps or websites. No third-party analytics SDK is used in the apps.</p>
+<ul>
+  <li><strong>Mobile apps:</strong> events carry the app's random install identifier (see below), so we can count returning users. On Android, the Google Play install referrer (the campaign tag of the store link that led to the install, e.g. <code>utm_source=pinterest</code>) is read once on first launch.</li>
+  <li><strong>Website without analytics consent:</strong> nothing is stored on your device and no identifier is sent. Visits are counted with a one-way hash of the connection that uses a random key which changes every day and is deleted after two days, so a visitor can never be recognised on a later day.</li>
+  <li><strong>Website with analytics consent</strong> (cookie banner): a random identifier kept in your browser's local storage is sent with the events so returning visits can be counted. Withdrawing consent stops this immediately.</li>
+</ul>
 
-<p><strong>Mobile app device identifier:</strong> The iOS and Android apps generate a random identifier (a UUID) the first time they launch and store it only on your device. It is sent with each drawing request purely to prevent abuse and enforce daily limits. It is <strong>not</strong> an advertising ID, is not linked to your identity, contains no personal information, and is removed when you uninstall the app. The mobile apps do not load Google Analytics or PostHog.</p>
+<p><strong>Usage analytics on the website (Google Analytics):</strong> Only after you accept analytics cookies via our consent banner, the website also loads Google Analytics to understand aggregate usage (e.g. browser type, device type, pages visited). It does not run if you decline. You can withdraw consent at any time by clicking "Cookie settings" in the footer, or opt out via the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics opt-out browser add-on</a>. The mobile apps do not use Google Analytics.</p>
 
-<p><strong>Bot protection (Cloudflare Turnstile):</strong> When you click "Draw!", a Cloudflare Turnstile challenge verifies the request comes from a human. Turnstile processes your request without setting tracking cookies. See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare's Privacy Policy</a> for details.</p>
+<p><strong>Mobile app install identifier:</strong> The iOS and Android apps generate a random identifier (a UUID) the first time they launch and store it only on your device. It is sent with drawing requests and the anonymous usage statistics described above, to prevent abuse, enforce daily limits and count returning users. It is <strong>not</strong> an advertising ID, is not linked to your identity, contains no personal information, and is removed when you uninstall the app.</p>
 
-<p><strong>AI image generation:</strong> We use a cascade of AI image generation services including Pollinations.ai, Together AI, Cloudflare Workers AI, and Novita.ai. The subject text you type is forwarded to generate your coloring page. It is not stored beyond the duration of the request.</p>
+<p><strong>Crash reports (mobile apps):</strong> If the app crashes, Firebase Crashlytics (Google) receives a technical crash report (stack trace, device model, OS and app version, the install identifier generated by Crashlytics) so we can fix the bug. It contains no personal information and is not used for advertising.</p>
+
+<p><strong>App integrity (mobile apps):</strong> Drawing requests from the apps carry a Firebase App Check token (Google Play Integrity / Apple App Attest) that proves the request comes from the genuine app. It contains no personal information.</p>
+
+<p><strong>Bot protection (Cloudflare Turnstile):</strong> When you click "Draw!" on the website, a Cloudflare Turnstile challenge verifies the request comes from a human. Turnstile processes your request without setting tracking cookies. See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare's Privacy Policy</a> for details.</p>
+
+<p><strong>What you ask Lalabuba to draw:</strong> The subject text you type or pick (e.g. "dragon") is sent to an AI translation service (to turn it into English) and to one of our AI image generation services to create your coloring page; those services do not keep it for us. On our own server the typed text is kept for <strong>30 days</strong> so we can spot misuse and see which topics children enjoy, then it is deleted; only the translated English topic (e.g. "dragon") is kept as an anonymous statistic. Please don't type names or other personal details — the drawing doesn't need them.</p>
 
 <p><strong>Shared coloring pages:</strong> If you use the "Challenge a friend" feature, your coloring page image is temporarily stored on our server (Hetzner, Germany) for up to 7 days to generate a shareable link. It is automatically deleted after 7 days.</p>
 
@@ -79,14 +90,14 @@
 
 <h2>4. Third-Party Services</h2>
 <ul>
-  <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Analytics</a> — anonymised usage statistics (web, opt-in)</li>
-  <li><a href="https://posthog.com/privacy" target="_blank" rel="noopener">PostHog</a> — anonymised product analytics, EU-hosted (web, opt-in)</li>
-  <li><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare Turnstile</a> — bot protection</li>
-  <li><a href="https://pollinations.ai/privacy" target="_blank" rel="noopener">Pollinations.ai</a> — AI image generation</li>
+  <li><a href="https://www.hetzner.com/legal/privacy-policy" target="_blank" rel="noopener">Hetzner Online GmbH</a> — web hosting, our database (including the anonymous usage statistics) and image storage (Germany, EU)</li>
+  <li><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare</a> — network delivery, Turnstile bot protection, Workers AI image generation</li>
+  <li><a href="https://deepinfra.com/privacy" target="_blank" rel="noopener">DeepInfra</a> — AI image generation and subject translation</li>
   <li><a href="https://www.together.ai/privacy" target="_blank" rel="noopener">Together AI</a> — AI image generation</li>
-  <li><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare Workers AI</a> — AI image generation</li>
   <li><a href="https://novita.ai/privacy-policy" target="_blank" rel="noopener">Novita.ai</a> — AI image generation</li>
-  <li><a href="https://www.hetzner.com/legal/privacy-policy" target="_blank" rel="noopener">Hetzner Online GmbH</a> — web hosting and image storage (Germany, EU)</li>
+  <li><a href="https://huggingface.co/privacy" target="_blank" rel="noopener">Hugging Face</a> — AI image generation (fallback)</li>
+  <li><a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Google Firebase</a> — Crashlytics crash reports and App Check app integrity (mobile apps)</li>
+  <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Analytics</a> — usage statistics (website only, opt-in)</li>
 </ul>
 
 <h2>5. Cookies &amp; Local Storage</h2>
@@ -99,19 +110,26 @@
 
 <p><strong>Analytics (opt-in only):</strong></p>
 <ul>
-  <li><strong>Google Analytics</strong> — only loaded after you explicitly accept analytics cookies via our consent banner. Collects anonymised data such as browser type, device type, and pages visited. No personally identifiable information is sent. You can opt out at any time via the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics opt-out browser add-on</a>.</li>
-  <li><strong>PostHog</strong> (EU-hosted) — only loaded after you explicitly accept analytics cookies. Records anonymised pageviews to understand feature usage; autocapture is disabled and no personally identifiable information is sent. Declining the banner prevents it from loading entirely.</li>
+  <li><strong>Google Analytics</strong> — only loaded after you explicitly accept analytics cookies via our consent banner. Collects anonymised data such as browser type, device type, and pages visited. You can opt out at any time via the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics opt-out browser add-on</a>.</li>
+  <li><strong>Returning-visit identifier</strong> — with consent, the random identifier in localStorage (<code>lalabuba-community-id</code>) is sent with our own anonymous usage statistics so returning visits can be counted. Without consent our statistics store nothing on your device.</li>
 </ul>
 
 <p>You can withdraw analytics consent at any time by clicking "Cookie settings" in the footer.</p>
 
 <h2>6. Data Retention</h2>
-<p>Shared coloring page images are deleted automatically after 7 days. Analytics data is retained by Google for 26 months per their standard policy. No other data is stored by us.</p>
+<ul>
+  <li>Typed drawing subjects: 30 days on our server, then deleted (only the anonymous English topic remains in statistics).</li>
+  <li>Anonymous usage statistics: 13 months, then deleted. The daily key used to count website visitors without consent is deleted after 2 days.</li>
+  <li>Shared coloring page images: 7 days.</li>
+  <li>Crash reports: 90 days (Firebase Crashlytics standard).</li>
+  <li>Google Analytics (website, opt-in): 26 months per Google's standard policy.</li>
+</ul>
 
 <h2>7. Your Rights</h2>
-<p>Since we do not collect personal data, there is generally nothing to access, correct, or delete. Where analytics are involved, you control them entirely through the cookie consent banner.</p>
-<p><strong>EU/EEA &amp; UK (GDPR):</strong> You have the right to access, rectify, erase, or restrict processing of your data, to data portability, and to object to processing. As analytics run only with your consent, you can exercise these rights at any time by declining or withdrawing consent via "Cookie settings". The legal basis for analytics is your consent (Art. 6(1)(a) GDPR).</p>
+<p>We do not collect personal data such as names or contact details, so there is generally nothing that identifies you. You can reset the app's install identifier at any time by uninstalling the app; on the website, declining or withdrawing analytics consent stops the returning-visit identifier. In the apps, <strong>Settings → Delete account</strong> erases everything our server holds for that install — profile, shared artworks and the usage statistics recorded for it — and resets the install identifier. You can also write to us at the address below.</p>
+<p><strong>EU/EEA &amp; UK (GDPR):</strong> You have the right to access, rectify, erase, or restrict processing of your data, to data portability, and to object to processing. The legal basis for our own anonymous usage statistics and crash reports is our legitimate interest in operating, securing and improving the app (Art. 6(1)(f) GDPR) — they are first-party, contain no names or contact details and are never shared; you may object at any time. The legal basis for Google Analytics and the website's returning-visit identifier is your consent (Art. 6(1)(a) GDPR, § 25 TDDDG).</p>
 <p><strong>California (CCPA/CPRA):</strong> We do not sell or share personal information, and we do not collect the categories of personal information that would trigger a sale. California residents may still contact us with any privacy request at the address below.</p>
+<p><strong>Children (COPPA):</strong> Our statistics use only a random install identifier for internal operations (analysing and improving the app, security), contain no personal information that identifies a child, and are never used for advertising or profiling.</p>
 
 <h2>8. Changes to This Policy</h2>
 <p>We may update this policy from time to time. The "last updated" date at the top of this page will reflect any changes.</p>

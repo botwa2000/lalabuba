@@ -1,78 +1,93 @@
-# Store privacy declarations — Lalabuba (free-only v1)
+# Store privacy declarations — Lalabuba (from app 1.0.24)
 
-This is the source of truth for the **Apple App Privacy** ("Nutrition Label")
-and **Google Play Data safety** questionnaires. Keep it in sync with
-`flutter_app/ios/Runner/PrivacyInfo.xcprivacy`, `public/privacy.html`, and the
-actual code. It reflects the free-only build with **no in-app purchases and no
-ads**.
+Source of truth for the **Apple App Privacy** ("nutrition label") and the
+**Google Play Data safety** form. Keep in sync with
+`flutter_app/ios/Runner/PrivacyInfo.xcprivacy`, `public/privacy.html` and the
+code (`lib/usage.js`, `flutter_app/lib/shared/services/usage_service.dart`).
+
+What changed in 1.0.24 (2026-10-30): PostHog was removed from the apps and the
+website and replaced by **first-party usage statistics** (our own server, our
+own database, never shared). Firebase Crashlytics was already shipping but had
+not been declared — it is now. Typed drawing subjects are now kept 30 days.
 
 ## What the app actually does with data
 
-| Data | Where | Sent off device? | Purpose | Linked to identity? | Tracking? |
-|------|-------|------------------|---------|---------------------|-----------|
-| Random install UUID (`device_id`) | Mobile app → our API | Yes (with each draw request) | Rate limiting / abuse prevention (app functionality) | No | No |
-| Drawing subject text | Mobile app → our API → AI providers | Yes (transient) | Generate the coloring page; not stored beyond the request | No | No |
-| Saved artwork (PNG) | On device gallery only | No | User keeps their pictures | No | No |
-| App preferences (language, options) | On-device secure storage | No | Remember settings | No | No |
+| Data | Sent to | Kept | Purpose | Linked to identity? | Tracking? |
+|------|---------|------|---------|---------------------|-----------|
+| Random install UUID (`device_id`) | our API | until uninstall / "Delete account" | abuse prevention, rate limits, usage statistics | No | No |
+| Usage events (screen opened, drawing finished/saved/printed/shared, app open, app version, UI language) | our API (`/api/t`) | 13 months | analytics (product improvement) | No | No |
+| Typed drawing subject | our API → AI translation + image providers (processors) | raw text 30 days, then only the English topic | app functionality, abuse review, analytics | No | No |
+| Country (2 letters from Cloudflare `CF-IPCountry`; IP is never stored) | our API | 13 months, aggregated | analytics | No | No |
+| Android install referrer (`utm_*` of the Play link) | our API, once | 13 months | analytics (acquisition) | No | No |
+| Crash reports | Firebase Crashlytics (Google, processor) | 90 days | app functionality (fix crashes) | No | No |
+| App Check token (Play Integrity / App Attest) | our API | not stored | security | No | No |
+| Saved artwork, preferences | on device only | — | — | — | — |
 
-The **mobile apps do not load Google Analytics or PostHog** — those run only on
-the website, gated behind a cookie-consent banner.
-
-There is no account, no login, no advertising identifier, no location, no
-contacts, no payment data.
-
----
-
-## Apple — App Privacy (App Store Connect → App Privacy)
-
-**Does the app collect data?** → **Yes** (the device UUID is sent to our server).
-
-Data type to declare:
-- **Identifiers → Device ID**
-  - Used for: **App Functionality** (fraud/abuse prevention, rate limiting)
-  - Linked to the user's identity: **No**
-  - Used for tracking: **No**
-
-Everything else (drawing text is transient and not stored; artwork/preferences
-stay on device) is **not collected** in Apple's sense.
-
-- **Tracking:** No. Do **not** enable App Tracking Transparency — we don't track.
-- This matches `PrivacyInfo.xcprivacy` (`NSPrivacyTracking=false`, Device ID
-  collected for App Functionality, not linked, not tracking).
-- **Encryption:** `ITSAppUsesNonExemptEncryption = false` (standard HTTPS only).
+No account is required, no advertising ID, no ads, no IAP, no precise location,
+no contacts, no third-party analytics SDK. "Delete account" in Settings deletes
+the profile, shared artworks **and** the usage statistics of that install
+(`DELETE /api/community/profile` → `usage.forgetInstall`).
 
 ---
 
-## Google Play — Data safety (Play Console → App content → Data safety)
+## Apple — App Store Connect → App Privacy
 
-**Does your app collect or share any of the required user data types?** → **Yes**.
+**Do you or your third-party partners collect data from this app?** → **Yes**.
 
-Declare one data type:
-- **Device or other IDs**
-  - Collected: **Yes**; Shared: **No**
-  - Processed ephemerally: **No** (the UUID persists on device, sent each request)
-  - Required or optional: **Required** (needed for abuse prevention)
-  - Purpose: **Fraud prevention, security, and compliance** (+ App functionality)
-  - Linked to the user: **No**
-  - Used to track the user: **No**
+Declare these data types (every one: **Linked to the user: No**, **Used for tracking: No**):
 
-Notes for the rest of the form:
-- **Data is encrypted in transit:** Yes (HTTPS).
-- **Users can request data deletion:** Uninstalling removes the on-device UUID;
-  no server-side account exists to delete. Provide the privacy contact
-  (privacy@lalabuba.com).
-- The drawing subject text is sent to AI providers transiently to render the
-  image and is **not stored** — not declared as collected.
+| Category → Type | Purposes to tick |
+|---|---|
+| Identifiers → **Device ID** | App Functionality, Analytics |
+| Usage Data → **Product Interaction** | Analytics |
+| User Content → **Other User Content** | App Functionality, Analytics |
+| Diagnostics → **Crash Data** | App Functionality |
+| Location → **Coarse Location** | Analytics |
 
-**Target audience & content:** mixed audience including children → complete the
-**Families** policy section. The app has **no ads, no IAP**, and gates external
-links (Privacy/Terms) behind a parental check.
+- **Tracking:** No. Do not enable App Tracking Transparency.
+- Matches `PrivacyInfo.xcprivacy` (same five types, `NSPrivacyTracking=false`).
+- Privacy Policy URL: `https://lalabuba.com/privacy`.
+- **Kids Category:** compliant — no third-party analytics or ads; first-party
+  analytics with no personal information (App Review Guideline 1.3 / 5.1.4).
 
----
+## Google Play — Play Console → App content → Data safety
 
-## Cross-checks before submitting
-- [ ] `PrivacyInfo.xcprivacy` is in the Runner target (Copy Bundle Resources).
-- [ ] `public/privacy.html` lists GA + PostHog (web) and the mobile device-ID. ✅ done
-- [ ] No IAP products configured in either store (free-only). ✅ code side done
+**Does your app collect or share any of the required user data types?** → **Yes**
+**Is all of the user data collected by your app encrypted in transit?** → **Yes**
+**Do you provide a way for users to request that their data is deleted?** → **Yes**
+(in-app: Settings → Delete account; or privacy@lalabuba.com)
+
+Data types — for each: **Collected: Yes · Shared: No · Processed ephemerally: No**:
+
+| Category → Type | Required? | Purposes |
+|---|---|---|
+| Location → **Approximate location** | Required | Analytics |
+| App activity → **App interactions** | Required | Analytics |
+| App activity → **Other user-generated content** | Required | App functionality, Analytics, Fraud prevention/security/compliance |
+| App info and performance → **Crash logs** | Required | App functionality |
+| App info and performance → **Diagnostics** | Required | App functionality |
+| Device or other IDs → **Device or other IDs** | Required | App functionality, Analytics, Fraud prevention/security/compliance |
+
+"Shared: No" is correct for Crashlytics and the AI providers: Google treats
+transfers to service providers that process data on our behalf as not sharing.
+
+**Target audience & content / Families:** unchanged — mixed audience including
+children; no ads, no IAP; external links behind the parental gate. First-party
+statistics carry no AAID or other hardware identifiers (Families policy).
+
+## Website
+
+- `public/privacy.html` §2, §4–§7 describe the first-party statistics, the
+  consent split (no identifier / no storage without consent; community ID with
+  consent), retention and legal bases (Art. 6(1)(f) / 6(1)(a) GDPR, § 25 TDDDG).
+- Google Analytics remains opt-in via the cookie banner. PostHog is removed
+  (it had been loading on `index.html` **before** consent — fixed).
+
+## Cross-checks before submitting 1.0.24
+- [x] `PrivacyInfo.xcprivacy` lists the five collected types.
+- [x] `public/privacy.html` updated (first-party stats, Crashlytics, DeepInfra, 30-day prompts).
+- [x] `posthog_flutter` removed from `pubspec.yaml`; no PostHog script on the web.
+- [ ] App Store Connect → App Privacy updated as above (manual — no API).
+- [ ] Play Console → Data safety updated as above (manual, or export CSV →
+      `scripts/play-data-safety.mjs <csv>` pushes it via the Play Developer API).
 - [ ] Impressum street address filled in (`public/impressum.html`). ⚠️ NEEDS OWNER
-- [ ] Parental gate present before external links. ✅ done

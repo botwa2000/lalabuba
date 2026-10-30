@@ -8,6 +8,7 @@ import '../../core/di/providers.dart';
 import '../../core/drawing_config_service.dart';
 import '../../shared/services/app_check_service.dart';
 import '../../shared/services/device_id_service.dart';
+import '../../shared/services/usage_service.dart';
 import 'generate_models.dart';
 
 class GenerateService {
@@ -26,6 +27,7 @@ class GenerateService {
     required String difficulty,
     required int colorCount,
     int? seed,
+    String? source,
   }) async {
     final deviceId = await DeviceIdService.getDeviceId();
     // Attestation proof for the server's bot gate (null if unavailable).
@@ -44,6 +46,8 @@ class GenerateService {
       height: height,
       seed: effectiveSeed,
       deviceId: deviceId,
+      source: source,
+      lang: UsageService.lang,
     );
 
     // CancelToken-based timeout: Future.timeout / receiveTimeout can't cancel
@@ -67,6 +71,7 @@ class GenerateService {
           headers: {
             'Content-Type': 'application/json',
             'X-Device-ID': deviceId,
+            ...UsageService.clientHeaders,
             if (appCheckToken != null) 'X-Firebase-AppCheck': appCheckToken,
           },
         ),
