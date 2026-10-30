@@ -511,5 +511,18 @@
   "topic_princess": "公主",
   "topic_mermaid": "美人鱼",
   "topic_rocket": "火箭",
-  "topic_car": "汽车"
+  "topic_car": "汽车",
+  "rateQuestion": "你喜欢这张图吗？",
+  "rateLoved": "超喜欢",
+  "rateOk": "还不错",
+  "rateMeh": "不太喜欢",
+  "rateThanks": "谢谢你告诉我们！💜",
+  "feedbackTitle": "您觉得 Lalabuba 怎么样？",
+  "feedbackHint": "供家长填写——您的评分和建议能帮助我们把 Lalabuba 做得更好。",
+  "feedbackPlaceholder": "我们可以改进什么？（可选）",
+  "feedbackSend": "发送",
+  "feedbackThanks": "谢谢！💜 您的反馈对我们很有帮助。",
+  "feedbackPickStars": "请选择 1–5 颗星。",
+  "feedbackError": "发送失败，请重试。",
+  "settingsFeedback": "发送反馈"
 }

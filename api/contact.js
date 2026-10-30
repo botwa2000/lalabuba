@@ -2,6 +2,9 @@
 
 const { clientIp } = require("../lib/client-ip");
 const rateLimit = require("../lib/rate-limit");
+const db = require("../lib/db");
+const usage = require("../lib/usage");
+const { sendContactMessage } = require("../lib/email");
 
 // Durable, shared rate limit (lib/rate-limit.js): 3 messages per IP per hour.
 const RATE_LIMIT_MAX    = 3;
@@ -100,50 +103,27 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (!resendApiKey) {
-      // Dev mode — log and return success silently
-      console.log("[contact] RESEND_API_KEY not set — skipping email send.", { name, email });
-      res.status(200).json({ ok: true });
-      return;
-    }
-
-    // Send email via Resend REST API
-    const timestamp = new Date().toISOString();
-    const htmlBody = `
-      <h2>New contact message from Lalabuba</h2>
-      <table style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
-        <tr><td style="padding:6px 12px;font-weight:bold;color:#555;">Name</td><td style="padding:6px 12px;">${escapeHtml(name)}</td></tr>
-        <tr><td style="padding:6px 12px;font-weight:bold;color:#555;">Email</td><td style="padding:6px 12px;"><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
-        <tr><td style="padding:6px 12px;font-weight:bold;color:#555;">IP</td><td style="padding:6px 12px;">${escapeHtml(ip)}</td></tr>
-        <tr><td style="padding:6px 12px;font-weight:bold;color:#555;">Sent at</td><td style="padding:6px 12px;">${timestamp}</td></tr>
-      </table>
-      <hr style="margin:16px 0;border:none;border-top:1px solid #eee;" />
-      <p style="font-family:sans-serif;font-size:14px;white-space:pre-wrap;">${escapeHtml(message)}</p>
-    `;
-
-    const emailRes = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Lalabuba Contact <info@lalabuba.com>',
-        to: ['info@lalabuba.com'],
-        // Strip control chars / newlines from user input before it enters the
-        // Subject header (header-injection hygiene; cap length).
-        subject: `Contact from ${name.replace(/[\x00-\x1F\x7F]+/g, " ").slice(0, 80)}`,
-        html: htmlBody,
-      }),
-    });
-
-    if (!emailRes.ok) {
-      const errData = await emailRes.text();
-      console.error("[contact] Resend API error:", emailRes.status, errData);
+    // Until 2026-10-30 this sent via Resend, whose key was never configured on
+    // Hetzner — every message was dropped while the form showed success. Brevo
+    // (lib/email.js) is the mail provider for everything else; a send failure
+    // is now reported to the user instead of swallowed.
+    const ctx = await usage.requestContext(req, null, body.lang);
+    try {
+      await sendContactMessage({ name, email, message,
+        meta: `${ctx.platform}${ctx.country ? " · " + ctx.country : ""}${ctx.lang ? " · " + ctx.lang : ""} · ${new Date().toISOString()}` });
+    } catch (err) {
+      console.error("[contact] send failed:", err.message);
       res.status(500).json({ error: "Failed to send message. Please try again later." });
       return;
     }
+
+    // Counted in /admin/stats → Feedback (message text only; name and email
+    // live in the email to info@, never in the database).
+    db.query(
+      `INSERT INTO feedback (kind, platform, visitor_hash, install_id, comment, lang, country)
+       VALUES ('contact', $1, $2, $3, $4, $5, $6)`,
+      [ctx.platform, ctx.visitorHash, ctx.installId, message, ctx.lang, ctx.country]
+    ).catch((err) => console.error("[contact] feedback row failed:", err.message));
 
     res.status(200).json({ ok: true });
   } catch (error) {
@@ -151,12 +131,3 @@ module.exports = async (req, res) => {
     res.status(500).json({ error: "An unexpected error occurred. Please try again later." });
   }
 };
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}

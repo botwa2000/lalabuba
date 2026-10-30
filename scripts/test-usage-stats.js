@@ -60,6 +60,23 @@ t("web analytics.js maps only to whitelisted events", () => {
   for (const e of mapped) assert(usage.EVENTS.has(e), e);
 });
 
+console.log("feedback.js");
+const feedback = require("../api/feedback");
+t("image path accepts relative and absolute served images only", () => {
+  assert.strictEqual(feedback._imagePathOf("/img/c/123-abc.png"), "/img/c/123-abc.png");
+  assert.strictEqual(feedback._imagePathOf("https://lalabuba.com/img/g/cat-easy-1.jpg"), "/img/g/cat-easy-1.jpg");
+  assert.strictEqual(feedback._imagePathOf("https://evil.example/x.png"), null);
+  assert.strictEqual(feedback._imagePathOf("/img/c/../../etc/passwd"), null);
+  assert.strictEqual(feedback._imagePathOf(""), null);
+});
+t("comments are trimmed, capped and stripped of control characters", () => {
+  assert.strictEqual(feedback._cleanComment("  great\u0000 app\u0007  "), "great app");
+  assert.strictEqual(feedback._cleanComment("line1\nline2"), "line1\nline2");
+  assert.strictEqual(feedback._cleanComment("x".repeat(1500)).length, 1000);
+  assert.strictEqual(feedback._cleanComment("   "), null);
+});
+t("feedback_open is a whitelisted usage event", () => assert(usage.EVENTS.has("feedback_open")));
+
 console.log("store-import.js");
 t("CSV parser handles quotes, commas, newlines, BOM", () => {
   const rows = imp._parseCsv('﻿Date,Text,Stars\n2026-10-01,"Hello, ""kid""\nline 2",5\r\n2026-10-02,,4\n');

@@ -913,3 +913,93 @@
   color: var(--purple);
   box-shadow: 0 3px 12px rgba(124,77,255,.18);
 }
+
+/* ─── Feedback: picture rating in the celebration + grown-ups' site rating ─── */
+/* The card grew by one row; cap it to the viewport so short landscape phones
+   (≤390px tall) can scroll to the what-next buttons instead of clipping them. */
+.celebration-card { max-height: calc(100dvh - 24px); overflow-y: auto; }
+
+.celebration-rate {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.celebration-rate-q,
+.celebration-rate-thanks {
+  font-family: var(--ff-body);
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.celebration-rate-thanks { color: var(--purple); }
+.celebration-rate-thanks[hidden] { display: none; }
+.celebration-rate-btns { display: flex; gap: 12px; justify-content: center; }
+.rate-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform .15s, border-color .15s, opacity .15s;
+}
+.rate-btn:hover { transform: scale(1.1); border-color: var(--purple); }
+.rate-btn.selected { border-color: var(--purple); transform: scale(1.12); box-shadow: 0 0 0 3px rgba(124,77,255,.2); }
+.celebration-rate.rated .rate-btn:not(.selected) { opacity: .35; }
+
+.feedback-card { max-height: calc(100dvh - 40px); overflow-y: auto; }
+.feedback-stars { display: flex; justify-content: center; gap: 6px; }
+.feedback-star {
+  background: none;
+  border: none;
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--border);
+  -webkit-text-stroke: 1.5px #f5a623;
+  cursor: pointer;
+  padding: 2px 4px;
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+  transition: transform .12s, color .12s;
+}
+.feedback-star:hover { transform: scale(1.12); }
+.feedback-star.on { color: #f5a623; }
+.feedback-comment {
+  width: 100%;
+  resize: vertical;
+  min-height: 72px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--ff-body);
+  font-size: 16px; /* ≥16px: iOS Safari doesn't zoom the page on focus */
+  box-sizing: border-box;
+}
+.feedback-comment:focus { outline: none; border-color: var(--purple); }
+.feedback-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.feedback-msg { min-height: 1.2em; margin: 0; text-align: center; font-family: var(--ff-body); font-size: .88rem; font-weight: 700; color: var(--purple); }
+.feedback-msg.error { color: var(--red, #d64545); }
+.feedback-send {
+  align-self: center;
+  font-family: var(--ff-brand);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 12px 32px;
+  min-height: 44px;
+  border-radius: 50px;
+  border: none;
+  background: var(--purple);
+  color: #fff;
+  cursor: pointer;
+}
+.feedback-send:disabled { opacity: .5; cursor: default; }
+#feedback-form { display: flex; flex-direction: column; gap: 14px; margin: 0; }
+.celebration-rate[hidden] { display: none; }

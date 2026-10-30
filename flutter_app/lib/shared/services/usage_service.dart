@@ -59,6 +59,9 @@ class UsageService {
   /// Current UI language (2 letters), kept in sync by the locale notifier.
   static String? lang;
 
+  /// Our API origin (from the bundle config, set by [start]).
+  static String apiBaseUrl = 'https://lalabuba.com';
+
   /// Headers every API call to our server should carry, so the server can
   /// attribute requests to a platform and app version.
   static Map<String, String> get clientHeaders => {
@@ -79,6 +82,7 @@ class UsageService {
   /// Android install referrer once, and flushes on a timer and on background.
   static Future<void> start(String apiBaseUrl) async {
     if (_dio != null) return;
+    UsageService.apiBaseUrl = apiBaseUrl;
     _dio = Dio(BaseOptions(
       baseUrl: apiBaseUrl,
       connectTimeout: const Duration(seconds: 10),

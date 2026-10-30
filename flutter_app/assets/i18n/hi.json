@@ -511,5 +511,18 @@
   "topic_princess": "राजकुमारी",
   "topic_mermaid": "जलपरी",
   "topic_rocket": "रॉकेट",
-  "topic_car": "कार"
+  "topic_car": "कार",
+  "rateQuestion": "क्या तुम्हें यह चित्र पसंद आया?",
+  "rateLoved": "बहुत पसंद आया",
+  "rateOk": "ठीक था",
+  "rateMeh": "ज़्यादा नहीं",
+  "rateThanks": "हमें बताने के लिए धन्यवाद! 💜",
+  "feedbackTitle": "आपको Lalabuba कैसा लगा?",
+  "feedbackHint": "बड़ों के लिए — आपकी रेटिंग और सुझाव Lalabuba को बेहतर बनाने में हमारी मदद करते हैं।",
+  "feedbackPlaceholder": "हम क्या बेहतर कर सकते हैं? (वैकल्पिक)",
+  "feedbackSend": "भेजें",
+  "feedbackThanks": "धन्यवाद! 💜 आपकी प्रतिक्रिया हमारी बहुत मदद करती है।",
+  "feedbackPickStars": "कृपया 1–5 सितारे चुनें।",
+  "feedbackError": "भेजा नहीं जा सका — कृपया फिर से कोशिश करें।",
+  "settingsFeedback": "प्रतिक्रिया भेजें"
 }

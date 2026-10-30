@@ -78,6 +78,7 @@ const MIME_TYPES = {
 const generateHandler  = require("./api/generate-image.js");
 const contactHandler   = require("./api/contact.js");
 const trackHandler     = require("./api/t.js");
+const feedbackHandler  = require("./api/feedback.js");
 const healthDeepHandler = require("./api/health-deep.js");
 
 function sendJson(res, statusCode, payload) {
@@ -1358,14 +1359,14 @@ const server = http.createServer(async (req, res) => {
   }
 
   // API routes — dispatch to the shared handlers.
-  if (p === "/api/generate-image" || p === "/api/contact") {
+  if (p === "/api/generate-image" || p === "/api/contact" || p === "/api/feedback") {
     if (req.method === "POST") {
       try { req.body = await readJsonBody(req); }
       catch (e) { return res.status(400).json({ error: e.message || "Invalid JSON body." }); }
     } else {
       req.body = {};
     }
-    const handler = p === "/api/contact" ? contactHandler : generateHandler;
+    const handler = p === "/api/contact" ? contactHandler : p === "/api/feedback" ? feedbackHandler : generateHandler;
     try {
       await handler(req, res);
     } catch (err) {

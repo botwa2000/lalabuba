@@ -30,6 +30,7 @@ import '../../features/community/community_service.dart';
 import '../../features/community/widgets/nickname_picker.dart';
 import '../../features/community/widgets/share_type_picker.dart';
 import '../../shared/services/analytics_service.dart';
+import '../../shared/services/feedback_service.dart';
 import '../../shared/services/review_prompt_service.dart';
 import '../../shared/services/storage_service.dart';
 import '../../shared/widgets/lala_color_swatch.dart';
@@ -1962,6 +1963,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         if (mounted && context.mounted) context.pop();
       },
       onShare: () => _shareArtwork(ref.read(canvasProvider)),
+      // Only pictures served by our API can be rated (joined to the generation).
+      onRate: _imageUrl == null
+          ? null
+          : (rating) => unawaited(
+              FeedbackService.ratePicture(imageUrl: _imageUrl!, rating: rating)),
     );
 
     // If this picture pushed the child over a crayon-pack threshold, tell them

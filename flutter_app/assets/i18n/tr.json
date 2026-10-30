@@ -511,5 +511,18 @@
   "topic_princess": "Prenses",
   "topic_mermaid": "Deniz Kızı",
   "topic_rocket": "Roket",
-  "topic_car": "Araba"
+  "topic_car": "Araba",
+  "rateQuestion": "Bu resmi beğendin mi?",
+  "rateLoved": "Çok beğendim",
+  "rateOk": "Fena değildi",
+  "rateMeh": "Pek değil",
+  "rateThanks": "Bize söylediğin için teşekkürler! 💜",
+  "feedbackTitle": "Lalabuba'yı nasıl buldunuz?",
+  "feedbackHint": "Yetişkinler için — puanınız ve fikirleriniz Lalabuba'yı geliştirmemize yardımcı olur.",
+  "feedbackPlaceholder": "Neyi daha iyi yapabiliriz? (isteğe bağlı)",
+  "feedbackSend": "Gönder",
+  "feedbackThanks": "Teşekkürler! 💜 Geri bildiriminiz bize çok yardımcı oluyor.",
+  "feedbackPickStars": "Lütfen 1–5 yıldız seçin.",
+  "feedbackError": "Gönderilemedi — lütfen tekrar deneyin.",
+  "settingsFeedback": "Geri bildirim gönder"
 }

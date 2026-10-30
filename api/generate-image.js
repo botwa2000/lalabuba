@@ -259,7 +259,7 @@ module.exports = async (req, res) => {
     res.setHeader("Access-Control-Expose-Headers", exposedHeaders.join(", "));
     res.status(200).send(generated.buffer);
     require("./health-deep").noteGeneration(true);
-    usage.recordGeneration(req, { ...log, outcome: "ok", provider: generated.provider, latencyMs: Date.now() - t0 });
+    usage.recordGeneration(req, { ...log, outcome: "ok", provider: generated.provider, latencyMs: Date.now() - t0, imagePath: imageUrl });
   } catch (error) {
     require("./health-deep").noteGeneration(false);
     usage.recordGeneration(req, { ...log, outcome: "fail", latencyMs: Date.now() - t0 });

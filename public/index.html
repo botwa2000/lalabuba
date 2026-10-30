@@ -143,22 +143,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=348" />
-  <link rel="stylesheet" href="/css/header.css?v=348" />
-  <link rel="stylesheet" href="/css/hero.css?v=348" />
-  <link rel="stylesheet" href="/css/generator.css?v=348" />
-  <link rel="stylesheet" href="/css/layout.css?v=348" />
-  <link rel="stylesheet" href="/css/workspace.css?v=348" />
-  <link rel="stylesheet" href="/css/palette.css?v=348" />
-  <link rel="stylesheet" href="/css/modals.css?v=348" />
-  <link rel="stylesheet" href="/css/footer.css?v=348" />
-  <link rel="stylesheet" href="/css/print.css?v=348" />
-  <link rel="stylesheet" href="/css/cookies.css?v=348" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=348" />
-  <link rel="stylesheet" href="/css/community.css?v=348" />
-  <link rel="stylesheet" href="/css/account.css?v=348" />
-  <script src="/js/cookies.js?v=348"></script>
-  <script src="/js/t.js?v=348" defer></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=349" />
+  <link rel="stylesheet" href="/css/header.css?v=349" />
+  <link rel="stylesheet" href="/css/hero.css?v=349" />
+  <link rel="stylesheet" href="/css/generator.css?v=349" />
+  <link rel="stylesheet" href="/css/layout.css?v=349" />
+  <link rel="stylesheet" href="/css/workspace.css?v=349" />
+  <link rel="stylesheet" href="/css/palette.css?v=349" />
+  <link rel="stylesheet" href="/css/modals.css?v=349" />
+  <link rel="stylesheet" href="/css/footer.css?v=349" />
+  <link rel="stylesheet" href="/css/print.css?v=349" />
+  <link rel="stylesheet" href="/css/cookies.css?v=349" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=349" />
+  <link rel="stylesheet" href="/css/community.css?v=349" />
+  <link rel="stylesheet" href="/css/account.css?v=349" />
+  <script src="/js/cookies.js?v=349"></script>
+  <script src="/js/t.js?v=349" defer></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -635,6 +635,8 @@
         <span>·</span>
         <a href="/contact" data-i18n="contactLink">Contact</a>
         <span>·</span>
+        <button id="feedback-btn" type="button" class="footer-cookie-btn" data-i18n="feedbackLink">⭐ Rate Lalabuba</button>
+        <span>·</span>
         <button id="cookie-settings-btn" class="footer-cookie-btn" data-i18n="cookieSettings">Cookie settings</button>
       </nav>
     </footer>
@@ -663,6 +665,17 @@
       <p id="celebration-journal" class="celebration-journal"></p>
       <p id="celebration-stats" class="celebration-stats"></p>
 
+      <!-- Picture rating (😍/🙂/😕) → POST /api/feedback kind=picture (js/feedback.js) -->
+      <div id="celebration-rate" class="celebration-rate">
+        <span class="celebration-rate-q" data-i18n="rateQuestion">Did you like this picture?</span>
+        <div class="celebration-rate-btns" role="group" aria-labelledby="celeb-title">
+          <button type="button" class="rate-btn" data-rate="3" data-i18n-aria-label="rateLoved" aria-label="Loved it">😍</button>
+          <button type="button" class="rate-btn" data-rate="2" data-i18n-aria-label="rateOk" aria-label="It was okay">🙂</button>
+          <button type="button" class="rate-btn" data-rate="1" data-i18n-aria-label="rateMeh" aria-label="Not really">😕</button>
+        </div>
+        <span class="celebration-rate-thanks" data-i18n="rateThanks" hidden>Thanks for telling us! 💜</span>
+      </div>
+
       <!-- What-next loop: closes back to creation -->
       <div class="celebration-actions celebration-whatnext">
         <button id="celebration-again"  type="button" class="wn-btn wn-primary" data-i18n="celebAgain">🎲 Again</button>
@@ -671,6 +684,31 @@
         <button id="celebration-print"  type="button" class="wn-btn" data-i18n="celebPrint">🖨️ Print</button>
       </div>
       <button id="celebration-keep" type="button" class="celebration-keep-link" data-i18n="celebKeep">Keep coloring</button>
+    </div>
+  </div>
+
+  <!-- Grown-ups' site rating (1–5 ★ + optional comment) → POST /api/feedback kind=site -->
+  <div id="feedback-modal" class="share-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="feedback-title">
+    <div class="share-card feedback-card">
+      <div class="share-header">
+        <h3 id="feedback-title" data-i18n="feedbackTitle">How do you like Lalabuba?</h3>
+        <button id="feedback-close" class="share-close" aria-label="Close">✕</button>
+      </div>
+      <form id="feedback-form" novalidate>
+        <p class="share-desc" data-i18n="feedbackHint">For grown-ups — your rating and ideas help us make Lalabuba better.</p>
+        <div class="feedback-stars" role="radiogroup" aria-labelledby="feedback-title">
+          <button type="button" class="feedback-star" data-star="1" role="radio" aria-checked="false" aria-label="1">★</button>
+          <button type="button" class="feedback-star" data-star="2" role="radio" aria-checked="false" aria-label="2">★</button>
+          <button type="button" class="feedback-star" data-star="3" role="radio" aria-checked="false" aria-label="3">★</button>
+          <button type="button" class="feedback-star" data-star="4" role="radio" aria-checked="false" aria-label="4">★</button>
+          <button type="button" class="feedback-star" data-star="5" role="radio" aria-checked="false" aria-label="5">★</button>
+        </div>
+        <textarea id="feedback-comment" class="feedback-comment" maxlength="1000" rows="3"
+                  data-i18n-placeholder="feedbackPlaceholder" placeholder="What could we do better? (optional)"></textarea>
+        <input type="text" name="website" class="feedback-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p id="feedback-msg" class="feedback-msg" role="status"></p>
+        <button id="feedback-send" type="submit" class="feedback-send" data-i18n="feedbackSend">Send</button>
+      </form>
     </div>
   </div>
 
@@ -862,8 +900,8 @@
 
   <!-- Safety net: if the main module throws before it can hide the splash screen,
        hide it here so the app never appears permanently frozen on native. -->
-  <script type="module" src="/js/main.js?v=348"></script>
-  <script type="module" src="/js/community.js?v=348"></script>
+  <script type="module" src="/js/main.js?v=349"></script>
+  <script type="module" src="/js/community.js?v=349"></script>
 
   <!-- Family members modal -->
   <div id="family-modal" class="family-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="family-modal-title">
@@ -972,7 +1010,7 @@
   <!-- Account modal (content rendered by account.js) -->
   <div id="account-modal" role="dialog" aria-modal="true" aria-label="Account" hidden></div>
 
-  <script type="module" src="/js/account.js?v=348"></script>
+  <script type="module" src="/js/account.js?v=349"></script>
 </body>
 </html>
 

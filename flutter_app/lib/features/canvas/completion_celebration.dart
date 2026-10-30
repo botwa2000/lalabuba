@@ -18,6 +18,7 @@ Future<void> showCompletionCelebration(
   required VoidCallback onAgain,
   required VoidCallback onNew,
   required VoidCallback onShare,
+  ValueChanged<int>? onRate,
 }) {
   return showDialog<void>(
     context: context,
@@ -29,6 +30,7 @@ Future<void> showCompletionCelebration(
       onAgain: onAgain,
       onNew: onNew,
       onShare: onShare,
+      onRate: onRate,
     ),
   );
 }
@@ -41,6 +43,9 @@ class _CelebrationDialog extends StatelessWidget {
   final VoidCallback onNew;
   final VoidCallback onShare;
 
+  /// 😕/🙂/😍 → 1/2/3 (POST /api/feedback). Null hides the row (no server image).
+  final ValueChanged<int>? onRate;
+
   const _CelebrationDialog({
     required this.l10n,
     required this.progress,
@@ -48,6 +53,7 @@ class _CelebrationDialog extends StatelessWidget {
     required this.onAgain,
     required this.onNew,
     required this.onShare,
+    this.onRate,
   });
 
   String _statsText() {
@@ -116,6 +122,11 @@ class _CelebrationDialog extends StatelessWidget {
                 style: GoogleFonts.nunito(
                     fontSize: 14, color: cs.onSurface.withValues(alpha: 0.7)),
               ),
+
+              if (onRate != null) ...[
+                const SizedBox(height: 14),
+                _PictureRating(l10n: l10n, onRate: onRate!),
+              ],
 
               // What-next loop
               const SizedBox(height: 22),
@@ -262,6 +273,85 @@ class _WhatNextBtn extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "Did you like this picture?" 😍 🙂 😕 — one tap, changeable, no text.
+class _PictureRating extends StatefulWidget {
+  final L10n l10n;
+  final ValueChanged<int> onRate;
+  const _PictureRating({required this.l10n, required this.onRate});
+
+  @override
+  State<_PictureRating> createState() => _PictureRatingState();
+}
+
+class _PictureRatingState extends State<_PictureRating> {
+  int? _rated;
+
+  static const _faces = [(3, '😍', 'rateLoved'), (2, '🙂', 'rateOk'), (1, '😕', 'rateMeh')];
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Text(
+          widget.l10n.t(_rated == null ? 'rateQuestion' : 'rateThanks'),
+          textAlign: TextAlign.center,
+          style: GoogleFonts.nunito(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: _rated == null
+                  ? cs.onSurface.withValues(alpha: 0.7)
+                  : const Color(0xFF7C4DFF)),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (final (value, face, label) in _faces)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Semantics(
+                  button: true,
+                  selected: _rated == value,
+                  label: widget.l10n.t(label),
+                  child: Opacity(
+                    opacity: _rated == null || _rated == value ? 1 : 0.35,
+                    child: InkResponse(
+                      key: ValueKey('rate-$value'),
+                      radius: 30,
+                      onTap: () {
+                        setState(() => _rated = value);
+                        widget.onRate(value);
+                      },
+                      child: AnimatedScale(
+                        scale: _rated == value ? 1.15 : 1,
+                        duration: const Duration(milliseconds: 150),
+                        child: Container(
+                          width: 52,
+                          height: 52,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                width: 2,
+                                color: _rated == value
+                                    ? const Color(0xFF7C4DFF)
+                                    : cs.outlineVariant),
+                          ),
+                          child: Text(face, style: const TextStyle(fontSize: 26)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -10,6 +10,8 @@ import '../../core/di/providers.dart' show themeModeProvider;
 import '../../services/account_service.dart';
 import '../../shared/services/review_prompt_service.dart';
 import '../../shared/services/storage_service.dart';
+import '../../shared/services/feedback_service.dart';
+import '../../shared/services/usage_service.dart';
 import '../../shared/widgets/parental_gate.dart';
 import '../community/community_service.dart';
 import '../community/models/profile_model.dart';
@@ -406,6 +408,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await ReviewPromptService.instance.openStoreListing();
   }
 
+  // Grown-ups' 1–5 ★ + comment → our server (/admin/stats); behind the gate
+  // because it invites free text.
+  Future<void> _sendFeedback(BuildContext context, L10n l10n) async {
+    final ok = await showParentalGate(context, l10n);
+    if (!ok || !context.mounted) return;
+    UsageService.track('feedback_open');
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (_) => SiteFeedbackSheet(l10n: l10n),
+    );
+  }
+
   Widget _buildAboutSection(BuildContext context, L10n l10n) {
     return FutureBuilder<PackageInfo>(
       future: PackageInfo.fromPlatform(),
@@ -424,6 +441,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       style: GoogleFonts.nunito(fontSize: 14),
                     ),
                     leading: const Icon(Icons.info_outline_rounded),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    title: Text(l10n.t('settingsFeedback'),
+                        style: GoogleFonts.nunito(fontSize: 14)),
+                    leading: const Icon(Icons.rate_review_outlined),
+                    onTap: () => _sendFeedback(ctx, l10n),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -589,6 +613,116 @@ class _SettingsChoiceChip extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 color: selected ? cs.onPrimaryContainer : cs.onSurface,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "How do you like Lalabuba?" — 1–5 stars + optional comment (grown-ups).
+class SiteFeedbackSheet extends StatefulWidget {
+  final L10n l10n;
+  const SiteFeedbackSheet({super.key, required this.l10n});
+
+  @override
+  State<SiteFeedbackSheet> createState() => _SiteFeedbackSheetState();
+}
+
+class _SiteFeedbackSheetState extends State<SiteFeedbackSheet> {
+  final _comment = TextEditingController();
+  int _stars = 0;
+  bool _sending = false;
+  String? _message;
+  bool _error = false;
+
+  @override
+  void dispose() {
+    _comment.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final l10n = widget.l10n;
+    if (_stars == 0) {
+      setState(() { _message = l10n.t('feedbackPickStars'); _error = true; });
+      return;
+    }
+    setState(() { _sending = true; _message = null; });
+    try {
+      await FeedbackService.rateSite(rating: _stars, comment: _comment.text);
+      if (!mounted) return;
+      setState(() { _message = l10n.t('feedbackThanks'); _error = false; });
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() { _message = l10n.t('feedbackError'); _error = true; _sending = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = widget.l10n;
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          20, 0, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.t('feedbackTitle'),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.fredoka(fontSize: 22, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text(l10n.t('feedbackHint'),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.nunito(
+                    fontSize: 14, color: cs.onSurface.withValues(alpha: 0.7))),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var i = 1; i <= 5; i++)
+                  IconButton(
+                    key: ValueKey('feedback-star-$i'),
+                    iconSize: 40,
+                    tooltip: '$i',
+                    onPressed: _sending ? null : () => setState(() { _stars = i; _message = null; }),
+                    icon: Icon(i <= _stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                        color: const Color(0xFFF5A623)),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _comment,
+              maxLength: 1000,
+              minLines: 3,
+              maxLines: 6,
+              enabled: !_sending,
+              decoration: InputDecoration(
+                hintText: l10n.t('feedbackPlaceholder'),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            if (_message != null) ...[
+              const SizedBox(height: 4),
+              Text(_message!,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.nunito(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: _error ? Colors.red[700] : const Color(0xFF7C4DFF))),
+            ],
+            const SizedBox(height: 12),
+            FilledButton(
+              key: const ValueKey('feedback-send'),
+              onPressed: _sending ? null : _send,
+              child: Text(l10n.t('feedbackSend'),
+                  style: GoogleFonts.fredoka(fontWeight: FontWeight.w700)),
             ),
           ],
         ),

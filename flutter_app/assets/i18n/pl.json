@@ -511,5 +511,18 @@
   "topic_princess": "Księżniczka",
   "topic_mermaid": "Syrenka",
   "topic_rocket": "Rakieta",
-  "topic_car": "Samochody"
+  "topic_car": "Samochody",
+  "rateQuestion": "Podobał ci się ten obrazek?",
+  "rateLoved": "Bardzo",
+  "rateOk": "Był w porządku",
+  "rateMeh": "Nie bardzo",
+  "rateThanks": "Dzięki, że nam powiedziałeś! 💜",
+  "feedbackTitle": "Jak podoba się Wam Lalabuba?",
+  "feedbackHint": "Dla dorosłych — Wasza ocena i pomysły pomagają nam ulepszać Lalabubę.",
+  "feedbackPlaceholder": "Co możemy poprawić? (opcjonalnie)",
+  "feedbackSend": "Wyślij",
+  "feedbackThanks": "Dziękujemy! 💜 Wasza opinia bardzo nam pomaga.",
+  "feedbackPickStars": "Wybierz od 1 do 5 gwiazdek.",
+  "feedbackError": "Nie udało się wysłać — spróbuj ponownie.",
+  "settingsFeedback": "Wyślij opinię"
 }

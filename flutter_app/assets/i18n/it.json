@@ -511,5 +511,18 @@
   "topic_princess": "Principessa",
   "topic_mermaid": "Sirena",
   "topic_rocket": "Razzo",
-  "topic_car": "Auto"
+  "topic_car": "Auto",
+  "rateQuestion": "Ti è piaciuto questo disegno?",
+  "rateLoved": "Tantissimo",
+  "rateOk": "Carino",
+  "rateMeh": "Non tanto",
+  "rateThanks": "Grazie per avercelo detto! 💜",
+  "feedbackTitle": "Ti piace Lalabuba?",
+  "feedbackHint": "Per gli adulti — la vostra valutazione e le vostre idee ci aiutano a migliorare Lalabuba.",
+  "feedbackPlaceholder": "Cosa possiamo migliorare? (facoltativo)",
+  "feedbackSend": "Invia",
+  "feedbackThanks": "Grazie! 💜 Il vostro feedback ci aiuta molto.",
+  "feedbackPickStars": "Scegli da 1 a 5 stelle.",
+  "feedbackError": "Invio non riuscito — riprova.",
+  "settingsFeedback": "Invia feedback"
 }

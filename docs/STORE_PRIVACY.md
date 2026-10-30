@@ -19,6 +19,8 @@ not been declared — it is now. Typed drawing subjects are now kept 30 days.
 | Typed drawing subject | our API → AI translation + image providers (processors) | raw text 30 days, then only the English topic | app functionality, abuse review, analytics | No | No |
 | Country (2 letters from Cloudflare `CF-IPCountry`; IP is never stored) | our API | 13 months, aggregated | analytics | No | No |
 | Android install referrer (`utm_*` of the Play link) | our API, once | 13 months | analytics (acquisition) | No | No |
+| Picture rating 😍/🙂/😕 (one tap after finishing a picture, no text) | our API (`/api/feedback`) | 13 months | analytics (picture quality) | No | No |
+| Grown-ups' feedback: 1–5 ★ + optional comment (Settings → Send feedback, behind parental gate) | our API → team inbox (Brevo, processor) | 13 months | app functionality (support), analytics | No | No |
 | Crash reports | Firebase Crashlytics (Google, processor) | 90 days | app functionality (fix crashes) | No | No |
 | App Check token (Play Integrity / App Attest) | our API | not stored | security | No | No |
 | Saved artwork, preferences | on device only | — | — | — | — |
@@ -40,7 +42,7 @@ Declare these data types (every one: **Linked to the user: No**, **Used for trac
 |---|---|
 | Identifiers → **Device ID** | App Functionality, Analytics |
 | Usage Data → **Product Interaction** | Analytics |
-| User Content → **Other User Content** | App Functionality, Analytics |
+| User Content → **Other User Content** | App Functionality, Analytics (typed subjects; grown-ups' feedback comments) |
 | Diagnostics → **Crash Data** | App Functionality |
 | Location → **Coarse Location** | Analytics |
 
@@ -63,7 +65,7 @@ Data types — for each: **Collected: Yes · Shared: No · Processed ephemerally
 |---|---|---|
 | Location → **Approximate location** | Required | Analytics |
 | App activity → **App interactions** | Required | Analytics |
-| App activity → **Other user-generated content** | Required | App functionality, Analytics, Fraud prevention/security/compliance |
+| App activity → **Other user-generated content** | Required | App functionality, Analytics, Fraud prevention/security/compliance (typed subjects; optional feedback comments) |
 | App info and performance → **Crash logs** | Required | App functionality |
 | App info and performance → **Diagnostics** | Required | App functionality |
 | Device or other IDs → **Device or other IDs** | Required | App functionality, Analytics, Fraud prevention/security/compliance |

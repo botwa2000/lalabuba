@@ -9,6 +9,7 @@ import { isSoundOn, toggleSound, playComplete, bounce, sparkleBurst } from './fx
 import { isNarrateOn, toggleNarrate, narrateSupported, speak } from './narrate.js';
 import { animateCompletion } from './canvas.js';
 import { track } from './analytics.js';
+import { resetPictureRating } from './feedback.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
 import { syncProgressToServer, openCommunityModal } from './community.js';
 import {
@@ -308,6 +309,7 @@ function celebrate() {
   // sparkles + chime). Falls back to showing the card immediately on any error.
   const _showCeleb = () => {
     const c = document.getElementById("celebration");
+    resetPictureRating(); // fresh 😍/🙂/😕 row for this picture
     c.classList.remove("hidden");
     c.setAttribute("aria-hidden", "false");
     speak(t('narratePraise')); // read-aloud praise (no-op unless narration is on)

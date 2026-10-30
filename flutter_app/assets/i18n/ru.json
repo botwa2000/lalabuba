@@ -511,5 +511,18 @@
   "topic_princess": "Принцесса",
   "topic_mermaid": "Русалка",
   "topic_rocket": "Ракета",
-  "topic_car": "Машины"
+  "topic_car": "Машины",
+  "rateQuestion": "Тебе понравилась картинка?",
+  "rateLoved": "Очень",
+  "rateOk": "Нормально",
+  "rateMeh": "Не очень",
+  "rateThanks": "Спасибо, что рассказал! 💜",
+  "feedbackTitle": "Как вам Lalabuba?",
+  "feedbackHint": "Для взрослых — ваша оценка и идеи помогают нам сделать Lalabuba лучше.",
+  "feedbackPlaceholder": "Что мы можем улучшить? (необязательно)",
+  "feedbackSend": "Отправить",
+  "feedbackThanks": "Спасибо! 💜 Ваш отзыв очень нам помогает.",
+  "feedbackPickStars": "Пожалуйста, выберите от 1 до 5 звёзд.",
+  "feedbackError": "Не удалось отправить — попробуйте ещё раз.",
+  "settingsFeedback": "Отправить отзыв"
 }

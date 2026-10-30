@@ -511,5 +511,18 @@
   "topic_princess": "Princess",
   "topic_mermaid": "Mermaid",
   "topic_rocket": "Rocket",
-  "topic_car": "Car"
+  "topic_car": "Car",
+  "rateQuestion": "Did you like this picture?",
+  "rateLoved": "Loved it",
+  "rateOk": "It was okay",
+  "rateMeh": "Not really",
+  "rateThanks": "Thanks for telling us! 💜",
+  "feedbackTitle": "How do you like Lalabuba?",
+  "feedbackHint": "For grown-ups — your rating and ideas help us make Lalabuba better.",
+  "feedbackPlaceholder": "What could we do better? (optional)",
+  "feedbackSend": "Send",
+  "feedbackThanks": "Thank you! 💜 Your feedback helps us a lot.",
+  "feedbackPickStars": "Please choose 1–5 stars.",
+  "feedbackError": "Could not send — please try again.",
+  "settingsFeedback": "Send feedback"
 }

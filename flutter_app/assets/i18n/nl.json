@@ -511,5 +511,18 @@
   "topic_princess": "Prinses",
   "topic_mermaid": "Zeemeermin",
   "topic_rocket": "Raket",
-  "topic_car": "Auto"
+  "topic_car": "Auto",
+  "rateQuestion": "Vond je dit plaatje leuk?",
+  "rateLoved": "Super leuk",
+  "rateOk": "Wel oké",
+  "rateMeh": "Niet zo",
+  "rateThanks": "Bedankt dat je het ons vertelt! 💜",
+  "feedbackTitle": "Hoe vind je Lalabuba?",
+  "feedbackHint": "Voor volwassenen — jullie beoordeling en ideeën helpen ons Lalabuba beter te maken.",
+  "feedbackPlaceholder": "Wat kunnen we beter doen? (optioneel)",
+  "feedbackSend": "Versturen",
+  "feedbackThanks": "Bedankt! 💜 Jullie feedback helpt ons enorm.",
+  "feedbackPickStars": "Kies 1 tot 5 sterren.",
+  "feedbackError": "Versturen mislukt — probeer het opnieuw.",
+  "settingsFeedback": "Feedback sturen"
 }
