@@ -27,9 +27,9 @@ t("old app builds resolve platform from the App Check app ID", () => {
   assert.strictEqual(usage.platformOf({ headers: {} }), "app");
   assert.strictEqual(usage.platformOf({ headers: { origin: "https://lalabuba.com" } }), "web");
 });
-t("props keep only small scalar values with safe keys", () => {
-  assert.deepStrictEqual(usage._cleanProps({ difficulty: "easy", n: 3, ok: true, "Bad-Key": 1, obj: { a: 1 }, long: "x".repeat(200) }),
-    { difficulty: "easy", n: 3, ok: true, long: "x".repeat(80) });
+t("props keep only allow-listed keys with small scalar values", () => {
+  assert.deepStrictEqual(usage._cleanProps({ difficulty: "easy", count: 3, fatal: true, "Bad-Key": 1, mode: { a: 1 }, reason: "x".repeat(200), subject: "Emma", name: "Emma" }),
+    { difficulty: "easy", count: 3, fatal: true, reason: "x".repeat(80) });
   assert.strictEqual(usage._cleanProps(["a"]), null);
   assert.strictEqual(usage._cleanProps({}), null);
 });

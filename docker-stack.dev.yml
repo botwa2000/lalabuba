@@ -26,6 +26,7 @@ services:
         target: lalabuba_dev_GALLERY_ADMIN_KEY
       - lalabuba_dev_JWT_SECRET
       - lalabuba_dev_BREVO_API_KEY
+      - lalabuba_dev_PLAY_SERVICE_ACCOUNT_JSON   # store-import: Play reviews + bulk reports
       - lalabuba_dev_DOCS_SECRET
     deploy:
       replicas: 1
@@ -57,4 +58,5 @@ secrets:
   lalabuba_dev_GALLERY_ADMIN_KEY_v2: { external: true }
   lalabuba_dev_JWT_SECRET: { external: true }
   lalabuba_dev_BREVO_API_KEY: { external: true }
+  lalabuba_dev_PLAY_SERVICE_ACCOUNT_JSON: { external: true }
   lalabuba_dev_DOCS_SECRET: { external: true }
