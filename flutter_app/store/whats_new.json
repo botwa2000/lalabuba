@@ -1,15 +1,15 @@
 {
   "_comment": "App Store 'What's New' text per language prefix, used by scripts/asc_submit_review.py for every App Store version localization. Update before each production release. 'en' is the fallback.",
-  "en": "New: if a picture looks wrong or scary, tap the 🚩 flag on the coloring screen to tell us, and a grown-up at Lalabuba will check it. Pictures are drawn more reliably. Stability improvements.",
-  "de": "Neu: Wenn ein Bild seltsam oder gruselig aussieht, tippe auf die 🚩-Flagge beim Ausmalen und sag es uns – ein Erwachsener bei Lalabuba schaut es sich an. Bilder werden zuverlässiger gezeichnet. Verbesserungen der Stabilität.",
-  "es": "Nuevo: si una imagen se ve mal o da miedo, toca la bandera 🚩 en la pantalla de colorear para avisarnos y un adulto de Lalabuba la revisará. Las imágenes se dibujan de forma más fiable. Mejoras de estabilidad.",
-  "fr": "Nouveau : si une image semble bizarre ou effrayante, touche le drapeau 🚩 sur l'écran de coloriage pour nous le dire, et un adulte de Lalabuba la vérifiera. Les images sont dessinées de façon plus fiable. Améliorations de stabilité.",
-  "it": "Novità: se un'immagine sembra sbagliata o paurosa, tocca la bandierina 🚩 nella schermata da colorare per dircelo e un adulto di Lalabuba la controllerà. Le immagini vengono disegnate in modo più affidabile. Miglioramenti di stabilità.",
-  "nl": "Nieuw: lijkt een plaatje niet goed of eng, tik dan op het 🚩-vlaggetje bij het kleuren om het ons te laten weten, en een volwassene bij Lalabuba kijkt ernaar. Plaatjes worden betrouwbaarder getekend. Verbeteringen in stabiliteit.",
-  "pl": "Nowość: jeśli obrazek wygląda źle lub strasznie, dotknij flagi 🚩 na ekranie kolorowania, aby nam powiedzieć, a dorosły z Lalabuby go sprawdzi. Obrazki rysują się bardziej niezawodnie. Poprawki stabilności.",
-  "pt": "Novo: se uma imagem parecer errada ou assustadora, toca na bandeira 🚩 no ecrã de colorir para nos avisar e um adulto da Lalabuba vai verificá-la. As imagens são desenhadas de forma mais fiável. Melhorias de estabilidade.",
-  "ru": "Новое: если картинка выглядит неправильно или страшно, нажми флажок 🚩 на экране раскрашивания, и взрослый из Lalabuba её проверит. Картинки рисуются надёжнее. Улучшения стабильности.",
-  "tr": "Yeni: Bir resim yanlış ya da korkutucu görünüyorsa boyama ekranındaki 🚩 bayrağına dokunarak bize söyle, Lalabuba'dan bir yetişkin kontrol edecek. Resimler artık daha güvenilir çiziliyor. Kararlılık iyileştirmeleri.",
-  "hi": "नया: अगर कोई चित्र गलत या डरावना लगे, तो रंग भरने वाली स्क्रीन पर 🚩 झंडे पर टैप करके हमें बताओ, Lalabuba का कोई बड़ा उसे जाँचेगा। चित्र अब ज़्यादा भरोसेमंद तरीके से बनते हैं। स्थिरता में सुधार।",
-  "zh": "新功能：如果图片看起来不对或很吓人，在涂色页面点击 🚩 小旗告诉我们，Lalabuba 的大人会来检查。图片绘制更加稳定可靠。稳定性改进。"
+  "en": "More privacy: we removed a third-party analytics tool. The app now only counts anonymous usage on our own server in the EU, never shared with anyone. Faster, more reliable pictures and stability improvements.",
+  "de": "Mehr Datenschutz: Wir haben ein Analyse-Tool eines Drittanbieters entfernt. Die App zählt die Nutzung jetzt nur noch anonym auf unserem eigenen Server in der EU – ohne Weitergabe an Dritte. Schnellere, zuverlässigere Bilder und mehr Stabilität.",
+  "es": "Más privacidad: hemos eliminado una herramienta de análisis de terceros. La app ahora solo cuenta el uso de forma anónima en nuestro propio servidor en la UE, sin compartirlo con nadie. Imágenes más rápidas y fiables y mejoras de estabilidad.",
+  "fr": "Plus de confidentialité : nous avons retiré un outil d'analyse tiers. L'app ne compte plus l'utilisation que de façon anonyme sur notre propre serveur dans l'UE, sans jamais la partager. Images plus rapides et plus fiables, meilleure stabilité.",
+  "it": "Più privacy: abbiamo rimosso uno strumento di analisi di terze parti. L'app ora conta l'utilizzo solo in forma anonima sul nostro server nell'UE, senza condividerlo con nessuno. Immagini più veloci e affidabili e maggiore stabilità.",
+  "nl": "Meer privacy: we hebben een analysetool van derden verwijderd. De app telt gebruik nu alleen anoniem op onze eigen server in de EU en deelt dit met niemand. Snellere, betrouwbaardere plaatjes en betere stabiliteit.",
+  "pl": "Więcej prywatności: usunęliśmy zewnętrzne narzędzie analityczne. Aplikacja liczy teraz korzystanie wyłącznie anonimowo na naszym własnym serwerze w UE i nikomu tego nie udostępnia. Szybsze, bardziej niezawodne obrazki i lepsza stabilność.",
+  "pt": "Mais privacidade: removemos uma ferramenta de análise de terceiros. A app agora só conta a utilização de forma anónima no nosso próprio servidor na UE, sem a partilhar com ninguém. Imagens mais rápidas e fiáveis e melhorias de estabilidade.",
+  "ru": "Больше конфиденциальности: мы убрали сторонний инструмент аналитики. Теперь приложение лишь анонимно считает использование на нашем собственном сервере в ЕС и ни с кем этим не делится. Картинки быстрее и надёжнее, стабильность выше.",
+  "tr": "Daha fazla gizlilik: Üçüncü taraf bir analiz aracını kaldırdık. Uygulama artık kullanımı yalnızca AB'deki kendi sunucumuzda anonim olarak sayıyor ve kimseyle paylaşmıyor. Daha hızlı, daha güvenilir resimler ve kararlılık iyileştirmeleri.",
+  "hi": "ज़्यादा निजता: हमने एक तीसरे पक्ष का एनालिटिक्स टूल हटा दिया है। ऐप अब केवल EU में हमारे अपने सर्वर पर गुमनाम रूप से उपयोग गिनता है और इसे किसी के साथ साझा नहीं करता। तेज़, ज़्यादा भरोसेमंद चित्र और स्थिरता में सुधार।",
+  "zh": "更多隐私保护：我们移除了第三方分析工具。应用现在只在我们位于欧盟的自有服务器上匿名统计使用情况，绝不与任何人分享。图片绘制更快更稳定，并改进了稳定性。"
 }
