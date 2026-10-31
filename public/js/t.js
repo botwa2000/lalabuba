@@ -41,6 +41,7 @@
     if (!queue.length) return;
     var payload = {
       iid: installId(),
+      wd: navigator.webdriver === true || undefined,
       lang: (document.documentElement.lang || "").slice(0, 2),
       events: queue.splice(0, 50)
     };
@@ -80,6 +81,21 @@
   }
   track("page_view");
   if (isChallenge) track("challenge_open");
+
+  // First real interaction on this page → "engage", sent at once: only visitors
+  // who interact (or draw) count as people on the dashboard, so link scanners
+  // and one-glance bounces don't inflate the numbers.
+  var engaged = false;
+  function onEngage() {
+    if (engaged) return;
+    engaged = true;
+    ["pointerdown", "keydown", "scroll", "touchstart"].forEach(function (t) { window.removeEventListener(t, onEngage, true); });
+    track("engage");
+    flush();
+  }
+  ["pointerdown", "keydown", "scroll", "touchstart"].forEach(function (t) {
+    window.addEventListener(t, onEngage, { capture: true, passive: true });
+  });
 
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flush(); });
   window.addEventListener("pagehide", flush);

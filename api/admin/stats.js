@@ -2,7 +2,9 @@
 // /api/admin/stats — data for the confidential /admin/stats dashboard.
 // Auth: admin session cookie (email OTP, lib/admin-auth.js) or X-Admin-Key.
 //
-// GET  ?range=today|7d|30d|90d&platform=all|web|ios|android → aggregates (lib/stats.js)
+// GET  ?range=today|7d|30d|90d|day|week|month|ytd|custom[&at=YYYY-MM-DD][&from=…&to=…]
+//      &platform=all|web|ios|android → aggregates (lib/stats.js), people only
+//      (traffic = 'human'); bots / internal / no-interaction visits under health.traffic
 // POST {"action":"import","only":["play_reviews",...]?} → start the store import
 //      in the background (the iOS ratings sweep takes ~10 min); poll GET for
 //      health.imports to see the result.
@@ -29,7 +31,8 @@ module.exports = async function adminStatsHandler(req, res, url) {
   if (!adminAuth.isAdminRequest(req)) return send(res, 401, { error: "Unauthorized" });
   try {
     if (req.method === "GET") {
-      const stats = await getStats({ range: url.searchParams.get("range"), platform: url.searchParams.get("platform") });
+      const q = (k) => url.searchParams.get(k) || undefined;
+      const stats = await getStats({ range: q("range"), platform: q("platform"), at: q("at"), from: q("from"), to: q("to") });
       return send(res, 200, stats);
     }
     if (req.method === "POST") {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -67,7 +68,12 @@ class UsageService {
   static Map<String, String> get clientHeaders => {
         'X-Platform': platform,
         if (appVersion != null) 'X-App-Version': appVersion!,
+        if (internal) 'X-Internal': '1',
       };
+
+  /// Debug / profile builds and emulators / simulators are the team testing:
+  /// the server stores their traffic as `internal`, never as users.
+  static bool internal = !kReleaseMode;
 
   /// Cheap, call before the first API request (reads the app version).
   static Future<void> prepare() async {
@@ -75,6 +81,15 @@ class UsageService {
       final info = await PackageInfo.fromPlatform()
           .timeout(const Duration(seconds: 2));
       appVersion = '${info.version}+${info.buildNumber}';
+    } catch (_) {}
+    if (internal || kIsWeb) return;
+    try {
+      final device = DeviceInfoPlugin();
+      if (Platform.isAndroid) {
+        internal = !(await device.androidInfo.timeout(const Duration(seconds: 2))).isPhysicalDevice;
+      } else if (Platform.isIOS) {
+        internal = !(await device.iosInfo.timeout(const Duration(seconds: 2))).isPhysicalDevice;
+      }
     } catch (_) {}
   }
 

@@ -132,6 +132,49 @@ t("with every credential set, every source is ready (needs() === true, not just 
   }
 });
 
+console.log("periods + traffic class");
+const { _rangeWindow: rw } = require("../lib/stats");
+const iso = (d) => d.toISOString().slice(0, 10);
+const todayIso = iso(new Date());
+const tomorrowMs = Date.parse(todayIso + "T00:00:00Z") + 86_400_000;
+t("day / week / month / ytd / custom windows", () => {
+  let w = rw("day", { at: "2026-03-04" });
+  assert.deepStrictEqual([iso(w.from), iso(w.to), iso(w.prevFrom), iso(w.prevTo), w.days], ["2026-03-04", "2026-03-05", "2026-03-03", "2026-03-04", 1]);
+  w = rw("week", { at: "2026-03-04" });          // a Wednesday → Mon 03-02 .. Sun 03-08
+  assert.deepStrictEqual([iso(w.from), iso(w.to), iso(w.prevFrom), w.days], ["2026-03-02", "2026-03-09", "2026-02-23", 7]);
+  w = rw("month", { at: "2026-03-31" });
+  assert.deepStrictEqual([iso(w.from), iso(w.to), iso(w.prevFrom), iso(w.prevTo)], ["2026-03-01", "2026-04-01", "2026-02-01", "2026-03-01"], "Feb is shorter: prev period capped at its end");
+  w = rw("ytd");
+  assert.strictEqual(iso(w.from), todayIso.slice(0, 4) + "-01-01");
+  assert.strictEqual(w.to.getTime(), tomorrowMs);
+  assert.strictEqual(iso(w.prevFrom), (Number(todayIso.slice(0, 4)) - 1) + "-01-01");
+  assert.strictEqual(w.prevTo - w.prevFrom, w.to - w.from, "ytd compares the same span last year");
+  w = rw("custom", { from: "2026-02-10", to: "2026-02-01" });   // reversed → swapped
+  assert.deepStrictEqual([iso(w.from), iso(w.to), w.days, iso(w.prevFrom), iso(w.prevTo)], ["2026-02-01", "2026-02-11", 10, "2026-01-22", "2026-02-01"]);
+  w = rw("custom", { from: "2020-01-01", to: "2026-02-01" });
+  assert.strictEqual(w.days, 400, "custom capped at event retention");
+  w = rw("custom", { from: "garbage", to: "2026-02-30" });
+  assert.strictEqual(iso(w.from), todayIso, "invalid dates fall back to today");
+  w = rw("week");                                  // current week never runs past today
+  assert(w.to.getTime() <= tomorrowMs && w.from.getUTCDay() === 1);
+  w = rw("day", { at: "2999-01-01" });
+  assert.strictEqual(iso(w.from), todayIso, "future anchor clamps to today");
+  assert.strictEqual(rw("7d").days, 7);
+});
+t("traffic class: internal / bot / unengaged web / human app", () => {
+  const req = (h) => ({ headers: h });
+  const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130 Safari/537.36";
+  assert.strictEqual(usage._baseTraffic(req({ "user-agent": UA }), "web"), "unengaged");
+  assert.strictEqual(usage._baseTraffic(req({ "user-agent": UA, cookie: "a=1; lb_int=1" }), "web"), "internal");
+  assert.strictEqual(usage._baseTraffic(req({ "x-internal": "1" }), "android"), "internal");
+  assert.strictEqual(usage._baseTraffic(req({}), "ios"), "human");
+  assert.strictEqual(usage._baseTraffic(req({ "user-agent": UA }), "web", { wd: true }), "bot", "navigator.webdriver");
+  for (const ua of ["Mozilla/5.0 (compatible; Googlebot/2.1)", "facebookexternalhit/1.1", "Mozilla/5.0 HeadlessChrome/130", "WhatsApp/2.23", "curl/8.4", ""]) {
+    assert.strictEqual(usage._baseTraffic(req({ "user-agent": ua }), "web"), "bot", ua);
+  }
+  assert(usage.EVENTS.has("engage"));
+});
+
 const tAsync = async (name, fn) => { await fn(); n++; console.log("  ✓", name); };
 (async () => {
 console.log("otp-auth (admin vs docs)");

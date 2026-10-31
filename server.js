@@ -1283,11 +1283,15 @@ async function handleAdmin(req, res, p) {
     req.on("end", () => resolve(new URLSearchParams(body)));
   });
   const route = p.replace(/\/+$/, "") || "/admin";
+  // Marks this browser as the team's for 400 days, so its own visits and
+  // drawings never count as users on /admin/stats (lib/usage.js isInternal).
+  const internalCookie = `${usage.INTERNAL_COOKIE}=1; Path=/; Max-Age=34560000; HttpOnly; SameSite=Lax${isHttps ? "; Secure" : ""}`;
 
   if (route === "/admin" && req.method === "GET") return redirect("/admin/stats");
 
   if (route === "/admin/stats" && req.method === "GET") {
     if (!adminAuth.isAuthenticated(req)) return redirect("/admin/login");
+    res.setHeader("Set-Cookie", internalCookie);
     return page(200, renderAdminStatsPage());
   }
 
@@ -1316,7 +1320,7 @@ async function handleAdmin(req, res, p) {
     if (tag) {
       await adminAuth.clearVerifyFails(ip);
       console.warn(`[admin] login ok from ${ip}`);
-      return redirect("/admin/stats", [adminAuth.sessionCookieHeader(adminAuth.generateSession(tag), isHttps), adminAuth.clearOtpCookieHeader()]);
+      return redirect("/admin/stats", [adminAuth.sessionCookieHeader(adminAuth.generateSession(tag), isHttps), adminAuth.clearOtpCookieHeader(), internalCookie]);
     }
     await adminAuth.recordVerifyFail(ip);
     return page(401, renderOtpPage({ error: true, site: ADMIN_SITE }));
@@ -1338,7 +1342,7 @@ if(t){document.forms[0].t.value=t;document.forms[0].submit()}else{document.getEl
       const tag = await adminAuth.redeemLink((await formBody()).get("t"));
       if (tag) {
         console.warn(`[admin] one-time link redeemed from ${ip}`);
-        return redirect("/admin/stats", [adminAuth.sessionCookieHeader(adminAuth.generateSession(tag, 3600), isHttps)]);
+        return redirect("/admin/stats", [adminAuth.sessionCookieHeader(adminAuth.generateSession(tag, 3600), isHttps), internalCookie]);
       }
       await adminAuth.recordVerifyFail(ip);
       console.warn(`[admin] one-time link rejected from ${ip}`);
