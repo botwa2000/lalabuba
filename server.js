@@ -1300,14 +1300,10 @@ async function handleAdmin(req, res, p) {
       if (!(await adminAuth.verifyTurnstile(params.get("cf-turnstile-response") || "", ip))) {
         return page(403, renderLoginPage({ error: true, site: ADMIN_SITE }));
       }
-      // Same response for unknown emails — never reveal which address is allowed.
-      if (adminAuth.isAllowedEmail(email)) {
-        const { code, state } = adminAuth.generateOtp();
-        await adminAuth.recordSend(ip);
-        res.setHeader("Set-Cookie", adminAuth.otpCookieHeader(state, isHttps));
-        try { await sendOtp(email, code, "en"); }
-        catch (err) { console.error("[admin] OTP email send failed:", err.message); }
-      }
+      // Identical page, cookie and timing for unknown emails — the allowlist can't be probed.
+      await adminAuth.recordSend(ip);
+      const state = adminAuth.beginLogin(email, (to, code) => sendOtp(to, code, "en"));
+      res.setHeader("Set-Cookie", adminAuth.otpCookieHeader(state, isHttps));
       return page(200, renderOtpPage({ email, site: ADMIN_SITE }));
     }
   }
@@ -1316,10 +1312,11 @@ async function handleAdmin(req, res, p) {
     if (await adminAuth.isVerifyLimited(ip)) return page(429, renderOtpPage({ rateLimited: true, site: ADMIN_SITE }));
     const params = await formBody();
     const code = (params.get("code") || "").replace(/\D/g, "").slice(0, 6);
-    if (adminAuth.validateOtp(code, adminAuth.getOtpCookie(req))) {
+    const tag = adminAuth.validateOtp(code, adminAuth.getOtpCookie(req));
+    if (tag) {
       await adminAuth.clearVerifyFails(ip);
       console.warn(`[admin] login ok from ${ip}`);
-      return redirect("/admin/stats", [adminAuth.sessionCookieHeader(adminAuth.generateSession(), isHttps), adminAuth.clearOtpCookieHeader()]);
+      return redirect("/admin/stats", [adminAuth.sessionCookieHeader(adminAuth.generateSession(tag), isHttps), adminAuth.clearOtpCookieHeader()]);
     }
     await adminAuth.recordVerifyFail(ip);
     return page(401, renderOtpPage({ error: true, site: ADMIN_SITE }));
@@ -1636,23 +1633,10 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        if (!docsAuth.isAllowedEmail(email)) {
-          // Always show same response — don't reveal which emails are allowed
-          serveHtmlDoc(200, renderOtpPage({ email }));
-          return;
-        }
-
-        const { code, state } = docsAuth.generateOtp();
+        // Identical page, cookie and timing for unknown emails — the allowlist can't be probed.
         await docsAuth.recordSend(ip);
+        const state = docsAuth.beginLogin(email, (to, code) => sendOtp(to, code, "en"));
         res.setHeader("Set-Cookie", docsAuth.otpCookieHeader(state, isHttps));
-
-        try {
-          await sendOtp(email, code, "en");
-        } catch (err) {
-          console.error("[docs] OTP email send failed:", err.message);
-          // Still show the OTP page — in dev BREVO_API_KEY may not be set, code logs to console
-        }
-
         serveHtmlDoc(200, renderOtpPage({ email }));
         return;
       }
@@ -1669,10 +1653,11 @@ const server = http.createServer(async (req, res) => {
       const code      = (params.get("code") || "").replace(/\D/g, "").slice(0, 6);
       const otpState  = docsAuth.getOtpCookie(req);
 
-      if (docsAuth.validateOtp(code, otpState)) {
+      const tag = docsAuth.validateOtp(code, otpState);
+      if (tag) {
         await docsAuth.clearVerifyFails(ip);
         res.setHeader("Set-Cookie", [
-          docsAuth.sessionCookieHeader(docsAuth.generateSession(), isHttps),
+          docsAuth.sessionCookieHeader(docsAuth.generateSession(tag), isHttps),
           docsAuth.clearOtpCookieHeader(),
         ]);
         res.writeHead(302, { Location: "/docs/internal" });

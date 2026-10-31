@@ -52,7 +52,7 @@ $r.workflow_runs | Select-Object name, conclusion, created_at, @{n='sha';e={$_.h
 - **Config file:** `codemagic.yaml` in repo root
 - **Trigger:** push to `main` (automatic via Codemagic webhook)
 - **Codemagic dashboard:** https://codemagic.io
-- **Codemagic account:** alexander.perel@gmail.com (Bonistock team)
+- **Codemagic account:** owner Google account (Bonistock team)
 - **App Store Connect integration name:** `Bonistock ASC`
 - **Bundle ID:** `com.lalabuba.lalabuba`
 - **App Store Apple ID:** `6761691648`

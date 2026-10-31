@@ -26,6 +26,7 @@ services:
       - lalabuba_prod_BREVO_API_KEY
       - lalabuba_prod_PLAY_SERVICE_ACCOUNT_JSON   # store-import: Play reviews + bulk reports
       - lalabuba_prod_DOCS_SECRET
+      - lalabuba_prod_ADMIN_EMAILS     # /admin + /docs login allowlist — never in the repo
     deploy:
       replicas: 1
       update_config:
@@ -100,6 +101,7 @@ secrets:
   lalabuba_prod_BREVO_API_KEY: { external: true }
   lalabuba_prod_PLAY_SERVICE_ACCOUNT_JSON: { external: true }
   lalabuba_prod_DOCS_SECRET: { external: true }
+  lalabuba_prod_ADMIN_EMAILS: { external: true }
   lalabuba_prod_IG_LALABUBA_USER_ID: { external: true }
   lalabuba_prod_IG_LALABUBA_TOKEN: { external: true }
   lalabuba_prod_IG_BONIFATUS_USER_ID: { external: true }

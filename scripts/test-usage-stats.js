@@ -115,31 +115,85 @@ t("every import source declares its credentials", () => {
     ["asc_analytics", "asc_reviews", "asc_sales", "ios_ratings", "play_listing", "play_reports", "play_reviews"]);
 });
 
+const tAsync = async (name, fn) => { await fn(); n++; console.log("  ✓", name); };
+(async () => {
 console.log("otp-auth (admin vs docs)");
-t("admin session validates, docs session does not open admin", () => {
-  const a = adminAuth.generateSession();
-  assert(adminAuth.validateSession(a));
-  const d = docsAuth.generateSession();
-  assert(docsAuth.validateSession(d));
-  assert(!adminAuth.validateSession(d), "docs session must not validate as admin");
-  assert(!docsAuth.validateSession(a), "admin session must not validate as docs");
+// Fixture addresses only — the real allowlist lives in a Swarm secret, never in this public repo.
+const OWNER = "owner@example.test";
+process.env.ADMIN_EMAILS = ` ${OWNER.toUpperCase()} , second@example.test`;
+delete process.env.DOCS_EMAILS;
+const loginAs = (auth, email) => {
+  const sent = [];
+  const state = auth.beginLogin(email, (to, code) => { sent.push({ to, code }); });
+  return { state, sent };
+};
+const flush = () => new Promise((r) => setImmediate(r));
+t("allowlist comes from env, trimmed + case-insensitive; unset = nobody", () => {
+  assert(adminAuth.isAllowedEmail(" Owner@Example.test "));
+  assert(!adminAuth.isAllowedEmail("someone@else.com"));
+  const saved = process.env.ADMIN_EMAILS;
+  delete process.env.ADMIN_EMAILS;
+  assert(!adminAuth.isAllowedEmail(OWNER), "no allowlist must refuse everyone");
+  process.env.ADMIN_EMAILS = saved;
 });
-t("OTP round-trip and rejection", () => {
-  const { code, state } = adminAuth.generateOtp();
-  assert.strictEqual(code.length, 6);
-  assert(adminAuth.validateOtp(code, state));
-  const wrong = String((Number(code) + 1) % 1000000).padStart(6, "1");
+await tAsync("allowed email: OTP mailed, round-trip opens a session", async () => {
+  const { state, sent } = loginAs(adminAuth, OWNER);
+  await flush();
+  assert.strictEqual(sent.length, 1);
+  assert.strictEqual(sent[0].to, OWNER);
+  const tag = adminAuth.validateOtp(sent[0].code, state);
+  assert(tag, "correct code must validate");
+  const wrong = String((Number(sent[0].code) + 1) % 1000000).padStart(6, "1");
   assert(!adminAuth.validateOtp(wrong, state));
-  assert(!docsAuth.validateOtp(code, state), "admin OTP must not validate for docs");
+  assert(!docsAuth.validateOtp(sent[0].code, state), "admin OTP must not validate for docs");
+  assert(adminAuth.validateSession(adminAuth.generateSession(tag)));
+});
+await tAsync("unknown email: no mail, same-shaped cookie, can never log in", async () => {
+  const a = loginAs(adminAuth, OWNER), u = loginAs(adminAuth, "intruder@evil.test");
+  await flush();
+  assert.strictEqual(u.sent.length, 0);
+  const shape = (s) => s.split(".").map((p) => p.length).join(",");
+  assert.strictEqual(shape(u.state), shape(a.state), "state must look identical");
+  for (let c = 0; c < 2000; c++) assert(!adminAuth.validateOtp(String(100000 + c), u.state));
+});
+t("cookies never contain the email address", () => {
+  const { state } = loginAs(adminAuth, OWNER);
+  const tag = adminAuth.validateOtp("000000", state); // wrong code → null, just checking the state
+  assert(!tag);
+  for (const s of [state, adminAuth.generateSession(state.split(".")[1])]) {
+    assert(!/owner|example|@/i.test(s) && !/owner|example/i.test(Buffer.from(s.split(".")[1], "base64url").toString("latin1")), s);
+  }
+});
+await tAsync("removing an email from the allowlist revokes its live session", async () => {
+  const { state, sent } = loginAs(adminAuth, "second@example.test");
+  await flush();
+  const sess = adminAuth.generateSession(adminAuth.validateOtp(sent[0].code, state));
+  assert(adminAuth.validateSession(sess));
+  const saved = process.env.ADMIN_EMAILS;
+  process.env.ADMIN_EMAILS = OWNER;
+  assert(!adminAuth.validateSession(sess), "revoked address must lose access");
+  process.env.ADMIN_EMAILS = saved;
+});
+t("forged / legacy / anonymous sessions are rejected for admin", () => {
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  assert(!adminAuth.validateSession(`${exp}.${adminAuth.hmac(`sess:${exp}`)}`), "legacy 2-part session");
+  assert(!adminAuth.validateSession(`${exp}.-.${adminAuth.hmac(`sess:${exp}:-`)}`), "anonymous session");
+  assert.throws(() => adminAuth.generateSession(null), /anonymous/);
+  assert(!adminAuth.validateSession(`${exp}.AAAAAAAAAAAAAAAAAAAAAA.xyz`));
+});
+t("admin and docs sessions never cross; docs share links stay anonymous", () => {
+  const { state } = loginAs(adminAuth, OWNER);
+  const tag = state.split(".")[1];
+  const a = adminAuth.generateSession(tag);
+  assert(!docsAuth.validateSession(a), "admin session must not validate as docs");
+  const d = docsAuth.generateSession();
+  assert(docsAuth.validateSession(d), "docs share-link session");
+  assert(!adminAuth.validateSession(d), "docs session must not validate as admin");
 });
 t("admin cookies are scoped and Secure on https", () => {
   const h = adminAuth.sessionCookieHeader("x", true);
   assert(/^admin_sess=x; HttpOnly; Secure; SameSite=Strict; Path=\/; Max-Age=43200$/.test(h), h);
   assert(/Path=\/docs/.test(docsAuth.sessionCookieHeader("x", true)));
-});
-t("only the owner email is allowed", () => {
-  assert(adminAuth.isAllowedEmail(" Alexander.Perel@gmail.com "));
-  assert(!adminAuth.isAllowedEmail("someone@else.com"));
 });
 t("X-Admin-Key check is constant-time and exact", () => {
   process.env.GALLERY_ADMIN_KEY = "k1";
@@ -150,3 +204,4 @@ t("X-Admin-Key check is constant-time and exact", () => {
 
 console.log(`\n${n} passed`);
 process.exit(0);
+})().catch((e) => { console.error(e); process.exit(1); });
