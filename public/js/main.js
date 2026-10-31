@@ -431,10 +431,11 @@ window.onTurnstileAfterInteractive = () => {
 };
 
 function getTurnstileToken() {
-  if (!window.turnstile) return Promise.resolve(null);
+  // api.js loads async — a Draw! before it arrives must wait, not skip the check.
+  if (document.documentElement.classList.contains('is-native')) return Promise.resolve(null);
   if (state.turnstileToken) return Promise.resolve(state.turnstileToken);
   const el = document.getElementById('turnstile-widget');
-  const existing = el ? window.turnstile.getResponse(el) : null;
+  const existing = el && window.turnstile ? window.turnstile.getResponse(el) : null;
   if (existing) return Promise.resolve(existing);
   // Token not ready yet — wait silently. If CF needs a human click it will call
   // onTurnstileBeforeInteractive which moves the widget on-screen automatically.

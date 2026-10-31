@@ -193,9 +193,11 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
     // Wait up to 15 s for Turnstile to complete silent (or interactive) verification.
     // Without this, calls from loadFromShare() arrive ~80 ms after page load —
     // before the widget has received its token — and the API rejects with "Bot check failed".
-    if (!state.turnstileToken && window.turnstile) {
+    // The api.js script is injected async, so at that point window.turnstile is
+    // usually still undefined: wait whenever we're on the web, not only once it loaded.
+    if (!state.turnstileToken && !document.documentElement.classList.contains('is-native')) {
       const el = document.getElementById('turnstile-widget');
-      const existing = el ? window.turnstile.getResponse(el) : null;
+      const existing = el && window.turnstile ? window.turnstile.getResponse(el) : null;
       if (existing) {
         state.turnstileToken = existing;
       } else {
