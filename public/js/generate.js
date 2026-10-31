@@ -168,6 +168,33 @@ function consentedInstallId() {
   } catch { return null; }
 }
 
+const isNative = () => document.documentElement.classList.contains('is-native');
+
+// Turnstile tokens are single-use, so every generation takes its own: wait for
+// one, then clear it and restart the silent challenge for the next request.
+// Waiting covers both api.js still loading (it is injected async — challenge
+// links call this ~80 ms after page load) and a slow or interactive challenge.
+// Never POSTs without a token: that is a guaranteed 403 "Bot check failed".
+async function takeTurnstileToken() {
+  if (isNative()) return null;
+  const el = document.getElementById('turnstile-widget');
+  const current = () => state.turnstileToken || (el && window.turnstile ? window.turnstile.getResponse(el) : null);
+  let token = current();
+  if (!token) {
+    token = await new Promise((resolve) => {
+      const poll = setInterval(() => {
+        const t = current();
+        if (t) { clearInterval(poll); clearTimeout(timer); resolve(t); }
+      }, 100);
+      const timer = setTimeout(() => { clearInterval(poll); resolve(null); }, 45000);
+    });
+  }
+  state.turnstileToken = null;
+  if (window.turnstile && el) window.turnstile.reset(el);
+  if (!token) throw new Error('Security check is taking a moment — please try again.');
+  return token;
+}
+
 export async function requestGeneratedImage(subject, difficulty = "medium", seedOverride = null, isPreDefined = false) {
   const provider = 'backend';
   const seed = (seedOverride !== null && Number.isFinite(seedOverride))
@@ -190,61 +217,51 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
   if (provider === "backend" || provider === "direct") {
     const apiBase = '';
 
-    // Wait up to 15 s for Turnstile to complete silent (or interactive) verification.
-    // Without this, calls from loadFromShare() arrive ~80 ms after page load —
-    // before the widget has received its token — and the API rejects with "Bot check failed".
-    // The api.js script is injected async, so at that point window.turnstile is
-    // usually still undefined: wait whenever we're on the web, not only once it loaded.
-    if (!state.turnstileToken && !document.documentElement.classList.contains('is-native')) {
-      const el = document.getElementById('turnstile-widget');
-      const existing = el && window.turnstile ? window.turnstile.getResponse(el) : null;
-      if (existing) {
-        state.turnstileToken = existing;
-      } else {
-        await new Promise((resolve) => {
-          const poll = setInterval(() => {
-            if (state.turnstileToken) { clearInterval(poll); clearTimeout(timer); resolve(); }
-          }, 100);
-          const timer = setTimeout(() => { clearInterval(poll); resolve(); }, 15000);
-        });
-      }
-    }
+    const source = state.generationSource || 'custom';
+    state.generationSource = null;
 
     // Hard timeout — prevents an infinite hang on slow connections.
     // Novel subjects take ~20-30s on the server (Novita); Pollinations cache
     // hits return in ~1-2s. Hard/extreme go straight to Novita (~20-30s).
     const _clientTimeout = window.DRAWING_CONFIG?.generation?.clientTimeoutMs ?? 80000;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), _clientTimeout);
-    let response;
-    try {
-      response = await fetch(`${apiBase}/api/generate-image`, {
-        method: "POST",
-        signal: controller.signal,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject,
-          difficulty,
-          artStyle: state.artStyle || 'structured',
-          size: state.selectedSize,
-          seed,
-          width:  (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).w,
-          height: (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).h,
-          turnstileToken: state.turnstileToken || undefined,
-          // Stats dashboard (lib/usage.js): where the subject came from + UI language.
-          source: state.generationSource || 'custom',
-          lang: (document.documentElement.lang || '').slice(0, 2) || undefined,
-          installId: consentedInstallId() || undefined,
-        }),
-      });
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        throw new Error(t('genTimeout'));
+    const post = async (turnstileToken) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), _clientTimeout);
+      try {
+        return await fetch(`${apiBase}/api/generate-image`, {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subject,
+            difficulty,
+            artStyle: state.artStyle || 'structured',
+            size: state.selectedSize,
+            seed,
+            width:  (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).w,
+            height: (SIZE_DIMS[state.selectedSize] || SIZE_DIMS.medium).h,
+            turnstileToken: turnstileToken || undefined,
+            // Stats dashboard (lib/usage.js): where the subject came from + UI language.
+            source,
+            lang: (document.documentElement.lang || '').slice(0, 2) || undefined,
+            installId: consentedInstallId() || undefined,
+          }),
+        });
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          throw new Error(t('genTimeout'));
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
       }
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
-      state.generationSource = null;
+    };
+
+    let response = await post(await takeTurnstileToken());
+    // A rejected token (expired / already redeemed) is not the user's fault —
+    // fetch a fresh one and try once more before surfacing "Bot check failed".
+    if (response.status === 403 && !isNative()) {
+      response = await post(await takeTurnstileToken());
     }
 
     if (!response.ok) {

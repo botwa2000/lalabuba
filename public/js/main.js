@@ -430,29 +430,8 @@ window.onTurnstileAfterInteractive = () => {
   document.body.classList.remove('ts-needs-interaction');
 };
 
-function getTurnstileToken() {
-  // api.js loads async — a Draw! before it arrives must wait, not skip the check.
-  if (document.documentElement.classList.contains('is-native')) return Promise.resolve(null);
-  if (state.turnstileToken) return Promise.resolve(state.turnstileToken);
-  const el = document.getElementById('turnstile-widget');
-  const existing = el && window.turnstile ? window.turnstile.getResponse(el) : null;
-  if (existing) return Promise.resolve(existing);
-  // Token not ready yet — wait silently. If CF needs a human click it will call
-  // onTurnstileBeforeInteractive which moves the widget on-screen automatically.
-  return new Promise((resolve, reject) => {
-    const poll = setInterval(() => {
-      if (state.turnstileToken) { clearInterval(poll); clearTimeout(timer); resolve(state.turnstileToken); }
-    }, 100);
-    // 15 s grace period. If still no token, reset the widget and surface a
-    // friendly retry message — never send a null token (guaranteed 403).
-    const timer = setTimeout(() => {
-      clearInterval(poll);
-      const _el = document.getElementById('turnstile-widget');
-      if (window.turnstile && _el) window.turnstile.reset(_el);
-      reject(new Error('Security check is taking a moment — please try again.'));
-    }, 15000);
-  });
-}
+// Tokens are waited for, consumed and refreshed per request in generate.js
+// (takeTurnstileToken) so Draw!, Again! and challenge links all behave the same.
 
 // ─── Form submit ─────────────────────────────────────────────────────────────
 let _pendingSeedOverride = null;
@@ -500,7 +479,6 @@ form.addEventListener("submit", async (event) => {
   showLoading(); // show immediately — don't wait for Turnstile (can take up to 15s)
 
   try {
-    state.turnstileToken = await getTurnstileToken();
     const seedOverride = _pendingSeedOverride;
     _pendingSeedOverride = null;
     state.paletteOverride = getSemanticPaletteOrder(
@@ -518,11 +496,6 @@ form.addEventListener("submit", async (event) => {
     setStatus(error.message || "Something went wrong.", true);
   } finally {
     submitButton.disabled = false;
-    // Clear token and restart the silent background challenge for the next Draw.
-    // Widget stays off-screen (default CSS); ts-needs-interaction is already clear.
-    state.turnstileToken = null;
-    const tsEl = document.getElementById('turnstile-widget');
-    if (window.turnstile && tsEl) window.turnstile.reset(tsEl);
   }
 });
 
