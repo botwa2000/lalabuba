@@ -121,6 +121,16 @@ t("every import source declares its credentials", () => {
   assert.deepStrictEqual(imp.SOURCES.map((s) => s.id).sort(),
     ["asc_analytics", "asc_reviews", "asc_sales", "cf_traffic", "ios_ratings", "play_listing", "play_reports", "play_reviews", "play_vitals"]);
 });
+t("with every credential set, every source is ready (needs() === true, not just truthy)", () => {
+  const keys = ["PLAY_SERVICE_ACCOUNT_JSON", "PLAY_REPORTS_BUCKET", "ASC_ISSUER_ID", "ASC_KEY_ID", "ASC_PRIVATE_KEY", "ASC_VENDOR_NUMBER", "CF_ANALYTICS_TOKEN"];
+  const saved = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
+  for (const k of keys) process.env[k] = "x";
+  try {
+    for (const s of imp.SOURCES) assert.strictEqual(s.needs(), true, s.id);
+  } finally {
+    for (const k of keys) if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
+  }
+});
 
 const tAsync = async (name, fn) => { await fn(); n++; console.log("  ✓", name); };
 (async () => {
@@ -201,6 +211,29 @@ t("admin cookies are scoped and Secure on https", () => {
   const h = adminAuth.sessionCookieHeader("x", true);
   assert(/^admin_sess=x; HttpOnly; Secure; SameSite=Strict; Path=\/; Max-Age=43200$/.test(h), h);
   assert(/Path=\/docs/.test(docsAuth.sessionCookieHeader("x", true)));
+});
+await tAsync("one-time link: single use, short session, allowlist + expiry + forgery checks", async () => {
+  const link = adminAuth.generateLink(null, 600);
+  assert(!/owner|example|@/i.test(link), "link must not contain the address");
+  const tag = await adminAuth.redeemLink(link);
+  assert(tag, "fresh link must redeem");
+  assert.strictEqual(await adminAuth.redeemLink(link), null, "second use must fail");
+  const sess = adminAuth.generateSession(tag, 3600);
+  assert(adminAuth.validateSession(sess));
+  assert(Number(sess.split(".")[0]) <= Math.floor(Date.now() / 1000) + 3600, "link session ≤ 1h");
+  const [exp, tg, nonce] = adminAuth.generateLink(OWNER).split(".");
+  assert.strictEqual(await adminAuth.redeemLink(`${exp}.${tg}.${nonce}.forged`), null, "bad mac");
+  const past = Math.floor(Date.now() / 1000) - 1;
+  assert.strictEqual(await adminAuth.redeemLink(`${past}.${tg}.${nonce}.${adminAuth.hmac(`link:${past}:${tg}:${nonce}`)}`), null, "expired");
+  const far = Math.floor(Date.now() / 1000) + 86400;
+  assert.strictEqual(await adminAuth.redeemLink(`${far}.${tg}.${nonce}.${adminAuth.hmac(`link:${far}:${tg}:${nonce}`)}`), null, "TTL beyond 15 min");
+  assert.throws(() => adminAuth.generateLink("intruder@evil.test"), /allowlist/);
+  assert.strictEqual(await docsAuth.redeemLink(adminAuth.generateLink()), null, "admin link must not open docs");
+  const pending = adminAuth.generateLink("second@example.test");
+  const saved = process.env.ADMIN_EMAILS;
+  process.env.ADMIN_EMAILS = OWNER;
+  assert.strictEqual(await adminAuth.redeemLink(pending), null, "removed address: link dies");
+  process.env.ADMIN_EMAILS = saved;
 });
 t("X-Admin-Key check is constant-time and exact", () => {
   process.env.GALLERY_ADMIN_KEY = "k1";

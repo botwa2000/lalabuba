@@ -313,6 +313,7 @@ For quadrant definitions see `docs/screen-quadrants.md`.
 - [ ] 🔴 Every path takes a fresh token (generate.js `takeTurnstileToken`): challenge link `/?s=1&q=Muffin` on a cold load, then Draw!, then 🎲 Again! — all three 200, server log has no `[turnstile] fail reason=timeout-or-duplicate` / `no-token`
 - [ ] 🔴 /admin/stats → Health: web_turnstile_fail stays a small fraction of web_turnstile_ok
 - [ ] /admin/stats → Store imports: play_listing shows "N installs (bucket)"; play_vitals ✓ once the Reporting API is on; cf_traffic ✓ once CF_ANALYTICS_TOKEN is set — then "🌐 Website traffic" and "🛠 App quality" sections fill in
+- [ ] /admin one-time link: `bash /opt/lalabuba/scripts/admin-link.sh prod` → open link → lands on /admin/stats (URL shows no token); opening the same link again → "expired or already used" 401; play_reports ✓ once the service account has Play "View app information and download bulk reports"
 - [ ] Mobile native apps: Turnstile skipped entirely
 
 ### 6.3 Hetzner Server Health

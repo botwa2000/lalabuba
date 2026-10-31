@@ -1322,6 +1322,30 @@ async function handleAdmin(req, res, p) {
     return page(401, renderOtpPage({ error: true, site: ADMIN_SITE }));
   }
 
+  // One-time sign-in link from scripts/admin-link.sh (root on the server only).
+  // GET serves a tiny page that moves the #token into a POST body — the token
+  // is never in a URL the server, Cloudflare or a Referer header sees.
+  if (route === "/admin/link") {
+    if (req.method === "GET") {
+      return page(200, `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Lalabuba Admin</title>
+<body style="font-family:system-ui;background:#111;color:#eee;display:grid;place-items:center;min-height:100vh;margin:0">
+<form method="post" action="/admin/link"><input type="hidden" name="t"><p id="m">Signing in…</p></form>
+<script>var t=location.hash.slice(1);history.replaceState(null,"",location.pathname);
+if(t){document.forms[0].t.value=t;document.forms[0].submit()}else{document.getElementById("m").textContent="This link is incomplete."}</script>`);
+    }
+    if (req.method === "POST") {
+      if (await adminAuth.isVerifyLimited(ip)) return page(429, renderOtpPage({ rateLimited: true, site: ADMIN_SITE }));
+      const tag = await adminAuth.redeemLink((await formBody()).get("t"));
+      if (tag) {
+        console.warn(`[admin] one-time link redeemed from ${ip}`);
+        return redirect("/admin/stats", [adminAuth.sessionCookieHeader(adminAuth.generateSession(tag, 3600), isHttps)]);
+      }
+      await adminAuth.recordVerifyFail(ip);
+      console.warn(`[admin] one-time link rejected from ${ip}`);
+      return page(401, `<!doctype html><meta charset="utf-8"><title>Lalabuba Admin</title><p style="font-family:system-ui">This sign-in link has expired or was already used. <a href="/admin/login">Sign in</a></p>`);
+    }
+  }
+
   if (route === "/admin/logout" && req.method === "GET") {
     return redirect("/admin/login", [adminAuth.clearSessionCookieHeader(), adminAuth.clearOtpCookieHeader()]);
   }
