@@ -65,7 +65,10 @@ async function verifyTurnstile(token, ip) {
     }
     return true;
   }
-  if (!token) return false;
+  if (!token) {
+    console.warn(`[turnstile] fail reason=no-token ip=${ip}`);
+    return false;
+  }
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -75,9 +78,15 @@ async function verifyTurnstile(token, ip) {
         signal: AbortSignal.timeout(5000),
       });
       const data = await res.json();
+      if (data.success !== true) {
+        console.warn(`[turnstile] fail reason=${(data["error-codes"] || []).join(",") || "rejected"} ip=${ip}`);
+      }
       return data.success === true;
     } catch {
-      if (attempt === 1) return false; // unreachable after a retry → fail closed
+      if (attempt === 1) {
+        console.warn(`[turnstile] fail reason=unreachable ip=${ip}`);
+        return false; // unreachable after a retry → fail closed
+      }
     }
   }
   return false;
