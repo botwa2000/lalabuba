@@ -94,9 +94,25 @@ t("decodes Play UTF-16LE and ASC gzip", () => {
   const gz = zlib.gzipSync(Buffer.from("A\tB\n1\t2\n"));
   assert.strictEqual(imp._parseCsv(imp._decodeText(gz), "\t")[0].B, "2");
 });
+t("Play listing parser: rated app → count, avg, histogram", () => {
+  const fs = require("fs"), path = require("path");
+  const r = imp._parsePlayListing(fs.readFileSync(path.join(__dirname, "fixtures/play-listing-rated.html"), "utf8"));
+  assert.strictEqual(r.count, 51455480);
+  assert(Math.abs(r.avg - 4.7466) < 0.001);
+  assert.deepStrictEqual(Object.keys(r.histogram).sort(), ["1", "2", "3", "4", "5"]);
+  assert.strictEqual(r.histogram["5"], 40712313);
+});
+t("Play listing parser: no public rating yet → 0, not an error", () => {
+  const fs = require("fs"), path = require("path");
+  const r = imp._parsePlayListing(fs.readFileSync(path.join(__dirname, "fixtures/play-listing-unrated.html"), "utf8"));
+  assert.deepStrictEqual([r.count, r.avg, r.name], [0, null, "Lalabuba: Kids Coloring"]);
+});
+t("Play listing parser fails loudly when the page format changes", () => {
+  assert.throws(() => imp._parsePlayListing("<html><body>captcha</body></html>"), /format changed/);
+});
 t("every import source declares its credentials", () => {
   assert.deepStrictEqual(imp.SOURCES.map((s) => s.id).sort(),
-    ["asc_analytics", "asc_reviews", "asc_sales", "ios_ratings", "play_reports", "play_reviews"]);
+    ["asc_analytics", "asc_reviews", "asc_sales", "ios_ratings", "play_listing", "play_reports", "play_reviews"]);
 });
 
 console.log("otp-auth (admin vs docs)");
