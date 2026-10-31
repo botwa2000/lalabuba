@@ -107,12 +107,19 @@ t("Play listing parser: no public rating yet → 0, not an error", () => {
   const r = imp._parsePlayListing(fs.readFileSync(path.join(__dirname, "fixtures/play-listing-unrated.html"), "utf8"));
   assert.deepStrictEqual([r.count, r.avg, r.name], [0, null, "Lalabuba: Kids Coloring"]);
 });
+t("Play listing parser: install count = the triple matching the visible bucket", () => {
+  const fs = require("fs"), path = require("path");
+  const r = imp._parsePlayListing(fs.readFileSync(path.join(__dirname, "fixtures/play-listing-unrated.html"), "utf8"));
+  assert.deepStrictEqual(r.installs, { bucket: "10+", min: 10, exact: 16 }); // not the "5+" decoy
+  const noCount = imp._parsePlayListing(fs.readFileSync(path.join(__dirname, "fixtures/play-listing-rated.html"), "utf8"));
+  assert.strictEqual(noCount.installs, null, "no visible Downloads bucket → no install number");
+});
 t("Play listing parser fails loudly when the page format changes", () => {
   assert.throws(() => imp._parsePlayListing("<html><body>captcha</body></html>"), /format changed/);
 });
 t("every import source declares its credentials", () => {
   assert.deepStrictEqual(imp.SOURCES.map((s) => s.id).sort(),
-    ["asc_analytics", "asc_reviews", "asc_sales", "ios_ratings", "play_listing", "play_reports", "play_reviews"]);
+    ["asc_analytics", "asc_reviews", "asc_sales", "cf_traffic", "ios_ratings", "play_listing", "play_reports", "play_reviews", "play_vitals"]);
 });
 
 const tAsync = async (name, fn) => { await fn(); n++; console.log("  ✓", name); };
