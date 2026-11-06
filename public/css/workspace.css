@@ -390,7 +390,9 @@
   }
   /* Must out-specify the hide rule above (which has two :not() class checks) */
   .canvas-actions.show-more .action-group:not(.action-group--primary):not(.action-group--more) { display: flex; }
-  .canvas-actions.show-more .action-group--output { margin-left: 0; }
+  /* Six output buttons do not fit one line at 390px: without wrap, Challenge clipped and
+     Community share and Report picture sat off-screen, where they could not be tapped. */
+  .canvas-actions.show-more .action-group--output { margin-left: 0; flex-wrap: wrap; flex-shrink: 1; min-width: 0; }
 
   /* Bigger, kid-friendly touch targets for the always-visible controls */
   .action-btn { min-height: 40px; }
