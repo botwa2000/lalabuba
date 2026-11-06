@@ -295,6 +295,35 @@ t("Send starts disabled and waits for every Turnstile callback", () => {
     assert(/onerror="tsErr\(\)"/.test(html), "a blocked script is a failure too");
   } finally { if (saved === undefined) delete process.env.TURNSTILE_SECRET_KEY; else process.env.TURNSTILE_SECRET_KEY = saved; }
 });
+t("a Turnstile checkbox is a question, not a failure", () => {
+  const saved = process.env.TURNSTILE_SECRET_KEY;
+  process.env.TURNSTILE_SECRET_KEY = "x";
+  let html;
+  try { html = renderLoginPage({ site: ADMIN }); } finally { if (saved === undefined) delete process.env.TURNSTILE_SECRET_KEY; else process.env.TURNSTILE_SECRET_KEY = saved; }
+  assert(html.includes('data-before-interactive-callback="tsAsk"'));
+  const run = () => {
+    const el = { textContent: "", className: "" }, send = { disabled: true }, sb = { window: {}, timers: [] };
+    sb.setTimeout = (fn, ms) => sb.timers.push({ fn, ms });
+    sb.document = { getElementById: (id) => (id === "tstat" ? el : send) };
+    new (require("vm").Script)(html.match(/<script>\s*\(function \(\) \{\s*function set[\s\S]*?<\/script>/)[0].replace(/<\/?script>/g, "")).runInNewContext(sb);
+    return { ...sb.window, el, send, fire: () => sb.timers[0].fn(), ms: sb.timers[0].ms };
+  };
+  const asked = run();
+  asked.tsAsk();
+  asked.fire();
+  assert.strictEqual(asked.el.textContent, "Please tick the box above.", "20 s passing changes nothing");
+  assert.strictEqual(asked.send.disabled, true);
+  asked.tsOk();
+  assert.strictEqual(asked.send.disabled, false, "ticking it enables Send");
+  const silent = run();
+  silent.fire();
+  assert.strictEqual(silent.ms, 20000);
+  assert(/failed/.test(silent.el.textContent), "no answer and no checkbox is still a failure");
+  const gaveUp = run();
+  gaveUp.tsAsk();
+  gaveUp.tsErr();
+  assert(/failed/.test(gaveUp.el.textContent) && gaveUp.send.disabled, "a real error after the checkbox");
+});
 t("local dev without a secret has no widget and an enabled button", () => {
   const saved = process.env.TURNSTILE_SECRET_KEY;
   delete process.env.TURNSTILE_SECRET_KEY;
