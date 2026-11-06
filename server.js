@@ -1263,7 +1263,14 @@ ${buildNav({ lang: 'de', breadcrumbs: [{ href: '/ausmalbilder/', label: 'Ausmalb
   serveHtml(res, html);
 }
 
-const ADMIN_SITE = { name: "Lalabuba Admin", base: "/admin", backHref: "/", backLabel: "← lalabuba.com" };
+const ADMIN_SITE = { name: "Lalabuba Admin", base: "/admin", backHref: "/", backLabel: "← lalabuba.com", limits: adminAuth.limits };
+
+// The address the visitor typed, carried through the code form so the page can
+// keep showing it after a wrong code. Only ever echoed back to that visitor.
+function otpEmail(params) {
+  const email = (params.get("email") || "").trim().slice(0, 254);
+  return email.includes("@") ? email : "";
+}
 
 async function handleAdmin(req, res, p) {
   res.setHeader("X-Robots-Tag", "noindex, nofollow");
@@ -1302,7 +1309,7 @@ async function handleAdmin(req, res, p) {
       const params = await formBody();
       const email = (params.get("email") || "").trim().toLowerCase();
       if (!(await adminAuth.verifyTurnstile(params.get("cf-turnstile-response") || "", ip))) {
-        return page(403, renderLoginPage({ error: true, site: ADMIN_SITE }));
+        return page(403, renderLoginPage({ botCheckFailed: true, site: ADMIN_SITE }));
       }
       // Identical page, cookie and timing for unknown emails — the allowlist can't be probed.
       await adminAuth.recordSend(ip);
@@ -1313,8 +1320,9 @@ async function handleAdmin(req, res, p) {
   }
 
   if (route === "/admin/verify" && req.method === "POST") {
-    if (await adminAuth.isVerifyLimited(ip)) return page(429, renderOtpPage({ rateLimited: true, site: ADMIN_SITE }));
     const params = await formBody();
+    const email = otpEmail(params);
+    if (await adminAuth.isVerifyLimited(ip)) return page(429, renderOtpPage({ email, rateLimited: true, site: ADMIN_SITE }));
     const code = (params.get("code") || "").replace(/\D/g, "").slice(0, 6);
     const tag = adminAuth.validateOtp(code, adminAuth.getOtpCookie(req));
     if (tag) {
@@ -1323,7 +1331,7 @@ async function handleAdmin(req, res, p) {
       return redirect("/admin/stats", [adminAuth.sessionCookieHeader(adminAuth.generateSession(tag), isHttps), adminAuth.clearOtpCookieHeader(), internalCookie]);
     }
     await adminAuth.recordVerifyFail(ip);
-    return page(401, renderOtpPage({ error: true, site: ADMIN_SITE }));
+    return page(401, renderOtpPage({ email, error: true, site: ADMIN_SITE }));
   }
 
   // One-time sign-in link from scripts/admin-link.sh (root on the server only).
@@ -1657,7 +1665,7 @@ const server = http.createServer(async (req, res) => {
         // Turnstile check first (before revealing whether email is valid)
         const turnstileOk = await docsAuth.verifyTurnstile(cfToken, ip);
         if (!turnstileOk) {
-          serveHtmlDoc(403, renderLoginPage({ error: true }));
+          serveHtmlDoc(403, renderLoginPage({ botCheckFailed: true }));
           return;
         }
 
@@ -1672,12 +1680,13 @@ const server = http.createServer(async (req, res) => {
 
     // POST /docs/verify → validate OTP, issue session
     if ((p === "/docs/verify" || p === "/docs/verify/") && req.method === "POST") {
-      if (await docsAuth.isVerifyLimited(ip)) {
-        serveHtmlDoc(429, renderOtpPage({ rateLimited: true }));
-        return;
-      }
       const body      = await readPostBody();
       const params    = new URLSearchParams(body);
+      const email     = otpEmail(params);
+      if (await docsAuth.isVerifyLimited(ip)) {
+        serveHtmlDoc(429, renderOtpPage({ email, rateLimited: true }));
+        return;
+      }
       const code      = (params.get("code") || "").replace(/\D/g, "").slice(0, 6);
       const otpState  = docsAuth.getOtpCookie(req);
 
@@ -1692,7 +1701,7 @@ const server = http.createServer(async (req, res) => {
         res.end();
       } else {
         await docsAuth.recordVerifyFail(ip);
-        serveHtmlDoc(401, renderOtpPage({ error: true }));
+        serveHtmlDoc(401, renderOtpPage({ email, error: true }));
       }
       return;
     }

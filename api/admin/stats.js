@@ -2,9 +2,11 @@
 // /api/admin/stats — data for the confidential /admin/stats dashboard.
 // Auth: admin session cookie (email OTP, lib/admin-auth.js) or X-Admin-Key.
 //
-// GET  ?range=today|7d|30d|90d|day|week|month|ytd|custom[&at=YYYY-MM-DD][&from=…&to=…]
-//      &platform=all|web|ios|android → aggregates (lib/stats.js), people only
-//      (traffic = 'human'); bots / internal / no-interaction visits under health.traffic
+// GET  ?range=today|7d|30d|90d|12m|day|week|month|ytd|custom[&at=YYYY-MM-DD][&from=…&to=…]
+//      &platform=all|web|ios|android&traffic=human|all[&bucket=day|week|month]
+//      → aggregates (lib/stats.js). traffic=human (default) counts people only,
+//      traffic=all counts every row; health.traffic lists every class either way.
+//      Without bucket the period picks one: day ≤ 31 days, week ≤ 120, else month.
 // POST {"action":"import","only":["play_reviews",...]?} → start the store import
 //      in the background (the iOS ratings sweep takes ~10 min); poll GET for
 //      health.imports to see the result.
@@ -32,7 +34,7 @@ module.exports = async function adminStatsHandler(req, res, url) {
   try {
     if (req.method === "GET") {
       const q = (k) => url.searchParams.get(k) || undefined;
-      const stats = await getStats({ range: q("range"), platform: q("platform"), at: q("at"), from: q("from"), to: q("to") });
+      const stats = await getStats({ range: q("range"), platform: q("platform"), at: q("at"), from: q("from"), to: q("to"), traffic: q("traffic"), bucket: q("bucket") });
       return send(res, 200, stats);
     }
     if (req.method === "POST") {

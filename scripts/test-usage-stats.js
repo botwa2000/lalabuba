@@ -175,6 +175,289 @@ t("traffic class: internal / bot / unengaged web / human app", () => {
   assert(usage.EVENTS.has("engage"));
 });
 
+t("store review and test devices are recognised by network, on every platform", () => {
+  const ip = (addr, h = {}) => ({ headers: { "cf-connecting-ip": addr, ...h } });
+  const UA = { "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile/15E148" };
+  assert.strictEqual(usage._baseTraffic(ip("17.5.7.9"), "ios"), "review");
+  assert.strictEqual(usage._baseTraffic(ip("17.5.7.9"), "app"), "review", "old builds too");
+  assert.strictEqual(usage._baseTraffic(ip("17.5.7.9", UA), "web"), "review");
+  assert.strictEqual(usage._baseTraffic(ip("108.177.6.1"), "android"), "test");
+  assert.strictEqual(usage._baseTraffic(ip("2001:4860:1008::1"), "android"), "test", "IPv6 range");
+  assert.strictEqual(usage._baseTraffic(ip("34.68.194.70"), "android"), "test");
+  assert.strictEqual(usage._baseTraffic(ip("18.0.0.1"), "ios"), "human", "next to Apple's /8");
+  assert.strictEqual(usage._baseTraffic(ip("16.255.255.255"), "ios"), "human");
+  assert.strictEqual(usage._baseTraffic(ip("8.8.8.8"), "android"), "human");
+  assert.strictEqual(usage._baseTraffic(ip("2001:4860:4860::8888"), "android"), "human", "Google DNS is not Test Lab");
+  assert.strictEqual(usage._baseTraffic(ip("unknown"), "ios"), "human", "unparsable address");
+  assert.strictEqual(usage._baseTraffic({ headers: {}, socket: { remoteAddress: "::ffff:17.1.2.3" } }, "ios"), "review", "IPv4-mapped socket address");
+});
+t("team and crawlers keep their class on those networks", () => {
+  assert.strictEqual(usage._baseTraffic({ headers: { "cf-connecting-ip": "17.5.7.9", "x-internal": "1" } }, "ios"), "internal");
+  assert.strictEqual(usage._baseTraffic({ headers: { "cf-connecting-ip": "17.5.7.9", "user-agent": "Mozilla/5.0 (compatible; Applebot/0.1)" } }, "web"), "bot");
+});
+t("X-Forwarded-For cannot change the class (lib/client-ip.js is the only source)", () => {
+  assert.strictEqual(usage._baseTraffic({ headers: { "cf-connecting-ip": "8.8.8.8", "x-forwarded-for": "17.5.7.9" } }, "ios"), "human");
+});
+
+console.log("stats windows + buckets");
+const stats = require("../lib/stats");
+t("12 months is a rolling period and an accepted range", () => {
+  assert(stats.RANGES.includes("12m"));
+  const w = rw("12m");
+  assert.strictEqual(w.days, 365);
+  assert.strictEqual(w.to.getTime(), tomorrowMs);
+  assert.strictEqual(w.prevTo.getTime(), w.from.getTime());
+});
+t("default bucket: day to 31 days, week to 120, then month", () => {
+  assert.deepStrictEqual([1, 31, 32, 120, 121, 365].map(stats._defaultBucket), ["day", "day", "week", "week", "month", "month"]);
+});
+t("bucket starts match date_trunc: weeks start on Monday", () => {
+  assert.strictEqual(stats._bucketStart("2026-11-08", "week"), "2026-11-02", "Sunday → its Monday");
+  assert.strictEqual(stats._bucketStart("2026-11-02", "week"), "2026-11-02");
+  assert.strictEqual(stats._bucketStart("2026-11-08", "month"), "2026-11-01");
+  assert.strictEqual(stats._bucketStart("2026-11-08", "day"), "2026-11-08");
+  const w = { from: new Date("2026-10-30T00:00:00Z"), to: new Date("2026-11-03T00:00:00Z") };
+  assert.deepStrictEqual(stats._bucketList(w, "week"), ["2026-10-26", "2026-11-02"]);
+  assert.deepStrictEqual(stats._bucketList(w, "month"), ["2026-10-01", "2026-11-01"]);
+  assert.strictEqual(stats._bucketList(w, "day").length, 4);
+});
+t("usage before tracking is unknown, store downloads stay", () => {
+  const row = { day: "2026-10-26", users: 0, web: 0, ios: 0, android: 0, newUsers: 0, pageViews: 0, screenViews: 0, drawings: 0, failed: 0, completed: 0, downloads: 7 };
+  const since = "2026-10-30T12:00:00.000Z";
+  const week = stats._markTracked(row, since, "week"), day = stats._markTracked(row, since, "day");
+  assert.strictEqual(week.tracked, true, "the week tracking started in counts");
+  assert.strictEqual(week.users, 0);
+  assert.strictEqual(day.tracked, false);
+  assert.strictEqual(day.users, null);
+  assert.strictEqual(day.drawings, null);
+  assert.strictEqual(day.downloads, 7, "downloads are not tracked by us");
+  assert.strictEqual(stats._markTracked(row, null, "day").tracked, false, "nothing recorded yet");
+});
+t("averages divide by tracked days only", () => {
+  const from = new Date("2026-10-01T00:00:00Z"), to = new Date("2026-11-01T00:00:00Z");
+  assert.strictEqual(stats._trackedDays(from, to, null), 31);
+  assert.strictEqual(stats._trackedDays(from, to, "2026-09-01T00:00:00.000Z"), 31);
+  assert.strictEqual(stats._trackedDays(from, to, "2026-10-25T09:00:00.000Z"), 7);
+  assert.strictEqual(stats._trackedDays(from, to, "2026-12-01T00:00:00.000Z"), 1, "never zero");
+});
+t("the traffic filter is one of two constants", () => {
+  assert.strictEqual(stats._trafficFilter("human"), "traffic = 'human'");
+  assert.strictEqual(stats._trafficFilter("all"), "TRUE");
+  assert.strictEqual(stats._trafficFilter("x' OR 1=1 --"), "traffic = 'human'");
+});
+
+console.log("login pages");
+const { renderLoginPage, renderOtpPage, waitLabel } = require("../lib/render-docs-page");
+const ADMIN = { name: "Lalabuba Admin", base: "/admin", backHref: "/", backLabel: "←", limits: adminAuth.limits };
+t("each scope shows its own code lifetime", () => {
+  assert.strictEqual(adminAuth.limits.otpTtlSec, 600);
+  assert.strictEqual(docsAuth.limits.otpTtlSec, 900);
+  assert(renderLoginPage({ site: ADMIN }).includes("valid 10 min"));
+  assert(renderLoginPage().includes("valid 15 min"));
+});
+t("waits follow the real windows: send 1 hour, wrong codes 15 minutes", () => {
+  assert.strictEqual(waitLabel(3600), "1 hour");
+  assert.strictEqual(waitLabel(7200), "2 hours");
+  assert.strictEqual(waitLabel(900), "15 minutes");
+  assert.strictEqual(waitLabel(60), "1 minute");
+  for (const site of [ADMIN, undefined]) {
+    assert(renderLoginPage({ rateLimited: true, site }).includes("Please wait 1 hour and try again."));
+    assert(renderOtpPage({ rateLimited: true, site }).includes("Please wait 15 minutes."));
+  }
+});
+t("a failed bot check never looks like an allowlist answer", () => {
+  for (const site of [ADMIN, undefined]) {
+    const html = renderLoginPage({ botCheckFailed: true, site });
+    assert(html.includes("Bot check failed. Please try again."));
+    assert(!/authorised|not allowed/i.test(html));
+  }
+});
+t("wrong code keeps the address, escaped, in the text and a hidden field", () => {
+  const html = renderOtpPage({ email: 'a"><script>x@y.test', error: true, site: ADMIN });
+  assert(html.includes('<input type="hidden" name="email" value="a&quot;&gt;&lt;script&gt;x@y.test">'));
+  assert(html.includes("<strong>a&quot;&gt;&lt;script&gt;x@y.test</strong>"));
+  assert(!html.includes('a"><script>x'));
+  assert(renderOtpPage({ site: ADMIN }).includes("<br>your email</p>"), "no address → no blank");
+});
+t("verify routes read the address before answering 401 and 429", () => {
+  const src = require("fs").readFileSync(require("path").join(__dirname, "../server.js"), "utf8");
+  assert.strictEqual((src.match(/renderOtpPage\(\{ email, (error|rateLimited): true/g) || []).length, 4, "admin + docs, 401 + 429");
+});
+t("Send starts disabled and waits for every Turnstile callback", () => {
+  const saved = process.env.TURNSTILE_SECRET_KEY;
+  process.env.TURNSTILE_SECRET_KEY = "x";
+  try {
+    const html = renderLoginPage({ site: ADMIN });
+    assert(/<button type="submit" id="send" disabled>/.test(html));
+    for (const a of ['data-callback="tsOk"', 'data-error-callback="tsErr"', 'data-expired-callback="tsWait"', 'data-timeout-callback="tsErr"']) assert(html.includes(a), a);
+    assert(html.includes("Checking with Cloudflare…") && html.includes("✓ Verified by Cloudflare") && html.includes("20000"));
+    assert(html.indexOf("window.tsOk") < html.indexOf("turnstile/v0/api.js"), "callbacks exist before the script loads");
+    assert(/onerror="tsErr\(\)"/.test(html), "a blocked script is a failure too");
+  } finally { if (saved === undefined) delete process.env.TURNSTILE_SECRET_KEY; else process.env.TURNSTILE_SECRET_KEY = saved; }
+});
+t("local dev without a secret has no widget and an enabled button", () => {
+  const saved = process.env.TURNSTILE_SECRET_KEY;
+  delete process.env.TURNSTILE_SECRET_KEY;
+  try {
+    const html = renderLoginPage({ site: ADMIN });
+    assert(!html.includes('class="cf-turnstile"') && /<button type="submit" id="send">/.test(html));
+  } finally { if (saved !== undefined) process.env.TURNSTILE_SECRET_KEY = saved; }
+});
+t("the code field takes pasted spaces and submits on the sixth digit", () => {
+  const html = renderOtpPage({ email: "a@b.test", site: ADMIN });
+  assert(/maxlength="16"/.test(html), "maxlength 6 would cut off a pasted '123 456'");
+  const handlers = {}, form = { submitted: 0, submit() { this.submitted++; } };
+  const code = { value: "", addEventListener: (ev, fn) => { handlers[ev] = fn; } };
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+  new (require("vm").Script)(script).runInNewContext({
+    document: { getElementById: (id) => (id === "code" ? code : form) }, window: { addEventListener() {} },
+  });
+  const type = (v) => { code.value = v; handlers.input(); };
+  type("12345");
+  assert.strictEqual(form.submitted, 0, "five digits wait");
+  type("123 456");
+  assert.strictEqual(code.value, "123456");
+  assert.strictEqual(form.submitted, 1);
+  type("123456");
+  assert.strictEqual(form.submitted, 1, "submits once");
+  type("12");
+  type(" 65 43 21 ");
+  assert.strictEqual(code.value, "654321");
+  assert.strictEqual(form.submitted, 2, "a corrected code submits again");
+});
+
+console.log("dashboard view");
+const V = require("../lib/admin-stats-view").viewHelpers();
+const count = (s, re) => (s.match(re) || []).length;
+const tips = (svg) => [...svg.matchAll(/data-tip="([^"]*)"/g)].map((m) => m[1].replace(/&#10;/g, "\n").replace(/&#39;/g, "'"));
+const pts = (n) => Array.from({ length: n }, (_, i) => ({ day: `2026-10-${String((i % 28) + 1).padStart(2, "0")}`, web: 3, ios: 2, _total: 4 }));
+t("the page inlines the helpers and its script parses", () => {
+  const html = require("../lib/render-admin-stats").renderAdminStatsPage();
+  assert(html.includes("function viewHelpers()"));
+  new (require("vm").Script)(html.match(/<script>([\s\S]*)<\/script>/)[1]);
+});
+t("platform colours: validated values, gray only for the old-build app", () => {
+  const html = require("../lib/render-admin-stats").renderAdminStatsPage();
+  for (const c of ["--web:#7c3aed", "--ios:#0a9490", "--android:#d97706", "--web:#8d6ef2", "--ios:#17a394", "--android:#c4851f"]) assert(html.includes(c), c);
+  assert(!/--ios:#2F80ED|--android:#1E9E5A|--ios:#5aa2ff/.test(html));
+});
+t("one shared tooltip, delegated, textContent only", () => {
+  const html = require("../lib/render-admin-stats").renderAdminStatsPage();
+  assert.strictEqual(count(html, /id="tip"/g), 1);
+  assert(html.includes('addEventListener("pointermove", showTip)') && html.includes('addEventListener("pointerdown", showTip)'));
+  assert(html.includes('tip.textContent = t.getAttribute("data-tip")'));
+  assert(!/tip\.innerHTML/.test(html));
+});
+t("stacked bars: one full-height hit column per period, listing each series + total", () => {
+  const svg = V.stacked(pts(5), ["web", "ios"], "day");
+  assert.strictEqual(count(svg, /class="hit"/g), 5);
+  assert.strictEqual(count(svg, /<title>/g), 0);
+  assert(/class="hit"[^>]*height="132"/.test(svg), "as tall as the plot");
+  assert.strictEqual(tips(svg)[0], "Thu 2026-10-01\nWeb: 3\niOS: 2\nTotal: 4", "the distinct total, not the bars' sum");
+  assert.strictEqual(tips(V.stacked([{ day: "2026-10-01", web: 3, ios: 2 }], ["web", "ios"], "day"))[0].split("\n").pop(), "Total: 5");
+  assert.strictEqual(tips(V.stacked([{ day: "2026-10-01", web: 3 }], ["web"], "day"))[0], "Thu 2026-10-01\nWeb: 3", "one series needs no total");
+  assert.strictEqual(tips(V.stacked([{ day: "2026-10-01", tracked: false }], ["web"], "day"))[0], "Thu 2026-10-01\nNot tracked yet");
+});
+t("line charts: hit columns, each series, total only where a total means something", () => {
+  const rows = [{ day: "2026-10-01", a: 2, b: 3 }, { day: "2026-10-02", a: 4, b: 5 }];
+  const s = [{ key: "a", color: "red", name: "A" }, { key: "b", color: "blue", name: "B" }];
+  assert.strictEqual(tips(V.lineChart(rows, s))[0], "2026-10-01\nA: 2\nB: 3");
+  assert.strictEqual(tips(V.lineChart(rows, s, { total: true }))[1], "2026-10-02\nA: 4\nB: 5\nTotal: 9");
+  assert.strictEqual(count(V.lineChart(rows, s), /<title>/g), 0);
+});
+t("tooltip text cannot break out of the attribute", () => {
+  const svg = V.lineChart([{ day: "2026-10-01", a: 1 }], [{ key: "a", color: "red", name: '"><script>' }]);
+  assert(!svg.includes("<script>"));
+});
+t("y gridlines are whole numbers", () => {
+  assert.deepStrictEqual(V.wholeTicks(0, 5), [0, 3, 6]);
+  assert.deepStrictEqual(V.wholeTicks(3, 4), [3, 4]);
+  assert.deepStrictEqual(V.wholeTicks(5, 5), [4, 5, 6]);
+  assert.deepStrictEqual(V.wholeTicks(0, 0), [0, 1]);
+  assert.deepStrictEqual(V.wholeTicks(1.2, 7.8), [1, 5, 9]);
+  for (const [a, b] of [[0, 1], [0, 3], [2, 9], [10, 1234], [7, 8]]) {
+    const ticks = V.wholeTicks(a, b);
+    assert(ticks.every(Number.isInteger) && ticks[0] <= a && ticks[ticks.length - 1] >= b, `${a}..${b}`);
+  }
+  const axis = (svg) => [...svg.matchAll(/text-anchor="end">([^<]+)</g)].map((m) => m[1]);
+  assert.deepStrictEqual(axis(V.stacked([{ day: "2026-10-01", web: 3 }], ["web"], "day")), ["0", "2", "4"]);
+  assert.deepStrictEqual(axis(V.stacked([{ day: "2026-10-01", web: 1 }], ["web"], "day")), ["0", "1"]);
+  assert.deepStrictEqual(axis(V.lineChart([{ day: "2026-10-01", a: 3 }, { day: "2026-10-02", a: 4 }], [{ key: "a", color: "red", name: "A" }])), ["3", "4"]);
+});
+t("the top y label is not clipped by the chart edge", () => {
+  const lowest = (svg) => Math.min(...[...svg.matchAll(/<text x="[\d.]+" y="([\d.]+)" text-anchor="end">/g)].map((m) => Number(m[1])));
+  assert(lowest(V.stacked(pts(3), ["web"], "day")) >= 10, "font-size 10 needs a baseline at y ≥ 10");
+  assert(lowest(V.lineChart(pts(3), [{ key: "web", color: "red", name: "W" }])) >= 10);
+});
+t("fractional charts keep their format; a flat line stays in range", () => {
+  const rate = (v) => (v * 100).toFixed(2) + "%";
+  const svg = V.lineChart([{ day: "2026-10-01", a: 0.02 }, { day: "2026-10-02", a: 0.02 }], [{ key: "a", color: "red", name: "A" }], { fmtY: rate });
+  assert(svg.includes("2.00%") && !svg.includes("102"));
+});
+t("stacked segments have a 1px surface gap", () => {
+  assert(/<rect x="[^"]+" y="[^"]+" width="[^"]+" height="[^"]+" fill="var\(--web\)" rx="1.5" stroke="var\(--surface\)" stroke-width="1"\/>/.test(V.stacked(pts(2), ["web"], "day")));
+});
+t("no dots above 31 points", () => {
+  const rows = (n) => Array.from({ length: n }, (_, i) => ({ day: "2026-10-01", a: i }));
+  const s = [{ key: "a", color: "red", name: "A" }];
+  assert.strictEqual(count(V.lineChart(rows(31), s), /<circle/g), 31);
+  assert.strictEqual(count(V.lineChart(rows(32), s), /<circle/g), 0);
+});
+t("the last x label stays inside the chart", () => {
+  const charWidth = 6, W = 560;
+  const last = (svg) => Math.max(...[...svg.matchAll(/<text x="([\d.]+)" y="146" text-anchor="middle">([^<]+)</g)].map((m) => Number(m[1]) + (m[2].length * charWidth) / 2));
+  for (const n of [2, 5, 8, 9, 17, 29, 31]) {
+    assert(last(V.stacked(pts(n), ["web"], "day")) <= W, `stacked ${n}`);
+    assert(last(V.lineChart(pts(n), [{ key: "web", color: "red", name: "W" }])) <= W, `line ${n}`);
+  }
+});
+t("bucket labels", () => {
+  assert.strictEqual(V.periodLabel("2026-11-07", "day"), "Sat 2026-11-07");
+  assert.strictEqual(V.periodLabel("2026-11-02", "week"), "Week of 2026-11-02");
+  assert.strictEqual(V.periodLabel("2026-11-01", "month"), "Nov 2026");
+  assert(V.stacked([{ day: "2026-11-01", web: 1 }], ["web"], "month").includes(">Nov<"));
+});
+t("no delta against a period before tracking", () => {
+  assert.strictEqual(V.delta(5, 0, false), "");
+  assert.strictEqual(V.delta(5, 2, false), "");
+  assert(V.delta(5, 0, true).includes("new"));
+  assert(V.delta(4, 2, true).includes("100%"));
+  assert.strictEqual(V.delta(0, 0, true), "");
+});
+t("platform dots are named, never colour-only", () => {
+  assert.strictEqual(V.dot("ios"), '<i class="dot" title="iOS" role="img" aria-label="iOS" style="background:var(--ios)"></i>');
+  assert(V.dot("app").includes('aria-label="App (old build)"') && V.dot("app").includes("var(--app)"));
+  assert(V.dot("<x>").includes("&lt;x&gt;"));
+  assert(V.dot(null).includes('aria-label="App"'));
+});
+t("store-feed hints follow health.imports", () => {
+  const f = V.feedStates([
+    { source: "asc_reviews", ok: true, detail: "12 reviews" },
+    { source: "play_reviews", ok: false, detail: "not configured — needs PLAY_SERVICE_ACCOUNT_JSON" },
+    { source: "cf_traffic", ok: false, detail: "HTTP 500" },
+  ]);
+  assert.deepStrictEqual(f, { asc_reviews: "ok", play_reviews: "missing", cf_traffic: "failing" });
+  assert(!V.iosHistogramNote(f).includes("needs"), "working feed: no credential hint");
+  assert(V.iosHistogramNote({}).includes("needs the App Store Connect key"), "never ran");
+  assert(V.iosHistogramNote({ asc_reviews: "failing" }).includes("failed"));
+  const both = V.noReviewsNote(f, ["ios", "android"]);
+  assert(!both.includes("App Store Connect") && both.includes("Play service account"));
+  assert(!V.noReviewsNote(f, ["ios"]).includes("needs"));
+  assert(!V.noStoreSourcesNote({ asc_analytics: "ok", play_reports: "ok" }).includes("needs"));
+  assert(V.noEdgeNote({ cf_traffic: "ok" }).includes("connected ✓"));
+  assert(V.noEdgeNote({}).includes("CF_ANALYTICS_TOKEN"));
+  assert(!V.noEdgeNote(f).includes("Not connected"));
+  assert(V.noVitalsNote({ play_vitals: "ok" }).includes("connected ✓"));
+  assert(V.noVitalsNote({}).includes("Reporting API"));
+});
+t("load() reports the status of a failed request and refreshes politely", () => {
+  const html = require("../lib/render-admin-stats").renderAdminStatsPage();
+  assert(html.includes('if (!r.ok) throw new Error("HTTP " + r.status);'));
+  assert(/\$\("meta"\)\.textContent = "";/.test(html));
+  assert(html.includes("60 * 1000") && !html.includes("5 * 60 * 1000"));
+  assert(html.includes("/^(INPUT|SELECT)$/.test(a.tagName)"));
+});
+
 const tAsync = async (name, fn) => { await fn(); n++; console.log("  ✓", name); };
 (async () => {
 console.log("otp-auth (admin vs docs)");
