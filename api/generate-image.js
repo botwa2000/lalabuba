@@ -6,7 +6,8 @@ const authStats = require("../lib/auth-stats");
 const usage = require("../lib/usage");
 const { verifyAppCheckToken } = require("../lib/app-check");
 const { getSecurityConfig } = require("../lib/security-config");
-const { sanitizeSubject, isSafeSubject, isAdminBlockedSubject } = require("../lib/content-safety");
+const { sanitizeSubject, isAdminBlockedSubject } = require("../lib/content-safety");
+const moderation = require("../lib/moderation");
 const db = require("../lib/db");
 const { buildPrompt, generateImage } = require("../lib/image-providers");
 const { translateToEnglish } = require("../lib/translate");
@@ -133,6 +134,10 @@ async function authenticate(req, body, ip, sec) {
   return { ok: false, status: 403, error: "Request blocked — please update the app and try again." };
 }
 
+const UNSAFE_MESSAGE = "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…";
+const UNAVAILABLE_MESSAGE = "Our safety helper is taking a nap — please try again in a moment! 🎨";
+const STRUCK_OUT_MESSAGE = "Let's take a little break — please try again later with a fun topic for kids!";
+
 const ALLOWED_ORIGINS = [
   "https://lalabuba.com",
   "https://www.lalabuba.com",
@@ -198,9 +203,18 @@ module.exports = async (req, res) => {
     log.subjectRaw = subject;
     log.difficulty = difficulty;
 
-    if (!isSafeSubject(subject)) {
-      usage.recordGeneration(req, { ...log, outcome: "unsafe" });
-      res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
+    // Refuses, records the refusal and counts it towards the repeat-attempt limit.
+    const refuse = (stage, verdict, outcome = "unsafe") => {
+      moderation.logBlock(req, { stage, verdict, subject, subjectEn: log.subjectEn });
+      moderation.addStrike(req, ip, sec.moderation).catch((e) => console.error("[moderation] strike failed:", e.message));
+      usage.recordGeneration(req, { ...log, outcome, latencyMs: Date.now() - t0 });
+      console.warn(`[moderation] blocked stage=${stage} category=${verdict.category} model=${verdict.model || "-"}`);
+      res.status(400).json({ error: UNSAFE_MESSAGE });
+    };
+
+    if (await moderation.isStruckOut(req, ip, sec.moderation)) {
+      usage.recordGeneration(req, { ...log, outcome: "rate_limited" });
+      res.status(429).json({ error: STRUCK_OUT_MESSAGE });
       return;
     }
 
@@ -208,8 +222,17 @@ module.exports = async (req, res) => {
     // (api/admin/content-reports.js). Config is cached in-process for 60s.
     const adminBlocked = await loadAdminBlockedSubjects();
     if (isAdminBlockedSubject(subject, adminBlocked)) {
-      usage.recordGeneration(req, { ...log, outcome: "unsafe" });
-      res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
+      refuse("prompt", { category: "admin" });
+      return;
+    }
+
+    // Layer 1: the child's ORIGINAL words. This must run before translation, which
+    // can shorten a request (2026-11-03: "remove the shirt from the women revealing
+    // nothing underneath" reached the image model as "women revealing nothing
+    // underneath").
+    const promptVerdict = await moderation.checkPrompt(subject);
+    if (!promptVerdict.allow) {
+      refuse("prompt", promptVerdict);
       return;
     }
 
@@ -226,15 +249,18 @@ module.exports = async (req, res) => {
 
     const englishSubject = await translateToEnglish(subject);
     log.subjectEn = englishSubject;
-    // Re-run the kid-safety check on the TRANSLATED English too. The first check
-    // runs on the raw subject, but a banned concept written in a language/spelling
-    // the blocklist doesn't cover could pass and only become obvious once
-    // translated to English — this closes that bypass before it reaches the model.
-    if (!isSafeSubject(englishSubject) || isAdminBlockedSubject(englishSubject, adminBlocked)) {
-      usage.recordGeneration(req, { ...log, outcome: "unsafe" });
-      res.status(400).json({ error: "Please choose a fun topic for kids — animals, vehicles, fantasy creatures, food…" });
+    // Layer 2: the exact English the image model will see, with a second opinion
+    // from an independent vendor's classifier.
+    if (isAdminBlockedSubject(englishSubject, adminBlocked)) {
+      refuse("translated", { category: "admin" });
       return;
     }
+    const translatedVerdict = await moderation.checkTranslated(englishSubject);
+    if (!translatedVerdict.allow) {
+      refuse("translated", translatedVerdict);
+      return;
+    }
+
     const prompt = buildPrompt(englishSubject, difficulty, size, artStyle);
     const generated = await generateImage(prompt, width, height, seed, {
       provider: IMAGE_PROVIDER,
@@ -242,6 +268,14 @@ module.exports = async (req, res) => {
       hfModel: HF_MODEL,
       difficulty,
     });
+
+    // Layer 3: the finished picture. Nothing is stored or returned before this
+    // passes, and a blocked picture is discarded here, never written anywhere.
+    const imageVerdict = await moderation.checkImage(generated.buffer);
+    if (!imageVerdict.allow) {
+      refuse("image", imageVerdict, "unsafe_image");
+      return;
+    }
 
     // Save generated image locally for sharing; clean up expired files asynchronously.
     let imageUrl = null;
@@ -270,6 +304,15 @@ module.exports = async (req, res) => {
     require("./health-deep").noteGeneration(true);
     usage.recordGeneration(req, { ...log, outcome: "ok", provider: generated.provider, latencyMs: Date.now() - t0, imagePath: imageUrl });
   } catch (error) {
+    // No verdict means no picture. This is a safety outage, not a provider failure,
+    // so it does not count against provider health.
+    if (error instanceof moderation.ModerationUnavailableError) {
+      authStats.record("moderation_unavailable");
+      usage.recordGeneration(req, { ...log, outcome: "moderation_unavailable", latencyMs: Date.now() - t0 });
+      console.error("[moderation] FAIL CLOSED:", error.message);
+      res.status(503).json({ error: UNAVAILABLE_MESSAGE });
+      return;
+    }
     require("./health-deep").noteGeneration(false);
     usage.recordGeneration(req, { ...log, outcome: "fail", latencyMs: Date.now() - t0 });
     // Log the real error server-side; never echo provider URLs, status bodies,

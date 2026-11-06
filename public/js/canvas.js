@@ -1048,6 +1048,8 @@ export async function renderGeneratedImage(imageBase64) {
   if (shareButton) shareButton.disabled = false;
   const shareArtworkBtn = document.getElementById('share-artwork-btn');
   if (shareArtworkBtn) shareArtworkBtn.disabled = false;
+  const reportPictureBtn = document.getElementById('report-picture-btn');
+  if (reportPictureBtn) reportPictureBtn.disabled = false;
   state.isFreeMode = false;
   const canvasNums = document.getElementById('canvas-numbers-btn');
   if (canvasNums) {

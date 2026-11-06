@@ -219,6 +219,8 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
 
     const source = state.generationSource || 'custom';
     state.generationSource = null;
+    state.lastSubject = subject; // what a report refers to
+    state.lastSource = source;
 
     // Hard timeout — prevents an infinite hang on slow connections.
     // Novel subjects take ~20-30s on the server (Novita); Pollinations cache

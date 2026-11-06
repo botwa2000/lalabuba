@@ -15,6 +15,8 @@ export const state = {
   colorCount: 12,
   lastSeed: null,
   lastImageUrl: null,
+  lastSubject: null,
+  lastSource: null,
   coloringStartTime: null,
   selectedPaletteIndex: 0,
   selectedSize: 'xxl',

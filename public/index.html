@@ -143,22 +143,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/tokens.css?v=357" />
-  <link rel="stylesheet" href="/css/header.css?v=357" />
-  <link rel="stylesheet" href="/css/hero.css?v=357" />
-  <link rel="stylesheet" href="/css/generator.css?v=357" />
-  <link rel="stylesheet" href="/css/layout.css?v=357" />
-  <link rel="stylesheet" href="/css/workspace.css?v=357" />
-  <link rel="stylesheet" href="/css/palette.css?v=357" />
-  <link rel="stylesheet" href="/css/modals.css?v=357" />
-  <link rel="stylesheet" href="/css/footer.css?v=357" />
-  <link rel="stylesheet" href="/css/print.css?v=357" />
-  <link rel="stylesheet" href="/css/cookies.css?v=357" />
-  <link rel="stylesheet" href="/css/onboarding.css?v=357" />
-  <link rel="stylesheet" href="/css/community.css?v=357" />
-  <link rel="stylesheet" href="/css/account.css?v=357" />
-  <script src="/js/cookies.js?v=357"></script>
-  <script src="/js/t.js?v=357" defer></script>
+  <link rel="stylesheet" href="/css/tokens.css?v=358" />
+  <link rel="stylesheet" href="/css/header.css?v=358" />
+  <link rel="stylesheet" href="/css/hero.css?v=358" />
+  <link rel="stylesheet" href="/css/generator.css?v=358" />
+  <link rel="stylesheet" href="/css/layout.css?v=358" />
+  <link rel="stylesheet" href="/css/workspace.css?v=358" />
+  <link rel="stylesheet" href="/css/palette.css?v=358" />
+  <link rel="stylesheet" href="/css/modals.css?v=358" />
+  <link rel="stylesheet" href="/css/footer.css?v=358" />
+  <link rel="stylesheet" href="/css/print.css?v=358" />
+  <link rel="stylesheet" href="/css/cookies.css?v=358" />
+  <link rel="stylesheet" href="/css/onboarding.css?v=358" />
+  <link rel="stylesheet" href="/css/community.css?v=358" />
+  <link rel="stylesheet" href="/css/account.css?v=358" />
+  <script src="/js/cookies.js?v=358"></script>
+  <script src="/js/t.js?v=358" defer></script>
 </head>
 <body>
   <div class="app app-hero">
@@ -516,6 +516,7 @@
               <button id="share-artwork-btn" type="button" disabled class="action-btn" data-i18n="shareArtBtn">🖼️ Share art</button>
               <button id="share-button"      type="button" disabled class="action-btn share-action-btn" data-i18n="shareBtn">🏆 Challenge!</button>
               <button id="community-share-btn" type="button" disabled class="action-btn action-btn--community" data-i18n="communityShareBtn">🌟 Share</button>
+              <button id="report-picture-btn" type="button" disabled class="action-btn" data-i18n="reportPictureBtn">🚩 Report picture</button>
             </div>
             <!-- Mobile-only: collapses the secondary groups above behind one tap -->
             <div class="action-group action-group--more">
@@ -712,6 +713,20 @@
     </div>
   </div>
 
+  <div id="report-modal" class="share-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="report-modal-title">
+    <div class="share-card">
+      <div class="share-header">
+        <h3 id="report-modal-title" data-i18n="reportPictureTitle">Something wrong with this picture?</h3>
+        <button id="close-report-modal" class="share-close" data-i18n-aria="cancel" aria-label="Cancel">✕</button>
+      </div>
+      <p class="share-desc" data-i18n="reportPictureBody">Tell us and a grown-up at Lalabuba will check it. Pictures are made by a computer, so sometimes they come out wrong.</p>
+      <button type="button" class="report-reason" data-reason="scary"><span aria-hidden="true">😱</span> <span data-i18n="reportReasonScary">Too scary</span></button>
+      <button type="button" class="report-reason" data-reason="inappropriate"><span aria-hidden="true">🙈</span> <span data-i18n="reportReasonInappropriate">Not OK for kids</span></button>
+      <button type="button" class="report-reason" data-reason="wrong"><span aria-hidden="true">🤔</span> <span data-i18n="reportReasonWrong">Doesn't look like my idea</span></button>
+      <button type="button" class="report-reason" data-reason="other"><span aria-hidden="true">✋</span> <span data-i18n="reportReasonOther">Something else</span></button>
+    </div>
+  </div>
+
   <div id="share-modal" class="share-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="share-modal-title">
     <div class="share-card">
       <div class="share-header">
@@ -900,8 +915,8 @@
 
   <!-- Safety net: if the main module throws before it can hide the splash screen,
        hide it here so the app never appears permanently frozen on native. -->
-  <script type="module" src="/js/main.js?v=357"></script>
-  <script type="module" src="/js/community.js?v=357"></script>
+  <script type="module" src="/js/main.js?v=358"></script>
+  <script type="module" src="/js/community.js?v=358"></script>
 
   <!-- Family members modal -->
   <div id="family-modal" class="family-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="family-modal-title">
@@ -1010,7 +1025,7 @@
   <!-- Account modal (content rendered by account.js) -->
   <div id="account-modal" role="dialog" aria-modal="true" aria-label="Account" hidden></div>
 
-  <script type="module" src="/js/account.js?v=357"></script>
+  <script type="module" src="/js/account.js?v=358"></script>
 </body>
 </html>
 

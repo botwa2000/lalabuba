@@ -381,3 +381,12 @@ These have broken in the past — test explicitly after any related change:
 
 See `ANDROID_BETA_CHANGELOG.md` for issue tracking.
 Items to track per tester session: generation success rate, fill accuracy, crash reports.
+
+---
+
+## Child-safety moderation (lib/moderation.js)
+
+- 🔴 `node scripts/test-moderation.js`: fail-closed, three layers, nothing stored on refusal, triage, repeat attempts (part of `npm test`).
+- 🔴 After changing a policy text or a model, run `scripts/test-moderation-live.js` in the app container. Targets: every unsafe phrase blocked, at most 2% of innocent subjects refused, on both corpora. A phrase used to tune the policy moves out of `safety-corpus-holdout.json`.
+- 🔴 Web: 🚩 Report picture opens the sheet, a reason sends it, and the report appears under Safety in `/admin/stats`. "Picture is fine" and "Remove and block subject" both close it.
+- Never generate sexual imagery to test the picture check, and never any imagery of minors. Use stored evidence and non-sexual positives.

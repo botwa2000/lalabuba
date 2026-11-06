@@ -23,6 +23,9 @@ not been declared — it is now. Typed drawing subjects are now kept 30 days.
 | Grown-ups' feedback: 1–5 ★ + optional comment (Settings → Send feedback, behind parental gate) | our API → team inbox (Brevo, processor) | 13 months | app functionality (support), analytics | No | No |
 | Crash reports | Firebase Crashlytics (Google, processor) | 90 days | app functionality (fix crashes) | No | No |
 | App Check token (Play Integrity / App Attest) | our API | not stored | security | No | No |
+| Refused subjects (safety filter: subject, category, install UUID) | our API → AI classifiers on the same provider as generation (processor) | 30 days | app functionality (child safety) | No | No |
+| Reported pictures (generated picture + preset reason, no free text) | our API | until reviewed | app functionality (child safety) | No | No |
+| Pictures shared to the community gallery | our API → AI classifiers (processor), then published | until the artwork expires or is deleted | app functionality | No | No |
 | Saved artwork, preferences | on device only | — | — | — | — |
 
 No account is required, no advertising ID, no ads, no IAP, no precise location,

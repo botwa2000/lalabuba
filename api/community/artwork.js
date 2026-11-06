@@ -3,7 +3,8 @@ const fs   = require("fs");
 const path = require("path");
 const db   = require("../../lib/db");
 const auth = require("../../lib/community-auth");
-const { sanitizeSubject, isSafeSubject } = require("../../lib/content-safety");
+const { sanitizeSubject } = require("../../lib/content-safety");
+const moderation = require("../../lib/moderation");
 
 const gallery = require("../../lib/gallery");
 
@@ -182,9 +183,6 @@ async function handleUpload(req, res, ip, uuid) {
 
   const rawSubject = typeof body.subject === "string" ? body.subject.slice(0, 200) : "";
   const subject    = rawSubject ? sanitizeSubject(rawSubject) : null;
-  if (subject && !isSafeSubject(subject)) {
-    return res.status(400).json({ error: "Subject contains disallowed content." });
-  }
   const difficulty = typeof body.difficulty === "string" && VALID_DIFFS.has(body.difficulty.toLowerCase())
     ? body.difficulty.toLowerCase() : null;
   let seed = null;
@@ -196,6 +194,25 @@ async function handleUpload(req, res, ip, uuid) {
     imageResult = await auth.validateImageData(body.imageData);
   } catch (e) {
     return res.status(400).json({ error: e.message });
+  }
+
+  // Shared with other children: the subject and the picture pass the same checks as
+  // a generated drawing before anything is stored. No verdict means no share.
+  try {
+    const verdict = subject ? await moderation.checkPrompt(subject) : { allow: true };
+    if (!verdict.allow) {
+      moderation.logBlock(req, { stage: "upload", verdict, subject });
+      return res.status(400).json({ error: "Subject contains disallowed content." });
+    }
+    const imageVerdict = await moderation.checkImage(imageResult.buffer);
+    if (!imageVerdict.allow) {
+      moderation.logBlock(req, { stage: "upload", verdict: imageVerdict, subject });
+      return res.status(400).json({ error: "This picture can't be shared.", code: "CONTENT_REFUSED" });
+    }
+  } catch (err) {
+    if (!(err instanceof moderation.ModerationUnavailableError)) throw err;
+    console.error("[moderation] FAIL CLOSED (upload):", err.message);
+    return res.status(503).json({ error: "Sharing is resting for a moment \u2014 please try again soon." });
   }
 
   const imagePath  = auth.saveUploadedImage(imageResult.buffer, imageResult.ext);

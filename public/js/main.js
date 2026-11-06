@@ -1,6 +1,6 @@
 import { state, DEBUG } from './state.js';
 import { PALETTES, EXAMPLE_SUGGESTIONS, randomCardSubject, getDailyChallenge, getTranslatedDailyWord, getTranslatedSubject, getSemanticPaletteOrder } from './data.js';
-import { sanitizeSubject, isSafeSubject } from './data.js';
+import { sanitizeSubject } from './data.js';
 import { CRAYON_PACKS, packById, isPackUnlocked, unlockedPaletteIds, packsUnlockedAt } from './data.js';
 import { saveArtwork, initGalleryHandlers, openGalleryModal } from './gallery.js';
 import { recordCompletion, recordShare, recordSave, recordChallengeCreated, getProgress, isExtremeUnlocked } from './progress.js';
@@ -28,6 +28,7 @@ import { generatePage, requestGeneratedImage } from './generate.js';
 import { initDrawingTool, setPaintEndCallback, setStrokeEndCallback, updateDrawCanvasMode, creditDrawPenSticker } from './drawing.js';
 import { numberedCapFor, pickMeaningfulTargets, freeComplete, isCovered } from './completion-core.js';
 import { initShareHandlers, loadFromShare } from './share.js';
+import { initReportPicture } from './report.js';
 import { initZoom, getCanvasCoords, isPanMode } from './zoom.js';
 import { initOnboarding } from './onboarding.js';
 import { getDrawingConfig } from './config.js';
@@ -466,11 +467,6 @@ form.addEventListener("submit", async (event) => {
   const subject = pendingEnglish ?? sanitizeSubject(subjectInput.value);
   if (!subject) {
     setStatus(t('typeFirst'), true);
-    return;
-  }
-
-  if (!isSafeSubject(subject)) {
-    setStatus(t('unsafeSubject'), true);
     return;
   }
 
@@ -1258,6 +1254,7 @@ document.addEventListener('click', (e) => {
 
 // ─── Share handlers ───────────────────────────────────────────────────────────
 initShareHandlers();
+initReportPicture();
 
 // ─── Settings chips (A2) ──────────────────────────────────────────────────────
 const PALETTE_CYCLE = ['classic', 'pastel', 'nature'];

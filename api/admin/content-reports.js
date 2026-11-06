@@ -1,6 +1,7 @@
 "use strict";
 // /api/admin/content-reports — review in-app reports of AI-generated pictures
-// (api/community/report-content.js). Auth: X-Admin-Key = GALLERY_ADMIN_KEY.
+// (api/community/report-content.js). Auth: admin session cookie (/admin/stats, the
+// review queue lives there) or X-Admin-Key.
 //
 // GET  ?status=open|dismissed|actioned|all&limit=N
 //        → { reports: [...], blockedSubjects: [...], summary: [{subject, open, total}] }
@@ -12,21 +13,13 @@
 
 const fs     = require("fs");
 const path   = require("path");
-const crypto = require("crypto");
 const db     = require("../../lib/db");
+const adminAuth = require("../../lib/admin-auth");
+const moderation = require("../../lib/moderation");
 const { subjectKey } = require("../../lib/content-safety");
 
 const REPORTS_DIR = path.join(__dirname, "../../data/reports");
 const STATUSES    = new Set(["open", "dismissed", "actioned"]);
-
-function isAdmin(req) {
-  const expected = process.env.GALLERY_ADMIN_KEY;
-  const got = req.headers["x-admin-key"];
-  if (!expected || typeof got !== "string") return false;
-  const a = crypto.createHash("sha256").update(got).digest();
-  const b = crypto.createHash("sha256").update(expected).digest();
-  return crypto.timingSafeEqual(a, b);
-}
 
 function send(res, status, body) {
   res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
@@ -52,7 +45,7 @@ async function getBlocked() {
 }
 
 module.exports = async function adminContentReportsHandler(req, res) {
-  if (!isAdmin(req)) return send(res, 401, { error: "Unauthorized" });
+  if (!adminAuth.isAdminRequest(req)) return send(res, 401, { error: "Unauthorized" });
   const url = new URL(req.url, "http://localhost");
 
   try {
@@ -95,6 +88,11 @@ module.exports = async function adminContentReportsHandler(req, res) {
     }
 
     if (req.method === "POST") {
+      // Cookie-authenticated POSTs must come from our own page, as in api/admin/stats.js.
+      const origin = req.headers.origin;
+      if (!adminAuth.hasAdminKey(req) && origin && !/^https:\/\/(www\.|dev\.)?lalabuba\.com$|^http:\/\/localhost(:\d+)?$/.test(origin)) {
+        return send(res, 403, { error: "Bad origin" });
+      }
       let body;
       try { body = await readBody(req); } catch (e) { return send(res, 400, { error: e.message }); }
 
@@ -114,10 +112,11 @@ module.exports = async function adminContentReportsHandler(req, res) {
       const note = typeof body.note === "string" ? body.note.slice(0, 500) : null;
       const { rows } = await db.query(
         `UPDATE content_reports SET status = $2, review_note = $3, reviewed_at = NOW()
-         WHERE id = $1 RETURNING subject`,
+         WHERE id = $1 RETURNING subject, image_path`,
         [id, body.status, note]
       );
       if (!rows.length) return send(res, 404, { error: "Report not found." });
+      if (body.status === "actioned") moderation.removePublicCopy(rows[0].image_path);
 
       let blockedSubjects = await getBlocked();
       if (body.blockSubject === true) {

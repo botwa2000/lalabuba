@@ -163,6 +163,28 @@
 }
 .share-modal.hidden { display: none; }
 
+/* Report sheet: reuses .share-modal/.share-card. Long translations wrap inside the
+   button, and the card scrolls when the keyboard or a landscape phone shrinks it. */
+#report-modal .share-card { max-height: calc(100dvh - 40px); overflow-y: auto; }
+.report-reason {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  text-align: left;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.report-reason:hover, .report-reason:focus-visible { border-color: var(--orange); }
+
 .share-card {
   background: var(--card);
   border-radius: var(--radius);

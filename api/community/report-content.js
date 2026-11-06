@@ -14,7 +14,8 @@ const path   = require("path");
 const crypto = require("crypto");
 const db     = require("../../lib/db");
 const auth   = require("../../lib/community-auth");
-const { sanitizeSubject } = require("../../lib/content-safety");
+const { sanitizeSubject, subjectKey } = require("../../lib/content-safety");
+const moderation = require("../../lib/moderation");
 const { sendAdminAlert } = require("../../lib/email");
 
 const REPORTS_DIR = path.join(__dirname, "../../data/reports");
@@ -79,6 +80,42 @@ async function saveEvidence(imagePath, imageData) {
   }
 }
 
+// Every report is run past the picture check straight away. A confirmed picture
+// comes off the public path at once and, when a child typed the subject, that subject
+// is blocked: a report must change what the filter does (Play policy: "utilize user
+// reports to inform content filtering"). A picture the classifier passes stays open
+// for a person, so the classifier can never dismiss a report. Library pictures are
+// shared by everyone, so those only ever go to a person.
+async function autoTriage({ id, evidence, subject, imagePath, source }) {
+  if (!evidence) return "not checked: no picture";
+  const buffer = fs.readFileSync(path.join(REPORTS_DIR, evidence));
+  let verdict;
+  try {
+    verdict = await moderation.checkImage(buffer);
+  } catch (err) {
+    if (err instanceof moderation.ModerationUnavailableError) return "not checked: moderation unavailable";
+    throw err;
+  }
+  if (verdict.allow) return "classifier passed it: needs a person";
+  const removed = moderation.removePublicCopy(imagePath);
+  let blocked = false;
+  if (source === "custom") {
+    const key = subjectKey(subject);
+    let list = [];
+    try { list = JSON.parse((await db.getConfig("blocked_subjects", "[]")) || "[]"); } catch { list = []; }
+    if (key && !list.some((s) => subjectKey(s) === key)) {
+      await db.setConfig("blocked_subjects", [...list, key]);
+      blocked = true;
+    }
+  }
+  const note = `auto: classifier refused (${verdict.category})${removed ? ", public copy removed" : ""}${blocked ? ", subject blocked" : ""}`;
+  await db.query(
+    "UPDATE content_reports SET status = $2, review_note = $3, reviewed_at = NOW() WHERE id = $1",
+    [id, "actioned", note]
+  );
+  return note;
+}
+
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
   if (auth.ALLOWED_ORIGINS.includes(origin)) {
@@ -138,24 +175,34 @@ module.exports = async (req, res) => {
   }
 
   console.warn(`[content-report] #${id} reason=${reason} subject="${subject}" seed=${seed} source=${source} evidence=${evidence ? "yes" : "no"}`);
-  sendAdminAlert(
-    `[Lalabuba] Content report #${id}: ${reason} — "${subject}"`,
-    [
-      `A user reported an AI-generated picture.`,
-      ``,
-      `Report:     #${id}`,
-      `Reason:     ${reason}`,
-      `Subject:    ${subject}`,
-      `Seed:       ${seed ?? "-"}`,
-      `Difficulty: ${difficulty ?? "-"}`,
-      `Source:     ${source ?? "-"}`,
-      `Image:      ${imagePath ? `https://lalabuba.com${imagePath}` : "-"}`,
-      `Evidence:   ${evidence ? "saved" : "not available"}`,
-      `Platform:   ${platform ?? "-"} ${appVersion ?? ""}`,
-      ``,
-      `Review: GET /api/admin/content-reports (X-Admin-Key).`,
-    ].join("\n")
-  ); // fire-and-forget; never throws
+  // Fire-and-forget: the reporter never waits for this, and it never throws.
+  autoTriage({ id, evidence, subject, imagePath, source })
+    .catch((err) => {
+      console.error("[content-report] triage failed:", err.message);
+      return "not checked: triage error";
+    })
+    .then((triage) => {
+      console.warn(`[content-report] #${id} triage: ${triage}`);
+    sendAdminAlert(
+      `[Lalabuba] Content report #${id}: ${reason} — "${subject}"`,
+      [
+        `A user reported an AI-generated picture.`,
+        ``,
+        `Report:     #${id}`,
+        `Reason:     ${reason}`,
+        `Subject:    ${subject}`,
+        `Seed:       ${seed ?? "-"}`,
+        `Difficulty: ${difficulty ?? "-"}`,
+        `Source:     ${source ?? "-"}`,
+        `Image:      ${imagePath ? `https://lalabuba.com${imagePath}` : "-"}`,
+        `Evidence:   ${evidence ? "saved" : "not available"}`,
+        `Platform:   ${platform ?? "-"} ${appVersion ?? ""}`,
+        `Triage:     ${triage}`,
+        ``,
+        `Review: https://lalabuba.com/admin/stats (Safety section).`,
+      ].join("\n")
+    );
+    });
 
   return res.status(200).json({ ok: true, id });
 };

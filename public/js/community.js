@@ -83,7 +83,7 @@ async function apiPost(path, body, extra = {}) {
 
 const toastEl = document.getElementById("community-toast");
 let toastTimer;
-function showToast(msg, durationMs = 2800) {
+export function showToast(msg, durationMs = 2800) {
   if (!toastEl) return;
   toastEl.textContent = msg;
   toastEl.classList.add("visible");
