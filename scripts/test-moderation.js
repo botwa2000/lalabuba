@@ -28,7 +28,8 @@ const rateLimitStub = {
   peek: async (b, k) => strikes.get(`${b}|${k}`) || 0,
   add: async (b, k) => { strikes.set(`${b}|${k}`, (strikes.get(`${b}|${k}`) || 0) + 1); },
 };
-const stored = [];
+// Loaded before the stub below replaces it for the handler tests.
+const realBuildPrompt = require(r("lib/image-providers.js")).buildPrompt;
 const imageStub = {
   buildPrompt: (s) => `PROMPT:${s}`,
   COLORING_NEGATIVE_PROMPT: "",
@@ -111,6 +112,17 @@ async function t(name, fn) {
 const allowAll = () => { replies = { [POLICY]: ALLOW, [SECOND]: SAFE }; };
 
 (async () => {
+  console.log("prompt framing");
+  for (const style of ["structured", "artistic"]) {
+    for (const difficulty of ["easy", "medium", "hard", "extreme"]) {
+      await t(`framing leads the ${style}/${difficulty} prompt, next to the subject`, () => {
+        const p = realBuildPrompt("mermaid", difficulty, "medium", style);
+        assert.ok(p.startsWith("wholesome, child-friendly, any people fully clothed, "));
+        assert.ok(p.indexOf("mermaid") < 120, "the subject must stay near the front too");
+      });
+    }
+  }
+
   console.log("verdict parsing");
   await t("explicit allow passes", () => assert.deepStrictEqual(m._parsePolicyVerdict('{"allow":true,"category":"none"}').allow, true));
   await t("fenced JSON is read", () => assert.strictEqual(m._parsePolicyVerdict('```json\n{"allow":false,"category":"hate"}\n```').category, "hate"));
