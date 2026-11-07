@@ -602,6 +602,19 @@ t("X-Admin-Key check is constant-time and exact", () => {
   assert(!adminAuth.hasAdminKey({ headers: {} }));
 });
 
+await tAsync("journey lookup refuses anything but an install UUID (no query runs)", async () => {
+  const stats = require("../lib/stats");
+  for (const bad of ["", "x", "1; DROP TABLE usage_events", "11111111-2222-4333-8444-55555555550"]) {
+    assert.strictEqual(await stats.getJourney(bad), null, bad);
+  }
+});
+t("journeys page script parses and has the timeline wiring", () => {
+  const html = require("../lib/render-admin-stats").renderAdminStatsPage({});
+  const js = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+  new Function(js);
+  assert(/openJourney\(/.test(js) && /data-journey=/.test(js) && /\?journey=/.test(js));
+});
+
 console.log(`\n${n} passed`);
 process.exit(0);
 })().catch((e) => { console.error(e); process.exit(1); });

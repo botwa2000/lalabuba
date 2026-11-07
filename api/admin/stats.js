@@ -7,12 +7,13 @@
 //      → aggregates (lib/stats.js). traffic=human (default) counts people only,
 //      traffic=all counts every row; health.traffic lists every class either way.
 //      Without bucket the period picks one: day ≤ 31 days, week ≤ 120, else month.
+// GET  ?journey=<install uuid> → that install's timeline (lib/stats.js getJourney).
 // POST {"action":"import","only":["play_reviews",...]?} → start the store import
 //      in the background (the iOS ratings sweep takes ~10 min); poll GET for
 //      health.imports to see the result.
 
 const adminAuth = require("../../lib/admin-auth");
-const { getStats } = require("../../lib/stats");
+const { getStats, getJourney } = require("../../lib/stats");
 const storeImport = require("../../lib/store-import");
 
 function send(res, status, body) {
@@ -34,6 +35,10 @@ module.exports = async function adminStatsHandler(req, res, url) {
   try {
     if (req.method === "GET") {
       const q = (k) => url.searchParams.get(k) || undefined;
+      if (q("journey")) {
+        const j = await getJourney(q("journey"));
+        return j ? send(res, 200, j) : send(res, 400, { error: "Bad install id" });
+      }
       const stats = await getStats({ range: q("range"), platform: q("platform"), at: q("at"), from: q("from"), to: q("to"), traffic: q("traffic"), bucket: q("bucket") });
       return send(res, 200, stats);
     }
