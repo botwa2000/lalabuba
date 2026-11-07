@@ -32,6 +32,7 @@ services:
       - lalabuba_prod_ASC_ISSUER_ID         # store-import: App Store Connect API key (Admin role)
       - lalabuba_prod_ASC_KEY_ID
       - lalabuba_prod_ASC_PRIVATE_KEY
+      - lalabuba_prod_ASC_VENDOR_NUMBER
     deploy:
       replicas: 1
       update_config:
@@ -112,6 +113,7 @@ secrets:
   lalabuba_prod_ASC_ISSUER_ID: { external: true }
   lalabuba_prod_ASC_KEY_ID: { external: true }
   lalabuba_prod_ASC_PRIVATE_KEY: { external: true }
+  lalabuba_prod_ASC_VENDOR_NUMBER: { external: true }
   lalabuba_prod_IG_LALABUBA_USER_ID: { external: true }
   lalabuba_prod_IG_LALABUBA_TOKEN: { external: true }
   lalabuba_prod_IG_BONIFATUS_USER_ID: { external: true }
