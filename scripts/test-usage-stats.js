@@ -27,6 +27,11 @@ t("old app builds resolve platform from the App Check app ID", () => {
   assert.strictEqual(usage.platformOf({ headers: {} }), "app");
   assert.strictEqual(usage.platformOf({ headers: { origin: "https://lalabuba.com" } }), "web");
 });
+t("browser beacons without an Origin header are still web", () => {
+  assert.strictEqual(usage.platformOf({ headers: { referer: "https://lalabuba.com/c/abc" } }), "web");
+  assert.strictEqual(usage.platformOf({ headers: { "sec-fetch-site": "same-origin" } }), "web");
+  assert.strictEqual(usage.platformOf({ headers: { "x-device-id": "3a27f915-71c4-4c13-82ee-ba38ef65100c", "user-agent": "Dart/3.5 (dart:io)" } }), "app");
+});
 t("props keep only allow-listed keys with small scalar values", () => {
   assert.deepStrictEqual(usage._cleanProps({ difficulty: "easy", count: 3, fatal: true, "Bad-Key": 1, mode: { a: 1 }, reason: "x".repeat(200), subject: "Emma", name: "Emma" }),
     { difficulty: "easy", count: 3, fatal: true, reason: "x".repeat(80) });
