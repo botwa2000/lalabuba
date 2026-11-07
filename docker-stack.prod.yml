@@ -29,6 +29,9 @@ services:
       - lalabuba_prod_ADMIN_EMAILS     # /admin + /docs login allowlist — never in the repo
       - lalabuba_prod_PLAY_REPORTS_BUCKET   # store-import: Play bulk-reports bucket (pubsite_prod_…)
       - lalabuba_prod_CF_ANALYTICS_TOKEN    # store-import: Cloudflare edge traffic (Zone → Analytics → Read)
+      - lalabuba_prod_ASC_ISSUER_ID         # store-import: App Store Connect API key (Admin role)
+      - lalabuba_prod_ASC_KEY_ID
+      - lalabuba_prod_ASC_PRIVATE_KEY
     deploy:
       replicas: 1
       update_config:
@@ -106,6 +109,9 @@ secrets:
   lalabuba_prod_ADMIN_EMAILS: { external: true }
   lalabuba_prod_PLAY_REPORTS_BUCKET: { external: true }
   lalabuba_prod_CF_ANALYTICS_TOKEN: { external: true }
+  lalabuba_prod_ASC_ISSUER_ID: { external: true }
+  lalabuba_prod_ASC_KEY_ID: { external: true }
+  lalabuba_prod_ASC_PRIVATE_KEY: { external: true }
   lalabuba_prod_IG_LALABUBA_USER_ID: { external: true }
   lalabuba_prod_IG_LALABUBA_TOKEN: { external: true }
   lalabuba_prod_IG_BONIFATUS_USER_ID: { external: true }
