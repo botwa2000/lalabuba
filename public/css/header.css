@@ -578,3 +578,11 @@
   .app.app-hero .logo        { font-size: 1.5rem; }
   .app.app-hero .logo-mascot { height: 1.2rem; }
 }
+
+/* Coloring state, ≥768px: the slim header is ~48px tall, but the 40px corner
+   buttons sat at top:14px and hung 6px into the canvas row (over the palette
+   card in landscape). Keep them inside the header. */
+@media (min-width: 768px) {
+  .app:not(.app-hero) .top-actions,
+  .app:not(.app-hero) .settings-wrap { top: 4px; }
+}

@@ -349,6 +349,11 @@
 .app.app-hero .hero-sub-heading  { order: 2; }
 .app.app-hero .generator-section { order: 3; }
 .app.app-hero .hero-section      { order: 4; }
+/* Secondary hero content goes AFTER the draw form. Without an explicit order
+   these default to 0 and render ABOVE the heading, pushing the prompt + Draw!
+   below the fold on phones (2026-11-09 audit). */
+.app.app-hero .hero-browse-section  { order: 5; }
+.app.app-hero .family-panel-section { order: 6; }
 .app.app-hero .panel-toggle-btn {
   display: none;
 }
