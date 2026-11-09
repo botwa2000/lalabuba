@@ -38,9 +38,11 @@ def app_store_profiles():
     if not matches:
         sys.exit(f"bundle id {BUNDLE} not found in App Store Connect")
     profiles = call("GET", f"/bundleIds/{matches[0]['id']}/profiles?limit=200")["data"]
-    return [p for p in profiles
-            if p["attributes"]["profileType"] == "IOS_APP_STORE"
-            and p["attributes"]["profileState"] == "ACTIVE"]
+    return [p for p in profiles if p["attributes"]["profileType"] == "IOS_APP_STORE"]
+
+
+def active(p):
+    return p["attributes"]["profileState"] == "ACTIVE"
 
 
 def has_app_attest(profile):
@@ -51,7 +53,7 @@ def has_app_attest(profile):
 def main():
     verify = "--verify" in sys.argv
     profiles = app_store_profiles()
-    good = [p for p in profiles if has_app_attest(p)]
+    good = [p for p in profiles if active(p) and has_app_attest(p)]
     if verify:
         if not good:
             sys.exit(f"No App Store profile for {BUNDLE} carries App Attest: the App ID "
@@ -59,9 +61,10 @@ def main():
         print(f"profile {good[0]['attributes']['name']} carries App Attest")
         return
     for p in profiles:
-        if not has_app_attest(p):
+        if not (active(p) and has_app_attest(p)):
             call("DELETE", f"/profiles/{p['id']}")
-            print(f"deleted profile without App Attest: {p['attributes']['name']} ({p['id']})")
+            print(f"deleted {p['attributes']['profileState']} profile without App Attest: "
+                  f"{p['attributes']['name']} ({p['id']})")
     print(f"{len(good)} profile(s) already carry App Attest")
 
 

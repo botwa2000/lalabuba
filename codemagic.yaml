@@ -62,7 +62,7 @@ workflows:
           PY=$(head -1 "$(command -v app-store-connect)" | sed 's/^#!//')
           $PY -c "import jwt" 2>/dev/null || { PY=python3; $PY -m pip install --quiet pyjwt cryptography; }
           set -o pipefail
-          cd scripts && $PY asc_ensure_app_attest.py 2>&1 | tee "$CM_BUILD_DIR/asc_app_attest.log"
+          cd "$CM_BUILD_DIR/scripts" && $PY asc_ensure_app_attest.py 2>&1 | tee "$CM_BUILD_DIR/asc_app_attest.log"
 
       - name: Fetch or create signing certificate & provisioning profile
         script: |
@@ -76,7 +76,7 @@ workflows:
           PY=$(head -1 "$(command -v app-store-connect)" | sed 's/^#!//')
           $PY -c "import jwt" 2>/dev/null || PY=python3
           set -o pipefail
-          cd scripts && $PY asc_ensure_app_attest.py --verify 2>&1 | tee -a "$CM_BUILD_DIR/asc_app_attest.log"
+          cd "$CM_BUILD_DIR/scripts" && $PY asc_ensure_app_attest.py --verify 2>&1 | tee -a "$CM_BUILD_DIR/asc_app_attest.log"
 
       - name: Add certificates to keychain
         script: keychain add-certificates
