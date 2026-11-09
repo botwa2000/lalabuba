@@ -60,7 +60,8 @@ workflows:
           # predate it, so the next step issues a profile carrying the entitlement.
           PY=$(head -1 "$(command -v app-store-connect)" | sed 's/^#!//')
           $PY -c "import jwt" 2>/dev/null || { PY=python3; $PY -m pip install --quiet pyjwt cryptography; }
-          cd scripts && $PY asc_ensure_app_attest.py
+          set -o pipefail
+          cd scripts && $PY asc_ensure_app_attest.py 2>&1 | tee "$CM_BUILD_DIR/asc_app_attest.log"
 
       - name: Fetch or create signing certificate & provisioning profile
         script: |
@@ -129,6 +130,7 @@ workflows:
       - build/ios/archive/Runner.xcarchive/dSYMs/*.dSYM
       - $CM_BUILD_DIR/flutter_build_ipa.log
       - $CM_BUILD_DIR/dsym_upload.log
+      - $CM_BUILD_DIR/asc_app_attest.log
       - /tmp/xcodebuild_logs/*.log
 
     publishing:

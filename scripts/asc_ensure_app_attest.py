@@ -30,7 +30,7 @@ def main():
         sys.exit(f"bundle id {BUNDLE} not found in App Store Connect")
     bid = matches[0]["id"]
 
-    caps = call("GET", f"/bundleIds/{bid}/bundleIdCapabilities?limit=200")["data"]
+    caps = call("GET", f"/bundleIds/{bid}/bundleIdCapabilities")["data"]
     if any(c["attributes"]["capabilityType"] == CAPABILITY for c in caps):
         print(f"{CAPABILITY} already enabled on {BUNDLE} — nothing to do")
         return
