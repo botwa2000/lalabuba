@@ -278,6 +278,28 @@ class AccountNotifier extends StateNotifier<AccountState> {
     } catch (_) {}
   }
 
+  // ── Delete account ─────────────────────────────────────────────────────────
+  /// Erases the parent account on the server (child profiles, linked devices
+  /// and sessions go with it — DELETE /api/auth/account) and clears the local
+  /// session. Play account-deletion policy. Throws if the server could not be
+  /// reached, so the caller can tell the grown-up to try again.
+  Future<void> deleteAccount() async {
+    if (!state.isSignedIn) return;
+    try {
+      await _dio.delete('/api/auth/account', options: _authHeaders);
+    } on DioException catch (e) {
+      // 401/404: token or account already gone — nothing left to delete.
+      final status = e.response?.statusCode;
+      if (status != 401 && status != 404) throw _fromDio(e);
+    }
+    await _storage.delete(key: _kAccess);
+    await _storage.delete(key: _kRefresh);
+    await _storage.delete(key: _kEmail);
+    await _storage.delete(key: _kAccount);
+    await _storage.delete(key: _kActiveChild);
+    state = const AccountState();
+  }
+
   // ── Logout ─────────────────────────────────────────────────────────────────
   Future<void> logout() async {
     final refresh = await _storage.read(key: _kRefresh);

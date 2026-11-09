@@ -518,6 +518,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
     if (confirmed != true || !ctx.mounted) return;
 
+    // Family account first: unlike the device data below it can't be erased
+    // later by reinstalling, so a network failure must stop here and say so.
+    if (ref.read(accountProvider).isSignedIn) {
+      try {
+        await ref.read(accountProvider.notifier).deleteAccount();
+      } catch (_) {
+        if (!ctx.mounted) return;
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(content: Text(l10n.t('deleteAccountFailed'))),
+        );
+        return;
+      }
+      if (!ctx.mounted) return;
+    }
+
     // Delete server-side profile + artworks (best-effort — don't block on network)
     try {
       final svc = ref.read(communityServiceProvider);
