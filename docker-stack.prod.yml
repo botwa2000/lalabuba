@@ -27,6 +27,8 @@ services:
       - lalabuba_prod_PLAY_SERVICE_ACCOUNT_JSON   # store-import: Play reviews + bulk reports
       - lalabuba_prod_DOCS_SECRET
       - lalabuba_prod_ADMIN_EMAILS     # /admin + /docs login allowlist — never in the repo
+      - lalabuba_prod_REVIEW_LOGIN_EMAIL   # store-reviewer sign-in (lib/review-login.js)
+      - lalabuba_prod_REVIEW_LOGIN_CODE
       - lalabuba_prod_PLAY_REPORTS_BUCKET   # store-import: Play bulk-reports bucket (pubsite_prod_…)
       - lalabuba_prod_CF_ANALYTICS_TOKEN    # store-import: Cloudflare edge traffic (Zone → Analytics → Read)
       - lalabuba_prod_ASC_ISSUER_ID         # store-import: App Store Connect API key (Admin role)
@@ -108,6 +110,8 @@ secrets:
   lalabuba_prod_PLAY_SERVICE_ACCOUNT_JSON: { external: true }
   lalabuba_prod_DOCS_SECRET: { external: true }
   lalabuba_prod_ADMIN_EMAILS: { external: true }
+  lalabuba_prod_REVIEW_LOGIN_EMAIL: { external: true }
+  lalabuba_prod_REVIEW_LOGIN_CODE: { external: true }
   lalabuba_prod_PLAY_REPORTS_BUCKET: { external: true }
   lalabuba_prod_CF_ANALYTICS_TOKEN: { external: true }
   lalabuba_prod_ASC_ISSUER_ID: { external: true }

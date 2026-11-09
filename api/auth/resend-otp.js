@@ -3,6 +3,7 @@
 const db       = require("../../lib/db");
 const email    = require("../../lib/email");
 const commAuth = require("../../lib/community-auth");
+const reviewLogin = require("../../lib/review-login");
 
 const emailRateLimiter = commAuth.makeRateLimiter("auth:otp-email", 3, commAuth.HOUR);
 
@@ -28,11 +29,15 @@ module.exports = async (req, res) => {
     [normalEmail]
   );
 
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  // Store-reviewer address: fixed code, no email (see lib/review-login.js).
+  const fixedCode = reviewLogin.reviewCode(normalEmail);
+  const code = fixedCode || String(Math.floor(100000 + Math.random() * 900000));
   await db.query(
     "INSERT INTO email_otp_codes (email, code, expires_at) VALUES ($1, $2, NOW() + INTERVAL '10 minutes')",
     [normalEmail, code]
   );
+
+  if (fixedCode) return res.status(200).json({ ok: true });
 
   try {
     await email.sendOtp(normalEmail, code, safeLang);
