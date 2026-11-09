@@ -42,15 +42,15 @@ deletion: ⚙️ → account → Delete account; request page https://lalabuba.c
 
 **Do you or your third-party partners collect data from this app?** → **Yes**.
 
-Declare these data types (**Used for tracking: No** for all; **Linked to the user: No** except the three family-account types marked Yes):
+Declare these data types (**Used for tracking: No** for all; **Linked to the user: Yes** for all except Crash Data). Why linked: usage rows, subjects and country are stored under the install UUID, and `account_devices` ties that UUID to a family account's email, so they *can* be linked even though we never join them. Crashlytics never receives our UUID or account.
 
 | Category → Type | Purposes to tick |
 |---|---|
-| Identifiers → **Device ID** | App Functionality, Analytics |
-| Usage Data → **Product Interaction** | Analytics |
-| User Content → **Other User Content** | App Functionality, Analytics (typed subjects; grown-ups' feedback comments) |
-| Diagnostics → **Crash Data** | App Functionality |
-| Location → **Coarse Location** | Analytics |
+| Identifiers → **Device ID** — **Linked: Yes** | App Functionality, Analytics |
+| Usage Data → **Product Interaction** — **Linked: Yes** | Analytics |
+| User Content → **Other User Content** — **Linked: Yes** | App Functionality, Analytics (typed subjects; grown-ups' feedback comments) |
+| Diagnostics → **Crash Data** — Linked: No | App Functionality |
+| Location → **Coarse Location** — **Linked: Yes** | Analytics |
 | Contact Info → **Email Address** — **Linked: Yes** | App Functionality (optional family account) |
 | Contact Info → **Name** — **Linked: Yes** | App Functionality (child nicknames in the family account) |
 | Identifiers → **User ID** — **Linked: Yes** | App Functionality (family account ID) |
