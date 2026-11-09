@@ -586,3 +586,9 @@
   .app:not(.app-hero) .top-actions,
   .app:not(.app-hero) .settings-wrap { top: 4px; }
 }
+
+/* Phone landscape: the header has no vertical padding, so the bouncing letters
+   were clipped at the top edge. Hold the wordmark still there. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .logo span, .logo-mascot { animation: none; }
+}
