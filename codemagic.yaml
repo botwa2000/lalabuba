@@ -54,10 +54,11 @@ workflows:
       - name: Set up keychain
         script: keychain initialize
 
-      - name: Ensure App Attest capability (Firebase App Check)
+      - name: Drop profiles without App Attest (Firebase App Check)
         script: |
-          # Idempotent: enables APP_ATTEST on the App ID once and drops profiles that
-          # predate it, so the next step issues a profile carrying the entitlement.
+          # Deletes App Store profiles lacking the App Attest entitlement so the next
+          # step mints a fresh one. The App ID capability itself is a one-time manual
+          # tick in the developer portal (Apple's API can't set it) — see the script.
           PY=$(head -1 "$(command -v app-store-connect)" | sed 's/^#!//')
           $PY -c "import jwt" 2>/dev/null || { PY=python3; $PY -m pip install --quiet pyjwt cryptography; }
           set -o pipefail
@@ -69,6 +70,13 @@ workflows:
             --type IOS_APP_STORE \
             --create \
             --certificate-key @env:CM_CERTIFICATE_PRIVATE_KEY
+
+      - name: Verify the profile carries App Attest
+        script: |
+          PY=$(head -1 "$(command -v app-store-connect)" | sed 's/^#!//')
+          $PY -c "import jwt" 2>/dev/null || PY=python3
+          set -o pipefail
+          cd scripts && $PY asc_ensure_app_attest.py --verify 2>&1 | tee -a "$CM_BUILD_DIR/asc_app_attest.log"
 
       - name: Add certificates to keychain
         script: keychain add-certificates
