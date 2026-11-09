@@ -85,15 +85,20 @@
   // First real interaction on this page → "engage", sent at once: only visitors
   // who interact (or draw) count as people on the dashboard, so link scanners
   // and one-glance bounces don't inflate the numbers.
+  // Only deliberate input counts. "scroll" is not used: rendering crawlers
+  // scroll the page by script (a nightly one from SG/US datacenters was counted
+  // as ~200 people a day in Nov 2026). People who scroll still count, via
+  // touchstart (finger) or wheel (mouse/trackpad). Synthetic events are ignored.
+  var ENGAGE = ["pointerdown", "keydown", "touchstart", "wheel"];
   var engaged = false;
-  function onEngage() {
-    if (engaged) return;
+  function onEngage(e) {
+    if (engaged || (e && e.isTrusted === false)) return;
     engaged = true;
-    ["pointerdown", "keydown", "scroll", "touchstart"].forEach(function (t) { window.removeEventListener(t, onEngage, true); });
+    ENGAGE.forEach(function (t) { window.removeEventListener(t, onEngage, true); });
     track("engage");
     flush();
   }
-  ["pointerdown", "keydown", "scroll", "touchstart"].forEach(function (t) {
+  ENGAGE.forEach(function (t) {
     window.addEventListener(t, onEngage, { capture: true, passive: true });
   });
 
