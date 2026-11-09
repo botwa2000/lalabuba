@@ -99,6 +99,41 @@ posts:
     link: https://lalabuba.com/de/ausmalbilder/schneemann/
     alt: "Ausmalbild eines fröhlichen Schneemanns mit Zylinder, Schal und Stockarmen als schwarze Linienzeichnung, mit dem lalabuba.com-Logo."
 
+  # ── Bonifatus Zeugnis season (Halbjahreszeugnisse late Jan / Feb 2027).
+  #    Drafted 2026-11-09, unapproved. Pinterest surfaces seasonal pins ~45–60 days
+  #    early, so these are worth approving in November / early December.
+  #    Assets read at full size: 1000×1500, „…" quotes and umlauts correct, no child
+  #    data, every claim restates the linked Ratgeber page.
+  - id: bf-pin-schlechtes-zeugnis-1
+    brand: bonifatus
+    platform: pinterest
+    image: /social/pin_ratgeber_schlechtes_zeugnis.jpg
+    board: "Taschengeld & Kinderfinanzen"
+    title: "Schlechtes Zeugnis – was Eltern jetzt tun können"
+    description: "Ein schlechtes Zeugnis ist eine Momentaufnahme, kein Urteil über Ihr Kind. Was Studien über Druck und Strafen zeigen, welche Fragen helfen, die Ursache zu finden, wie Sie mit der Lehrkraft sprechen – und wo Eltern kostenlos und anonym Rat bekommen. Mit Quellen. #Zeugnis #Halbjahreszeugnis #SchlechteNoten #Elternratgeber #Schule"
+    link: https://bonifatus.com/de/ratgeber/schlechtes-zeugnis-was-tun
+    alt: "Grüne Ratgeber-Grafik von Bonifatus: „Schlechtes Zeugnis – was jetzt hilft“ mit fünf nummerierten Tipps: Eine Momentaufnahme, Druck macht es schwerer, Erst fragen, dann handeln, Mit der Lehrkraft sprechen, Hilfe holen (Elterntelefon 0800 111 0 550)."
+
+  - id: bf-pin-halbjahreszeugnis-1
+    brand: bonifatus
+    platform: pinterest
+    image: /social/pin_ratgeber_halbjahreszeugnis.jpg
+    board: "Taschengeld & Kinderfinanzen"
+    title: "Halbjahreszeugnis 2027: Termine und was es bedeutet"
+    description: "Wann gibt es 2027 Halbjahreszeugnisse? Niedersachsen 29.01., Sachsen 05.02., NRW 12.02., Bayern 19.02. – laut Kultusministerien. Und: Das Halbjahreszeugnis ist keine Versetzungsentscheidung. Was es bedeutet und wann es doch Gewicht hat, etwa in Klasse 4. #Halbjahreszeugnis #Zeugnis #Zeugnistag #Schule #Eltern"
+    link: https://bonifatus.com/de/ratgeber/halbjahreszeugnis-bedeutung
+    alt: "Graue Ratgeber-Grafik von Bonifatus: „Halbjahreszeugnis 2027: Termine & Bedeutung“ mit einer Tabelle der Zeugnistermine für Niedersachsen, Sachsen, Nordrhein-Westfalen und Bayern und drei Hinweisen, darunter: keine Versetzungsentscheidung."
+
+  - id: bf-pin-zeugnisgespraech-1
+    brand: bonifatus
+    platform: pinterest
+    image: /social/pin_ratgeber_zeugnisgespraech.jpg
+    board: "Taschengeld & Kinderfinanzen"
+    title: "Zeugnisgespräch: So reden Sie mit Ihrem Kind über das Zeugnis"
+    description: "Wie Sie am Zeugnistag reagieren, prägt mehr als die Noten selbst. Erst das Kind, dann die Noten; Anstrengung loben statt Talent; schwache Noten als Information sehen; keine Vergleiche – mit Gesprächsleitfaden und Studien. #Zeugnis #Zeugnistag #Elterntipps #Halbjahreszeugnis #Erziehung"
+    link: https://bonifatus.com/de/ratgeber/zeugnis-gespraech-fuehren
+    alt: "Petrolfarbene Ratgeber-Grafik von Bonifatus: „Zeugnisgespräch: So reden Sie mit Ihrem Kind“ mit fünf Tipps und Beispielsätzen wie „Wie geht es dir damit?“ und „Du hast nicht aufgegeben“."
+
 # ── Posted outside this service (by hand, before it existed). Read-only input to
 #    dedupe and the daily ceiling. Source: docs/growth-checkin-log.md (local).
 history:
