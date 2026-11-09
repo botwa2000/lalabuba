@@ -26,12 +26,15 @@ not been declared — it is now. Typed drawing subjects are now kept 30 days.
 | Refused subjects (safety filter: subject, category, install UUID) | our API → AI classifiers on the same provider as generation (processor) | 30 days | app functionality (child safety) | No | No |
 | Reported pictures (generated picture + preset reason, no free text) | our API | until reviewed | app functionality (child safety) | No | No |
 | Pictures shared to the community gallery | our API → AI classifiers (processor), then published | until the artwork expires or is deleted | app functionality | No | No |
+| Optional parent family account: email address, child nicknames/avatars/age groups, account ID, linked devices | our API (sign-in code via Brevo, processor) | until the account is deleted | app functionality (account management) | **Yes** | No |
 | Saved artwork, preferences | on device only | — | — | — | — |
 
-No account is required, no advertising ID, no ads, no IAP, no precise location,
+No account is required (the family account is optional and parent-created), no advertising ID, no ads, no IAP, no precise location,
 no contacts, no third-party analytics SDK. "Delete account" in Settings deletes
-the profile, shared artworks **and** the usage statistics of that install
-(`DELETE /api/community/profile` → `usage.forgetInstall`).
+the family account (`DELETE /api/auth/account`: child profiles, devices and
+sessions cascade), the profile, shared artworks **and** the usage statistics of
+that install (`DELETE /api/community/profile` → `usage.forgetInstall`). Web
+deletion: ⚙️ → account → Delete account; request page https://lalabuba.com/delete-account.
 
 ---
 
@@ -39,7 +42,7 @@ the profile, shared artworks **and** the usage statistics of that install
 
 **Do you or your third-party partners collect data from this app?** → **Yes**.
 
-Declare these data types (every one: **Linked to the user: No**, **Used for tracking: No**):
+Declare these data types (**Used for tracking: No** for all; **Linked to the user: No** except the three family-account types marked Yes):
 
 | Category → Type | Purposes to tick |
 |---|---|
@@ -48,9 +51,12 @@ Declare these data types (every one: **Linked to the user: No**, **Used for trac
 | User Content → **Other User Content** | App Functionality, Analytics (typed subjects; grown-ups' feedback comments) |
 | Diagnostics → **Crash Data** | App Functionality |
 | Location → **Coarse Location** | Analytics |
+| Contact Info → **Email Address** — **Linked: Yes** | App Functionality (optional family account) |
+| Contact Info → **Name** — **Linked: Yes** | App Functionality (child nicknames in the family account) |
+| Identifiers → **User ID** — **Linked: Yes** | App Functionality (family account ID) |
 
 - **Tracking:** No. Do not enable App Tracking Transparency.
-- Matches `PrivacyInfo.xcprivacy` (same five types, `NSPrivacyTracking=false`).
+- Matches `PrivacyInfo.xcprivacy` (same eight types, `NSPrivacyTracking=false`).
 - Privacy Policy URL: `https://lalabuba.com/privacy`.
 - **Kids Category:** compliant — no third-party analytics or ads; first-party
   analytics with no personal information (App Review Guideline 1.3 / 5.1.4).
@@ -72,6 +78,13 @@ Data types — for each: **Collected: Yes · Shared: No · Processed ephemerally
 | App info and performance → **Crash logs** | Required | App functionality |
 | App info and performance → **Diagnostics** | Required | App functionality |
 | Device or other IDs → **Device or other IDs** | Required | App functionality, Analytics, Fraud prevention/security/compliance |
+| Personal info → **Email address** | Optional | App functionality, Account management |
+| Personal info → **Name** | Optional | App functionality, Account management (child nicknames) |
+| Personal info → **User IDs** | Optional | App functionality, Account management |
+
+**Account creation:** "Username and other authentication" (email + one-time code).
+**Account deletion URL:** https://lalabuba.com/delete-account
+**Delete data URL:** https://lalabuba.com/delete-account
 
 "Shared: No" is correct for Crashlytics and the AI providers: Google treats
 transfers to service providers that process data on our behalf as not sharing.

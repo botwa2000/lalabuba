@@ -9,6 +9,7 @@ const sendOtp     = require("./send-otp");
 const verifyEmail = require("./verify-email");
 const resendOtp   = require("./resend-otp");
 const children    = require("./children");
+const deleteAccount = require("./delete-account");
 
 module.exports = async (req, res, p) => {
   try {
@@ -21,6 +22,7 @@ module.exports = async (req, res, p) => {
     if (p === "/api/auth/send-otp")      return await sendOtp(req, res);
     if (p === "/api/auth/verify-email")  return await verifyEmail(req, res);
     if (p === "/api/auth/resend-otp")    return await resendOtp(req, res);
+    if (p === "/api/auth/account")       return await deleteAccount(req, res);
     if (p === "/api/auth/children" || /^\/api\/auth\/children\/\d+$/.test(p))
       return await children(req, res, p);
     res.status(404).json({ error: "Not found." });

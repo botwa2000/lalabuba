@@ -524,10 +524,14 @@ function renderChildSelector(isDismissible = true) {
         <span class="account-email-value" style="margin-left:auto;text-align:right">${escHtml(_session.email)}</span>
         <button class="account-link-btn" id="account-signout" style="color:#ef4444;margin-left:8px">${t('accountSignOutBtn') || 'Sign out'}</button>
       </div>
+      <div class="account-delete-row" style="text-align:center;margin-top:10px">
+        <button class="account-link-btn" id="account-delete" style="color:#b91c1c;font-size:.78rem;opacity:.85">${t('accountDeleteBtn') || 'Delete account'}</button>
+      </div>
     </div>
   `;
   if (isDismissible) $id('account-close')?.addEventListener('click', closeModal);
   $id('account-signout').addEventListener('click', handleSignOut);
+  $id('account-delete').addEventListener('click', handleDeleteAccount);
   $id('account-im-parent').addEventListener('click', () => {
     localStorage.removeItem(K_CHILD);
     updateSettingsUI();
@@ -657,6 +661,42 @@ function renderSignedIn() {
   } else {
     renderChildSelector();
   }
+}
+
+// Two taps (no browser dialog): the first arms the button, the second deletes
+// the parent account, its child profiles and linked devices on the server
+// (DELETE /api/auth/account), then signs out here. Play account-deletion policy.
+async function handleDeleteAccount() {
+  const btn = $id('account-delete');
+  if (!btn) return;
+  if (btn.dataset.armed !== '1') {
+    btn.dataset.armed = '1';
+    btn.textContent = t('accountDeleteConfirm') || 'Tap again to delete everything';
+    btn.style.fontWeight = '800';
+    setTimeout(() => {
+      if (btn.isConnected && btn.dataset.armed === '1') {
+        btn.dataset.armed = '';
+        btn.style.fontWeight = '';
+        btn.textContent = t('accountDeleteBtn') || 'Delete account';
+      }
+    }, 6000);
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = t('accountDeleting') || 'Deleting…';
+  const r = await authFetch(`${BASE}/api/auth/account`, { method: 'DELETE' }).catch(() => null);
+  if (!r || (!r.ok && r.status !== 404)) {
+    btn.disabled = false;
+    btn.dataset.armed = '';
+    btn.textContent = t('accountDeleteBtn') || 'Delete account';
+    return;
+  }
+  clearSession();
+  localStorage.removeItem(K_CHILD);
+  _children = [];
+  updateSettingsUI();
+  closeModal();
+  renderEmailStep();
 }
 
 async function handleSignOut() {
