@@ -599,6 +599,14 @@
   .app:not(.app-hero) .zoom-controls[hidden] { display: none; }
   .app:not(.app-hero) .zoom-pan-btn { margin: 4px 0 0; border-left: 2px solid var(--border); padding-left: 0; }
 
+  /* Pencil/brush "🗑️ Clear" opens the output row (left side, which is empty)
+     instead of wrapping onto a third toolbar row of its own (+44px at 1440). */
+  .canvas-actions .action-sep:has(+ #draw-tools-group) { display: none; }
+  .canvas-actions .action-row-break    { order: 1; }
+  .canvas-actions #draw-tools-group    { order: 2; }
+  .canvas-actions .action-group--output { order: 3; }
+  .canvas-actions .action-group--more  { order: 4; }
+
   /* Collapsed config rail: its contents are invisible (opacity 0) but were
      still reachable with Tab, so keyboard focus vanished behind the canvas. */
   .config-panel.collapsed .panel-inner { visibility: hidden; transition: opacity .2s ease, visibility 0s linear .2s; }
