@@ -227,6 +227,9 @@ For quadrant definitions see `docs/screen-quadrants.md`.
 - [ ] Difficulty persists across page reload
 - [ ] Palette selection persists
 - [ ] Numbers on/off persists
+- [ ] 🔴 First visit (cleared storage): pre-selected Medium draws with 8 colours AND numbers on; mode chip reads "Numbers" (regressed until v371: drew 12 colours, no numbers)
+- [ ] 🔴 Touch tablet (Lala_Tablet AVD, Chrome) landscape + portrait: whole picture visible without scrolling; hero shows the 4 suggestion cards under "or pick something fun"
+- [ ] 🔴 Phone landscape (Galaxy_S25_Ultra AVD): picture below the zoom bar, hint ✕ visible, today's-word pill not cut off, no ◀ over Draw!
 - [ ] Language persists
 - [ ] Theme (dark/light) persists
 - [ ] Sound on/off persists
