@@ -1,4 +1,4 @@
-import { state, DEBUG } from './state.js';
+import { state, DEBUG, LEVEL_DEFAULTS } from './state.js';
 import { PALETTES, EXAMPLE_SUGGESTIONS, randomCardSubject, getDailyChallenge, getTranslatedDailyWord, getTranslatedSubject, getSemanticPaletteOrder } from './data.js';
 import { sanitizeSubject } from './data.js';
 import { CRAYON_PACKS, packById, isPackUnlocked, unlockedPaletteIds, packsUnlockedAt } from './data.js';
@@ -879,8 +879,6 @@ document.getElementById("celebration-print").addEventListener("click", () => {
 });
 
 // ─── Level cards (replaces diff-pills + chip-diff + chip-count) ──────────────
-// Default colorCount per level — mirrors config.js FALLBACK values.
-const LEVEL_DEFAULTS = { easy: 6, medium: 8, hard: 12, extreme: 32 };
 
 function syncExtremeCard() {
   const unlocked = isExtremeUnlocked(getProgress());

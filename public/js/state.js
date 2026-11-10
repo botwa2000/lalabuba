@@ -1,3 +1,7 @@
+// Default colour count per level card — mirrors config.js FALLBACK values.
+// Shared by the level cards (main.js) and shared / SEO links (share.js).
+export const LEVEL_DEFAULTS = { easy: 6, medium: 8, hard: 12, extreme: 32 };
+
 export const DEBUG = ['localhost','127.0.0.1'].includes(window.location.hostname);
 
 export const state = {

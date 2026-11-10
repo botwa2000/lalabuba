@@ -231,6 +231,7 @@ For quadrant definitions see `docs/screen-quadrants.md`.
 - [ ] 🔴 Touch tablet (Lala_Tablet AVD, Chrome) landscape + portrait: whole picture visible without scrolling; hero shows the 4 suggestion cards under "or pick something fun"
 - [ ] 🔴 Phone landscape (Galaxy_S25_Ultra AVD): picture below the zoom bar, hint ✕ visible, today's-word pill not cut off, no ◀ over Draw!
 - [ ] 🔴 Mouse desktop 1024×768 / 1366×768 / 1440×900 / 1920×1080, coloring state: whole picture visible without page scroll (scrollHeight = viewport), zoom buttons float bottom-right of the picture, no lone separator row in the toolbar; same with the side panel expanded and in Pencil mode (regressed until v373: bottom of the picture below the fold)
+- [ ] 🔴 SEO-page CTA links (`/?s=1&q=cat&d=easy`, `…&d=hard`): auto-draw with that level's colours (Easy 6 / Hard 12) and its card highlighted; a link's own `c=` still wins (until v375 every level drew Medium's 8)
 - [ ] 🔴 🏆 Challenge! in the toolbar (desktop + phone) credits the Challenger sticker and logs challenge_created (until v373 only the hidden strip's "Share →" did)
 - [ ] Language persists
 - [ ] Theme (dark/light) persists

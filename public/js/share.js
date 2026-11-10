@@ -1,4 +1,4 @@
-import { state } from './state.js';
+import { state, LEVEL_DEFAULTS } from './state.js';
 import { subjectInput, difficultySelect, paletteSelect } from './dom.js';
 import { setColorCount, setStatus, showLoading, hideLoading } from './ui.js';
 import { generatePage } from './generate.js';
@@ -59,9 +59,14 @@ export function loadFromShare() {
 
   subjectInput.value = q;
 
+  // Level from the link: select its card and apply its colour preset. This
+  // used to toggle the long-gone .diff-pill buttons only, so every SEO-page
+  // "Try Easy / Try Hard" link drew Medium's 8 colours and the Medium card
+  // stayed highlighted. A link's own colour count (c=) still wins below.
   if (['easy', 'medium', 'hard', 'extreme'].includes(d)) {
-    document.querySelectorAll('.diff-pill').forEach(b => b.classList.toggle('selected', b.dataset.diff === d));
+    document.querySelectorAll('.level-card').forEach(b => b.classList.toggle('selected', b.dataset.diff === d));
     difficultySelect.value = d;
+    setColorCount(LEVEL_DEFAULTS[d]);
   }
   if (['classic', 'pastel', 'nature'].includes(p)) {
     document.querySelectorAll('.palette-pill').forEach(b => b.classList.toggle('selected', b.dataset.palette === p));
