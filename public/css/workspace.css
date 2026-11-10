@@ -353,6 +353,9 @@
    dock, so there's never a scroll/touch conflict on the canvas. */
 @media (max-width: 767px) and (min-height: 501px) {
   .app:not(.app-hero) .canvas-area { overflow: hidden; }
+  /* The ≤480px .app padding leaves 40px of dead space under the colour dock;
+     the dock already pads for the home-indicator safe area. */
+  .app:not(.app-hero) { padding-bottom: 0; }
   .app:not(.app-hero) .workspace {
     display: flex;
     flex-direction: column;

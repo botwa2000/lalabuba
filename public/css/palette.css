@@ -140,7 +140,7 @@
     flex-wrap: nowrap;
     overflow-x: auto;
     gap: 10px;
-    padding: 2px;
+    padding: 7px 6px; /* room for the active ring + scale: the strip scrolls, so it clips */
     align-items: center;
     scrollbar-width: none;
   }

@@ -246,7 +246,16 @@
     pointer-events: auto !important;
   }
   .panel-inner { min-width: 196px; width: 196px; }
-  .panel-toggle-btn { display: flex; }
+  /* The panel can't collapse here (forced open above), so the ◀ toggle did
+     nothing except sit over the end of the Draw! button. */
+  .panel-toggle-btn { display: none; }
+  /* Today's-word pill: label over word, so it fits the 200px panel instead
+     of being cut mid-word ("Mikrosko|") */
+  .config-panel .daily-word-pill {
+    flex-direction: column; gap: 0; max-width: 100%;
+    padding: 4px 14px; border-radius: 16px; line-height: 1.25;
+  }
+  .config-panel .daily-word-pill > span:not([class]) { display: none; }
   .mobile-menu-btn { display: none; }
   .landscape-hint { display: none; }
   /* footer wastes ~170px in landscape — hide it */
