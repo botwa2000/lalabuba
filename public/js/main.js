@@ -1719,16 +1719,18 @@ if (dismissHintBtn) {
   });
 }
 
-// ─── Challenge strip share button ────────────────────────────────────────────
-const challengeShareBtn = document.getElementById('challenge-share-btn');
-if (challengeShareBtn) {
-  challengeShareBtn.addEventListener('click', () => {
-    document.getElementById('share-button').click();
-    // Creating/sharing a challenge → credit the Challenger sticker.
-    try { toastNewBadges(recordChallengeCreated().newBadges); } catch {}
-    track('challenge_created');
-  });
-}
+// ─── Challenge: credit on the 🏆 toolbar button itself ───────────────────────
+// Creating a challenge → Challenger sticker + challenge_created event. This used
+// to live only on the strip's "Share →" button, which phones and desktops hide,
+// so the toolbar 🏆 Challenge! never credited either. The strip now just
+// forwards to the toolbar button, so one challenge is counted once.
+document.getElementById('share-button')?.addEventListener('click', () => {
+  try { toastNewBadges(recordChallengeCreated().newBadges); } catch {}
+  track('challenge_created');
+});
+document.getElementById('challenge-share-btn')?.addEventListener('click', () => {
+  document.getElementById('share-button').click();
+});
 
 // ─── Daily word button ────────────────────────────────────────────────────────
 const dailyWordRow   = document.getElementById('daily-word-row');

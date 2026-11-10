@@ -64,6 +64,12 @@
   flex-shrink: 0;
 }
 
+/* The separator before the pencil/brush tools only separates something while
+   those tools show (canvas.js / main.js toggle the group's inline display).
+   Otherwise it was a lone 20px bar that wrapped onto its own toolbar row on
+   ~760px-wide canvases (1024px desktops), costing ~35px of picture height. */
+.action-sep:has(+ #draw-tools-group[style*="none"]) { display: none; }
+
 /* Fills remaining space at end of tool row */
 .action-spacer {
   flex: 1;
@@ -559,15 +565,45 @@
   .coloring-hint > span { min-width: 0; }
 }
 
-/* ─── Touch tablets, coloring state: the whole picture fits the screen ─────
+/* ─── Tablets + desktops, coloring state: the whole picture fits the screen ──
    Same fit-viewport model as phones (portrait + landscape): .app is locked to
    100dvh and the picture is capped by the stage, a size container. Before
    this the page scrolled and the canvas (max 85dvh, below ~270px of chrome)
-   always ran off the bottom; on a Pixel Tablet in landscape ~185px of the
-   picture was off-screen, and swiping on the canvas (touch-action:none)
-   can't scroll. The footer hides in this state as on phones; the hero still
-   shows it. Mouse desktops (pointer: fine) keep the scrolling page. */
-@media (min-width: 768px) and (min-height: 501px) and (pointer: coarse) {
+   always ran off the bottom: on a Pixel Tablet in landscape ~185px of the
+   picture was off-screen (and swiping on the canvas can't scroll), and on
+   mouse desktops from 1024×768 to 1920×1080 the bottom of every picture sat
+   below the fold. The footer hides in this state as on phones; the hero
+   still shows it.
+   Height won back for the picture: the challenge strip goes (🏆 Challenge!
+   is in the toolbar, as on phones) and the zoom buttons float in the stage's
+   bottom-right corner instead of filling a 53px row of their own. They
+   stack vertically so they sit in the white margin beside a square picture
+   on landscape screens. z-index 4: over the (transformed) canvas frame,
+   under the loading overlay (5). */
+@media (min-width: 768px) and (min-height: 501px) {
+  .app:not(.app-hero) .challenge-strip { display: none; }
+  .app:not(.app-hero) .canvas-wrapper { position: relative; }
+  .app:not(.app-hero) .zoom-controls {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 4;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px;
+    border: 1.5px solid var(--border);
+    border-radius: 999px;
+    background: var(--card);
+    box-shadow: var(--sh-md);
+  }
+  .app:not(.app-hero) .zoom-controls[hidden] { display: none; }
+  .app:not(.app-hero) .zoom-pan-btn { margin: 4px 0 0; border-left: 2px solid var(--border); padding-left: 0; }
+
+  /* Collapsed config rail: its contents are invisible (opacity 0) but were
+     still reachable with Tab, so keyboard focus vanished behind the canvas. */
+  .config-panel.collapsed .panel-inner { visibility: hidden; transition: opacity .2s ease, visibility 0s linear .2s; }
+}
+@media (min-width: 768px) and (min-height: 501px) {
   .app:not(.app-hero) { height: 100dvh; overflow: hidden; padding-bottom: 10px; }
   .app:not(.app-hero) .app-body { min-height: 0; }
   .app:not(.app-hero) .canvas-area { min-height: 0; overflow: hidden; }
