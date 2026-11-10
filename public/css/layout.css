@@ -274,6 +274,10 @@
   /* Restore hero headings hidden by landscape rule above */
   .app.app-hero .config-panel .hero-draw-heading,
   .app.app-hero .config-panel .hero-sub-heading { display: block !important; }
+  /* …and the suggestion cards: the hero scrolls, and without them the
+     "— or pick something fun —" divider sat over an empty gap */
+  .app.app-hero .config-panel .examples-grid    { display: grid !important; }
+  .app.app-hero .config-panel .shuffle-cards-btn { display: inline-flex !important; }
 
   /* Coloring state: ensure prompt input fills the full 200px sidebar width.
      The base grid layout gets squeezed; use flex-column so input gets its own full row. */
@@ -308,6 +312,10 @@
   .config-panel .shuffle-cards-btn { display: none !important; }
   .config-panel .hero-tagline { display: none; }
   .config-panel .hero-section { padding: 8px 0 4px; }
+  /* The hide above is for the 260px coloring sidebar. The hero is full width,
+     scrolls, and lists the cards after the form, so keep them there. */
+  .app.app-hero .config-panel .examples-grid    { display: grid !important; }
+  .app.app-hero .config-panel .shuffle-cards-btn { display: inline-flex !important; }
 }
 
 

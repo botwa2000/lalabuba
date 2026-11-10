@@ -910,6 +910,15 @@ document.querySelectorAll('.level-card').forEach(card => {
     track('difficulty_changed', { difficulty: card.dataset.diff });
   });
 });
+// Apply the pre-selected card's preset on load. Its colour count used to apply
+// only on click, so a first visit drew Medium with the select's default of 12
+// colours while the card said 8. Runs before loadFromShare(), so a shared
+// link's own colour count still wins.
+{
+  const preset = document.querySelector('.level-card.selected')?.dataset.diff || difficultySelect.value;
+  difficultySelect.value = preset;
+  setColorCount(LEVEL_DEFAULTS[preset] ?? 8);
+}
 
 // (Removed dead .count-pill / .count-max-pill / .palette-pill listeners — those
 // elements no longer exist in index.html; settings are driven by the chips.)
@@ -1355,6 +1364,11 @@ if (chipNarrate) chipNarrate.addEventListener('click', () => {
 // Sketch images are soft/blurry so Numbers mode is incompatible with them.
 // One chip combines art-style + numbers to make that relationship explicit.
 try { state.artStyle = localStorage.getItem('lalabuba-art-style') || 'structured'; } catch {}
+// Start in Numbers mode (as the app does, and as the Easy/Medium cards and the
+// coloring hint promise). #show-numbers had no default, so every visit started
+// in Classic with no numbers. Sketch keeps numbers off. Set directly, without a
+// change event: there is no picture to redraw yet.
+if (state.artStyle !== 'artistic') showNumbersInput.checked = true;
 updateModeChip();
 
 if (chipMode) chipMode.addEventListener('click', () => {

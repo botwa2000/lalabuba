@@ -42,9 +42,12 @@
   box-shadow: 0 6px 16px rgba(0,0,0,.22), inset 0 -2px 0 rgba(0,0,0,.1);
   z-index: 2;
 }
+/* Ring + scale must fit the sidebar's ~10px side room: it scrolls vertically,
+   which forces overflow-x to clip too. The old 9px ring + 18% scale needed
+   ~14px and was cut off on the left on tablets and desktops. */
 .color-swatch.active {
-  transform: scale(1.18);
-  box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--c, #aaa), 0 0 0 9px rgba(0,0,0,.18), 0 8px 20px rgba(0,0,0,.28);
+  transform: scale(1.12);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--c, #aaa), 0 6px 16px rgba(0,0,0,.28);
   z-index: 3;
   outline: none;
 }

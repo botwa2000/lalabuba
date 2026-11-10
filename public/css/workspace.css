@@ -556,6 +556,26 @@
   .coloring-hint > span { min-width: 0; }
 }
 
+/* ─── Touch tablets, coloring state: the whole picture fits the screen ─────
+   Same fit-viewport model as phones (portrait + landscape): .app is locked to
+   100dvh and the picture is capped by the stage, a size container. Before
+   this the page scrolled and the canvas (max 85dvh, below ~270px of chrome)
+   always ran off the bottom; on a Pixel Tablet in landscape ~185px of the
+   picture was off-screen, and swiping on the canvas (touch-action:none)
+   can't scroll. The footer hides in this state as on phones; the hero still
+   shows it. Mouse desktops (pointer: fine) keep the scrolling page. */
+@media (min-width: 768px) and (min-height: 501px) and (pointer: coarse) {
+  .app:not(.app-hero) { height: 100dvh; overflow: hidden; padding-bottom: 10px; }
+  .app:not(.app-hero) .app-body { min-height: 0; }
+  .app:not(.app-hero) .canvas-area { min-height: 0; overflow: hidden; }
+  .app:not(.app-hero) .workspace { min-height: 0; }
+  .app:not(.app-hero) .canvas-wrapper { align-self: stretch; min-height: 0; }
+  .app:not(.app-hero) .canvas-body { min-height: 0; }
+  .app:not(.app-hero) .preview-stage { container-type: size; min-height: 0; }
+  .app:not(.app-hero) #preview-canvas { max-height: 100cqh; max-width: 100cqw; }
+  .app:not(.app-hero) .site-footer { display: none; }
+}
+
 /* ─── Empty state (improved) ─────────────────────────────────────────────── */
 .empty-hint { opacity: .7; }
 .empty-icon { font-size: 5rem; }
