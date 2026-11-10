@@ -101,7 +101,8 @@ export function loadFromShare() {
         await generatePage(q, seed);
       } else {
         // Direct link from coloring-page CTAs (no seed, no cached image) — generate fresh.
-        state.generationSource = 'challenge';
+        // Own source so the dashboard tells SEO-page draws from real challenges.
+        state.generationSource = 'coloring_page';
         await generatePage(q);
       }
     } catch (err) {

@@ -67,12 +67,19 @@
   var internal = false;
   try { internal = !!ref && new URL(ref).hostname.replace(/^www\./, "").slice(-12) === "lalabuba.com"; } catch (e) {}
   var params = new URLSearchParams(location.search);
-  var isChallenge = params.get("s") === "1";
+  // ?s=1 opens a picture link. A real challenge (share modal) always carries
+  // seed= (and usually img=); the coloring-page CTAs ("Try Easy →",
+  // /?s=1&q=cat&d=easy) never do. Both used to count as "challenge" opens and
+  // as the "challenge share" source, so 25 SEO pages' clicks (and crawlers
+  // following them) showed as ~60 challenge visits a week with 0 created.
+  var isShareLink = params.get("s") === "1";
+  var isChallenge = isShareLink && (params.has("seed") || params.has("img"));
+  var isPageCta = isShareLink && !isChallenge;
 
   if (!internal) {
     acq = {
-      utm_source: params.get("utm_source") || (isChallenge ? "challenge" : undefined),
-      utm_medium: params.get("utm_medium") || (isChallenge ? "share" : undefined),
+      utm_source: params.get("utm_source") || (isChallenge ? "challenge" : isPageCta ? "coloring-page" : undefined),
+      utm_medium: params.get("utm_medium") || (isChallenge ? "share" : isPageCta ? "cta" : undefined),
       utm_campaign: params.get("utm_campaign") || undefined,
       referrer: ref || undefined
     };
@@ -81,6 +88,7 @@
   }
   track("page_view");
   if (isChallenge) track("challenge_open");
+  if (isPageCta) track("page_cta_open");
 
   // First real interaction on this page → "engage", sent at once: only visitors
   // who interact (or draw) count as people on the dashboard, so link scanners

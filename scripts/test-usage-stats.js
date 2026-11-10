@@ -56,7 +56,7 @@ t("acquisition prefers UTM, falls back to referrer", () => {
   assert.deepStrictEqual(usage._acquisitionOf({}), { source: null, medium: null, campaign: null });
 });
 t("event whitelist contains the client contract", () => {
-  for (const e of ["app_open", "page_view", "screen_view", "complete", "save", "print", "share", "challenge_open"]) assert(usage.EVENTS.has(e), e);
+  for (const e of ["app_open", "page_view", "screen_view", "complete", "save", "print", "share", "challenge_open", "page_cta_open"]) assert(usage.EVENTS.has(e), e);
   assert(!usage.EVENTS.has("image_generate_started"));
 });
 t("web analytics.js maps only to whitelisted events", () => {
