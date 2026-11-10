@@ -475,7 +475,7 @@
   .mode-btn    { font-size: .72rem !important; padding: 4px 6px !important; white-space: nowrap; flex-shrink: 0; }
   .zoom-controls { padding: 5px 8px; gap: 4px; }
   .zoom-btn { width: 30px; height: 30px; font-size: .95rem; }
-  .coloring-hint { font-size: .74rem; padding: 5px 8px; overflow: hidden; white-space: nowrap; }
+  /* Fallback only; browsers with container queries use the 100cqh cap below */
   #preview-canvas { max-height: calc(100dvh - 210px); }
 }
 
@@ -538,6 +538,23 @@
   transition: transform .15s, box-shadow .15s;
 }
 .challenge-strip-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(255,71,87,.4); }
+
+/* ─── Phone landscape, coloring state ─────────────────────────────────────
+   Must stay AFTER the base .coloring-hint / .challenge-strip rules: same
+   specificity, so source order decides (an earlier copy of the hint rule sat
+   above the base rule and never applied).
+   The stage is a size container, so the picture is capped by the height that
+   is really left after hint + toolbar + zoom bar. The old calc(100dvh - 210px)
+   guess was taller than the stage at ≤375px and drew over the zoom bar. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .app:not(.app-hero) .preview-stage { container-type: size; }
+  .app:not(.app-hero) #preview-canvas { max-height: 100cqh; max-width: 100cqw; }
+  /* "🏆 Challenge!" is in the action row (and the header) — same as portrait */
+  .app:not(.app-hero) .challenge-strip { display: none; }
+  /* Compact hint that may wrap: with nowrap the text pushed ✕ out of reach */
+  .coloring-hint { font-size: .74rem; line-height: 1.3; padding: 4px 6px 4px 10px; gap: 6px; }
+  .coloring-hint > span { min-width: 0; }
+}
 
 /* ─── Empty state (improved) ─────────────────────────────────────────────── */
 .empty-hint { opacity: .7; }

@@ -208,6 +208,12 @@
   .picker-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .6rem; }
   .picker-dot { width: 10px; height: 10px; }
   .legend-sep { margin: 2px 1px; }
+  /* overflow-y:auto on the sidebar forces overflow-x to clip as well, so the
+     active ring must fit the ~7px of sidebar + strip padding (scale + ring ≤ 6px) */
+  .color-swatch.active {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--c, #aaa), 0 4px 10px rgba(0,0,0,.25);
+  }
 }
 
 /* ─── Max colour-picker modal (16 × 16 grid) ─────────────────────────────── */
