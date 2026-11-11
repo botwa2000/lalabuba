@@ -229,7 +229,8 @@ For quadrant definitions see `docs/screen-quadrants.md`.
 - [ ] Numbers on/off persists
 - [ ] 🔴 First visit (cleared storage): pre-selected Medium draws with 8 colours AND numbers on; mode chip reads "Numbers" (regressed until v371: drew 12 colours, no numbers)
 - [ ] 🔴 Touch tablet (Lala_Tablet AVD, Chrome) landscape + portrait: whole picture visible without scrolling; hero shows the 4 suggestion cards under "or pick something fun"
-- [ ] 🔴 Phone landscape (Galaxy_S25_Ultra AVD): picture below the zoom bar, hint ✕ visible, today's-word pill not cut off, no ◀ over Draw!
+- [ ] 🔴 Phone landscape (Galaxy_S25_Ultra AVD): picture fills the stage (zoom buttons float bottom-right when the card is >470px, otherwise a row above), hint ✕ visible, today's-word pill not cut off, no ◀ over Draw!
+- [ ] 🔴 Phone-landscape toolbar at 667/740/844/915/932/1040 wide, EN + DE + ES, with a picture loaded (✓ I'm finished! showing): one row, "⋯ More" fully visible; Tap/Pencil/Brush in the row only when the card is >640px; at 667 Undo/More show ↩ / ⋯ only. More opens a panel OVER the picture (picture doesn't move or shrink) holding Numbers/Free, Print, Save, Share art, 🏆 Challenge!, Share, Report; tapping any of them closes the panel
 - [ ] 🔴 Mouse desktop 1024×768 / 1366×768 / 1440×900 / 1920×1080, coloring state: whole picture visible without page scroll (scrollHeight = viewport), zoom buttons float bottom-right of the picture, no lone separator row in the toolbar; same with the side panel expanded and in Pencil mode (regressed until v373: bottom of the picture below the fold)
 - [ ] 🔴 SEO-page CTA links (`/?s=1&q=cat&d=easy`, `…&d=hard`): auto-draw with that level's colours (Easy 6 / Hard 12) and its card highlighted; a link's own `c=` still wins (until v375 every level drew Medium's 8)
 - [ ] 🔴 🏆 Challenge! in the toolbar (desktop + phone) credits the Challenger sticker and logs challenge_created (until v373 only the hidden strip's "Share →" did)
