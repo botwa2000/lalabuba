@@ -503,8 +503,8 @@
     position: absolute; left: 0; right: 0; z-index: 6;
     border-radius: 0 0 14px 14px; box-shadow: var(--sh-md);
   }
-  .canvas-actions.show-more + .zoom-controls:not([hidden]),
-  .canvas-actions.show-more + .zoom-controls[hidden] + .canvas-body { margin-top: 40px; }
+  /* An in-flow zoom row slides up under the panel; the picture keeps its place. */
+  .canvas-actions.show-more ~ .canvas-body { margin-top: 40px; }
   .canvas-actions.show-more .action-group:not(.action-group--primary):not(.action-group--more):not(.color-mode-group) {
     display: flex; flex-wrap: wrap; flex-shrink: 1; min-width: 0; max-width: 100%;
   }
@@ -597,6 +597,20 @@
   /* Compact hint that may wrap: with nowrap the text pushed ✕ out of reach */
   .coloring-hint { font-size: .74rem; line-height: 1.3; padding: 4px 6px 4px 10px; gap: 6px; }
   .coloring-hint > span { min-width: 0; }
+  /* Zoom buttons float in the stage corner (as on tablets) instead of a 53px
+     row: the picture is height-limited here, so it gains ~20% and the buttons
+     sit in the side margin. Only on cards >470px: narrower ones (667–740px
+     phones) have no side margin, and the buttons would cover the picture. */
+  @container canvas-wrapper (min-width: 471px) {
+    .app:not(.app-hero) .zoom-controls {
+      position: absolute; right: 8px; bottom: 8px; z-index: 4;
+      flex-direction: column; gap: 4px; padding: 4px;
+      border: 1.5px solid var(--border); border-radius: 999px;
+      background: var(--card); box-shadow: var(--sh-md);
+    }
+    .app:not(.app-hero) .zoom-controls[hidden] { display: none; }
+    .app:not(.app-hero) .zoom-pan-btn { margin: 4px 0 0; border-left: 0; padding-left: 0; }
+  }
 }
 
 /* ─── Tablets + desktops, coloring state: the whole picture fits the screen ──
