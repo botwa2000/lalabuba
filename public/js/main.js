@@ -1247,6 +1247,15 @@ moreActionsBtn?.addEventListener('click', () => {
   const open = canvasActionsEl?.classList.toggle('show-more');
   moreActionsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
 });
+// Phone landscape opens "More" as a panel over the picture (workspace.css), so
+// an action closes it again; portrait pushes the picture down and stays open.
+const phoneLandscape = window.matchMedia('(orientation: landscape) and (max-height: 500px)');
+canvasActionsEl?.addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn || btn === moreActionsBtn || !phoneLandscape.matches || !canvasActionsEl.classList.contains('show-more')) return;
+  canvasActionsEl.classList.remove('show-more');
+  moreActionsBtn?.setAttribute('aria-expanded', 'false');
+});
 
 // Close mobile portrait panel when clicking outside
 document.addEventListener('click', (e) => {

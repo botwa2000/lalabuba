@@ -478,8 +478,42 @@
     scrollbar-width: none;
   }
   .canvas-actions::-webkit-scrollbar { display: none; }
-  .action-row-break { display: none; }  /* single scrollable row in landscape */
+  .action-row-break { display: none; }  /* single row in landscape */
   .action-group--output { margin-left: 0; flex-wrap: nowrap; flex-shrink: 0; }
+  /* Slim row like portrait: all 14 buttons needed ~1190px but the canvas card is
+     ~480–680px, so Print / Save / Share art / 🏆 Challenge / Share / Report sat
+     past the right edge of a hidden-scrollbar row (Print cut in half, the rest
+     unseen). Landscape keeps the coloring tools in the row (it has the width);
+     Numbers/Free and the output buttons open with "⋯ More" (main.js toggles
+     .show-more), which wraps them onto extra rows until it is tapped again.
+     #draw-tools-group (Clear) is shown by an inline style, which still wins. */
+  .action-spacer { display: block; flex: 1 1 auto; min-width: 0; max-width: none; }
+  .action-sep { display: none; }
+  .action-group--more { display: flex; }
+  .canvas-actions .action-group:not(.action-group--primary):not(.action-group--more):not(.color-mode-group) { display: none; }
+  /* Open = a panel OVER the picture: pushing it down (portrait-style) left a
+     375px-tall screen with ~0px of picture once 2–5 extra rows opened.
+     top:auto keeps the bar at its static spot; the next visible element takes
+     the bar's fixed 40px so the picture doesn't jump. main.js closes it after
+     an action. z-index 6: over the loading overlay (5). */
+  .canvas-wrapper { position: relative; }
+  .canvas-actions { height: 40px; box-sizing: border-box; }
+  .canvas-actions.show-more {
+    flex-wrap: wrap !important; overflow: auto; height: auto; max-height: 85%;
+    position: absolute; left: 0; right: 0; z-index: 6;
+    border-radius: 0 0 14px 14px; box-shadow: var(--sh-md);
+  }
+  .canvas-actions.show-more + .zoom-controls:not([hidden]),
+  .canvas-actions.show-more + .zoom-controls[hidden] + .canvas-body { margin-top: 40px; }
+  .canvas-actions.show-more .action-group:not(.action-group--primary):not(.action-group--more):not(.color-mode-group) {
+    display: flex; flex-wrap: wrap; flex-shrink: 1; min-width: 0; max-width: 100%;
+  }
+  /* Narrow cards (667–740px phones: ~300–380px) can't fit the tools either:
+     they pushed "⋯ More" itself off the edge. Same as portrait: tools open with More. */
+  @container canvas-wrapper (max-width: 470px) {
+    .canvas-actions .action-group.color-mode-group { display: none; }
+    .canvas-actions.show-more .action-group.color-mode-group { display: flex; }
+  }
   .action-btn  { font-size: .72rem !important; padding: 4px 8px !important; white-space: nowrap; flex-shrink: 0; }
   .mode-btn    { font-size: .72rem !important; padding: 4px 6px !important; white-space: nowrap; flex-shrink: 0; }
   .zoom-controls { padding: 5px 8px; gap: 4px; }
