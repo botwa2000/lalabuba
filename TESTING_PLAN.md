@@ -235,6 +235,8 @@ For quadrant definitions see `docs/screen-quadrants.md`.
 - [ ] 🔴 SEO-page CTA links (`/?s=1&q=cat&d=easy`, `…&d=hard`): auto-draw with that level's colours (Easy 6 / Hard 12) and its card highlighted; a link's own `c=` still wins (until v375 every level drew Medium's 8)
 - [ ] 🔴 🏆 Challenge! in the toolbar (desktop + phone) credits the Challenger sticker and logs challenge_created (until v373 only the hidden strip's "Share →" did)
 - [ ] 🔴 Challenge strip ("🏆 Challenge a friend … Share →") shows under the picture after every Draw!/Again!/Journal restore at 1440×900, 1024×768, 390×844, 375×667, 360×640, 844×390, 667×375 (EN + DE; cookie banner answered): ≤2 lines on phone portrait, 1 line (ellipsis) on desktop/landscape; picture never overlaps it or the zoom row; floating zoom buttons sit ABOVE it (never on Share →); Share → opens the challenge modal. Hidden in all three layouts until v380, so it never appeared
+- [ ] 🔴 Phone-portrait toolbar row (🆕 New · ↩ · ✓ I'm finished! · ⋯ More) fits at 320/360/375/390px in all 12 languages with no horizontal scroll; ⋯ More is never cut off (sticky right edge). Undo is icon-only on phones (DE/NL/ES/RU/HI labels pushed More off-screen until v381).
+- [ ] Challenge modal app link: Android UA → Google Play URL, Play glyph, `noAppYetPlay` text in the UI language (follows a language switch); other UAs → App Store + Apple glyph. Before v381 Android showed the Apple logo with untranslated English.
 - [ ] Language persists
 - [ ] Theme (dark/light) persists
 - [ ] Sound on/off persists

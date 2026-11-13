@@ -120,9 +120,12 @@ export function initShareHandlers() {
   const appLabel = document.getElementById('share-app-label');
   if (appLink && appLabel && /Android/i.test(navigator.userAgent)) {
     appLink.href = 'https://play.google.com/store/apps/details?id=com.lalabuba.lalabuba';
-    appLink.setAttribute('aria-label', 'Get Lalabuba on Google Play');
-    appLabel.removeAttribute('data-i18n');
-    appLabel.textContent = 'No app yet? Get it free on Google Play';
+    // Own i18n key (applyTranslations re-applies it on a language change) and
+    // the Play glyph instead of the Apple logo.
+    appLabel.dataset.i18n = 'noAppYetPlay';
+    appLabel.textContent = t('noAppYetPlay');
+    appLink.querySelector('.share-apple-icon path')
+      ?.setAttribute('d', 'M3.6 1.8c-.3.3-.5.8-.5 1.4v17.6c0 .6.2 1.1.5 1.4l.1.1 9.9-9.9v-.2L3.7 1.7l-.1.1zM16.9 15.7l-3.3-3.3v-.2l3.3-3.3.1.1 3.9 2.2c1.1.6 1.1 1.7 0 2.3l-3.9 2.2h-.1zM17 15.6 13.6 12 3.6 22.2c.4.4 1 .4 1.7.1L17 15.6M17 8.4 5.3 1.7c-.7-.4-1.3-.3-1.7.1L13.6 12 17 8.4z');
   }
 
   document.getElementById('share-button').addEventListener('click', openShareModal);

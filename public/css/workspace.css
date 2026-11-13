@@ -412,6 +412,18 @@
 
   /* Bigger, kid-friendly touch targets for the always-visible controls */
   .action-btn { min-height: 40px; }
+
+  /* Undo is icon-only on phones: the ↩ glyph is universal, and long labels
+     ("Rückgängig", "Ongedaan maken") pushed ⋯ More off a 360–390px row. The
+     text stays in the DOM (font-size 0), so it is still the accessible name.
+     #id + !important beats the 480px `.action-btn` font-size !important. */
+  #undo-button { font-size: 0 !important; min-width: 40px; padding: 5px 10px !important; }
+  #undo-button::before { content: '↩'; font-size: 1rem; font-weight: 700; }
+
+  /* ⋯ More is the only door to Challenge / Save / Print here, so it may never
+     scroll out of reach: pinned to the right edge of the scrolling row. */
+  .action-group--more { position: sticky; right: 0; z-index: 1; background: var(--bg); box-shadow: -8px 0 8px -4px var(--bg); }
+  .canvas-actions.show-more .action-group--more { position: static; box-shadow: none; }
 }
 
 /* Tablet and below: stack palette under canvas */
@@ -439,6 +451,13 @@
   .canvas-actions { gap: 4px !important; padding: 6px 8px !important; }
   .action-btn { font-size: .76rem !important; padding: 5px 11px !important; }
   .mode-btn   { font-size: .76rem !important; padding: 5px 8px !important; }
+}
+
+/* 320–340px phones (iPhone SE 1st gen): the portrait row still ran ≤22px
+   over in es/pl/ru — tighten it so the whole row fits without scrolling. */
+@media (max-width: 340px) and (min-height: 501px) {
+  .canvas-actions { gap: 3px !important; padding: 6px 6px !important; }
+  .action-btn { font-size: .72rem !important; padding: 5px 8px !important; }
 }
 
 /* Very small phones */
