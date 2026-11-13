@@ -22,7 +22,9 @@ workflows:
         - ios-signing
       vars:
         APP_STORE_APPLE_ID: "6761691648"
-      flutter: stable
+      # Pinned: "stable" floated to 3.50.0 on 2026-11-13 and 9 widget tests failed
+      # (font-change frame callback after dispose). 3.47.9 shipped 1.0.25.
+      flutter: 3.47.9
       # Pinned (not "latest"): when Codemagic moves "latest" to a new Xcode whose
       # image the free mac_mini_m2 pool doesn't carry yet, builds sit in "queued"
       # indefinitely (2026-10-09: 1.0.21 queued 1h+). 26.6 built every release so far.
@@ -215,7 +217,7 @@ workflows:
       events: []
     working_directory: flutter_app
     environment:
-      flutter: stable
+      flutter: 3.47.9   # pinned — see flutter-release
       xcode: "26.6"   # pinned — see flutter-release
     scripts:
       - name: Get Flutter dependencies
