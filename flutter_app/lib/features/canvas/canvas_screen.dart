@@ -42,6 +42,7 @@ import 'stroke_mask.dart';
 import 'canvas_painter.dart';
 import 'narration_service.dart';
 import 'completion_celebration.dart';
+import 'challenge_strip.dart';
 import 'report_content_sheet.dart';
 import '../rewards/crayon_packs.dart';
 import '../rewards/scenes.dart';
@@ -879,6 +880,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             ],
           ),
         ),
+        if (_challengeReady(canvas)) _buildChallengeStrip(l10n),
         if (hasContent) _buildDrawingPanel(context, canvas, settings, l10n),
         if (hasContent) _buildActionBar(context, canvas, l10n),
         SizedBox(height: MediaQuery.paddingOf(context).bottom),
@@ -922,6 +924,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                   ],
                 ),
               ),
+              if (_challengeReady(canvas))
+                _buildChallengeStrip(l10n, compact: true),
               if (hasContent) _buildActionBar(context, canvas, l10n),
               SizedBox(height: MediaQuery.paddingOf(context).bottom),
             ],
@@ -931,6 +935,20 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       ],
     );
   }
+
+  // ─── Challenge strip ─────────────────────────────────────────────────────────
+  // Same gate as the toolbar 🏆 Challenge button: a challenge link needs the
+  // picture's seed, and the picture must be ready to colour.
+  bool _challengeReady(CanvasState canvas) =>
+      _currentSeed != null && canvas.isReady;
+
+  Widget _buildChallengeStrip(L10n l10n, {bool compact = false}) =>
+      ChallengeStrip(
+        hint: l10n.t('challengeHint'),
+        shareLabel: l10n.t('challengeShare'),
+        onShare: _showChallengeDialog,
+        compact: compact,
+      );
 
   // ─── Canvas area ─────────────────────────────────────────────────────────────
 
