@@ -377,9 +377,13 @@
     border-right: 0;
   }
   .app:not(.app-hero) .canvas-body { flex: 1; min-height: 0; }
-  .app:not(.app-hero) #preview-canvas { max-height: 100%; }
-  /* Challenge lives in the More menu on mobile — drop the strip to save height */
-  .app:not(.app-hero) .challenge-strip { display: none; }
+  /* Cap the picture by the stage's real box (size container), as in landscape
+     and on desktop. The old max-height:100% resolved against .canvas-frame's
+     auto height, i.e. never applied: the square picture was as tall as the
+     screen is wide and spilled over the zoom row and challenge strip whenever
+     the stage was shorter (375×667: ~50px). */
+  .app:not(.app-hero) .preview-stage { container-type: size; min-height: 0; }
+  .app:not(.app-hero) #preview-canvas { max-height: 100cqh; max-width: 100cqw; }
 
   /* Slim single-row toolbar: New + Undo on the left, More on the right.
      Secondary groups are hidden until "More" is tapped. */
@@ -591,6 +595,36 @@
 }
 .challenge-strip-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(255,71,87,.4); }
 
+/* Coloring state: the strip stays visible on every viewport. It was display:none
+   in all three fit-viewport layouts (phone portrait, phone landscape,
+   tablet/desktop) to give the picture its height — so it never showed at all:
+   generate.js un-hides it only after a picture is drawn, by which time
+   .app-hero is gone. Challenge links are the top traffic source, so the strip
+   is back, but on a height budget: ≤2 lines (1 in phone landscape), slimmer
+   padding, never shrunk by the flex column. The picture is capped by its
+   stage (size container / max-height:100%), so it gives up the ~40px and the
+   strip can't cover it; it's inside .canvas-wrapper, above the palette dock.
+   Where the zoom buttons float at the card's bottom-right (tablet/desktop,
+   wide phone-landscape cards) they would sit on the strip's Share button, so
+   there the strip is one line of fixed height --challenge-h and the zoom
+   stack is lifted by exactly that (set only while the strip is shown). */
+.app:not(.app-hero) .challenge-strip {
+  flex-shrink: 0;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  font-size: .8rem;
+  line-height: 1.25;
+}
+.app:not(.app-hero) .challenge-strip > span {
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.app:not(.app-hero) .challenge-strip-btn { padding: 5px 14px; font-size: .82rem; }
+
 /* ─── Phone landscape, coloring state ─────────────────────────────────────
    Must stay AFTER the base .coloring-hint / .challenge-strip rules: same
    specificity, so source order decides (an earlier copy of the hint rule sat
@@ -601,8 +635,12 @@
 @media (orientation: landscape) and (max-height: 500px) {
   .app:not(.app-hero) .preview-stage { container-type: size; }
   .app:not(.app-hero) #preview-canvas { max-height: 100cqh; max-width: 100cqw; }
-  /* "🏆 Challenge!" is in the action row (and the header) — same as portrait */
-  .app:not(.app-hero) .challenge-strip { display: none; }
+  /* Challenge strip: one ~30px line (text ellipsised) instead of the old
+     display:none — this is where the picture's height is scarcest. */
+  .app:not(.app-hero) .canvas-wrapper:has(> .challenge-strip:not([hidden])) { --challenge-h: 30px; }
+  .app:not(.app-hero) .challenge-strip { height: var(--challenge-h, auto); box-sizing: border-box; padding: 3px 6px 3px 10px; font-size: .72rem; }
+  .app:not(.app-hero) .challenge-strip > span { -webkit-line-clamp: 1; line-clamp: 1; }
+  .app:not(.app-hero) .challenge-strip-btn { padding: 3px 12px; font-size: .74rem; }
   /* Compact hint that may wrap: with nowrap the text pushed ✕ out of reach */
   .coloring-hint { font-size: .74rem; line-height: 1.3; padding: 4px 6px 4px 10px; gap: 6px; }
   .coloring-hint > span { min-width: 0; }
@@ -612,7 +650,7 @@
      phones) have no side margin, and the buttons would cover the picture. */
   @container canvas-wrapper (min-width: 471px) {
     .app:not(.app-hero) .zoom-controls {
-      position: absolute; right: 8px; bottom: 8px; z-index: 4;
+      position: absolute; right: 8px; bottom: calc(8px + var(--challenge-h, 0px)); z-index: 4;
       flex-direction: column; gap: 4px; padding: 4px;
       border: 1.5px solid var(--border); border-radius: 999px;
       background: var(--card); box-shadow: var(--sh-md);
@@ -631,19 +669,17 @@
    mouse desktops from 1024×768 to 1920×1080 the bottom of every picture sat
    below the fold. The footer hides in this state as on phones; the hero
    still shows it.
-   Height won back for the picture: the challenge strip goes (🏆 Challenge!
-   is in the toolbar, as on phones) and the zoom buttons float in the stage's
+   Height won back for the picture: the zoom buttons float in the stage's
    bottom-right corner instead of filling a 53px row of their own. They
    stack vertically so they sit in the white margin beside a square picture
    on landscape screens. z-index 4: over the (transformed) canvas frame,
    under the loading overlay (5). */
 @media (min-width: 768px) and (min-height: 501px) {
-  .app:not(.app-hero) .challenge-strip { display: none; }
   .app:not(.app-hero) .canvas-wrapper { position: relative; }
   .app:not(.app-hero) .zoom-controls {
     position: absolute;
     right: 10px;
-    bottom: 10px;
+    bottom: calc(10px + var(--challenge-h, 0px)); /* above the challenge strip */
     z-index: 4;
     flex-direction: column;
     gap: 6px;
@@ -655,6 +691,10 @@
   }
   .app:not(.app-hero) .zoom-controls[hidden] { display: none; }
   .app:not(.app-hero) .zoom-pan-btn { margin: 4px 0 0; border-left: 2px solid var(--border); padding-left: 0; }
+  /* Challenge strip: one 40px line here, so the zoom stack's lift is exact */
+  .app:not(.app-hero) .canvas-wrapper:has(> .challenge-strip:not([hidden])) { --challenge-h: 40px; }
+  .app:not(.app-hero) .challenge-strip { height: var(--challenge-h, auto); box-sizing: border-box; }
+  .app:not(.app-hero) .challenge-strip > span { -webkit-line-clamp: 1; line-clamp: 1; }
 
   /* Pencil/brush "🗑️ Clear" opens the output row (left side, which is empty)
      instead of wrapping onto a third toolbar row of its own (+44px at 1440). */

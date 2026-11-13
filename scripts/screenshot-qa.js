@@ -21,7 +21,16 @@ if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
 
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 
-const VIEWPORTS = [
+// QA_LANG=de → UI language for the run. QA_VIEWPORTS=375x667,667x375 → replace
+// the default three (mobile emulation when either side is < 768).
+const QA_LANG = process.env.QA_LANG || '';
+const VIEWPORTS = process.env.QA_VIEWPORTS
+  ? process.env.QA_VIEWPORTS.split(',').map(v => {
+      const [width, height] = v.split('x').map(Number);
+      const mobile = Math.min(width, height) < 768;
+      return { name: `${v}${QA_LANG ? '-' + QA_LANG : ''}`, width, height, mobile, touch: mobile, scale: mobile ? 2 : 1 };
+    })
+  : [
   { name: 'desktop',          width: 1440, height: 900,  mobile: false, touch: false, scale: 1 },
   { name: 'mobile-portrait',  width: 390,  height: 844,  mobile: true,  touch: true,  scale: 2 },
   { name: 'mobile-landscape', width: 844,  height: 390,  mobile: true,  touch: true,  scale: 2 },
@@ -74,6 +83,16 @@ async function run() {
       deviceScaleFactor: vp.scale,
       userAgent:         vp.mobile ? MOBILE_UA : undefined,
     });
+
+    // Pre-answer the cookie banner: it is fixed to the bottom ~110–250px and
+    // covered whatever sits there in every shot (challenge strip, palette dock,
+    // zoom buttons), so those were never actually reviewed.
+    await ctx.addInitScript((lang) => {
+      try {
+        localStorage.setItem('lala_cookie_consent', JSON.stringify({ analytics: false, ts: Date.now() }));
+        if (lang) localStorage.setItem('lalabuba-lang', lang);
+      } catch {}
+    }, QA_LANG);
 
     const page = await ctx.newPage();
     page.on('console', () => {});
