@@ -5,7 +5,8 @@ name: Flutter — Store Release (manual, Claude-triggered)
 #   { "ref": "main", "inputs": { "platform": "android", "track": "internal" } }
 #
 # For iOS the ios-trigger job starts the Codemagic "flutter-release" workflow
-# (build + TestFlight). With track=production it ALSO starts "appstore-submit",
+# (build + TestFlight). With track=production it waits for that build to finish,
+# then starts "appstore-submit" (never both at once: one Codemagic Mac),
 # which waits for that new build to finish processing and submits it for App
 # Store review (What's New from flutter_app/store/whats_new.json).
 
@@ -140,27 +141,40 @@ jobs:
           echo "Codemagic token present (length: ${#CM_TOKEN})"
 
       - name: Trigger Codemagic iOS workflows
+        timeout-minutes: 60
         env:
           CM_TOKEN: ${{ secrets.CODEMAGIC_API_TOKEN }}
-          # production → TestFlight build + App Store review submission; else TestFlight only.
-          CM_WORKFLOWS: ${{ inputs.track == 'production' && 'flutter-release appstore-submit' || 'flutter-release' }}
+          SUBMIT: ${{ inputs.track == 'production' }}
         run: |
-          # appstore-submit only accepts builds uploaded after this moment.
-          NOT_BEFORE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          for wf in $CM_WORKFLOWS; do
-            echo "Codemagic workflow: $wf"
+          # Strictly sequential: the Codemagic account has ONE concurrent Mac.
+          # Triggering both at once let appstore-submit grab the machine and
+          # wait (up to 90 min) for a build that could only start after it
+          # released the machine — a deadlock (1.0.26, 2026-11-13).
+          NOT_BEFORE=$(date -u +%Y-%m-%dT%H:%M:%SZ)   # submit only accepts builds uploaded after this
+          trigger() {
             resp=$(curl -s -w "\n%{http_code}" -X POST \
               -H "x-auth-token: $CM_TOKEN" \
               -H "Content-Type: application/json" \
-              --data "{\"appId\": \"69d2bd72c09ad496ab57741d\", \"workflowId\": \"$wf\", \"branch\": \"main\", \"environment\": {\"variables\": {\"NOT_BEFORE\": \"$NOT_BEFORE\"}}}" \
+              --data "{\"appId\": \"69d2bd72c09ad496ab57741d\", \"workflowId\": \"$1\", \"branch\": \"main\", \"environment\": {\"variables\": {\"NOT_BEFORE\": \"$NOT_BEFORE\"}}}" \
               https://api.codemagic.io/builds)
-            code=$(echo "$resp" | tail -n1)
-            body=$(echo "$resp" | sed '$d')
-            echo "HTTP $code"
-            echo "$body"
+            code=$(echo "$resp" | tail -n1); body=$(echo "$resp" | sed '$d')
+            echo "Codemagic $1: HTTP $code $body" >&2
             if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
-              echo "::error::Codemagic $wf trigger failed (HTTP $code)"
-              exit 1
+              echo "::error::Codemagic $1 trigger failed (HTTP $code)" >&2; exit 1
             fi
-            echo "Codemagic $wf triggered successfully"
+            echo "$body" | jq -r .buildId
+          }
+          id=$(trigger flutter-release) || exit 1
+          [ "$SUBMIT" = "true" ] || exit 0
+          # Wait for the TestFlight build, then submit it for App Store review.
+          while :; do
+            status=$(curl -s -H "x-auth-token: $CM_TOKEN" https://api.codemagic.io/builds/$id | jq -r .build.status)
+            echo "flutter-release $id: $status"
+            case "$status" in
+              finished) break ;;
+              failed|canceled|timeout|skipped)
+                echo "::error::Codemagic flutter-release ended '$status' — App Store submit not started"; exit 1 ;;
+            esac
+            sleep 60
           done
+          trigger appstore-submit >/dev/null
