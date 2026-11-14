@@ -116,6 +116,23 @@ async function autoTriage({ id, evidence, subject, imagePath, source }) {
   return note;
 }
 
+// Who sent the report, from the install's traffic class (lib/usage.js): Play
+// pre-launch robots and Apple App Review tap every button on each new build, 🚩
+// included, so most reports right after a release come from them. The report
+// is still stored, triaged and mailed; the label only says how much to worry.
+async function reporterLabel(uuid) {
+  let traffic = null;
+  try {
+    const { rows } = await db.query("SELECT traffic FROM usage_installs WHERE install_id = $1", [uuid]);
+    traffic = rows[0]?.traffic || null;
+  } catch { /* label is best-effort; never lose the alert over it */ }
+  if (traffic === "review")   return { tag: " [store reviewer]", line: "store reviewer (App Review / Play review) — not a child" };
+  if (traffic === "test")     return { tag: " [test device]",    line: "test device (pre-launch robot or tester) — not a child" };
+  if (traffic === "internal") return { tag: " [team device]",    line: "our own device" };
+  if (traffic)                return { tag: "", line: `real user (${traffic})` };
+  return { tag: "", line: "unknown device (no usage record yet)" };
+}
+
 module.exports = async (req, res) => {
   const origin = req.headers.origin;
   if (auth.ALLOWED_ORIGINS.includes(origin)) {
@@ -181,10 +198,11 @@ module.exports = async (req, res) => {
       console.error("[content-report] triage failed:", err.message);
       return "not checked: triage error";
     })
-    .then((triage) => {
+    .then(async (triage) => {
       console.warn(`[content-report] #${id} triage: ${triage}`);
+      const reporter = await reporterLabel(uuid);
     sendAdminAlert(
-      `[Lalabuba] Content report #${id}: ${reason} — "${subject}"`,
+      `[Lalabuba] Content report #${id}: ${reason} — "${subject}"${reporter.tag}`,
       [
         `A user reported an AI-generated picture.`,
         ``,
@@ -197,6 +215,7 @@ module.exports = async (req, res) => {
         `Image:      ${imagePath ? `https://lalabuba.com${imagePath}` : "-"}`,
         `Evidence:   ${evidence ? "saved" : "not available"}`,
         `Platform:   ${platform ?? "-"} ${appVersion ?? ""}`,
+        `Reporter:   ${reporter.line}`,
         `Triage:     ${triage}`,
         ``,
         `Review: https://lalabuba.com/admin/stats (Safety section).`,
