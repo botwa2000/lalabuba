@@ -179,9 +179,10 @@ const sum = (rows, k) => rows.reduce((a, r) => a + (r[k] || 0), 0);
     assert.strictEqual(ev.rows[0].traffic, "review");
     assert(!JSON.stringify(ev.rows[0]).includes("17.5.7.9"), "the address is not stored");
     assert.strictEqual((await db.query("SELECT traffic FROM usage_installs WHERE install_id = $1", [id(8)])).rows[0].traffic, "review");
-    // The same install later seen on an ordinary network is a person.
+    // Review is sticky (54ca982): the same reviewer device later seen on an
+    // ordinary network stays a reviewer instead of turning into a person.
     await usage.recordEvents({ headers: { ...req.headers, "cf-connecting-ip": "8.8.8.8" } }, { events: [{ e: "app_open" }] });
-    assert.strictEqual((await db.query("SELECT traffic FROM usage_installs WHERE install_id = $1", [id(8)])).rows[0].traffic, "human");
+    assert.strictEqual((await db.query("SELECT traffic FROM usage_installs WHERE install_id = $1", [id(8)])).rows[0].traffic, "review");
   });
 
   console.log(`\n${n} passed`);
