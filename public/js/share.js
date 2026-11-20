@@ -4,6 +4,7 @@ import { setColorCount, setStatus, showLoading, hideLoading } from './ui.js';
 import { generatePage } from './generate.js';
 import { renderGeneratedImage } from './canvas.js';
 import { t } from './i18n.js';
+import { track } from './analytics.js';
 
 export function buildShareUrl() {
   const isDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
@@ -93,7 +94,11 @@ export function loadFromShare() {
         // Load the pre-drawn image directly — no AI call.
         await renderGeneratedImage(imgUrl);
         state.lastImageUrl = imgUrl;
+        track('picture_opened', { source: 'library', difficulty: d });
         setStatus(t('done'));
+        // Same "tap a shape to colour it" hint a generated picture gets.
+        const coloringHint = document.getElementById('coloring-hint');
+        if (coloringHint) coloringHint.hidden = false;
         document.getElementById('regen-button').disabled = false;
       } else if (Number.isFinite(seed)) {
         // Legacy share link without stored image — regenerate using seed.

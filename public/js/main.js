@@ -543,8 +543,17 @@ difficultySelect.addEventListener("change", () => {
 const UNDO_MAX = 10;
 const undoButton = document.getElementById('undo-button');
 
+// First colour of the current picture (tap fill, paint or pencil) — counted once
+// per picture for the dashboard funnel; canvas.js resets the flag on a new image.
+function markFirstColour() {
+  if (state.firstFillTracked) return;
+  state.firstFillTracked = true;
+  track('first_fill', { difficulty: difficultySelect.value });
+}
+
 function pushUndo(regionId, fillResult, completedBefore) {
   if (!fillResult.success) return;
+  markFirstColour();
   state.undoStack.push({ regionId, record: fillResult.record, completedBefore });
   if (state.undoStack.length > UNDO_MAX) state.undoStack.shift();
   if (undoButton) undoButton.disabled = false;
@@ -1140,10 +1149,10 @@ function checkPaintCoverage() {
   }
 }
 
-setPaintEndCallback(checkPaintCoverage);
+setPaintEndCallback((...a) => { markFirstColour(); return checkPaintCoverage(...a); });
 // Pencil/freehand strokes also re-check free-mode coverage completion so a child
 // who colours by hand (unevenly) still earns the auto-celebration.
-setStrokeEndCallback(() => { try { checkCompletion(); } catch {} });
+setStrokeEndCallback(() => { markFirstColour(); try { checkCompletion(); } catch {} });
 
 // When the region worker finishes AFTER the user has already filled all numbered
 // areas, _retroactiveCompletionDetect() in canvas.js upgrades completedRegions to

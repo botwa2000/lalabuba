@@ -45,6 +45,7 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "127.0.0.1"; // container sets HOST=0.0.0.0
 const PUBLIC_DIR = path.join(__dirname, "public");
 
+const landing = require("./lib/landing");
 const { DE_TOPIC_MAP, EN_TO_DE_SLUG, DE_TOPIC_NAMES, topicDisplayName, topicsForLang, topicNavSection, hubCards, fillTopicMarkers } = require("./lib/topic-nav");
 
 // Translations for gallery section injected into DE static pages
@@ -183,21 +184,58 @@ function malformedSecrets() {
 
 // ── Gallery HTML helpers ─────────────────────────────────────────────────────
 
-// pageCtx = { basePath: '/en/coloring-pages/dinosaur/' } → links to individual image pages
-// If no basePath or no slug, falls back to ?s=1&img= direct-load link.
+// One picture card. Picture + "Color this" open the picture on the canvas in one
+// tap (library image, no generation); the label links to its own picture page.
+// pageCtx = { basePath: '/en/coloring-pages/dinosaur/' } → label links to /…/<slug>/
+//           { pageHref, label } → explicit label link/text (hub "ready to color" strip)
 function galleryCardHtml(entry, meta, t, pageCtx = {}) {
-  const shown = t?.subjectLabel ? t.subjectLabel(entry.subject) : entry.subject;
+  const shown = pageCtx.label || (t?.subjectLabel ? t.subjectLabel(entry.subject) : entry.subject);
   const label = shown.charAt(0).toUpperCase() + shown.slice(1);
   const diff  = entry.difficulty || "easy";
-  const href  = (entry.slug && pageCtx.basePath)
-    ? `${pageCtx.basePath}${entry.slug}/`
-    : `/?s=1&img=${encodeURIComponent(entry.url)}&q=${encodeURIComponent(entry.subject)}&d=${diff}`;
+  const color = landing.colorHref(entry, diff);
+  const page  = pageCtx.pageHref || ((entry.slug && pageCtx.basePath) ? `${pageCtx.basePath}${entry.slug}/` : null);
   const cta   = t?.colorThis || "Color this →";
-  return `<a href="${href}" class="gallery-card" title="${label}">
-    <img src="${entry.url}" alt="${label} ${t?.altSuffix || "coloring page"}" loading="lazy" width="280" height="280"/>
-    <div class="gallery-card-label">${label}</div>
-    <div class="gallery-card-cta">${cta}</div>
-  </a>`;
+  const L     = landing.esc(label);
+  return `<div class="gallery-card">
+    <a href="${landing.esc(color)}" class="gallery-card-img" aria-label="${landing.esc(cta)} ${L}"><img src="${entry.url}" alt="${L} ${t?.altSuffix || "coloring page"}" loading="lazy" width="280" height="280"/></a>
+    ${page ? `<a href="${page}" class="gallery-card-label" title="${L}">${L}</a>` : `<span class="gallery-card-label" title="${L}">${L}</span>`}
+    <a href="${landing.esc(color)}" class="gallery-card-cta">${cta}</a>
+  </div>`;
+}
+
+// Hub "ready to color" strip: one easy picture per topic, one tap to the canvas.
+// topics = topicsForLang(lang) rows ({ id, name, url }).
+function readyToColorSection(lang, topics, t) {
+  const L = landing.strings(lang);
+  const cards = topics.map(tp => {
+    const first = landing.firstPicture(gallery.getAllForTopic(tp.id));
+    if (!first) return "";
+    return galleryCardHtml({ ...first.entry, difficulty: first.difficulty }, null,
+      { colorThis: L.colorThis, altSuffix: t?.altSuffix }, { pageHref: tp.url, label: tp.name });
+  }).join("");
+  if (!cards) return "";
+  return `<section class="lp-section gallery-section" id="${landing.READY_ID}">
+    <h2 class="section-heading">${L.ready}</h2>
+    <div class="gallery-grid">${cards}</div>
+  </section>`;
+}
+
+// Hub page: "ready to color" strip right under the hero, hero button jumps to it.
+function withReadyToColor(html, lang, t) {
+  const section = readyToColorSection(lang, topicsForLang(lang, { season: null }), t);
+  if (!section) return html;
+  const injected = landing.injectAfterHero(html, section);
+  if (!injected) return html;
+  return landing.retargetHeroCta(injected, `#${landing.READY_ID}`, landing.strings(lang).pick);
+}
+
+// Topic page: pictures right under the hero (not below the article), and the
+// hero button opens the first picture on the canvas.
+function withPicturesFirst(html, lang, topicImages, galleryHtml) {
+  const injected = (galleryHtml && landing.injectAfterHero(html, galleryHtml))
+    || (galleryHtml ? injectGalleryIntoHtml(html, galleryHtml) : html);
+  const first = landing.firstPicture(topicImages);
+  return first ? landing.retargetHeroCta(injected, landing.colorHref(first.entry, first.difficulty), landing.strings(lang).colorNow) : injected;
 }
 
 function gallerySection(topicImages, meta, t, pageCtx = {}) {
@@ -282,7 +320,7 @@ async function serveTopicPageWithGallery(res, topic) {
   const topicImages = gallery.getAllForTopic(topic);
   const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
   const basePath = `/en/coloring-pages/${topic}/`;
-  let enhanced = hasAny ? injectGalleryIntoHtml(baseHtml, gallerySection(topicImages, meta, null, { basePath })) : baseHtml;
+  let enhanced = hasAny ? withPicturesFirst(baseHtml, "en", topicImages, gallerySection(topicImages, meta, null, { basePath })) : baseHtml;
 
   // Inject first gallery image as og:image for Pinterest/social sharing
   const firstImg = ["easy","medium","hard"].reduce((found, d) => found || (topicImages[d]||[])[0], null);
@@ -356,7 +394,7 @@ function serveDeTopicPageBySlug(res, deSlug) {
     const topicImages = gallery.getAllForTopic(enTopic);
     const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
     const deMeta = { ...gallery.TOPIC_META[enTopic], name: deTopicName };
-    if (hasAny) enhanced = injectGalleryIntoHtml(enhanced, gallerySection(topicImages, deMeta, DE_GALLERY_T, { basePath: `/de/ausmalbilder/${deSlug}/` }));
+    if (hasAny) enhanced = withPicturesFirst(enhanced, "de", topicImages, gallerySection(topicImages, deMeta, DE_GALLERY_T, { basePath: `/de/ausmalbilder/${deSlug}/` }));
     const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
     if (firstImg) {
       enhanced = enhanced.replace(/<meta property="og:image"[^>]*>/, `<meta property="og:image" content="https://lalabuba.com${firstImg.url}"/>`);
@@ -793,7 +831,7 @@ ${buildNav({ lang, breadcrumbs: [{ label: t.hubH1 }], hreflangMap: hubHreflangMa
 </footer>
 </body>
 </html>`;
-  serveHtml(res, html);
+  serveHtml(res, withReadyToColor(html, lang, t));
 }
 
 async function serveI18nTopic(res, lang, enTopic) {
@@ -866,7 +904,8 @@ ${buildNav({ lang, breadcrumbs: [{ href: `/${root}/`, label: t.hubH1 ? t.hubH1.s
 </footer>
 </body>
 </html>`;
-  serveHtml(res, html);
+  const first = landing.firstPicture(topicImages);
+  serveHtml(res, first ? landing.retargetHeroCta(html, landing.colorHref(first.entry, first.difficulty), landing.strings(lang).colorNow) : html);
 }
 
 // Serve the main app (index.html) with lang-specific meta for /fr/, /es/, etc.
@@ -1776,7 +1815,7 @@ const server = http.createServer(async (req, res) => {
         html = html.replace(/"url":"https:\/\/lalabuba\.com\/coloring-pages\/([^"]+)"/g, '"url":"https://lalabuba.com/en/coloring-pages/$1"');
         html = injectUnifiedNav(html, buildNav({ lang: 'en', breadcrumbs: [{ label: 'Coloring Pages' }], hreflangMap: hubHreflangMap(), ctaHref: '/' }));
         html = fillTopicMarkers(html, 'en');
-        return serveHtml(res, html);
+        return serveHtml(res, withReadyToColor(html, 'en', null));
       } catch { /* 404 below */ }
     }
     if (p === "/en/coloring-pages/today" || p === "/en/coloring-pages/today/") {
@@ -1815,7 +1854,7 @@ const server = http.createServer(async (req, res) => {
         html = html.replace(/"url":"https:\/\/lalabuba\.com\/ausmalbilder\/([^"]+)"/g, '"url":"https://lalabuba.com/de/ausmalbilder/$1"');
         html = injectUnifiedNav(html, buildNav({ lang: 'de', breadcrumbs: [{ label: 'Ausmalbilder' }], hreflangMap: hubHreflangMap(), ctaHref: '/' }));
         html = fillTopicMarkers(html, 'de');
-        return serveHtml(res, html);
+        return serveHtml(res, withReadyToColor(html, 'de', DE_GALLERY_T));
       } catch { /* 404 below */ }
     }
     if (p === "/de/ausmalbilder/heute" || p === "/de/ausmalbilder/heute/") {

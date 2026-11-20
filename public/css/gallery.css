@@ -98,22 +98,34 @@
   display: block;
   background: #f5f2ff;
 }
+/* Card = <div>: picture + "Color this" open the canvas, label opens the
+   picture's own page. Links set colour/decoration themselves because legal.css
+   colours every <a> purple. */
+.gallery-card-img { display: block; text-decoration: none; }
 .gallery-card-label {
+  display: block;
   font-size: 0.78rem;
   font-weight: 600;
   padding: 0.5rem 0.65rem 0.1rem;
   color: var(--lp-ink, #1e1b2e);
+  text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.35;
 }
+a.gallery-card-label:hover { text-decoration: underline; }
 .gallery-card-cta {
+  display: block;
   font-size: 0.72rem;
   font-weight: 700;
   color: #7c4dff;
+  text-decoration: none;
   padding: 0.1rem 0.65rem 0.6rem;
 }
+.gallery-card-cta:hover { text-decoration: underline; }
+/* Hero "pick a picture" jumps here; clear the 58px sticky nav (legal.css). */
+#ready-to-color { scroll-margin-top: 74px; }
 
 /* ── Empty state ─────────────────────────────────────────────────────────── */
 .gallery-empty {

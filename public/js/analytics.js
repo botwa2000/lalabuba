@@ -8,6 +8,10 @@ const EVENT_MAP = {
   print: 'print',
   challenge_created: 'challenge_create',
   gallery_opened: 'gallery_open',
+  // Coloring funnel: picture on the canvas → first colour → complete.
+  image_generate_success: 'picture_open',
+  picture_opened: 'picture_open',
+  first_fill: 'first_fill',
 };
 
 export function track(event, props = {}) {
@@ -16,5 +20,6 @@ export function track(event, props = {}) {
   // Only small, non-identifying props: never the subject text.
   const safe = {};
   if (typeof props.difficulty === 'string') safe.difficulty = props.difficulty;
+  if (name === 'picture_open') safe.source = props.source === 'library' ? props.source : "generated";
   try { window.lalaTrack?.(name, Object.keys(safe).length ? safe : undefined); } catch (_) {}
 }

@@ -57,6 +57,10 @@
   }
 
   function track(event, props) {
+    if (landing && FUNNEL[event]) {
+      props = props ? Object.assign({}, props) : {};
+      props.lp = landing;
+    }
     queue.push({ e: event, s: location.pathname, p: props || undefined, t: Date.now() });
     if (queue.length >= 20) flush();
     else if (!timer) timer = setTimeout(flush, 2000);
@@ -65,16 +69,27 @@
   // A visit starts when the previous page was not ours (no storage needed).
   var ref = document.referrer || "";
   var internal = false;
-  try { internal = !!ref && new URL(ref).hostname.replace(/^www\./, "").slice(-12) === "lalabuba.com"; } catch (e) {}
+  try {
+    var refUrl = ref ? new URL(ref) : null;
+    internal = !!refUrl && (refUrl.host === location.host || refUrl.hostname.replace(/^www\./, "").slice(-12) === "lalabuba.com");
+  } catch (e) {}
   var params = new URLSearchParams(location.search);
-  // ?s=1 opens a picture link. A real challenge (share modal) always carries
-  // seed= (and usually img=); the coloring-page CTAs ("Try Easy →",
-  // /?s=1&q=cat&d=easy) never do. Both used to count as "challenge" opens and
-  // as the "challenge share" source, so 25 SEO pages' clicks (and crawlers
-  // following them) showed as ~60 challenge visits a week with 0 created.
+  // ?s=1 opens a picture link. Only a real challenge (share modal) carries
+  // seed=. Everything else with s=1 comes from one of our coloring pages:
+  // "Color this" on a library picture (img=, opens that exact picture) or
+  // "generate one" (q= only). Until 2026-11 any img= link counted as a
+  // challenge, so ~80% of coloring-page clicks showed as challenge opens.
   var isShareLink = params.get("s") === "1";
-  var isChallenge = isShareLink && (params.has("seed") || params.has("img"));
+  var isChallenge = isShareLink && params.has("seed");
   var isPageCta = isShareLink && !isChallenge;
+  // Which of our pages the click came from (path only), so the dashboard can
+  // show page → picture → first fill → finished per landing page. It rides
+  // along on the later events of this page load (the app is one page).
+  var landing = null;
+  if (isPageCta) {
+    try { landing = internal ? new URL(ref).pathname.slice(0, 120) : "(direct)"; } catch (e) { landing = "(direct)"; }
+  }
+  var FUNNEL = { page_cta_open: 1, picture_open: 1, first_fill: 1, complete: 1 };
 
   if (!internal) {
     acq = {

@@ -1004,6 +1004,7 @@ export function drawBaseImage(image) {
   state.completedRegions = new Set();
   state.celebrationShown = false;
   state.completionRecorded = false; // new image → this coloring may be recorded once
+  state.firstFillTracked = false;   // and its first fill counted once (analytics funnel)
   state.coloringStartTime = null;
   state.undoStack = [];
   state.isSegmenting = false; // worker path sets this; reset on new image
