@@ -28,6 +28,8 @@ export const state = {
   customColor: '#e91e63',
   turnstileToken: null,
   turnstileWidgetId: null,
+  turnstileInteractive: false, // CF wants a checkbox click (before-interactive fired)
+  turnstileWaiting: false,     // a drawing is waiting for a token right now
   undoStack: [],        // [{regionId, record: Uint8Array, completedBefore: boolean}]
   colorMode: 'tap',     // 'tap' | 'pencil' | 'brush'
   artStyle: 'structured', // 'structured' (Classic) | 'artistic' (Sketch)

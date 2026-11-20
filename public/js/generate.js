@@ -181,13 +181,22 @@ async function takeTurnstileToken() {
   const current = () => state.turnstileToken || (el && window.turnstile ? window.turnstile.getResponse(el) : null);
   let token = current();
   if (!token) {
-    token = await new Promise((resolve) => {
-      const poll = setInterval(() => {
-        const t = current();
-        if (t) { clearInterval(poll); clearTimeout(timer); resolve(t); }
-      }, 100);
-      const timer = setTimeout(() => { clearInterval(poll); resolve(null); }, 45000);
-    });
+    // A drawing is now waiting: show the checkbox if CF already asked for one
+    // (main.js keeps it off-screen until something needs the token).
+    state.turnstileWaiting = true;
+    if (state.turnstileInteractive) document.body.classList.add('ts-needs-interaction');
+    try {
+      token = await new Promise((resolve) => {
+        const poll = setInterval(() => {
+          const t = current();
+          if (t) { clearInterval(poll); clearTimeout(timer); resolve(t); }
+        }, 100);
+        const timer = setTimeout(() => { clearInterval(poll); resolve(null); }, 45000);
+      });
+    } finally {
+      state.turnstileWaiting = false;
+      if (!token) document.body.classList.remove('ts-needs-interaction');
+    }
   }
   state.turnstileToken = null;
   if (window.turnstile && el) window.turnstile.reset(el);

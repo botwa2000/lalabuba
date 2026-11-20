@@ -407,6 +407,7 @@ function celebrate() {
 // CF explicitly needs a human click (before-interactive-callback).
 window.onTurnstileSuccess = (token) => {
   state.turnstileToken = token;
+  state.turnstileInteractive = false;
   document.body.classList.remove('ts-needs-interaction');
 };
 window.onTurnstileExpired = () => {
@@ -417,17 +418,24 @@ window.onTurnstileExpired = () => {
 };
 window.onTurnstileError = () => {
   state.turnstileToken = null;
+  state.turnstileInteractive = false;
   document.body.classList.remove('ts-needs-interaction');
   // Retry after a short delay — avoids a tight loop if CF is temporarily down.
   const _el = document.getElementById('turnstile-widget');
   setTimeout(() => { if (window.turnstile && _el) window.turnstile.reset(_el); }, 3000);
 };
-// CF fires this just before showing the visual checkbox — move widget on-screen.
+// CF fires this just before showing the visual checkbox. The widget moves
+// on-screen only while a drawing is waiting for a token (generate.js
+// takeTurnstileToken); otherwise it stays off-screen until one is. Until
+// 2026-11 the checkbox covered the page at load even for a visitor who only
+// opened a ready-made picture from a coloring page, which needs no token.
 window.onTurnstileBeforeInteractive = () => {
-  document.body.classList.add('ts-needs-interaction');
+  state.turnstileInteractive = true;
+  if (state.turnstileWaiting) document.body.classList.add('ts-needs-interaction');
 };
 // CF fires this after the user completes the interactive challenge.
 window.onTurnstileAfterInteractive = () => {
+  state.turnstileInteractive = false;
   document.body.classList.remove('ts-needs-interaction');
 };
 
