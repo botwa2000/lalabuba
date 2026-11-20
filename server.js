@@ -190,7 +190,7 @@ function malformedSecrets() {
 //           { pageHref, label } → explicit label link/text (hub "ready to color" strip)
 function galleryCardHtml(entry, meta, t, pageCtx = {}) {
   const shown = pageCtx.label || (t?.subjectLabel ? t.subjectLabel(entry.subject) : entry.subject);
-  const label = shown.charAt(0).toUpperCase() + shown.slice(1);
+  const label = shown.charAt(0).toUpperCase() + shown.slice(1) + (!pageCtx.label && entry.variant ? ` · ${entry.variant}` : "");
   const diff  = entry.difficulty || "easy";
   const color = landing.colorHref(entry, diff);
   const page  = pageCtx.pageHref || ((entry.slug && pageCtx.basePath) ? `${pageCtx.basePath}${entry.slug}/` : null);
@@ -465,7 +465,7 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
   const meta        = gallery.TOPIC_META[topic];
   const isDE   = lang === "de";
   const subject     = gallery.subjectLabel(lang, entry.subject || topic);
-  const subjectTitle = subject.charAt(0).toUpperCase() + subject.slice(1);
+  const subjectTitle = subject.charAt(0).toUpperCase() + subject.slice(1) + (entry.variant ? ` · ${entry.variant}` : "");
 
   const i18nCfg = (!isDE && lang !== "en") ? i18n.LANGS[lang] : null;
 
@@ -1421,6 +1421,12 @@ const server = http.createServer(async (req, res) => {
     const bad = malformedSecrets();
     if (bad.length) return sendJson(res, 503, { status: "degraded", malformed: bad });
     return sendJson(res, 200, { status: "ok" });
+  }
+
+  // Sitemap: built from the live picture library (lib/sitemap.js).
+  if (p === "/sitemap.xml" && (req.method === "GET" || req.method === "HEAD")) {
+    res.writeHead(200, { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" });
+    return res.end(req.method === "HEAD" ? undefined : require("./lib/sitemap").sitemapXml());
   }
 
   // Deep health check: actually generates a test image and validates quality.
