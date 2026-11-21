@@ -103,7 +103,7 @@ Data types — for each: **Collected: Yes · Shared: No · Processed ephemerally
 | App activity → **App interactions** | Required | Analytics |
 | App activity → **Other user-generated content** | Required | App functionality, Analytics, Fraud prevention/security/compliance (typed subjects; optional feedback comments) |
 | App info and performance → **Crash logs** | Required | App functionality |
-| App info and performance → **Diagnostics** | Required | App functionality |
+| App info and performance → **Diagnostics** | Required | App functionality, Analytics (error class + screen, 1.0.27+) |
 | Device or other IDs → **Device or other IDs** | Required | App functionality, Analytics, Fraud prevention/security/compliance |
 | Personal info → **Email address** | Optional | App functionality, Account management |
 | Personal info → **Name** | Optional | App functionality, Account management (child nicknames) |
