@@ -235,7 +235,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // pinned to bottom so the panel has no dead whitespace on tall tablets.
   //
   // KEY LAYOUT RULES:
-  //  • Right panel is NOT wrapped in SingleChildScrollView so that Spacer() works.
+  //  • Right panel sits in SliverFillRemaining(hasScrollBody:false), not a plain
+  //    SingleChildScrollView, so Spacer() still works but it scrolls when the
+  //    keyboard leaves too little height.
   //  • LalaTextField is a DIRECT child of the Column (never inside a Row's Expanded
   //    or inside LalaShowcase→Showcase) so it gets the full panel width cleanly.
   //    The Showcase's Expanded-context issue collapses the border-radius 50 field
@@ -278,8 +280,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         );
 
-    // ── Right: action panel (fills height — no scroll view) ─────────────────
-    Widget rightPanel(HomeState home) => Padding(
+    // ── Right: action panel (fills height; scrolls only when too short) ─────
+    // SliverFillRemaining(hasScrollBody: false) keeps the Spacer working on a
+    // tall panel, but lets the panel scroll when the keyboard shrinks it —
+    // a bare Column overflowed by ~200 px with the keyboard open on a
+    // landscape tablet and clipped the Draw button.
+    Widget rightPanelBody(HomeState home) => Padding(
           padding: EdgeInsets.fromLTRB(16, vPad, 28, vPad),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -369,7 +375,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             loading: () =>
                 const Center(child: CircularProgressIndicator.adaptive()),
             error: (_, __) => const SizedBox.shrink(),
-            data: rightPanel,
+            data: (home) => CustomScrollView(
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: rightPanelBody(home),
+                ),
+              ],
+            ),
           ),
         ),
       ],
