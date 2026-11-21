@@ -242,6 +242,27 @@
   border-radius: inherit;
 }
 .canvas-error-icon { font-size: 3.2rem; line-height: 1; }
+/* Refused subject: friendly line + three one-tap ideas (main.js 'lalabuba:refused').
+   Wraps to one idea per row on narrow stages; long labels wrap inside the pill. */
+.canvas-error-overlay--ideas { overflow-y: auto; justify-content: safe center; }
+.canvas-error-overlay p.canvas-error-try { color: var(--ink); font-size: .9rem; }
+.canvas-error-ideas { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 520px; }
+.canvas-error-idea {
+  font-family: var(--ff-brand);
+  font-size: .95rem;
+  font-weight: 700;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 2px solid var(--purple);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  white-space: normal;
+  touch-action: manipulation;
+}
+.canvas-error-idea:hover { transform: translateY(-1px); box-shadow: var(--sh-md); }
 .canvas-error-overlay p {
   font-family: var(--ff-body);
   font-size: .95rem;

@@ -209,7 +209,8 @@ module.exports = async (req, res) => {
       moderation.addStrike(req, ip, sec.moderation).catch((e) => console.error("[moderation] strike failed:", e.message));
       usage.recordGeneration(req, { ...log, outcome, latencyMs: Date.now() - t0 });
       console.warn(`[moderation] blocked stage=${stage} category=${verdict.category} model=${verdict.model || "-"}`);
-      res.status(400).json({ error: UNSAFE_MESSAGE });
+      // code lets the apps show a localised message + safe one-tap ideas instead of a dead end.
+      res.status(400).json({ error: UNSAFE_MESSAGE, code: "unsafe" });
     };
 
     if (await moderation.isStruckOut(req, ip, sec.moderation)) {

@@ -153,6 +153,8 @@ export async function generatePage(subject, seedOverride = null, isPreDefined = 
     track('image_generate_failed', { subject, difficulty, error: msg });
     setStatus(msg, true);
     showCanvasError(msg); // visible in the canvas area even when the panel/status bar is closed (mobile)
+    // A refused subject must not be a dead end: main.js adds safe one-tap ideas.
+    if (err.code === 'unsafe') document.dispatchEvent(new CustomEvent('lalabuba:refused'));
   } finally {
     hideLoading();
   }
@@ -277,11 +279,15 @@ export async function requestGeneratedImage(subject, difficulty = "medium", seed
 
     if (!response.ok) {
       let message = `Image request failed (${response.status}).`;
+      let code = null;
       try {
         const payload = await response.json();
         if (payload?.error) message = payload.error;
+        if (typeof payload?.code === 'string') code = payload.code;
       } catch { /* keep generic message */ }
-      throw new Error(message);
+      const err = new Error(code === 'unsafe' ? t('unsafeMsg') : message);
+      err.code = code;
+      throw err;
     }
 
     // Server echoes the seed and (when Blob is configured) a persistent image URL.

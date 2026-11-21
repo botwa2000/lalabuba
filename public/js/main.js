@@ -544,6 +544,40 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
+// ─── Refused subject → three safe ideas, one tap each ────────────────────────
+// The safety filter's verdict stands (lib/moderation.js is not involved here);
+// this only turns the refusal into a next step. Ideas come from the hero card
+// pool: fixed, pre-written subjects, already in the child's language.
+document.addEventListener('lalabuba:refused', () => {
+  const overlay = document.getElementById('canvas-error-overlay');
+  if (!overlay) return;
+  const lang = getCurrentLang();
+  const pool = [...EXAMPLE_SUGGESTIONS];
+  const picks = [];
+  while (picks.length < 3 && pool.length) picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  const hint = document.createElement('p');
+  hint.className = 'canvas-error-try';
+  hint.textContent = t('unsafeTry');
+  const row = document.createElement('div');
+  row.className = 'canvas-error-ideas';
+  for (const item of picks) {
+    const label = item.labels?.[lang] || (item.subject.charAt(0).toUpperCase() + item.subject.slice(1));
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'canvas-error-idea';
+    b.textContent = `${item.emoji} ${label}`;
+    b.addEventListener('click', () => {
+      subjectInput.value = label;
+      _pendingEnglishSubject = item.subject;
+      _pendingSource = 'refused_idea';
+      form.requestSubmit();
+    });
+    row.appendChild(b);
+  }
+  overlay.classList.add('canvas-error-overlay--ideas');
+  overlay.append(hint, row);
+});
+
 // ─── Show numbers checkbox ───────────────────────────────────────────────────
 showNumbersInput.addEventListener("change", () => {
   if (showNumbersInput.checked) {
