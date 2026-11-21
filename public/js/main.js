@@ -27,7 +27,7 @@ import {
 import { generatePage, requestGeneratedImage } from './generate.js';
 import { initDrawingTool, setPaintEndCallback, setStrokeEndCallback, updateDrawCanvasMode, creditDrawPenSticker } from './drawing.js';
 import { numberedCapFor, pickMeaningfulTargets, freeComplete, isCovered } from './completion-core.js';
-import { initShareHandlers, loadFromShare } from './share.js';
+import { initShareHandlers, loadFromShare, challengeCid } from './share.js';
 import { initReportPicture } from './report.js';
 import { initZoom, getCanvasCoords, isPanMode } from './zoom.js';
 import { initOnboarding } from './onboarding.js';
@@ -169,7 +169,48 @@ function hasPencilMarks() {
   } catch { return false; }
 }
 
+// How far the current picture is: coloured areas / areas that count. The same
+// areas checkCompletion judges (numbered areas, or the free-colour targets).
+function pictureProgress() {
+  const numbersOn = showNumbersInput.checked && !state.isFreeMode;
+  if (numbersOn) {
+    if (!state.regionColorMap || !state.regionColorMap.size) return null;
+    const ids = [...state.regionColorMap.keys()];
+    return { done: ids.filter((id) => state.completedRegions.has(id)).length, total: ids.length };
+  }
+  const targets = meaningfulTargets();
+  if (!targets.length) return null;
+  const covered = freeColouredRegions(targets);
+  return { done: targets.filter((id) => covered.has(id)).length, total: targets.length };
+}
+
+// Visible "🎨 7 / 12" on the canvas, so a child can see how close they are.
+const colorProgressEl = document.getElementById('color-progress');
+function showProgress(p) {
+  state.progress = p;
+  if (!colorProgressEl) return;
+  if (!p || !p.total || !state.firstFillTracked) { colorProgressEl.hidden = true; return; }
+  colorProgressEl.hidden = false;
+  colorProgressEl.textContent = `🎨 ${Math.min(p.done, p.total)} / ${p.total}`;
+  colorProgressEl.classList.toggle('color-progress--done', p.done >= p.total);
+}
+
+// A picture that got its first colour and is left before it was finished:
+// counted once with the share of areas coloured (5% steps) — the dashboard's
+// "Unfinished pictures". Fired when the next picture replaces it or the page goes.
+function reportAbandon() {
+  if (!state.firstFillTracked || state.completionRecorded || state.abandonSent) return;
+  state.abandonSent = true;
+  const p = state.progress;
+  const pct = p && p.total ? Math.round((100 * Math.min(p.done, p.total) / p.total) / 5) * 5 : 0;
+  track('picture_abandoned', { difficulty: difficultySelect.value, pct });
+  try { window.lalaTrack?.flush?.(); } catch {}
+}
+document.addEventListener('lalabuba:picture-leaving', reportAbandon);
+window.addEventListener('pagehide', reportAbandon);
+
 function checkCompletion() {
+  try { showProgress(pictureProgress()); } catch { /* progress display is best-effort */ }
   if (state.celebrationShown) return;
 
   const numbersOn = showNumbersInput.checked && !state.isFreeMode;
@@ -557,6 +598,7 @@ function markFirstColour() {
   if (state.firstFillTracked) return;
   state.firstFillTracked = true;
   track('first_fill', { difficulty: difficultySelect.value });
+  try { showProgress(pictureProgress()); } catch {}
 }
 
 function pushUndo(regionId, fillResult, completedBefore) {
@@ -573,6 +615,7 @@ function doUndo() {
   if (undoButton) undoButton.disabled = state.undoStack.length === 0;
   setStatus(t('undoDone'));
   updateUndoBtn();
+  try { showProgress(pictureProgress()); } catch {}
 }
 
 function updateUndoBtn() {
@@ -1750,7 +1793,7 @@ if (dismissHintBtn) {
 // forwards to the toolbar button, so one challenge is counted once.
 document.getElementById('share-button')?.addEventListener('click', () => {
   try { toastNewBadges(recordChallengeCreated().newBadges); } catch {}
-  track('challenge_created');
+  track('challenge_created', { cid: challengeCid() });
 });
 document.getElementById('challenge-share-btn')?.addEventListener('click', () => {
   document.getElementById('share-button').click();

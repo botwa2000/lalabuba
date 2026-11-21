@@ -1001,6 +1001,13 @@ export function drawBaseImage(image) {
   state.hasFreehand = false;  // fresh draw layer for the new image
   state.backgroundRegionId = 0;
   state.eraseMode = false;
+  // The previous picture is about to be replaced: main.js reports it as
+  // unfinished if it was started (dispatchEvent is synchronous, state intact).
+  try { document.dispatchEvent(new CustomEvent('lalabuba:picture-leaving')); } catch {}
+  state.abandonSent = false;
+  state.progress = null;
+  const progressEl = document.getElementById('color-progress');
+  if (progressEl) progressEl.hidden = true;
   state.completedRegions = new Set();
   state.celebrationShown = false;
   state.completionRecorded = false; // new image → this coloring may be recorded once

@@ -6,6 +6,20 @@ import { renderGeneratedImage } from './canvas.js';
 import { t } from './i18n.js';
 import { track } from './analytics.js';
 
+// One random id per shared picture (subject + seed + image), carried as cid= so
+// the dashboard can count opens per challenge link. Not tied to the person.
+let _cid = null, _cidFor = null;
+export function challengeCid() {
+  const key = `${subjectInput.value.trim()}|${state.lastSeed ?? 0}|${state.lastImageUrl || ''}`;
+  if (!_cid || _cidFor !== key) {
+    const a = new Uint8Array(6);
+    crypto.getRandomValues(a);
+    _cid = [...a].map((b) => (b % 36).toString(36)).join('') + Date.now().toString(36).slice(-4);
+    _cidFor = key;
+  }
+  return _cid;
+}
+
 export function buildShareUrl() {
   const isDev = ['localhost', '127.0.0.1'].includes(window.location.hostname);
   const base = !isDev ? 'https://lalabuba.com/' : window.location.origin + window.location.pathname;
@@ -16,6 +30,7 @@ export function buildShareUrl() {
     p:    paletteSelect.value,
     c:    String(state.colorCount),
     seed: String(state.lastSeed ?? 0),
+    cid:  challengeCid(),
   });
   // Include persistent blob URL + 7-day expiry so recipients get the exact
   // image instantly and old links are clearly invalid after a week.

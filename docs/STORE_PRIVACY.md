@@ -38,6 +38,23 @@ path of the lalabuba.com page the visitor clicked "color" on (e.g.
 validated server-side to `/[\w/.-]` (no query, no external URL, no free text),
 kept 13 months like every usage event, never linked to identity.
 
+**2026-11-21 additions (website now; apps from 1.0.27):**
+- `page_leave` (website only): seconds the page was open (5 s steps to a minute,
+  then minutes, max 3600), scroll depth (10 % steps) and device class
+  (`phone` | `tablet` | `desktop`, from pointer type + screen's short side;
+  no screen size, no user agent stored).
+- `abandon` (web + apps): a started picture left unfinished, with `pct` = share
+  of its areas coloured (5 % steps) and the difficulty.
+- `cid` on `challenge_create` / `challenge_open` and the opener's later steps: a
+  random challenge-link number generated per shared picture. It identifies the
+  link, not the sender or the opener.
+- `reason` on app `error` events: the error class (e.g. `dio_receiveTimeout`,
+  `contentSafetyError`, `format`), never the message or stack, plus the screen.
+  **Store forms:** Apple → add **Diagnostics → Other Diagnostic Data — Linked:
+  Yes — Analytics, App Functionality** (and `PrivacyInfo.xcprivacy`, done in
+  1.0.27); Google Play → Diagnostics: add the **Analytics** purpose. Owner to
+  apply in App Store Connect / Play Console with the 1.0.27 submission.
+
 No account is required (the family account is optional and parent-created), no advertising ID, no ads, no IAP, no precise location,
 no contacts, no third-party analytics SDK. "Delete account" in Settings deletes
 the family account (`DELETE /api/auth/account`: child profiles, devices and
@@ -59,13 +76,14 @@ Declare these data types (**Used for tracking: No** for all; **Linked to the use
 | Usage Data → **Product Interaction** — **Linked: Yes** | Analytics |
 | User Content → **Other User Content** — **Linked: Yes** | App Functionality, Analytics (typed subjects; grown-ups' feedback comments) |
 | Diagnostics → **Crash Data** — Linked: No | App Functionality |
+| Diagnostics → **Other Diagnostic Data** — **Linked: Yes** | App Functionality, Analytics (error class + screen, 1.0.27+) |
 | Location → **Coarse Location** — **Linked: Yes** | Analytics |
 | Contact Info → **Email Address** — **Linked: Yes** | App Functionality (optional family account) |
 | Contact Info → **Name** — **Linked: Yes** | App Functionality (child nicknames in the family account) |
 | Identifiers → **User ID** — **Linked: Yes** | App Functionality (family account ID) |
 
 - **Tracking:** No. Do not enable App Tracking Transparency.
-- Matches `PrivacyInfo.xcprivacy` (same eight types, `NSPrivacyTracking=false`).
+- Matches `PrivacyInfo.xcprivacy` (same nine types (Other Diagnostic Data since 1.0.27), `NSPrivacyTracking=false`).
 - Privacy Policy URL: `https://lalabuba.com/privacy`.
 - **Kids Category:** compliant — no third-party analytics or ads; first-party
   analytics with no personal information (App Review Guideline 1.3 / 5.1.4).

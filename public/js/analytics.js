@@ -12,6 +12,7 @@ const EVENT_MAP = {
   image_generate_success: 'picture_open',
   picture_opened: 'picture_open',
   first_fill: 'first_fill',
+  picture_abandoned: 'abandon',
 };
 
 export function track(event, props = {}) {
@@ -21,5 +22,7 @@ export function track(event, props = {}) {
   const safe = {};
   if (typeof props.difficulty === 'string') safe.difficulty = props.difficulty;
   if (name === 'picture_open') safe.source = props.source === 'library' ? props.source : "generated";
+  if (typeof props.cid === 'string') safe.cid = props.cid;
+  if (Number.isFinite(props.pct)) safe.pct = props.pct;
   try { window.lalaTrack?.(name, Object.keys(safe).length ? safe : undefined); } catch (_) {}
 }

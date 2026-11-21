@@ -57,9 +57,10 @@
   }
 
   function track(event, props) {
-    if (landing && FUNNEL[event]) {
+    if ((landing || cid) && FUNNEL[event]) {
       props = props ? Object.assign({}, props) : {};
-      props.lp = landing;
+      if (landing) props.lp = landing;
+      if (cid) props.cid = cid;
     }
     queue.push({ e: event, s: location.pathname, p: props || undefined, t: Date.now() });
     if (queue.length >= 20) flush();
@@ -89,7 +90,10 @@
   if (isPageCta) {
     try { landing = internal ? new URL(ref).pathname.slice(0, 120) : "(direct)"; } catch (e) { landing = "(direct)"; }
   }
-  var FUNNEL = { page_cta_open: 1, picture_open: 1, first_fill: 1, complete: 1 };
+  var FUNNEL = { page_cta_open: 1, challenge_open: 1, picture_open: 1, first_fill: 1, complete: 1 };
+  // A challenge link's random id (share.js / the app's /challenge link), so the
+  // dashboard can count opens and how far openers got per link.
+  var cid = isChallenge && /^[a-z0-9]{6,16}$/.test(params.get("cid") || "") ? params.get("cid") : null;
 
   if (!internal) {
     acq = {
@@ -125,8 +129,38 @@
     window.addEventListener(t, onEngage, { capture: true, passive: true });
   });
 
-  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flush(); });
-  window.addEventListener("pagehide", flush);
+  // Leaving the page: how long it was open, how far it was scrolled and the
+  // device class, all coarse (no screen size, no user agent). Sent once; for
+  // visitors who never interacted this is what "left without interacting" shows.
+  var shownAt = Date.now();
+  var maxDepth = 0;
+  function noteDepth() {
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    var d = h > 0 ? Math.min(100, Math.round(100 * (window.scrollY || 0) / h)) : 100;
+    if (d > maxDepth) maxDepth = d;
+  }
+  window.addEventListener("scroll", noteDepth, { passive: true });
+  function deviceClass() {
+    var coarse = false;
+    try { coarse = window.matchMedia("(pointer: coarse)").matches; } catch (e) {}
+    var w = Math.min(window.screen ? screen.width : 0, window.screen ? screen.height : 0) || window.innerWidth;
+    return !coarse ? "desktop" : w >= 600 ? "tablet" : "phone";
+  }
+  var left = false;
+  function leave() {
+    if (!left) {
+      left = true;
+      noteDepth();
+      var secs = Math.round((Date.now() - shownAt) / 1000);
+      // Buckets keep this coarse: 0–60 s to 5 s, then to the minute.
+      secs = secs < 60 ? Math.round(secs / 5) * 5 : Math.min(3600, Math.round(secs / 60) * 60);
+      track("page_leave", { secs: secs, depth: Math.round(maxDepth / 10) * 10, dev: deviceClass() });
+    }
+    flush();
+  }
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") leave(); });
+  window.addEventListener("pagehide", leave);
 
+  track.flush = flush;  // for an event sent while the page is going away
   window.lalaTrack = track;
 })();

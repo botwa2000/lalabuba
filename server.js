@@ -1784,7 +1784,8 @@ const server = http.createServer(async (req, res) => {
     if (p === "/challenge") {
       const subject = parsedUrl.searchParams.get("subject") || "";
       const seed    = parsedUrl.searchParams.get("seed")    || "";
-      const qs = new URLSearchParams({ s: "1", q: subject, seed }).toString();
+      const cid     = parsedUrl.searchParams.get("cid")     || "";
+      const qs = new URLSearchParams({ s: "1", q: subject, seed, ...(/^[a-z0-9]{6,16}$/.test(cid) ? { cid } : {}) }).toString();
       res.writeHead(301, { Location: `/?${qs}`, "Cache-Control": "no-store" });
       res.end();
       return;

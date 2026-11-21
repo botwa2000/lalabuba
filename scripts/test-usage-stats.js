@@ -34,7 +34,13 @@ t("browser beacons without an Origin header are still web", () => {
 });
 t("props keep only allow-listed keys with small scalar values", () => {
   assert.deepStrictEqual(usage._cleanProps({ difficulty: "easy", count: 3, fatal: true, "Bad-Key": 1, mode: { a: 1 }, reason: "x".repeat(200), subject: "Emma", name: "Emma" }),
-    { difficulty: "easy", count: 3, fatal: true, reason: "x".repeat(80) });
+    { difficulty: "easy", count: 3, fatal: true, reason: "x".repeat(40) });
+  // reason is a slug (error class), cid a challenge-link id; free text never survives.
+  assert.deepStrictEqual(usage._cleanProps({ reason: "Dio Timeout: socket!", cid: "ab12cd34" }), { reason: "dio_timeout:_socket_", cid: "ab12cd34" });
+  assert.strictEqual(usage._cleanProps({ cid: "Emma likes cats" }), null);
+  // Cast to float on the dashboard: only numbers survive, clamped; dev is an enum.
+  assert.deepStrictEqual(usage._cleanProps({ pct: 47.6, secs: 99999, depth: "50", dev: "phone" }), { pct: 48, secs: 3600, dev: "phone" });
+  assert.strictEqual(usage._cleanProps({ dev: "iPhone 15", pct: -3 }), null);
   assert.strictEqual(usage._cleanProps(["a"]), null);
   assert.strictEqual(usage._cleanProps({}), null);
 });
