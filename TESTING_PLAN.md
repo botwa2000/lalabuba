@@ -221,6 +221,11 @@ For quadrant definitions see `docs/screen-quadrants.md`.
 - [ ] Crayon unlock toast at correct thresholds (5/15/30)
 - [ ] Brush unlock toast at 3 completions
 - [ ] Scene/decoration unlocks fire correctly
+- [ ] 🔴 "🎨 n / N" progress pill appears after the first colour (web: top-left of the stage; app: bottom-left of the canvas), updates on fill / stroke / undo, never blocks a tap, hidden in hero state
+- [ ] 🔴 Finish card shows "🏆 Challenge!" after "Again"; the community-share prompt waits until the card is closed (it must never cover the card's buttons)
+- [ ] Refused subject (mock `/api/generate-image` → 400 `{code:"unsafe"}`): localised message + 3 one-tap ideas; a tap draws that idea (web + app; app test `test/refusal_ideas_test.dart`)
+- [ ] Stats beacons (route `/api/t`, don't send to prod): `page_leave` {secs, depth, dev} on leaving, `abandon` {pct} when a started picture is replaced or left, `challenge_create`/`challenge_open` carry `cid`; `/challenge?…&cid=` redirect keeps `cid`
+- Scripted check used 2026-11-21: Playwright with `/api/generate-image` and `/api/t` intercepted, 390×844 / 1440×900 / 844×390 / 375×667 (de)
 
 ### 4.5 Settings Persistence
 
