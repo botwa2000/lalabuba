@@ -836,6 +836,24 @@ let _pcpTimer = null;
 
 function showPostCompletionPrompt() {
   if (_pcpShown) return;
+  // The finish card (#celebration) holds Again / Challenge / Share / Print; this
+  // prompt sat on top of those buttons. Wait until the card is closed.
+  const celeb = document.getElementById("celebration");
+  if (celeb && !celeb.classList.contains("hidden")) {
+    const obs = new MutationObserver(() => {
+      if (!celeb.classList.contains("hidden")) return;
+      obs.disconnect();
+      // Closed via "Again"/"New" → a new picture is coming; don't ask about the old one.
+      // Closed into the challenge / share modal → that is the share already; skip.
+      setTimeout(() => {
+        const busy = document.getElementById("loading-overlay")?.style.display?.includes("flex")
+          || document.querySelector(".share-modal:not(.hidden)");
+        if (!busy) showPostCompletionPrompt();
+      }, 400);
+    });
+    obs.observe(celeb, { attributes: true, attributeFilter: ["class"] });
+    return;
+  }
   _pcpShown = true;
 
   if (_pcpEl) _pcpEl.remove();
