@@ -549,6 +549,16 @@ form.addEventListener("submit", async (event) => {
 // this only turns the refusal into a next step. Ideas come from the hero card
 // pool: fixed, pre-written subjects, already in the child's language.
 document.addEventListener('lalabuba:refused', () => {
+  // The refused words are never shown back to the child: clear the search box
+  // (input event → Draw! state + pending overrides reset) and drop a ?q= from a
+  // shared link. Only /admin/stats shows them (lib/stats.js refusedSubjects).
+  subjectInput.value = '';
+  subjectInput.dispatchEvent(new Event('input', { bubbles: true }));
+  state.lastEnglishSubject = '';
+  try {
+    const u = new URL(window.location.href);
+    if (u.searchParams.has('q')) { u.searchParams.delete('q'); history.replaceState(history.state, '', u); }
+  } catch { /* URL API unavailable → nothing to strip */ }
   const overlay = document.getElementById('canvas-error-overlay');
   if (!overlay) return;
   const lang = getCurrentLang();
