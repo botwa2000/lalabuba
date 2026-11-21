@@ -958,6 +958,14 @@ document.getElementById("celebration-new").addEventListener("click", () => {
   subjectInput.focus();
 });
 
+// Challenge: the finish moment is when a child is proudest, so offer the
+// challenge link right here (same toolbar button → counted once, with its cid).
+document.getElementById("celebration-challenge")?.addEventListener("click", () => {
+  closeCelebration();
+  const btn = document.getElementById("share-button");
+  if (btn && !btn.disabled) btn.click();
+});
+
 // Share: reuse the existing share-artwork action (the growth engine).
 document.getElementById("celebration-share").addEventListener("click", () => {
   closeCelebration();

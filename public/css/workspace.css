@@ -191,6 +191,30 @@
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z' fill='%23333'/%3E%3Cpath d='M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z' fill='%23555'/%3E%3C/svg%3E") 0 24, crosshair;
 }
 .preview-stage.empty .canvas-frame { display: none; }
+/* Progress pill "🎨 7 / 12": top-left of the stage, never blocks a tap
+   (pointer-events none), under zoom (4), loading (5) and error (6) layers. */
+.color-progress {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 3;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--sh-md);
+  font-family: var(--ff-brand);
+  font-size: .85rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ink);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.color-progress[hidden],
+.app.app-hero .color-progress,
+.preview-stage.empty .color-progress { display: none; }
+.color-progress--done { border-color: var(--green); color: var(--green); }
 .empty-hint {
   position: absolute;
   top: 50%;
