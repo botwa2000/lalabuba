@@ -5,6 +5,7 @@
 // ignore_for_file: deprecated_member_use
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' show Random;
 import 'dart:ui' as ui;
 import 'package:dio/dio.dart' show DioException;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -38,6 +39,7 @@ import '../../shared/widgets/lala_loading_overlay.dart';
 import '../../shared/widgets/lala_showcase.dart';
 import '../../shared/widgets/parental_gate.dart';
 import 'canvas_models.dart';
+import '../../shared/models/subject_model.dart' show SubjectCard;
 import 'stroke_mask.dart';
 import 'canvas_painter.dart';
 import 'narration_service.dart';
@@ -92,6 +94,19 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   // One-shot guard so the completion celebration fires once per finished image.
   bool _celebrationShown = false;
   String _subject = '';
+  // What the child sees as the picture's name; a refused subject's one-tap idea
+  // replaces it (and _subject) for the next drawing.
+  String _displayLabel = '';
+  String? _sourceOverride;
+  // Progress of the current picture, cached by state identity (colouredTargetCount
+  // walks every region) — the pill, and the 'abandon' event when it is left.
+  _Progress? _progress;
+  CanvasState? _progressOf;
+  bool _abandonSent = false;
+  String _difficulty = 'medium';
+  List<SubjectCard>? _ideas;
+  String? _challengeCid;
+  int? _challengeCidSeed;
   int? _currentSeed;
   // The AI picture currently on the canvas — what the 🚩 report sends so the
   // team reviews exactly the image the child saw.
@@ -136,6 +151,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   void initState() {
     super.initState();
     _subject = widget.args.subject;
+    _displayLabel = widget.args.displayLabel;
     StorageService.readBool(StorageService.kTutorialCanvas, false).then((seen) {
       if (mounted && !seen) setState(() => _canvasTutorialSeen = false);
     });
@@ -150,6 +166,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
   @override
   void dispose() {
+    _reportAbandon(); // leaving the canvas with a started, unfinished picture
     _transformCtrl.dispose();
     _disposeScreenSnap();
     super.dispose();
@@ -261,16 +278,22 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       return;
     }
 
+    _reportAbandon(); // the picture on the canvas is being replaced
     setState(() {
       _isGenerating = true;
       _errorMsg = null;
       _celebrationShown = false; // arm the celebration for the new image
     });
     ref.read(canvasProvider.notifier).reset();
+    _abandonSent = false;
+    _progress = null;
+    _progressOf = null;
+    _ideas = null;
     _imageUrl = null;
     _imageBytes = null;
 
     final difficulty = settings?.difficulty ?? 'medium';
+    _difficulty = difficulty;
     final colorCount = settings?.colorCount ?? 12;
     _generateStart = DateTime.now();
     AnalyticsService.track('image_generate_started', {
@@ -287,7 +310,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         difficulty: difficulty,
         colorCount: colorCount,
         seed: seed,
-        source: again ? 'again' : widget.args.source,
+        source: again ? 'again' : (_sourceOverride ?? widget.args.source),
       );
 
       final minArea = _minAreaFor(difficulty);
@@ -789,7 +812,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                widget.args.displayLabel,
+                _displayLabel,
                 style: GoogleFonts.fredoka(fontWeight: FontWeight.w700, fontSize: 16),
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
@@ -872,9 +895,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                 Positioned.fill(
                   child: LalaLoadingOverlay(
                     message: l10n.t('generating',
-                        {'subject': widget.args.displayLabel}),
+                        {'subject': _displayLabel}),
                   ),
                 ),
+              _buildProgressPill(context, canvas),
               if (_errorMsg != null)
                 Positioned.fill(child: _buildError(context, l10n)),
             ],
@@ -918,7 +942,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                       Positioned.fill(
                           child: LalaLoadingOverlay(
                               message: l10n.t('generating',
-                                  {'subject': widget.args.displayLabel}))),
+                                  {'subject': _displayLabel}))),
+                    _buildProgressPill(context, canvas),
                     if (_errorMsg != null)
                       Positioned.fill(child: _buildError(context, l10n)),
                   ],
@@ -1777,8 +1802,90 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
   // ─── Error state ─────────────────────────────────────────────────────────────
 
+  /// Coloured / counted areas of [canvas] — the same areas completion judges.
+  _Progress _progressFor(CanvasState canvas) {
+    if (!identical(canvas, _progressOf) || _progress == null) {
+      _progressOf = canvas;
+      _progress = _Progress(
+        done: canvas.colouredTargetCount,
+        total: canvas.regionColorMap.length,
+        started: canvas.hasMeaningfulProgress,
+      );
+    }
+    return _progress!;
+  }
+
+  /// A picture that was started (first colour) and is left before it was
+  /// finished: counted once, with the share of its areas coloured in 5% steps.
+  /// Uses the cached progress so it is safe from dispose().
+  void _reportAbandon() {
+    final p = _progress;
+    if (_abandonSent || _celebrationShown || p == null || !p.started || p.total == 0) return;
+    _abandonSent = true;
+    final pct = ((100 * p.done.clamp(0, p.total) / p.total) / 5).round() * 5;
+    AnalyticsService.track('picture_abandoned', {'difficulty': _difficulty, 'pct': pct});
+  }
+
+  /// "🎨 7 / 12" — bottom-left of the canvas once the child has started.
+  /// IgnorePointer: never takes a tap meant for the picture.
+  Widget _buildProgressPill(BuildContext context, CanvasState canvas) {
+    if (!canvas.isReady || _errorMsg != null || _isGenerating) return const SizedBox.shrink();
+    final p = _progressFor(canvas);
+    if (!p.started || p.total == 0) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
+    final done = p.done >= p.total;
+    return Positioned(
+      left: 8,
+      bottom: 8,
+      child: IgnorePointer(
+        child: Container(
+          key: const ValueKey('color-progress'),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: done ? Colors.green : cs.outlineVariant, width: 1.5),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 8, offset: const Offset(0, 2))],
+          ),
+          child: Text(
+            '🎨 ${p.done.clamp(0, p.total)} / ${p.total}',
+            style: GoogleFonts.fredoka(
+                fontSize: 14, fontWeight: FontWeight.w700,
+                color: done ? Colors.green.shade700 : cs.onSurface),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// A refused subject must not be a dead end: three fixed, pre-written card
+  /// subjects in the child's language, one tap draws it. The safety verdict is
+  /// untouched — these come from the app's own card list (assets/data/subjects.json).
+  List<SubjectCard> _refusalIdeas() {
+    // watch: called from build, so the ideas appear as soon as the card list
+    // has loaded (it normally already has — the canvas opens from home).
+    final cards = ref.watch(homeProvider).value?.allCards ?? const <SubjectCard>[];
+    if (_ideas != null) return _ideas!; // same three for this refusal, every rebuild
+    if (cards.isEmpty) return const [];
+    final pool = [...cards]..shuffle();
+    return _ideas = pool.take(3).toList();
+  }
+
+  void _drawIdea(SubjectCard card, String locale) {
+    setState(() {
+      _subject = card.englishPrompt;
+      _displayLabel = card.label(locale);
+      _sourceOverride = 'refused_idea';
+      _errorMsg = null;
+    });
+    _generate();
+  }
+
   Widget _buildError(BuildContext context, L10n l10n) {
     final cs = Theme.of(context).colorScheme;
+    final refused = _errorMsg == 'contentSafetyError';
+    final ideas = refused ? _refusalIdeas() : const <SubjectCard>[];
+    final locale = l10n.locale;
     return Container(
       color: cs.surface,
       child: Center(
@@ -1794,8 +1901,30 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.nunito(fontSize: 15),
               ),
+              if (ideas.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                Text(l10n.t('unsafeTry'),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.nunito(fontSize: 14, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 10),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final c in ideas)
+                      ActionChip(
+                        key: ValueKey('refusal-idea-${c.englishPrompt}'),
+                        avatar: Text(c.emoji),
+                        label: Text(c.label(locale),
+                            style: GoogleFonts.fredoka(fontWeight: FontWeight.w600)),
+                        onPressed: () => _drawIdea(c, locale),
+                      ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 24),
-              ElevatedButton(
+              if (!refused || ideas.isEmpty) ElevatedButton(
                 onPressed: () {
                   if (widget.args.preloadedUrl != null || widget.args.preloadedBytes != null) {
                     _renderPreloaded();
@@ -2131,11 +2260,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       if (bytes == null) return;
       final file = XFile.fromData(bytes,
           mimeType: 'image/png',
-          name: 'lalabuba_${widget.args.displayLabel}.png');
+          name: 'lalabuba_$_displayLabel.png');
       final l10n = ref.read(l10nProvider);
       await SharePlus.instance.share(ShareParams(
         files: [file],
-        text: l10n.t('shareImageText', {'subject': widget.args.displayLabel}),
+        text: l10n.t('shareImageText', {'subject': _displayLabel}),
         sharePositionOrigin: _shareOrigin(),
       ));
       AnalyticsService.track('draw_shared', {'subject': _subject});
@@ -2337,10 +2466,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       if (bytes == null) return;
       final file = XFile.fromData(bytes,
           mimeType: 'image/png',
-          name: 'lalabuba_${widget.args.displayLabel}.png');
+          name: 'lalabuba_$_displayLabel.png');
       await SharePlus.instance.share(ShareParams(
         files: [file],
-        subject: 'Print — Lalabuba: ${widget.args.displayLabel}',
+        subject: 'Print — Lalabuba: $_displayLabel',
         sharePositionOrigin: _shareOrigin(),
       ));
     } catch (_) {}
@@ -2355,7 +2484,15 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final baseUrl = ref.read(appConfigProvider).value?.apiBaseUrl
         ?? 'https://lalabuba.com';
     final encodedSubject = Uri.encodeQueryComponent(_subject);
-    final challengeUrl = '$baseUrl/challenge?subject=$encodedSubject&seed=$seed';
+    // One random id per shared picture, so the dashboard counts opens per link.
+    if (_challengeCid == null || _challengeCidSeed != seed) {
+      final rnd = Random.secure();
+      const abc = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      _challengeCid = List.generate(10, (_) => abc[rnd.nextInt(abc.length)]).join();
+      _challengeCidSeed = seed;
+    }
+    final cid = _challengeCid!;
+    final challengeUrl = '$baseUrl/challenge?subject=$encodedSubject&seed=$seed&cid=$cid';
     final l10n = ref.read(l10nProvider);
     final cs = Theme.of(context).colorScheme;
 
@@ -2416,14 +2553,14 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                     onPressed: () async {
                       Navigator.pop(ctx);
                       final text = l10n.t('challengeText',
-                          {'subject': widget.args.displayLabel});
+                          {'subject': _displayLabel});
                       try {
                         await SharePlus.instance.share(ShareParams(
                           text: '$text\n$challengeUrl',
                           subject: 'Lalabuba Challenge 🏆',
                           sharePositionOrigin: _shareOrigin(),
                         ));
-                        AnalyticsService.track('challenge_created');
+                        AnalyticsService.track('challenge_created', {'cid': cid});
                         // Credit the "challenger" sticker.
                         unawaited(ref
                             .read(progressProvider.notifier)
@@ -2671,4 +2808,12 @@ class _SidebarBtn extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Coloured / counted areas of the picture on the canvas.
+class _Progress {
+  final int done;
+  final int total;
+  final bool started;
+  const _Progress({required this.done, required this.total, required this.started});
 }

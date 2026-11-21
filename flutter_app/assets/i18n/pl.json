@@ -130,6 +130,7 @@
     "Panel rodzica"
   ],
   "contentSafetyError": "Wybierz temat odpowiedni dla dzieci — zwierzęta, pojazdy, fantastyczne stwory, jedzenie…",
+  "unsafeTry": "Spróbuj jednego z tych:",
   "networkError": "Błąd połączenia — sprawdź swoją sieć",
   "generationError": "Usługa rysowania jest teraz zajęta — spróbuj ponownie za chwilę! 🎨",
   "generationBlockedError": "Coś zablokowało ten rysunek — zaktualizuj aplikację i spróbuj ponownie",

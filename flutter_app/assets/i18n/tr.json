@@ -130,6 +130,7 @@
     "Ebeveyn paneli"
   ],
   "contentSafetyError": "Lütfen çocuklar için eğlenceli bir konu seç — hayvanlar, araçlar, fantastik yaratıklar, yiyecek…",
+  "unsafeTry": "Bunlardan birini dene:",
   "networkError": "Bağlantı hatası — ağını kontrol et",
   "generationError": "Çizim servisi şu an meşgul — biraz sonra tekrar dene! 🎨",
   "generationBlockedError": "Bu çizim engellendi — lütfen uygulamayı güncelleyip tekrar dene",

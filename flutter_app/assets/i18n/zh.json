@@ -130,6 +130,7 @@
     "家长面板"
   ],
   "contentSafetyError": "请选择适合儿童的主题 — 动物、交通工具、奇幻生物、食物…",
+  "unsafeTry": "试试这些：",
   "networkError": "连接错误 — 请检查网络",
   "generationError": "绘画服务暂时繁忙 — 请稍后再试！🎨",
   "generationBlockedError": "这幅画被拦截了——请更新应用后再试一次",

@@ -130,6 +130,7 @@
     "Ouderdashboard"
   ],
   "contentSafetyError": "Kies een leuk onderwerp voor kinderen — dieren, voertuigen, fantasiewezens, eten…",
+  "unsafeTry": "Probeer een van deze:",
   "networkError": "Verbindingsfout — controleer je netwerk",
   "generationError": "De tekenservice is nu druk — probeer het zo opnieuw! 🎨",
   "generationBlockedError": "Iets heeft deze tekening geblokkeerd — werk de app bij en probeer het opnieuw",

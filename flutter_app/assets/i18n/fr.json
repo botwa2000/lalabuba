@@ -130,6 +130,7 @@
     "Tableau de bord parent"
   ],
   "contentSafetyError": "Choisis un sujet adapté aux enfants — animaux, véhicules, créatures fantastiques, nourriture…",
+  "unsafeTry": "Essaie plutôt :",
   "networkError": "Erreur de connexion — vérifie ton réseau",
   "generationError": "Le service de dessin est occupé — réessaie dans un moment ! 🎨",
   "generationBlockedError": "Quelque chose a bloqué ce dessin — mets l'app à jour et réessaie",

@@ -43,6 +43,9 @@ class UsageService {
   static int _inFlight = 0;
   static Map<String, String>? _acq;
   static String? _lastScreen;
+
+  /// Route template of the screen on view (for error events).
+  static String? get lastScreen => _lastScreen;
   static AppLifecycleListener? _lifecycle;
 
   /// `ios` | `android` (anything else is reported as `app`).

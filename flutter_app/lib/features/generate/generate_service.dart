@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/app_config.dart';
 import '../../core/di/providers.dart';
 import '../../core/drawing_config_service.dart';
+import '../../shared/services/analytics_service.dart' show GenerateErrorLike;
 import '../../shared/services/app_check_service.dart';
 import '../../shared/services/device_id_service.dart';
 import '../../shared/services/usage_service.dart';
@@ -131,10 +132,13 @@ class GenerateService {
 
 /// A failed generation, as an l10n key the canvas translates for the child.
 /// toString keeps the HTTP status for analytics/crash reports.
-class GenerateError {
+class GenerateError implements GenerateErrorLike {
   final String key;
   final int? status;
   const GenerateError(this.key, [this.status]);
+
+  @override
+  String get errorKey => key;
 
   @override
   String toString() => status == null ? key : '$key (HTTP $status)';

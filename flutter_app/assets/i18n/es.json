@@ -130,6 +130,7 @@
     "Panel para padres"
   ],
   "contentSafetyError": "Elige un tema divertido para niños — animales, vehículos, criaturas fantásticas, comida…",
+  "unsafeTry": "Prueba una de estas:",
   "networkError": "Error de conexión — comprueba tu red",
   "generationError": "El servicio de dibujo está ocupado — ¡inténtalo en un momento! 🎨",
   "generationBlockedError": "Algo bloqueó este dibujo: actualiza la app e inténtalo de nuevo",
