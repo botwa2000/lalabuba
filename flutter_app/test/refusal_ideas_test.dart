@@ -93,7 +93,7 @@ void main() {
             path: '/',
             builder: (_, __) => const CanvasScreen(
               args: CanvasScreenArgs(
-                  subject: 'something not for kids', displayLabel: 'x', source: 'custom'),
+                  subject: 'something not for kids', displayLabel: 'something not for kids', source: 'custom'),
             ),
           ),
         ]),
@@ -110,6 +110,13 @@ void main() {
     expect(svc.calls.first.subject, 'something not for kids');
     final chips = find.byType(ActionChip);
     expect(chips, findsNWidgets(3), reason: 'three safe ideas under the refusal message');
+    // The refused words are gone from the screen (title bar), 🎲 can't resend
+    // them, and the home input is told to clear itself.
+    expect(find.textContaining('something not for kids'), findsNothing);
+    final container = ProviderScope.containerOf(tester.element(find.byType(CanvasScreen)));
+    expect(container.read(subjectRefusedProvider), 1);
+    final dice = tester.widget<IconButton>(find.ancestor(of: find.text('🎲'), matching: find.byType(IconButton)));
+    expect(dice.onPressed, isNull);
     // The retry button would just send the refused subject again — it is replaced.
     expect(find.byType(ElevatedButton), findsNothing);
 

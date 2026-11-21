@@ -362,9 +362,18 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         'error': e.toString().substring(0, e.toString().length.clamp(0, 200)),
       });
       if (mounted) {
+        final refused = e is GenerateError && e.key == 'contentSafetyError';
         setState(() {
           _errorMsg = e is GenerateError ? e.key : 'generationError';
+          // Never show the refused words again: title bar, share/print names
+          // and 🎲 (disabled while empty) all read these. The original words
+          // are kept server-side for /admin/stats → Safety only.
+          if (refused) {
+            _subject = '';
+            _displayLabel = '';
+          }
         });
+        if (refused) ref.read(subjectRefusedProvider.notifier).state++;
       }
     } finally {
       // FIX 3: always clear the in-flight flag so the guard can't get stuck,
@@ -857,7 +866,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         IconButton(
           icon: const Text('🎲', style: TextStyle(fontSize: 20)),
           tooltip: l10n.t('regenBtn'),
-          onPressed: _isGenerating ? null : () => _generate(again: true),
+          onPressed: _isGenerating || _subject.isEmpty ? null : () => _generate(again: true),
         ),
         const SizedBox(width: 4),
       ],

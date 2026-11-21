@@ -28,3 +28,6 @@ final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 final communityGalleryRefreshProvider = StateProvider<int>((ref) => 0);
 // Set to 1 to auto-switch Journal screen to the Community sub-tab.
 final journalTabIndexProvider = StateProvider<int>((ref) => 0);
+// Incremented when the safety filter refuses a subject: the home screen clears
+// its input so the refused words are never shown back to the child.
+final subjectRefusedProvider = StateProvider<int>((ref) => 0);

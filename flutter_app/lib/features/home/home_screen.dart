@@ -122,6 +122,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final homeAsync = ref.watch(homeProvider);
     final settingsAsync = ref.watch(settingsProvider);
     final sub = ref.watch(subscriptionProvider).value;
+    // The safety filter refused what was typed: clear it so the child comes
+    // back to an empty field, never to the refused words.
+    ref.listen<int>(subjectRefusedProvider, (_, __) => _fillSubject(''));
     // Assign today's mission and snapshot its baseline at app start, so a
     // mission like "color a picture" still counts a picture finished before the
     // child opens the Rewards screen.
