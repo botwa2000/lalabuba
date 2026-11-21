@@ -49,3 +49,7 @@ docs/instagram-strategy.md
 
 # Python bytecode
 __pycache__/
+
+# Social media renders (large binaries, kept local)
+docs/social-content/videos/series/
+docs/social-content/ig/
