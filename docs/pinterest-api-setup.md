@@ -30,9 +30,48 @@ The runner won't post pins until `PINTEREST_STANDARD_ACCESS` is `true` in
 
 ---
 
+## ✅ STATUS 2026-11-12 — Trial access APPROVED (email 2026-10-17 20:05 Berlin). Next: step 6, then stage B.
+
+**Stage A is DONE. Do not redo it.**
+
+| | |
+|---|---|
+| Developer account | created under the **Lalabuba** profile → `info@lalabuba.com`; email verified and Developer Terms accepted by Alex |
+| App | **`Lalabuba Publisher`**, **App ID `1625877`** |
+| Status | **Trial access approved** — pinbot@account.pinterest.com, "Your API access request has been approved!", 2026-10-17 (40 s after submitting) |
+
+Submitted settings: icon `public/icon-512.png` · company `Lalabuba` · website `https://lalabuba.com` ·
+privacy `https://lalabuba.com/privacy` · developer purpose **Personal API access (single, personal use)** ·
+use cases **Pin creation & scheduling** + **Reporting** · audience **Businesses** ·
+**Reads Pins and/or Boards Data = "Yes, mine"**.
+
+### Traps hit while doing this — read before touching the form again
+1. **`Reads Pins and/or Boards Data` defaults to "No".** Left alone it contradicts the `boards:read` /
+   `pins:read` scopes and the Reporting use case. Must be **"Yes, mine"**.
+2. **Website prefills as `http://www.lalabuba.com`.** Corrected to `https://lalabuba.com`.
+3. **Do not type the App purpose character-by-character.** Typing dropped letters — the field read
+   *"two band profiles"*, *"Every pin s chosen"*, *"topcs"*. Set the field value directly instead.
+   That paragraph is what a reviewer reads.
+4. **The form was lost twice before it took.** Once when the browser window closed, once when the
+   captcha was ticked but Submit was not clicked immediately after — the captcha token expires in
+   around two minutes and the form silently resets to blank with no error. **Tick the captcha and
+   click Submit back to back.**
+5. Claude cannot do: the email verification, the Developer Terms, or the captcha. Everything else on
+   the form it can fill.
+
+**2026-11-12:** App ID + secret set in `.env` and prod Swarm. Redirect URI `http://localhost:8085/`
+registered (step 4 had been skipped → OAuth 400 "This application has not registered a redirect URI").
+Steps 8–9 done for **lalabubaAI** — refresh token on prod, expires 2027-01-11 (rotates on use).
+
+### ▶️ Next: step 10 (dry-run demo), step 11 (Bonifatus auth), then stage C (Upgrade access + video)
+Steps 7–11 below, with a screen recording running — that recording **is** the Standard access review
+video. Alex runs these; they involve a terminal on his machine and refresh tokens.
+
+---
+
 ## Checklist
 
-### A. Create the app (about 10 min)
+### A. Create the app (about 10 min) — ✅ COMPLETE 2026-10-18, see status above
 
 1. Log in to **pinterest.com as the Lalabuba profile**. Use a personal or business login only.
    Nothing is linked to Meta, and Bonifatus's Meta restriction doesn't apply to Pinterest.
