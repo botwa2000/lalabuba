@@ -1,15 +1,15 @@
 {
   "_comment": "App Store 'What's New' text per language prefix, used by scripts/asc_submit_review.py for every App Store version localization. Update before each production release. 'en' is the fallback.",
-  "en": "Challenge a friend, right under your picture: tap Share to send the same page to a friend and race to finish it first. Stability improvements.",
-  "de": "Fordere einen Freund heraus, direkt unter deinem Bild: Tippe auf Teilen, schicke dieselbe Seite an einen Freund und wer ist zuerst fertig? Mehr Stabilität.",
-  "es": "Desafía a un amigo justo debajo de tu dibujo: toca Compartir, envía la misma página y a ver quién termina primero. Mejoras de estabilidad.",
-  "fr": "Défie un ami juste sous ton dessin : touche Partager, envoie la même page et qui finira en premier ? Meilleure stabilité.",
-  "it": "Sfida un amico proprio sotto il tuo disegno: tocca Condividi, invia la stessa pagina e vedi chi finisce prima. Maggiore stabilità.",
-  "nl": "Daag een vriend uit, direct onder je tekening: tik op Delen, stuur dezelfde pagina en wie is er eerst klaar? Betere stabiliteit.",
-  "pl": "Wyzwij przyjaciela tuż pod swoim obrazkiem: dotknij Udostępnij, wyślij tę samą stronę i kto pierwszy skończy? Lepsza stabilność.",
-  "pt": "Desafia um amigo mesmo por baixo do teu desenho: toca em Partilhar, envia a mesma página e vê quem termina primeiro. Melhorias de estabilidade.",
-  "ru": "Вызови друга прямо под рисунком: нажми «Поделиться», отправь ту же картинку и узнай, кто раскрасит быстрее. Выше стабильность.",
-  "tr": "Resminin hemen altından arkadaşına meydan oku: Paylaş'a dokun, aynı sayfayı gönder ve kim önce bitirecek gör. Kararlılık iyileştirmeleri.",
-  "hi": "अपने चित्र के ठीक नीचे से दोस्त को चुनौती दो: शेयर पर टैप करो, वही पेज भेजो और देखो कौन पहले खत्म करता है। स्थिरता में सुधार।",
-  "zh": "在图片下方直接挑战朋友：点击分享，发送同一张图，看谁先涂完。稳定性改进。"
+  "en": "See how much is left: a little counter shows how many areas you've coloured. If a drawing idea can't be made, you get three fun ideas to tap instead. Tablet layout fix.",
+  "de": "Sieh, wie viel noch fehlt: Ein kleiner Zähler zeigt, wie viele Flächen du schon ausgemalt hast. Geht eine Idee nicht, bekommst du drei lustige Ideen zum Antippen. Tablet-Layout verbessert.",
+  "es": "Mira cuánto falta: un pequeño contador muestra cuántas zonas has coloreado. Si una idea no se puede dibujar, te damos tres ideas divertidas para tocar. Mejoras en tabletas.",
+  "fr": "Vois ce qu'il reste : un petit compteur montre combien de zones tu as coloriées. Si une idée ne peut pas être dessinée, tu reçois trois idées amusantes à toucher. Affichage tablette amélioré.",
+  "it": "Guarda quanto manca: un piccolo contatore mostra quante zone hai colorato. Se un'idea non si può disegnare, ricevi tre idee divertenti da toccare. Layout tablet migliorato.",
+  "nl": "Zie hoeveel er nog over is: een kleine teller laat zien hoeveel vlakken je hebt ingekleurd. Kan een idee niet getekend worden, dan krijg je drie leuke ideeën om op te tikken. Tablet-indeling verbeterd.",
+  "pl": "Zobacz, ile zostało: mały licznik pokazuje, ile pól już pokolorowałeś. Jeśli pomysłu nie da się narysować, dostaniesz trzy fajne pomysły do wyboru. Poprawiony układ na tabletach.",
+  "pt": "Vê quanto falta: um pequeno contador mostra quantas áreas já coloriste. Se uma ideia não puder ser desenhada, recebes três ideias divertidas para tocar. Melhorias no tablet.",
+  "ru": "Смотри, сколько осталось: маленький счётчик показывает, сколько областей ты раскрасил. Если идею нельзя нарисовать, ты получишь три весёлые идеи на выбор. Улучшен вид на планшетах.",
+  "tr": "Ne kadar kaldığını gör: küçük bir sayaç kaç alanı boyadığını gösterir. Bir fikir çizilemezse dokunabileceğin üç eğlenceli fikir alırsın. Tablet düzeni iyileştirildi.",
+  "hi": "देखो कितना बाकी है: एक छोटा काउंटर दिखाता है कि तुमने कितने हिस्से रंग दिए। अगर कोई विचार नहीं बन सकता, तो तुम्हें टैप करने के लिए तीन मज़ेदार विचार मिलते हैं। टैबलेट लेआउट में सुधार।",
+  "zh": "看看还剩多少：小计数器显示你已经涂了几块。如果某个想法画不出来，你会得到三个有趣的点子，点一下就能画。平板布局改进。"
 }
