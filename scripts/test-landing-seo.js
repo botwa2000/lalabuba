@@ -15,7 +15,7 @@ const t = (name, fn) => { fn(); n++; console.log(`  ✓ ${name}`); };
 t("every topic subject has a label in every page language", () => {
   const langs = ["de", ...Object.keys(i18n.LANGS)];
   for (const [topic, meta] of Object.entries(gallery.TOPIC_META)) {
-    if (meta.seasonal) continue; // seasonal topics are German-only pages
+    if (meta.seasonal && !require("../lib/seasonal-topics").TOPICS[topic]) continue; // German-only pages
     for (const s of meta.subjects || []) for (const l of langs)
       assert(gallery.subjectLabel(l, s) !== s, `${topic}: "${s}" has no ${l} label`);
   }

@@ -369,6 +369,14 @@
 }
 .hero-topic-card:hover span { color: #7c4dff; }
 
+.hero-browse-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+}
+.hero-browse-links > [hidden] { display: none; }
 .hero-today-link {
   font-family: var(--ff-body);
   font-size: .85rem;

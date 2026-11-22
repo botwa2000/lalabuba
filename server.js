@@ -46,7 +46,8 @@ const HOST = process.env.HOST || "127.0.0.1"; // container sets HOST=0.0.0.0
 const PUBLIC_DIR = path.join(__dirname, "public");
 
 const landing = require("./lib/landing");
-const { DE_TOPIC_MAP, EN_TO_DE_SLUG, DE_TOPIC_NAMES, topicDisplayName, topicsForLang, topicNavSection, hubCards, fillTopicMarkers } = require("./lib/topic-nav");
+const { DE_TOPIC_MAP, EN_TO_DE_SLUG, DE_TOPIC_NAMES, topicDisplayName, topicPageUrl, topicFromSlug, topicAlternates, topicsForLang, topicNavSection, topicNavCards, hubCards, fillTopicMarkers } = require("./lib/topic-nav");
+const seasonalTopics = require("./lib/seasonal-topics");
 
 // Translations for gallery section injected into DE static pages
 const DE_GALLERY_T = {
@@ -315,7 +316,7 @@ async function serveTopicPageWithGallery(res, topic) {
   const staticPath = path.join(PUBLIC_DIR, "coloring-pages", topic, "index.html");
   let baseHtml;
   try { baseHtml = fs.readFileSync(staticPath, "utf8"); }
-  catch { return sendJson(res, 404, { error: "Not found" }); }
+  catch { return topicPageUrl("en", topic) ? serveI18nTopic(res, "en", topic) : sendJson(res, 404, { error: "Not found" }); }
 
   const topicImages = gallery.getAllForTopic(topic);
   const hasAny = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
@@ -377,12 +378,13 @@ function serveDeTopicPageBySlug(res, deSlug) {
   const staticPath = path.join(PUBLIC_DIR, "ausmalbilder", deSlug, "index.html");
   let baseHtml;
   try { baseHtml = fs.readFileSync(staticPath, "utf8"); } catch { /* fall through */ }
+  // Christmas & winter topics added 2026-11 have no static German page: SSR.
+  if (!baseHtml && enTopic) return serveI18nTopic(res, "de", enTopic);
   if (!baseHtml) return sendJson(res, 404, { error: "Not found" });
 
   const deTopicName = enTopic ? (DE_TOPIC_NAMES[enTopic] || deSlug) : deSlug;
-  // Seasonal topics (Einschulung, Weihnachten, …) have gallery images but no page
-  // in any other language — they must not advertise EN/x-default alternates.
-  const hasEnPage = !!enTopic && !gallery.TOPIC_META[enTopic]?.seasonal;
+  // German-only topics (Einschulung, Nikolaus, …) must not advertise EN/x-default alternates.
+  const hasEnPage = !!enTopic && !!topicPageUrl("en", enTopic);
   const deNav = buildNav({
     lang: 'de',
     breadcrumbs: [{ href: '/de/ausmalbilder/', label: 'Ausmalbilder' }, { label: deTopicName }],
@@ -399,6 +401,11 @@ function serveDeTopicPageBySlug(res, deSlug) {
     if (firstImg) {
       enhanced = enhanced.replace(/<meta property="og:image"[^>]*>/, `<meta property="og:image" content="https://lalabuba.com${firstImg.url}"/>`);
     }
+  }
+  if (hasEnPage && gallery.TOPIC_META[enTopic]?.seasonal) {
+    // Static German Christmas pages were German-only; they now have pages in every language.
+    enhanced = enhanced.replace(/[ \t]*<link rel="alternate" hreflang=[^>]*>\n?/g, "")
+      .replace("</head>", `${topicHreflang(enTopic)}\n</head>`);
   }
   if (hasEnPage) {
     enhanced = enhanced.replace(
@@ -496,7 +503,7 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
     htmlLang       = "de";
     hubHref        = "/de/ausmalbilder/";
     hubLabel       = "Ausmalbilder";
-    topicPath      = deSlug2 ? `/de/ausmalbilder/${deSlug2}/` : `/en/coloring-pages/${topic}/`;
+    topicPath      = topicPageUrl("de", topic) || topicPageUrl("en", topic);
     topicName      = DE_TOPIC_NAMES?.[topic] || (meta?.name || topic);
     diffLabel      = { easy: "Einfach", medium: "Mittel", hard: "Schwer" }[difficulty] || difficulty;
     title          = `${subjectTitle} Ausmalbild (${diffLabel}) — Kostenlos | Lalabuba`;
@@ -510,8 +517,8 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
     htmlLang       = "en";
     hubHref        = "/en/coloring-pages/";
     hubLabel       = "Coloring Pages";
-    topicPath      = `/en/coloring-pages/${topic}/`;
-    topicName      = meta?.name || topic;
+    topicPath      = topicPageUrl("en", topic);
+    topicName      = topicDisplayName("en", topic);
     diffLabel      = { easy: "Easy", medium: "Medium", hard: "Hard" }[difficulty] || difficulty;
     title          = `${subjectTitle} Coloring Page (${diffLabel}) — Free Printable | Lalabuba`;
     desc           = `Free printable ${subject} coloring page for kids. ${diffLabel} difficulty. Color online or print at Lalabuba.`;
@@ -527,25 +534,11 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
   const printHref = `${basePath}${imageSlug}/print`;
   const dlHref    = `${basePath}${imageSlug}/print?download=1`;
 
-  // ── hreflang block ─────────────────────────────────────────────────────────
-  const deSlug = EN_TO_DE_SLUG[topic];
-  // Seasonal topics are DE-only: their images are listed only on /de/ausmalbilder/.
-  const deOnly = !!(deSlug && meta?.seasonal);
-  const hreflangLines = deOnly ? [] : [`  <link rel="alternate" hreflang="en" href="https://lalabuba.com/en/coloring-pages/${topic}/${imageSlug}/"/>`];
-  if (deSlug) hreflangLines.push(`  <link rel="alternate" hreflang="de" href="https://lalabuba.com/de/ausmalbilder/${deSlug}/${imageSlug}/"/>`);
-  for (const [lk, lc] of Object.entries(i18n.LANGS)) {
-    const ls = lc.topicSlugs[topic];
-    if (ls) hreflangLines.push(`  <link rel="alternate" hreflang="${lc.htmlLang}" href="https://lalabuba.com/${lc.root}/${ls}/${imageSlug}/"/>`);
-  }
-  if (!deOnly) hreflangLines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/en/coloring-pages/${topic}/${imageSlug}/"/>`);
-
-  // hreflangMap for nav builder
-  const hreflangMap = deOnly ? {} : { en: `https://lalabuba.com/en/coloring-pages/${topic}/${imageSlug}/` };
-  if (deSlug) hreflangMap.de = `https://lalabuba.com/de/ausmalbilder/${deSlug}/${imageSlug}/`;
-  for (const [lk, lc] of Object.entries(i18n.LANGS)) {
-    const ls = lc.topicSlugs[topic];
-    if (ls) hreflangMap[lc.htmlLang] = `https://lalabuba.com/${lc.root}/${ls}/${imageSlug}/`;
-  }
+  // ── hreflang block: every language that has this topic's page ──────────────
+  const alt = topicAlternates(topic, `${imageSlug}/`);
+  const hreflangLines = alt.list.map(([hl, u]) => `  <link rel="alternate" hreflang="${hl}" href="${u}"/>`);
+  if (alt.xDefault) hreflangLines.push(`  <link rel="alternate" hreflang="x-default" href="${alt.xDefault}"/>`);
+  const hreflangMap = Object.fromEntries(alt.list);
 
   const jsonLd = JSON.stringify({ "@context":"https://schema.org", "@graph": [
     { "@type":"ImageObject", "name":title, "description":desc,
@@ -625,7 +618,7 @@ ${buildNav({ lang: htmlLang, breadcrumbs: [
       <a href="${topicPath}" class="lp-topic-link">${topicName}</a>
     </div>
     <p class="lp-image-desc">${desc}</p>
-    <a href="/?s=1&q=${encodeURIComponent(topic)}&d=${difficulty}" class="lp-generate-link">✨ ${moreLabel} →</a>
+    <a href="/?s=1&q=${encodeURIComponent(topicDisplayName("en", topic))}&d=${difficulty}" class="lp-generate-link">✨ ${moreLabel} →</a>
   </div>
   ${relatedHtml}
   ${topicNavSection(lang, topic)}
@@ -713,13 +706,8 @@ function hubHreflangMap() {
 }
 // Topic pages: each lang links to its own topic page (or hub if no topic slug exists).
 function topicHreflangMap(enTopic) {
-  const m = { en: `https://lalabuba.com/en/coloring-pages/${enTopic}/` };
-  const deSlug = EN_TO_DE_SLUG[enTopic];
-  if (deSlug) m.de = `https://lalabuba.com/de/ausmalbilder/${deSlug}/`;
-  for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
-    const slug = cfg.topicSlugs[enTopic];
-    m[lang] = slug ? `https://lalabuba.com/${cfg.root}/${slug}/` : `https://lalabuba.com/${cfg.root}/`;
-  }
+  const m = Object.fromEntries(topicAlternates(enTopic).list);
+  for (const [lang, cfg] of Object.entries(i18n.LANGS)) m[cfg.htmlLang] ||= `https://lalabuba.com/${cfg.root}/`;
   return m;
 }
 // Daily pages only exist in EN + DE; other langs fall back to their hub.
@@ -759,16 +747,9 @@ function hubHreflang(currentLang) {
 
 // Build full hreflang for a topic page across all languages
 function topicHreflang(enTopic) {
-  const lines = [
-    `  <link rel="alternate" hreflang="en" href="https://lalabuba.com/en/coloring-pages/${enTopic}/"/>`,
-  ];
-  const deSlug = EN_TO_DE_SLUG[enTopic];
-  if (deSlug) lines.push(`  <link rel="alternate" hreflang="de" href="https://lalabuba.com/de/ausmalbilder/${deSlug}/"/>`);
-  for (const [lang, cfg] of Object.entries(i18n.LANGS)) {
-    const slug = cfg.topicSlugs[enTopic];
-    if (slug) lines.push(`  <link rel="alternate" hreflang="${cfg.htmlLang}" href="https://lalabuba.com/${cfg.root}/${slug}/"/>`);
-  }
-  lines.push(`  <link rel="alternate" hreflang="x-default" href="https://lalabuba.com/en/coloring-pages/${enTopic}/"/>`);
+  const alt = topicAlternates(enTopic);
+  const lines = alt.list.map(([hl, u]) => `  <link rel="alternate" hreflang="${hl}" href="${u}"/>`);
+  if (alt.xDefault) lines.push(`  <link rel="alternate" hreflang="x-default" href="${alt.xDefault}"/>`);
   return lines.join('\n');
 }
 
@@ -778,13 +759,21 @@ function serveI18nHub(res, lang) {
   const { root, htmlLang, t } = cfg;
   const canon = `https://lalabuba.com/${root}/`;
 
-  const topics = topicsForLang(lang);
+  const topics = topicsForLang(lang, { season: null });
   const topicCards = hubCards(topics, t.topicCta);
+  const xmas = topicsForLang(lang, { season: "christmas" });
+  const xmasSection = xmas.length ? `
+  <section class="lp-section">
+    <h2 class="section-heading">${seasonalTopics.UI.heading[lang]}</h2>
+    <nav class="lp-related-grid" aria-label="${seasonalTopics.UI.heading[lang]}">
+      ${topicNavCards(xmas, null, "lp-related-card--featured")}
+    </nav>
+  </section>` : "";
 
   const ldJson = JSON.stringify({
     "@context": "https://schema.org", "@type": "CollectionPage",
     "name": t.hubH1, "description": t.hubDesc, "url": canon,
-    "hasPart": topics.map(tp => ({ "@type": "WebPage", "name": tp.name, "url": `https://lalabuba.com${tp.url}` })),
+    "hasPart": [...xmas, ...topics].map(tp => ({ "@type": "WebPage", "name": tp.name, "url": `https://lalabuba.com${tp.url}` })),
   });
 
   const html = `<!doctype html>
@@ -817,7 +806,7 @@ ${buildNav({ lang, breadcrumbs: [{ label: t.hubH1 }], hreflangMap: hubHreflangMa
     <a href="/" class="lp-cta">${t.hubCta}</a>
   </div>
 </div>
-<div class="legal-content">
+<div class="legal-content">${xmasSection}
   <section class="lp-section">
     <h2 class="section-heading">${t.hubSectionTitle}</h2>
     <p class="section-sub">${t.hubSectionSub}</p>
@@ -834,23 +823,25 @@ ${buildNav({ lang, breadcrumbs: [{ label: t.hubH1 }], hreflangMap: hubHreflangMa
   serveHtml(res, withReadyToColor(html, lang, t));
 }
 
+// Topic page for the 10 SSR languages, and for English/German topics without a
+// static page (the Christmas & winter topics).
 async function serveI18nTopic(res, lang, enTopic) {
-  const cfg = i18n.LANGS[lang];
-  if (!cfg || !gallery.TOPIC_META[enTopic]) return sendJson(res, 404, { error: 'Not found' });
+  const cfg = i18n.pageCfg(lang);
+  const pagePath = topicPageUrl(lang, enTopic);
+  if (!cfg || !gallery.TOPIC_META[enTopic] || !pagePath) return sendJson(res, 404, { error: 'Not found' });
   const { root, htmlLang } = cfg;
   const t = { ...i18n.topicT(cfg.t, enTopic), subjectLabel: (s) => gallery.subjectLabel(lang, s) };
-  const topicSlug  = cfg.topicSlugs[enTopic] || enTopic;
-  const topicName  = t.topicNames[enTopic] || enTopic;
-  const canon      = `https://lalabuba.com/${root}/${topicSlug}/`;
-  const q          = encodeURIComponent(enTopic);
-  const emoji      = i18n.TOPIC_EMOJIS[enTopic] || '🎨';
+  const topicName  = t.topicNames[enTopic] || topicDisplayName(lang, enTopic);
+  const canon      = `https://lalabuba.com${pagePath}`;
+  const q          = encodeURIComponent(seasonalTopics.TOPICS[enTopic] ? topicDisplayName("en", enTopic) : enTopic);
+  const emoji      = gallery.TOPIC_META[enTopic].emoji || '🎨';
 
   const topicImages = gallery.getAllForTopic(enTopic);
   const hasAny  = ["easy","medium","hard"].some(d => (topicImages[d]||[]).length > 0);
   let galSection = '';
   if (hasAny) {
     const topicMeta = { name: topicName };
-    galSection = gallerySection(topicImages, topicMeta, t, { basePath: `/${root}/${topicSlug}/` });
+    galSection = gallerySection(topicImages, topicMeta, t, { basePath: pagePath });
   }
 
   const firstImg = ["easy","medium","hard"].reduce((f, d) => f || (topicImages[d]||[])[0], null);
@@ -1832,18 +1823,16 @@ const server = http.createServer(async (req, res) => {
     }
     const enDailyMatch = p.match(/^\/en\/coloring-pages\/daily\/(\d{4}-\d{2}-\d{2})-([a-z]+)\/?$/);
     if (enDailyMatch) return serveDailyPage(res, enDailyMatch[1], enDailyMatch[2]);
-    const enPrintMatch = p.match(/^\/en\/coloring-pages\/([a-z]+)\/([a-z0-9-]+)\/print\/?$/);
-    if (enPrintMatch && gallery.TOPIC_META[enPrintMatch[1]]) {
-      return serveImagePrint(req, res, "en", enPrintMatch[1], enPrintMatch[2]);
-    }
-    const enImageMatch = p.match(/^\/en\/coloring-pages\/([a-z]+)\/([a-z0-9-]+)\/?$/);
-    if (enImageMatch && gallery.TOPIC_META[enImageMatch[1]]) {
-      return serveIndividualImagePage(res, "en", enImageMatch[1], enImageMatch[2]);
-    }
-    const enTopicMatch2 = p.match(/^\/en\/coloring-pages\/([a-z]+)\/?$/);
-    if (enTopicMatch2 && gallery.TOPIC_META[enTopicMatch2[1]]) {
-      return serveTopicPageWithGallery(res, enTopicMatch2[1]);
-    }
+    // English topic slugs: the topic id, or the seasonal slug (christmas-tree → christmastree).
+    const enPrintMatch = p.match(/^\/en\/coloring-pages\/([a-z-]+)\/([a-z0-9-]+)\/print\/?$/);
+    const enPrintTopic = enPrintMatch && topicFromSlug("en", enPrintMatch[1]);
+    if (enPrintTopic) return serveImagePrint(req, res, "en", enPrintTopic, enPrintMatch[2]);
+    const enImageMatch = p.match(/^\/en\/coloring-pages\/([a-z-]+)\/([a-z0-9-]+)\/?$/);
+    const enImageTopic = enImageMatch && topicFromSlug("en", enImageMatch[1]);
+    if (enImageTopic) return serveIndividualImagePage(res, "en", enImageTopic, enImageMatch[2]);
+    const enTopicMatch2 = p.match(/^\/en\/coloring-pages\/([a-z-]+)\/?$/);
+    const enTopicId = enTopicMatch2 && topicFromSlug("en", enTopicMatch2[1]);
+    if (enTopicId) return serveTopicPageWithGallery(res, enTopicId);
 
     // ── URL-3: Language-prefixed DE routes (/de/ausmalbilder/...) ─────────────
     if (p === "/de/ausmalbilder" || p === "/de/ausmalbilder/") {

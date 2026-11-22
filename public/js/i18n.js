@@ -4813,6 +4813,20 @@ const COLORING_TODAY_LABELS = {
   zh:'🌟 今日涂色页 →', hi:'🌟 आज का चित्र →',
 };
 
+// Home-page link to the Christmas & winter pages (shown November–January).
+const COLORING_SEASON_SLUGS = {
+  en:'christmas', de:'weihnachten', fr:'noel', es:'navidad', pt:'natal', ru:'novyy-god',
+  it:'natale', nl:'kerst', pl:'boze-narodzenie', tr:'yilbasi', zh:'shengdan', hi:'christmas',
+};
+const COLORING_SEASON_LABELS = {
+  en:'🎄 Christmas coloring pages →', de:'🎄 Weihnachts-Ausmalbilder →',
+  fr:'🎄 Coloriages de Noël →', es:'🎄 Dibujos de Navidad →',
+  pt:'🎄 Desenhos de Natal →', ru:'🎄 Новогодние раскраски →',
+  it:'🎄 Disegni di Natale →', nl:'🎄 Kerstkleurplaten →',
+  pl:'🎄 Kolorowanki świąteczne →', tr:'🎄 Yılbaşı boyamaları →',
+  zh:'🎄 圣诞涂色页 →', hi:'🎄 क्रिसमस के चित्र →',
+};
+
 const COLORING_TODAY_SLUGS = {
   en:'today', de:'heute', fr:'aujourd-hui', es:'hoy', pt:'hoje',
   ru:'seychas', it:'oggi', nl:'vandaag', pl:'dzisiaj',
@@ -4848,6 +4862,13 @@ function updateTopicLinks(lang) {
   if (todayLink) {
     todayLink.href = getHubHref(lang) + (COLORING_TODAY_SLUGS[lang] || 'today') + '/';
     todayLink.textContent = COLORING_TODAY_LABELS[lang] || COLORING_TODAY_LABELS.en;
+  }
+  const seasonLink = document.getElementById('hero-season-link');
+  if (seasonLink) {
+    const month = new Date().getMonth();
+    seasonLink.hidden = !(month >= 10 || month === 0);
+    seasonLink.href = getTopicHref(lang, COLORING_SEASON_SLUGS[lang] || COLORING_SEASON_SLUGS.en);
+    seasonLink.textContent = COLORING_SEASON_LABELS[lang] || COLORING_SEASON_LABELS.en;
   }
   const footerColoringLink = document.getElementById('footer-coloring-link');
   if (footerColoringLink) footerColoringLink.href = hubHref;
