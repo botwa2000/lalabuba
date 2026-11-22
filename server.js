@@ -49,6 +49,7 @@ const landing = require("./lib/landing");
 const { DE_TOPIC_MAP, EN_TO_DE_SLUG, DE_TOPIC_NAMES, topicDisplayName, topicPageUrl, topicFromSlug, topicAlternates, topicsForLang, topicNavSection, topicNavCards, hubCards, fillTopicMarkers } = require("./lib/topic-nav");
 const seasonalTopics = require("./lib/seasonal-topics");
 const titleOverrides = require("./lib/title-overrides");
+const imageNames = require("./lib/image-names");
 
 // Translations for gallery section injected into DE static pages
 const DE_GALLERY_T = {
@@ -284,9 +285,16 @@ function withBeacon(html) {
   return i === -1 ? html : html.slice(0, i) + BEACON_TAG + html.slice(i);
 }
 
+// Large image previews in search results (growth plan L3), unless the page sets its own robots meta.
+function withRobots(html) {
+  if (typeof html !== "string" || /<meta name="robots"/i.test(html)) return html;
+  const i = html.indexOf("</head>");
+  return i === -1 ? html : html.slice(0, i) + '  <meta name="robots" content="max-image-preview:large"/>\n' + html.slice(i);
+}
+
 function serveHtml(res, html) {
   res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-  res.end(withBeacon(titleOverrides.apply(html, res.req && res.req.url)));
+  res.end(withBeacon(withRobots(titleOverrides.apply(html, res.req && res.req.url))));
 }
 
 // Replace the old <nav class="legal-nav">...</nav> block in static HTML with the
@@ -469,6 +477,8 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
     if (found) { entry = { ...found, difficulty: diff }; difficulty = diff; break; }
   }
   if (!entry) return sendJson(res, 404, { error: "Not found" });
+  // Descriptive picture URL in this page's language (growth plan L3); print/save keep entry.url.
+  const seoImg = imageNames.pictureUrl(lang, topic, entry) || entry.url;
 
   const meta        = gallery.TOPIC_META[topic];
   const isDE   = lang === "de";
@@ -543,7 +553,7 @@ function serveIndividualImagePage(res, lang, topic, imageSlug) {
 
   const jsonLd = JSON.stringify({ "@context":"https://schema.org", "@graph": [
     { "@type":"ImageObject", "name":title, "description":desc,
-      "contentUrl":`https://lalabuba.com${entry.url}`, "url":canonical,
+      "contentUrl":`https://lalabuba.com${seoImg}`, "url":canonical,
       "encodingFormat": entry.url.endsWith(".jpg") ? "image/jpeg" : "image/png",
       "license":"https://creativecommons.org/licenses/by/4.0/",
       "acquireLicensePage":"https://lalabuba.com/terms",
@@ -582,7 +592,7 @@ ${hreflangLines.join('\n')}
   <meta property="og:description" content="${desc}"/>
   <meta property="og:type" content="article"/>
   <meta property="og:url" content="${canonical}"/>
-  <meta property="og:image" content="https://lalabuba.com${entry.url}"/>
+  <meta property="og:image" content="https://lalabuba.com${seoImg}"/>
   <meta property="og:site_name" content="Lalabuba"/>
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="theme-color" content="#7c4dff"/>
@@ -604,7 +614,7 @@ ${buildNav({ lang: htmlLang, breadcrumbs: [
 <main class="lp-main lp-image-page">
   <div class="lp-image-hero">
     <a href="${colorHref}" class="lp-coloring-img-link" title="${colorLabel}">
-      <img src="${entry.url}" alt="${subjectTitle} ${isDE ? "Ausmalbild" : (i18nCfg?.t.altSuffix || "coloring page")} — ${diffLabel}" class="lp-coloring-img" width="800" height="800" loading="eager"/>
+      <img src="${seoImg}" alt="${subjectTitle} ${isDE ? "Ausmalbild" : (i18nCfg?.t.altSuffix || "coloring page")} — ${diffLabel}" class="lp-coloring-img" width="800" height="800" loading="eager"/>
     </a>
     <div class="lp-image-actions">
       <a href="${colorHref}" class="lp-btn lp-btn-primary">✏️ ${colorLabel}</a>
@@ -1421,6 +1431,10 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" });
     return res.end(req.method === "HEAD" ? undefined : require("./lib/sitemap").sitemapXml());
   }
+  if (p === "/sitemap-images.xml" && (req.method === "GET" || req.method === "HEAD")) {
+    res.writeHead(200, { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" });
+    return res.end(req.method === "HEAD" ? undefined : require("./lib/sitemap").imageSitemapXml());
+  }
 
   // Deep health check: actually generates a test image and validates quality.
   // Protected by GALLERY_ADMIN_KEY. Cached 10 min to avoid burning credits.
@@ -1476,6 +1490,21 @@ const server = http.createServer(async (req, res) => {
   }
   if (p === "/api/admin/security") {
     return require("./api/admin/security")(req, res);
+  }
+
+  // ── Descriptive library picture URLs (lib/image-names.js) → the stored file ──
+  const seoImgMatch = p.match(/^\/img\/p\/([a-z0-9-]+)\/([a-z0-9-]+\.(?:png|jpe?g))$/);
+  if (seoImgMatch && req.method === "GET") {
+    const e = imageNames.resolve(seoImgMatch[1], seoImgMatch[2]);
+    const file = e && /^\/img\/g\/([A-Za-z0-9_.-]+)$/.exec(e.url);
+    if (!file) return sendJson(res, 404, { error: "Image not found" });
+    try {
+      const buf = fs.readFileSync(path.join(__dirname, "data", "images", "g", file[1]));
+      res.writeHead(200, { "Content-Type": /\.jpe?g$/i.test(file[1]) ? "image/jpeg" : "image/png", "Cache-Control": "public, max-age=604800" });
+      return res.end(buf);
+    } catch {
+      return sendJson(res, 404, { error: "Image not found" });
+    }
   }
 
   // ── Serve generated images (coloring shares + gallery + community shared) ──

@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
 Sitemap: https://lalabuba.com/sitemap.xml
+Sitemap: https://lalabuba.com/sitemap-images.xml
