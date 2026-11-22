@@ -863,11 +863,20 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
             onPressed: ready && !_isGenerating ? _reportPicture : null,
           );
         }),
-        IconButton(
-          icon: const Text('🎲', style: TextStyle(fontSize: 20)),
-          tooltip: l10n.t('regenBtn'),
-          onPressed: _isGenerating || _subject.isEmpty ? null : () => _generate(again: true),
-        ),
+        Builder(builder: (_) {
+          // Empty subject = just refused (words cleared): 🎲 would resend
+          // nothing. An emoji ignores IconButton's disabled colour, so dim it.
+          final canRegen = !_isGenerating && _subject.isNotEmpty;
+          return IconButton(
+            key: const ValueKey('regen-dice'),
+            icon: Opacity(
+              opacity: canRegen ? 1 : 0.4,
+              child: const Text('🎲', style: TextStyle(fontSize: 20)),
+            ),
+            tooltip: l10n.t('regenBtn'),
+            onPressed: canRegen ? () => _generate(again: true) : null,
+          );
+        }),
         const SizedBox(width: 4),
       ],
     );

@@ -555,6 +555,10 @@ document.addEventListener('lalabuba:refused', () => {
   subjectInput.value = '';
   subjectInput.dispatchEvent(new Event('input', { bubbles: true }));
   state.lastEnglishSubject = '';
+  // 🎲 Again! would redraw the (now empty) subject: disabled = greyed at 40 %
+  // (.regen-btn:disabled). generate.js re-enables it after the next picture.
+  const regen = document.getElementById('regen-button');
+  if (regen) regen.disabled = true;
   try {
     const u = new URL(window.location.href);
     if (u.searchParams.has('q')) { u.searchParams.delete('q'); history.replaceState(history.state, '', u); }
@@ -1050,7 +1054,8 @@ regenButton.addEventListener('click', async () => {
   } catch (error) {
     setStatus(error.message || 'Something went wrong.', true);
   } finally {
-    regenButton.disabled = false;
+    // Stays disabled when this redraw was refused (the refusal cleared the subject).
+    regenButton.disabled = !sanitizeSubject(subjectInput.value);
     submitButton.disabled = false;
   }
 });

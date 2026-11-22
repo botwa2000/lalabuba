@@ -117,6 +117,10 @@ void main() {
     expect(container.read(subjectRefusedProvider), 1);
     final dice = tester.widget<IconButton>(find.ancestor(of: find.text('🎲'), matching: find.byType(IconButton)));
     expect(dice.onPressed, isNull);
+    // …and looks disabled: the emoji is greyed to 40 % (it ignores the
+    // IconButton's disabled colour).
+    final diceOpacity = tester.widget<Opacity>(find.ancestor(of: find.text('🎲'), matching: find.byType(Opacity)).first);
+    expect(diceOpacity.opacity, closeTo(0.4, 0.001));
     // The retry button would just send the refused subject again — it is replaced.
     expect(find.byType(ElevatedButton), findsNothing);
 
