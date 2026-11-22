@@ -1938,7 +1938,7 @@ const server = http.createServer(async (req, res) => {
       if (oldPrefixMatch) {
         const [, langCode, slug] = oldPrefixMatch;
         const isKnownLang = langCode === 'en' || langCode === 'de' || !!i18n.LANGS[langCode];
-        if (isKnownLang) {
+        if (isKnownLang && !['features', 'faq', 'community'].includes(slug)) {   // real pages, served below
           res.writeHead(301, { Location: `/${slug}/`, 'Cache-Control': 'public, max-age=86400' });
           return res.end();
         }
