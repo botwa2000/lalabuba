@@ -5,6 +5,7 @@ const gallery = require("../lib/gallery");
 
 const LIB = {
   car: { easy: [{ slug: "tow-easy", url: "/img/g/car-easy-1.png" }], medium: [], hard: [{ slug: "sporty-hard", url: "/img/g/car-hard-2.png" }] },
+  dragon: { easy: [{ slug: "dragon-easy-9", url: "/img/g/dragon-easy-9.jpg" }], medium: [], hard: [] },
   firetruck: { easy: [{ slug: "firetruck-easy-1", url: "/img/g/firetruck-easy-9.jpg" }], medium: [], hard: [] },
 };
 gallery.getAllForTopic = (t) => LIB[t] || {};
@@ -20,6 +21,10 @@ assert.strictEqual(names.pictureUrl("de", "car", LIB.car.easy[0]), "/img/p/auto/
 assert.strictEqual(names.pictureUrl("en", "car", LIB.car.easy[0]), "/img/p/car/car-tow-easy.png");
 assert.strictEqual(names.pictureUrl("fr", "firetruck", LIB.firetruck.easy[0]), "/img/p/camion-de-pompiers/camion-de-pompiers-firetruck-easy-1.jpg");
 assert.strictEqual(names.pictureUrl("tr", "car", { slug: "x" }), null, "entry without a stored file");
+assert.strictEqual(names.pictureUrl("en", "dragon", LIB.dragon.easy[0]), "/img/p/dragon/dragon-easy-9.jpg", "no doubled prefix");
+assert.strictEqual(names.pictureUrl("tr", "dragon", LIB.dragon.easy[0]), "/img/p/ejderha/ejderha-dragon-easy-9.jpg");
+assert.strictEqual(names.resolve("dragon", "dragon-easy-9.jpg").url, "/img/g/dragon-easy-9.jpg");
+assert.strictEqual(names.resolve("ejderha", "ejderha-dragon-easy-9.jpg").url, "/img/g/dragon-easy-9.jpg");
 
 // …and resolve back to the stored file, also where one slug starts with another ("camion" vs "camion-de-pompiers").
 assert.strictEqual(names.resolve("araba", "araba-sporty-hard.png").url, "/img/g/car-hard-2.png");
@@ -36,5 +41,5 @@ assert.ok(xml.includes('xmlns:image="http://www.google.com/schemas/sitemap-image
 assert.ok(xml.includes("<loc>https://lalabuba.com/boyama-sayfalari/araba/sporty-hard/</loc><image:image><image:loc>https://lalabuba.com/img/p/araba/araba-sporty-hard.png</image:loc>"));
 assert.ok(xml.includes("<loc>https://lalabuba.com/de/ausmalbilder/auto/tow-easy/</loc>"));
 const n = (xml.match(/<url>/g) || []).length;
-assert.strictEqual(n, 3 * 12, `3 pictures × 12 languages, got ${n}`);
+assert.strictEqual(n, 4 * 12, `4 pictures × 12 languages, got ${n}`);
 console.log("image-names: all checks passed");
