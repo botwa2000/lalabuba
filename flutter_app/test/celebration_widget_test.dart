@@ -18,6 +18,7 @@ const _strings = {
   'celebNew': '✨ New',
   'celebShare': '🖼️ Share',
   'celebKeep': 'Keep coloring',
+  'challengeBtn': '🏆 Challenge!',
   'badgeFiveTitle': 'High Five',
   'badgeFiveDesc': '5 pictures colored!',
 };
@@ -46,6 +47,7 @@ void main() {
     testWidgets('celebration renders with sticker at ${entry.key}',
         (tester) async {
       await _setSize(tester, entry.value);
+      var challenged = 0;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -61,6 +63,7 @@ void main() {
                     onAgain: () {},
                     onNew: () {},
                     onShare: () {},
+                    onChallenge: () => challenged++,
                   ),
                   child: const Text('go'),
                 ),
@@ -85,6 +88,14 @@ void main() {
       expect(find.text('🎲 Again'), findsOneWidget);
       expect(find.text('✨ New'), findsOneWidget);
       expect(find.text('🖼️ Share'), findsOneWidget);
+      // 🏆 Challenge! (web parity): visible, and a tap closes the card first.
+      expect(find.text('🏆 Challenge!'), findsOneWidget);
+      await tester.ensureVisible(find.text('🏆 Challenge!'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('🏆 Challenge!'));
+      await tester.pumpAndSettle();
+      expect(challenged, 1);
+      expect(find.text('Well done! 🎉'), findsNothing);
     });
   }
 
@@ -117,6 +128,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('High Five'), findsNothing);
+    // No seed → no challenge link → no button.
+    expect(find.text('🏆 Challenge!'), findsNothing);
     expect(find.text('New sticker unlocked!'.toUpperCase()), findsNothing);
   });
 }

@@ -19,6 +19,8 @@ Future<void> showCompletionCelebration(
   required VoidCallback onNew,
   required VoidCallback onShare,
   ValueChanged<int>? onRate,
+  VoidCallback? onChallenge,
+  String? challengeLabel,
 }) {
   return showDialog<void>(
     context: context,
@@ -31,6 +33,8 @@ Future<void> showCompletionCelebration(
       onNew: onNew,
       onShare: onShare,
       onRate: onRate,
+      onChallenge: onChallenge,
+      challengeLabel: challengeLabel,
     ),
   );
 }
@@ -46,6 +50,11 @@ class _CelebrationDialog extends StatelessWidget {
   /// 😕/🙂/😍 → 1/2/3 (POST /api/feedback). Null hides the row (no server image).
   final ValueChanged<int>? onRate;
 
+  /// "🏆 Challenge!" (web parity: #celebration-challenge). Null hides it — a
+  /// challenge link needs the picture's seed.
+  final VoidCallback? onChallenge;
+  final String? challengeLabel;
+
   const _CelebrationDialog({
     required this.l10n,
     required this.progress,
@@ -54,6 +63,8 @@ class _CelebrationDialog extends StatelessWidget {
     required this.onNew,
     required this.onShare,
     this.onRate,
+    this.onChallenge,
+    this.challengeLabel,
   });
 
   String _statsText() {
@@ -143,6 +154,15 @@ class _CelebrationDialog extends StatelessWidget {
                       onAgain();
                     },
                   ),
+                  if (onChallenge != null)
+                    _WhatNextBtn(
+                      key: const ValueKey('celebration-challenge'),
+                      label: challengeLabel ?? l10n.t('challengeBtn'),
+                      onTap: () {
+                        close();
+                        onChallenge!();
+                      },
+                    ),
                   _WhatNextBtn(
                     label: l10n.t('celebNew'),
                     onTap: () {
@@ -244,7 +264,7 @@ class _WhatNextBtn extends StatelessWidget {
   final bool primary;
   final VoidCallback onTap;
   const _WhatNextBtn(
-      {required this.label, required this.onTap, this.primary = false});
+      {super.key, required this.label, required this.onTap, this.primary = false});
 
   @override
   Widget build(BuildContext context) {

@@ -2128,6 +2128,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         if (mounted && context.mounted) context.pop();
       },
       onShare: () => _shareArtwork(ref.read(canvasProvider)),
+      // 🏆 Challenge! on the finish card (web parity), when a link can be made.
+      onChallenge: _challengeReady(ref.read(canvasProvider))
+          ? () { if (mounted) _showChallengeDialog(); }
+          : null,
       // Only pictures served by our API can be rated (joined to the generation).
       onRate: _imageUrl == null
           ? null
