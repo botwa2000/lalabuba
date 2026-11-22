@@ -130,7 +130,7 @@ t("Play listing parser fails loudly when the page format changes", () => {
 });
 t("every import source declares its credentials", () => {
   assert.deepStrictEqual(imp.SOURCES.map((s) => s.id).sort(),
-    ["asc_analytics", "asc_reviews", "asc_sales", "cf_traffic", "ios_ratings", "play_listing", "play_reports", "play_reviews", "play_vitals"]);
+    ["asc_analytics", "asc_reviews", "asc_sales", "cf_traffic", "ios_ratings", "play_listing", "play_reports", "play_reviews", "play_tracks", "play_vitals"]);
 });
 t("with every credential set, every source is ready (needs() === true, not just truthy)", () => {
   const keys = ["PLAY_SERVICE_ACCOUNT_JSON", "PLAY_REPORTS_BUCKET", "ASC_ISSUER_ID", "ASC_KEY_ID", "ASC_PRIVATE_KEY", "ASC_VENDOR_NUMBER", "CF_ANALYTICS_TOKEN"];
