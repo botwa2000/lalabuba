@@ -54,7 +54,7 @@ for (const id of Object.keys(seasonalTopics.TOPICS)) {
   for (const lang of nav.PAGE_LANGS) {
     const cfg = i18n.pageCfg(lang);
     const o = i18n.topicT(cfg.t, id);
-    assert.ok(o.topicPageH1() && o.topicPageSub() && o.topicPageTitle().endsWith("| Lalabuba"), `${lang} ${id} strings`);
+    assert.ok(o.topicPageH1() && o.topicPageSub() && o.topicPageTitle().length <= 75, `${lang} ${id} strings`);
   }
 }
 assert.strictEqual(nav.topicAlternates("nikolaus").list.length, 1);

@@ -829,7 +829,8 @@ ${buildNav({ lang, breadcrumbs: [{ label: t.hubH1 }], hreflangMap: hubHreflangMa
 async function serveI18nTopic(res, lang, enTopic) {
   const cfg = i18n.pageCfg(lang);
   const pagePath = topicPageUrl(lang, enTopic);
-  if (!cfg || !gallery.TOPIC_META[enTopic] || !pagePath) return sendJson(res, 404, { error: 'Not found' });
+  // No pictures yet → no page (a topic page is never served thin; see growth plan L2).
+  if (!cfg || !gallery.TOPIC_META[enTopic] || !pagePath || !gallery.hasImages(enTopic)) return sendJson(res, 404, { error: 'Not found' });
   const { root, htmlLang } = cfg;
   const t = { ...i18n.topicT(cfg.t, enTopic), subjectLabel: (s) => gallery.subjectLabel(lang, s) };
   const topicName  = t.topicNames[enTopic] || topicDisplayName(lang, enTopic);
