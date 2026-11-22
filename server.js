@@ -48,6 +48,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const landing = require("./lib/landing");
 const { DE_TOPIC_MAP, EN_TO_DE_SLUG, DE_TOPIC_NAMES, topicDisplayName, topicPageUrl, topicFromSlug, topicAlternates, topicsForLang, topicNavSection, topicNavCards, hubCards, fillTopicMarkers } = require("./lib/topic-nav");
 const seasonalTopics = require("./lib/seasonal-topics");
+const titleOverrides = require("./lib/title-overrides");
 
 // Translations for gallery section injected into DE static pages
 const DE_GALLERY_T = {
@@ -285,7 +286,7 @@ function withBeacon(html) {
 
 function serveHtml(res, html) {
   res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-  res.end(withBeacon(html));
+  res.end(withBeacon(titleOverrides.apply(html, res.req && res.req.url)));
 }
 
 // Replace the old <nav class="legal-nav">...</nav> block in static HTML with the
