@@ -130,7 +130,7 @@ t("Play listing parser fails loudly when the page format changes", () => {
 });
 t("every import source declares its credentials", () => {
   assert.deepStrictEqual(imp.SOURCES.map((s) => s.id).sort(),
-    ["asc_analytics", "asc_reviews", "asc_sales", "cf_traffic", "ios_ratings", "play_listing", "play_reports", "play_reviews", "play_tracks", "play_vitals"]);
+    ["asc_analytics", "asc_reviews", "asc_sales", "cf_traffic", "ios_ratings", "play_listing", "play_reports", "play_reviews", "play_tracks", "play_vitals", "search_console"]);
 });
 t("with every credential set, every source is ready (needs() === true, not just truthy)", () => {
   const keys = ["PLAY_SERVICE_ACCOUNT_JSON", "PLAY_REPORTS_BUCKET", "ASC_ISSUER_ID", "ASC_KEY_ID", "ASC_PRIVATE_KEY", "ASC_VENDOR_NUMBER", "CF_ANALYTICS_TOKEN"];
@@ -613,6 +613,22 @@ await tAsync("journey lookup refuses anything but an install UUID (no query runs
   for (const bad of ["", "x", "1; DROP TABLE usage_events", "11111111-2222-4333-8444-55555555550"]) {
     assert.strictEqual(await stats.getJourney(bad), null, bad);
   }
+});
+t("Search Console: page language from its URL", () => {
+  const f = require("../lib/stats")._gscLang;
+  const cases = {
+    "https://lalabuba.com/": "en", "https://lalabuba.com/privacy": "en",
+    "https://lalabuba.com/en/coloring-pages/cat/": "en", "https://lalabuba.com/de/ausmalbilder/katze/": "de",
+    "https://lalabuba.com/boyama-sayfalari/kedi/": "tr", "https://lalabuba.com/tr/": "tr",
+    "https://lalabuba.com/zhuose-ye/mao/": "zh", "https://lalabuba.com/rang-bharane-ke-chitra/": "hi",
+    "https://lalabuba.com/kleurplaten/kat/": "nl", "not a url": "?",
+  };
+  for (const [u, l] of Object.entries(cases)) assert.strictEqual(f(u), l, u);
+});
+t("stats page has the Google Search panel", () => {
+  const js = require("../lib/render-admin-stats").renderAdminStatsPage({}).match(/<script>([\s\S]*?)<\/script>/)[1];
+  new Function(js);
+  assert(/Google Search/.test(js) && /search_console/.test(js) && /Indexed pages/.test(js));
 });
 t("journeys page script parses and has the timeline wiring", () => {
   const html = require("../lib/render-admin-stats").renderAdminStatsPage({});
