@@ -202,9 +202,9 @@ function galleryCardHtml(entry, meta, t, pageCtx = {}) {
   const cta   = t?.colorThis || "Color this →";
   const L     = landing.esc(label);
   return `<div class="gallery-card">
-    <a href="${landing.esc(color)}" class="gallery-card-img" aria-label="${landing.esc(cta)} ${L}"><img src="${entry.url}" alt="${L} ${t?.altSuffix || "coloring page"}" loading="lazy" width="280" height="280"/></a>
+    <a href="${landing.esc(color)}" class="gallery-card-img" rel="nofollow" aria-label="${landing.esc(cta)} ${L}"><img src="${entry.url}" alt="${L} ${t?.altSuffix || "coloring page"}" loading="lazy" width="280" height="280"/></a>
     ${page ? `<a href="${page}" class="gallery-card-label" title="${L}">${L}</a>` : `<span class="gallery-card-label" title="${L}">${L}</span>`}
-    <a href="${landing.esc(color)}" class="gallery-card-cta">${cta}</a>
+    <a href="${landing.esc(color)}" class="gallery-card-cta" rel="nofollow">${cta}</a>
   </div>`;
 }
 
@@ -617,13 +617,13 @@ ${buildNav({ lang: htmlLang, breadcrumbs: [
 ], hreflangMap, ctaHref: colorHref })}
 <main class="lp-main lp-image-page">
   <div class="lp-image-hero">
-    <a href="${colorHref}" class="lp-coloring-img-link" title="${colorLabel}">
+    <a href="${colorHref}" class="lp-coloring-img-link" title="${colorLabel}" rel="nofollow">
       <img src="${seoImg}" alt="${subjectTitle} ${isDE ? "Ausmalbild" : (i18nCfg?.t.altSuffix || "coloring page")} — ${diffLabel}" class="lp-coloring-img" width="800" height="800" loading="eager"/>
     </a>
     <div class="lp-image-actions">
-      <a href="${colorHref}" class="lp-btn lp-btn-primary">✏️ ${colorLabel}</a>
-      <a href="${printHref}" class="lp-btn lp-btn-secondary" target="_blank" rel="noopener">🖨️ ${printLabel}</a>
-      <a href="${dlHref}" class="lp-btn lp-btn-outline" download="lalabuba-${imageSlug}.png">💾 ${dlLabel}</a>
+      <a href="${colorHref}" class="lp-btn lp-btn-primary" rel="nofollow">✏️ ${colorLabel}</a>
+      <a href="${printHref}" class="lp-btn lp-btn-secondary" target="_blank" rel="nofollow noopener">🖨️ ${printLabel}</a>
+      <a href="${dlHref}" class="lp-btn lp-btn-outline" rel="nofollow" download="lalabuba-${imageSlug}.png">💾 ${dlLabel}</a>
     </div>
   </div>
   <div class="lp-image-info lp-section">
@@ -633,7 +633,7 @@ ${buildNav({ lang: htmlLang, breadcrumbs: [
       <a href="${topicPath}" class="lp-topic-link">${topicName}</a>
     </div>
     <p class="lp-image-desc">${desc}</p>
-    <a href="/?s=1&q=${encodeURIComponent(topicDisplayName("en", topic))}&d=${difficulty}" class="lp-generate-link">✨ ${moreLabel} →</a>
+    <a href="/?s=1&q=${encodeURIComponent(topicDisplayName("en", topic))}&d=${difficulty}" class="lp-generate-link" rel="nofollow">✨ ${moreLabel} →</a>
   </div>
   ${relatedHtml}
   ${topicNavSection(lang, topic)}
@@ -673,6 +673,8 @@ function serveImagePrint(req, res, lang, topic, imageSlug) {
         "Content-Disposition": `attachment; filename="lalabuba-${imageSlug}.${ext}"`,
         "Content-Length":      buf.length,
         "Cache-Control":       "public, max-age=31536000",
+        // Growth plan L4: ~90% of "Crawled – not indexed" were these downloads and print views.
+        "X-Robots-Tag":        "noindex",
       });
       return res.end(buf);
     } catch {
@@ -687,6 +689,8 @@ function serveImagePrint(req, res, lang, topic, imageSlug) {
 <head>
   <meta charset="utf-8"/>
   <title>${subjectTitle} — Print | Lalabuba</title>
+  <meta name="robots" content="noindex"/>
+  <link rel="canonical" href="https://lalabuba.com${topicPageUrl(lang, topic) || "/"}${topicPageUrl(lang, topic) ? imageSlug + "/" : ""}"/>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
     body{display:flex;flex-direction:column;align-items:center;min-height:100vh;background:#fff;padding:16px;font-family:sans-serif;}
@@ -706,7 +710,7 @@ function serveImagePrint(req, res, lang, topic, imageSlug) {
   <script>window.addEventListener('load', () => window.print());</script>
 </body>
 </html>`;
-  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex" });
   res.end(html);
 }
 
@@ -2118,6 +2122,11 @@ const server = http.createServer(async (req, res) => {
       // Reverse slug → enTopic
       const enTopic = Object.entries(cfg.topicSlugs).find(([, s]) => s === topicSlug)?.[0];
       if (enTopic) return serveI18nTopic(res, lang, enTopic);
+      // Old sitemaps listed German-only topics (schultuete, einschulung, …) under every hub: 301 to the hub (L4).
+      if (gallery.TOPIC_META[topicSlug] && !topicPageUrl(lang, topicSlug)) {
+        res.writeHead(301, { Location: `/${cfg.root}/`, "Cache-Control": "public, max-age=86400" });
+        return res.end();
+      }
     }
 
     // ── i18n print/download: /<root>/<topic>/<image-slug>/print ─────────────
