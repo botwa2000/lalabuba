@@ -83,4 +83,47 @@ t("sitemap is well-formed, keeps the static pages, has no duplicates", () => {
   assert.strictEqual((xml.match(/<url>/g) || []).length, (xml.match(/<\/url>/g) || []).length);
 });
 
+t("printable pack: 12 languages, own URLs, files, labels, banner, sitemap, event", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const packs = require("../lib/printables");
+  const nav = require("../lib/topic-nav");
+  const langs = ["en", "de", ...Object.keys(i18n.LANGS)];
+  assert.deepStrictEqual([...packs.LANGS].sort(), [...langs].sort(), "a pack page in every page language");
+  const n = packs.CHRISTMAS_PICTURES.length;
+  assert(n >= 12 && n <= 20, `12–20 pictures, got ${n}`);
+  for (const l of packs.LANGS) {
+    const s = packs.strings(l);
+    const p = packs.pagePath(l);
+    assert.strictEqual(packs.langForPath(p), l, `${l}: path round trip`);
+    assert.strictEqual(packs.langForPath(p.slice(0, -1)), l, `${l}: path without trailing slash`);
+    // The pack slug must never shadow a topic page in that language.
+    const slug = p.split("/").filter(Boolean).pop();
+    for (const topic of gallery.TOPICS) {
+      const u = nav.topicPageUrl(l, topic);
+      assert(!u || u.split("/").filter(Boolean).pop() !== slug, `${l}: pack slug "${slug}" = topic ${topic}`);
+    }
+    assert(s.title.length <= 66, `${l}: title ${s.title.length} chars`);
+    assert(s.desc.length <= 160, `${l}: description ${s.desc.length} chars`);
+    assert(!JSON.stringify(s).includes("{n}"), `${l}: unfilled {n}`);
+    assert.strictEqual(s.tips.length, 3, `${l}: tips`);
+    for (const f of [packs.pdfPath(l), packs.pdfPath(l).replace(/\.pdf$/, ".png")])
+      assert(fs.existsSync(path.join(__dirname, "../public", f)), `${l}: ${f} missing — run scripts/make-printable-pack.py`);
+    for (const pic of packs.CHRISTMAS_PICTURES) {
+      assert(gallery.TOPIC_META[pic.topic]?.season === "christmas", `${pic.topic} is a Christmas topic`);
+      if (l !== "en") assert(gallery.subjectLabel(l, pic.subject) !== pic.subject, `${l}: no label for "${pic.subject}"`);
+    }
+    assert(packs.pdfAppUrl(l).includes("utm_source=christmas-pack"), `${l}: PDF link tagged`);
+  }
+  const page = '<div class="legal-content"><section class="lp-section">pics</section>\n  <section class="lp-section lp-topic-nav">nav</section>\n</div>\n<footer></footer>';
+  const out = packs.withPackBanner(page, "tr");
+  assert(out.indexOf("lp-pack-card") > out.indexOf("pics") && out.indexOf("lp-pack-card") < out.indexOf("lp-topic-nav"), "banner before the topic nav");
+  assert.strictEqual(packs.withPackBanner(out, "tr"), out, "banner only once");
+  assert(out.includes(`href="${packs.pagePath("tr")}"`));
+  const locs = require("../lib/sitemap")._build();
+  for (const l of packs.LANGS) assert(locs.includes(`<loc>https://lalabuba.com${packs.pagePath(l)}</loc>`), `${l}: pack page in sitemap`);
+  assert(usage.EVENTS.has("pack_download"));
+  assert(nav.fillTopicMarkers("<!--pack-banner:christmas-->", "de").includes(packs.pagePath("de")), "hub marker filled");
+});
+
 console.log(`\nlanding-seo: ${n} passed`);

@@ -40,6 +40,7 @@ data/gallery.json
 # Growth / social-ops working docs — internal strategy, personal account emails and
 # Meta business/app IDs. This repo is PUBLIC: these stay local, never committed.
 docs/GROWTH-STRATEGY.md
+docs/GROWTH-PLAN.md
 docs/PROMPT-*.md
 docs/VIDEO-SERIES-STRATEGY.md
 docs/WORKING-PREFERENCES.md

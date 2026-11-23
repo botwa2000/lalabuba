@@ -38,6 +38,10 @@ path of the lalabuba.com page the visitor clicked "color" on (e.g.
 validated server-side to `/[\w/.-]` (no query, no external URL, no free text),
 kept 13 months like every usage event, never linked to identity.
 
+**2026-11-23 (website only, no store-form change):** `pack_download` — the printable
+Christmas PDF was downloaded on a pack page. No props; the event's page path says
+which language. Same 13-month retention, never linked to identity.
+
 **2026-11-21 additions (website now; apps from 1.0.27):**
 - `page_leave` (website only): seconds the page was open (5 s steps to a minute,
   then minutes, max 3600), scroll depth (10 % steps) and device class

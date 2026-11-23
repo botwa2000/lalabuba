@@ -71,6 +71,16 @@ function injectLegalFooterSocial() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
+// ── Click events: <a data-track="pack_download"> → first-party beacon (t.js) ──
+
+function wireTracking() {
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest && e.target.closest('[data-track]');
+    if (el && typeof window.lalaTrack === 'function') window.lalaTrack(el.dataset.track);
+  });
+}
+
 wireSettingsDropdown();
 wireTheme();
 injectLegalFooterSocial();
+wireTracking();
