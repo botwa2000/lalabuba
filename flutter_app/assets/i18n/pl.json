@@ -34,6 +34,7 @@
   "orPickSomething": "— albo wybierz coś fajnego —",
   "emptyHint": "Wybierz kartę, słowo dnia lub wpisz swoje — narysujemy! 🎨",
   "coloringHint": "👆 Dotknij koloru, potem dotknij obszaru z numerem!",
+  "tapHere": "Dotknij tutaj!",
   "generating": "Rysuję {subject}…",
   "loadingMessages": [
     "Ostrzymy kredki…",

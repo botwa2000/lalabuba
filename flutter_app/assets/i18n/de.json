@@ -36,6 +36,7 @@
   "orPickSomething": "— oder wähle etwas Lustiges —",
   "emptyHint": "Wähle eine Karte, das Wort des Tages oder tippe dein eigenes — wir zeichnen es! 🎨",
   "coloringHint": "👆 Tippe auf eine Farbe, dann auf einen nummerierten Bereich!",
+  "tapHere": "Hier tippen!",
   "generating": "{subject} wird gezeichnet…",
   "loadingMessages": [
     "Wir spitzen die Stifte…",

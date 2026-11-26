@@ -66,6 +66,7 @@ class CanvasNotifier extends Notifier<CanvasState> {
     // late result is ignored and it stops consuming CPU on an abandoned image.
     final gen = ++_detectGen;
     _killDetectIsolate();
+    _userPickedColour = false; // a new picture opens on its hint colour again
 
     state = CanvasState(isProcessing: true, showNumbers: showNumbers);
 
@@ -162,7 +163,41 @@ class CanvasNotifier extends Notifier<CanvasState> {
       strokes: [],
       isProcessing: false,
       regionColorMap: colorMap,
+      activeColor: _userPickedColour
+          ? null
+          : openingColour(
+              detection: result,
+              regionColorMap: colorMap,
+              guided: showNumbers && !state.isFreeMode,
+              palette: palette,
+              current: state.activeColor,
+            ),
     );
+  }
+
+  /// The colour a picture opens with (growth plan L12). Guided: the colour of
+  /// the largest numbered area, so the first tap on the "Tap here!" area fills
+  /// instead of being refused. The default red (#FF4757) was in no palette, so
+  /// EVERY first tap in colour-by-number used to be blocked. Otherwise the
+  /// current colour if it is a palette colour, else the first palette colour.
+  @visibleForTesting
+  static Color openingColour({
+    required RegionDetectionResult detection,
+    required Map<int, Color> regionColorMap,
+    required bool guided,
+    required List<Color> palette,
+    required Color current,
+  }) {
+    final target = firstFillHintRegion(
+      detection: detection,
+      regionColorMap: regionColorMap,
+      regionColors: const {},
+      guided: guided,
+    );
+    final needed = target == null ? null : regionColorMap[target.id];
+    if (guided && needed != null) return needed;
+    if (palette.isEmpty || palette.contains(current)) return current;
+    return palette.first;
   }
 
   // FIX 2: kill the in-flight detection isolate (if any) and close its port.
@@ -594,7 +629,14 @@ class CanvasNotifier extends Notifier<CanvasState> {
     }
   }
 
-  void setActiveColor(Color c) => state = state.copyWith(activeColor: c);
+  // The child chose a colour themselves for this picture: the opening colour
+  // (see [openingColour]) no longer replaces it when detection finishes.
+  bool _userPickedColour = false;
+
+  void setActiveColor(Color c) {
+    _userPickedColour = true;
+    state = state.copyWith(activeColor: c);
+  }
   void setMode(DrawMode m) =>
       state = state.copyWith(mode: m, clearCurrentStroke: true);
   void toggleNumbers() =>

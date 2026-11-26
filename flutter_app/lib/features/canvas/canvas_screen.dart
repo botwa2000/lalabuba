@@ -44,6 +44,7 @@ import 'stroke_mask.dart';
 import 'canvas_painter.dart';
 import 'narration_service.dart';
 import 'completion_celebration.dart';
+import 'first_fill_hint.dart';
 import 'challenge_strip.dart';
 import 'report_content_sheet.dart';
 import '../rewards/crayon_packs.dart';
@@ -93,6 +94,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   bool _hintVisible = true;
   // One-shot guard so the completion celebration fires once per finished image.
   bool _celebrationShown = false;
+  // Growth plan L12: the current picture got its first colour (tap, paint or
+  // pencil). Until then the "Tap here!" hint shows; first_fill is sent once.
+  bool _firstFillDone = false;
+  // Last press on the picture (canvas-local) — where the first-fill sparkle plays.
+  Offset? _lastPressLocal;
+  Offset? _sparkleAt;
+  int _sparkleSeq = 0;
   String _subject = '';
   // What the child sees as the picture's name; a refused subject's one-tap idea
   // replaces it (and _subject) for the next drawing.
@@ -226,8 +234,11 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     if (mounted) setState(() { _isPreloading = false; });
 
     ref.read(canvasProvider.notifier).reset();
+    _firstFillDone = false;
+    _sparkleAt = null;
     final settings = ref.read(settingsProvider).value;
     final difficulty = widget.args.preloadedDifficulty;
+    _difficulty = difficulty;
     final colorCount = settings?.colorCount ?? 12;
     final paletteColors = _getPaletteColors(settings?.palette ?? 'classic', colorCount);
     try {
@@ -245,6 +256,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         'source': 'explore',
         'preloaded': true,
       });
+      AnalyticsService.track('picture_opened', {'source': 'library', 'difficulty': difficulty});
       if (mounted) setState(() { _hintVisible = true; });
     } catch (e) {
       debugPrint('LALABUBA_PATH: _renderPreloaded load failed: $e');
@@ -283,6 +295,8 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       _isGenerating = true;
       _errorMsg = null;
       _celebrationShown = false; // arm the celebration for the new image
+      _firstFillDone = false;    // and the "Tap here!" hint
+      _sparkleAt = null;
     });
     ref.read(canvasProvider.notifier).reset();
     _abandonSent = false;
@@ -342,6 +356,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
         'color_count': colorCount,
         'duration_ms': genMs,
       });
+      AnalyticsService.track('picture_opened', {'source': 'generated', 'difficulty': difficulty});
 
       if (mounted) {
         setState(() {
@@ -644,6 +659,20 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
     // Fire the completion celebration once when the last guided region is filled.
     ref.listen<CanvasState>(canvasProvider, (prev, next) {
+      // First colour of this picture (every colouring op pushes an undo entry):
+      // hide the hint, sparkle where the child pressed, count it once.
+      if (!_firstFillDone &&
+          next.isReady &&
+          next.undoStack.isNotEmpty &&
+          (prev == null || prev.undoStack.isEmpty)) {
+        final at = _lastPressLocal ?? _hintCenter;
+        setState(() {
+          _firstFillDone = true;
+          _sparkleAt = at;
+          _sparkleSeq++;
+        });
+        AnalyticsService.track('first_fill', {'difficulty': _difficulty});
+      }
       if (!_celebrationShown &&
           next.isReady &&
           next.isComplete &&
@@ -1034,9 +1063,59 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     );
   }
 
+  // Canvas-local centre of the current "Tap here!" target (null = no hint).
+  Offset? _hintCenter;
+
+  Offset? _hintCenterFor(CanvasState canvas, Size size) {
+    final d = canvas.detection;
+    final target = canvas.firstFillHint;
+    if (d == null || target == null) return null;
+    final rect = fitImageRect(
+        d.width.toDouble(), d.height.toDouble(), size.width, size.height);
+    return Offset(rect.left + target.centroid.dx * rect.width / d.width,
+        rect.top + target.centroid.dy * rect.height / d.height);
+  }
+
   Widget _buildInteractiveCanvas(BuildContext context, CanvasState canvas) {
     return LayoutBuilder(builder: (ctx, constraints) {
       final size = Size(constraints.maxWidth, constraints.maxHeight);
+      final showHint = canvas.isReady && !_firstFillDone && !_isGenerating;
+      _hintCenter = showHint ? _hintCenterFor(canvas, size) : null;
+      final hintAt = _hintCenter;
+      final sparkleAt = _sparkleAt;
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Listener(
+            onPointerDown: (e) => _lastPressLocal = e.localPosition,
+            child: _buildGestureCanvas(canvas, size),
+          ),
+          if (hintAt != null)
+            Positioned.fill(
+              child: TapHereHint(
+                key: const ValueKey('tap-here-hint'),
+                center: hintAt,
+                area: size,
+                label: ref.read(l10nProvider).t('tapHere'),
+              ),
+            ),
+          if (sparkleAt != null)
+            Positioned.fill(
+              child: FirstFillSparkle(
+                key: ValueKey('first-fill-sparkle-$_sparkleSeq'),
+                center: sparkleAt,
+                onDone: () {
+                  if (mounted) setState(() => _sparkleAt = null);
+                },
+              ),
+            ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildGestureCanvas(CanvasState canvas, Size size) {
+    return Builder(builder: (ctx) {
       return GestureDetector(
         // A tap fills in BOTH tap and paint modes (and samples in eyedropper).
         // Paint mode used to react only to drags, so after the eraser forced

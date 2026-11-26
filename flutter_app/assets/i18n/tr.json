@@ -34,6 +34,7 @@
   "orPickSomething": "— veya eğlenceli bir şey seç —",
   "emptyHint": "Bir kart seç, günün kelimesini seç veya kendin yaz — biz çizeceğiz! 🎨",
   "coloringHint": "👆 Bir renk dokun, sonra numaralı bölgeye dokun!",
+  "tapHere": "Buraya dokun!",
   "generating": "{subject} çiziliyor…",
   "loadingMessages": [
     "Kalemleri açıyoruz…",

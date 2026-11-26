@@ -34,6 +34,7 @@
   "orPickSomething": "— of kies iets leuks —",
   "emptyHint": "Kies een kaart, het woord van de dag of typ je eigen — wij tekenen het! 🎨",
   "coloringHint": "👆 Tik op een kleur, dan op een genummerd gebied om het in te kleuren!",
+  "tapHere": "Tik hier!",
   "generating": "{subject} tekenen…",
   "loadingMessages": [
     "Potloden slijpen…",

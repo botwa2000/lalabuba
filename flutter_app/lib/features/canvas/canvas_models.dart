@@ -33,6 +33,30 @@ class Region {
   });
 }
 
+/// Where a child should make their first tap (growth plan L12): the largest
+/// area that is still uncoloured. Guided colour-by-number → the largest
+/// NUMBERED area (its colour is then pre-selected, so the tap always fills);
+/// free colour / numbers off → the largest meaningful area (any colour fills).
+/// [Region.centroid] is the interior label point, so it lies inside the area.
+/// Null until detection is done. Mirrors the web's canvas.js firstHintTarget().
+Region? firstFillHintRegion({
+  required RegionDetectionResult? detection,
+  required Map<int, Color> regionColorMap,
+  required Map<int, Color> regionColors,
+  required bool guided,
+}) {
+  final d = detection;
+  if (d == null) return null;
+  // detection.regions is sorted by area, largest first.
+  for (final r in d.regions) {
+    if (r.id == d.backgroundRegionId || regionColors.containsKey(r.id)) continue;
+    if (!regionColorMap.containsKey(r.id)) continue;
+    if (guided && d.regionPaletteIndex[r.id] == null) continue;
+    return r;
+  }
+  return null;
+}
+
 class Stroke {
   final List<Offset> points;
   final Color color;
@@ -209,6 +233,14 @@ class CanvasState {
   });
 
   bool get hasImage => baseImage != null;
+
+  /// The first-tap target for the "Tap here!" hint, see [firstFillHintRegion].
+  Region? get firstFillHint => firstFillHintRegion(
+        detection: detection,
+        regionColorMap: regionColorMap,
+        regionColors: regionColors,
+        guided: showNumbers && !isFreeMode,
+      );
   bool get isReady => hasImage && detection != null && !isProcessing;
 
   /// The "meaningful areas" a child is expected to colour = the would-be-numbered

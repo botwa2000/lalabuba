@@ -23,6 +23,10 @@ class AnalyticsService {
   /// generate events and settings toggles are intentionally not sent.
   static const _usageEvents = {
     'coloring_completed': 'complete',
+    // Colouring funnel (growth plan L12), same events as the web:
+    // picture on the canvas → first colour → finished.
+    'picture_opened': 'picture_open',
+    'first_fill': 'first_fill',
     'draw_saved': 'save',
     'draw_shared': 'share_art',
     'draw_printed': 'print',

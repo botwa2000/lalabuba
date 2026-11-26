@@ -34,6 +34,7 @@
   "orPickSomething": "— ou escolha algo divertido —",
   "emptyHint": "Escolha um cartão, a palavra do dia ou digite o seu — a gente desenha! 🎨",
   "coloringHint": "👆 Toque em uma cor, depois toque em qualquer região numerada!",
+  "tapHere": "Toque aqui!",
   "generating": "Desenhando {subject}…",
   "loadingMessages": [
     "Apontando os lápis…",
