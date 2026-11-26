@@ -538,8 +538,9 @@ export function firstHintTarget() {
       if (!(id > 0) || id === state.backgroundRegionId || !state.regionColorMap.has(id)) continue;
       if (state.completedRegions.has(id)) continue;
       const area = state.regionAreaMap?.get(id) ?? reg.area ?? 0;
-      if (!best || area > best.area) best = { x: reg.x, y: reg.y, area, colorIndex: guided ? state.regionColorMap.get(id) : null };
+      if (!best || area > best.area) best = { id, x: reg.x, y: reg.y, area, colorIndex: guided ? state.regionColorMap.get(id) : null };
     }
+    if (best) _snapInside(best);
     if (best || guided) return best;
   }
   if (state.regionPixels?.size) {
@@ -556,9 +557,28 @@ export function firstHintTarget() {
       const p = bestPx[bestPx.length >> 1];
       x = p % w; y = (p / w) | 0;
     }
-    return { x, y, area: bestPx.length, colorIndex: null };
+    return { id: bestId, x, y, area: bestPx.length, colorIndex: null };
   }
   return null;
+}
+
+// A badge point can sit on an outline pixel, and a tap there snaps to the
+// nearest area, maybe a neighbour that needs another colour. Move the marker to
+// the hinted area's own pixel closest to its badge (worker data only).
+function _snapInside(t) {
+  const rm = state.regionMap;
+  const w = previewCanvas.width;
+  if (!rm || rm[t.y * w + t.x] === t.id) return;
+  const px = state.regionPixels?.get(t.id);
+  if (!px?.length) return;
+  const step = Math.max(1, (px.length / 4000) | 0);
+  let best = -1, bestD = Infinity;
+  for (let i = 0; i < px.length; i += step) {
+    const x = px[i] % w, y = (px[i] / w) | 0;
+    const d = (x - t.x) ** 2 + (y - t.y) ** 2;
+    if (d < bestD) { bestD = d; best = px[i]; }
+  }
+  if (best >= 0) { t.x = best % w; t.y = (best / w) | 0; }
 }
 
 export function animateCompletion() {

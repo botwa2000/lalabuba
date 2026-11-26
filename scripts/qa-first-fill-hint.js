@@ -30,7 +30,8 @@ let failures = 0;
 const check = (n, c, extra = '') => { console.log(`  ${c ? 'ok  ' : 'FAIL'} ${n}${extra ? ' — ' + extra : ''}`); if (!c) failures++; };
 
 async function fixture(ctx, topic) {
-  const origin = new URL(TARGET).origin;
+  // Gallery pictures are only published on prod (dev's gallery is empty).
+  const origin = 'https://lalabuba.com';
   const list = await (await ctx.request.get(`${origin}/api/gallery?topic=${topic}`)).json();
   const entry = (list.easy || list.medium || [])[0];
   const img = await ctx.request.get(origin + entry.url);
@@ -53,6 +54,7 @@ async function draw(page, subject) {
 // Hint + state as the page sees it (same module instances as main.js).
 const probe = (page) => page.evaluate(async () => {
   const { state } = await import('/js/state.js');
+  const { findRegionAt, firstHintTarget } = await import('/js/canvas.js');
   const el = document.getElementById('tap-here-hint');
   const r = el.getBoundingClientRect();
   const c = document.getElementById('preview-canvas').getBoundingClientRect();
@@ -61,7 +63,9 @@ const probe = (page) => page.evaluate(async () => {
   const cv = document.getElementById('preview-canvas');
   const px = Math.round((r.left - c.left) / c.width * cv.width);
   const py = Math.round((r.top - c.top) / c.height * cv.height);
-  const id = state.regionMap ? state.regionMap[py * cv.width + px] : 0;
+  // What a tap at the marker resolves to — the page's own lookup (it snaps off outlines).
+  const id = findRegionAt(px, py);
+  const target = firstHintTarget();
   const label = el.querySelector('.tap-here-label');
   const lr = label.getBoundingClientRect();
   return {
@@ -70,7 +74,7 @@ const probe = (page) => page.evaluate(async () => {
     label: label.textContent, labelBox: { l: lr.left, r: lr.right, t: lr.top, b: lr.bottom }, vw: innerWidth,
     selected: state.selectedPaletteIndex, activeSwatch: active,
     needs: id > 0 && state.regionColorMap?.has(id) ? state.regionColorMap.get(id) : null,
-    regionId: id, filled: state.firstFillTracked, done: state.completedRegions.size,
+    regionId: id, targetId: target?.id ?? null, filled: state.firstFillTracked, targetDone: null, done: state.completedRegions.size,
     freeMode: state.isFreeMode, pointerEvents: getComputedStyle(el.querySelector('.tap-here-ring')).pointerEvents,
   };
 });
@@ -120,6 +124,8 @@ async function run() {
     check('marker inside the picture', p.x >= p.canvas.l && p.x <= p.canvas.r && p.y >= p.canvas.t && p.y <= p.canvas.b);
     check('label not clipped by the viewport', p.labelBox.l >= 0 && p.labelBox.r <= p.vw, JSON.stringify(p.labelBox));
     check('marker sits on a numbered area', p.needs != null, `region ${p.regionId}`);
+    check('a tap at the marker lands in the hinted area itself', p.regionId === p.targetId, `tap → ${p.regionId}, hinted ${p.targetId}`);
+    const hinted = p.targetId;
     check('that area\'s colour is pre-selected', p.selected === p.needs && p.activeSwatch === p.needs, `selected ${p.selected}, swatch ${p.activeSwatch}, needs ${p.needs}`);
     check('marker never takes the tap', p.pointerEvents === 'none');
     if (SHOTS) await page.screenshot({ path: path.join(OUT, `hint-${vp.name}--1-open.png`) });
@@ -130,7 +136,8 @@ async function run() {
     const sparkled = await sparkles;
     await page.waitForTimeout(400);
     let q = await probe(page);
-    check('tap on the marker fills (first try, no "wrong colour")', q.filled && q.done >= 1, `done ${q.done}`);
+    const hintedDone = await page.evaluate(async (id) => (await import('/js/state.js')).state.completedRegions.has(id), hinted);
+    check('tap on the marker fills the hinted area (first try, no "wrong colour")', q.filled && hintedDone, `done ${q.done}`);
     check('hint gone after the first fill', !q.visible);
     check('sparkle on the first fill', sparkled);
     if (SHOTS) await page.screenshot({ path: path.join(OUT, `hint-${vp.name}--2-after-tap.png`) });
