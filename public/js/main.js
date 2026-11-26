@@ -7,7 +7,8 @@ import { recordCompletion, recordShare, recordSave, recordChallengeCreated, getP
 import { awardForCompletion, addArtSticker, weekScene, SCENE_SUBJECTS } from './scenes.js';
 import { isSoundOn, toggleSound, playComplete, bounce, sparkleBurst } from './fx.js';
 import { isNarrateOn, toggleNarrate, narrateSupported, speak } from './narrate.js';
-import { animateCompletion } from './canvas.js';
+import { animateCompletion, setRedrawHook } from './canvas.js';
+import { initFirstFillHint, updateTapHint, celebrateFirstFill } from './first-fill-hint.js';
 import { track } from './analytics.js';
 import { resetPictureRating } from './feedback.js';
 import { t, applyTranslations, setLanguage, getCurrentLang } from './i18n.js';
@@ -646,6 +647,7 @@ function markFirstColour() {
   if (state.firstFillTracked) return;
   state.firstFillTracked = true;
   track('first_fill', { difficulty: difficultySelect.value });
+  try { celebrateFirstFill(); } catch {}
   try { showProgress(pictureProgress()); } catch {}
 }
 
@@ -1271,6 +1273,12 @@ document.addEventListener('lalabuba:retroactive-completion', () => { try { check
 // ─── Zoom ─────────────────────────────────────────────────────────────────────
 const canvasFrame = document.querySelector('.canvas-frame');
 if (canvasFrame) initZoom(canvasFrame, previewCanvas);
+
+// ─── First-fill hint (growth plan L12) ────────────────────────────────────────
+// Pre-selects the colour of the largest area and marks it "Tap here!" until the
+// picture gets its first colour (markFirstColour → celebrateFirstFill).
+initFirstFillHint();
+setRedrawHook(updateTapHint);
 
 // ─── Config panel toggle (desktop sidebar + mobile drawer) ────────────────────
 const configPanel    = document.getElementById('config-panel');

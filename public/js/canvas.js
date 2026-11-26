@@ -513,27 +513,52 @@ export function redrawCanvas() {
   if (showNumbersInput.checked) {
     overlayNumbers();
   }
+  if (_redrawHook) { try { _redrawHook(); } catch { /* presentation only */ } }
 }
 
-// ─── Completion animation ────────────────────────────────────────────────────
-// Plays a short "comes to life" beat the instant the last region is filled: the
-// colored picture reveals itself over the line art in a few quick waves, then the
-// canvas gives a happy bounce with sparkles + a chime. Returns a Promise that
-// resolves once the beat is done, so main.js can then slide in the celebration
-// card. PURE PRESENTATION — it reads state.paintedImageData/regionPixels and
-// repaints the visible canvas; it never mutates fill state, so an undo afterwards
-// is unaffected. Degrades to an instant finish when data or motion is unavailable.
-function burstCompletionSparkles() {
-  try {
-    const regions = state.numberRegions;
-    const rect = previewCanvas.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    if (!regions || !regions.length) { sparkleAt(previewCanvas, 14); return; }
-    const sx = rect.width / previewCanvas.width;
-    const sy = rect.height / previewCanvas.height;
-    regions.slice(0, 6).forEach((r) =>
-      sparkleBurst(rect.left + r.x * sx, rect.top + r.y * sy, 6));
-  } catch { /* ignore */ }
+// main.js registers the first-fill hint here (first-fill-hint.js): it follows
+// every redraw so the hint moves to worker-accurate regions once they arrive.
+let _redrawHook = null;
+export function setRedrawHook(fn) { _redrawHook = fn; }
+
+// Where a child should make their first tap (growth plan L12): the largest
+// area still uncoloured. Guided colour-by-number → the largest numbered area,
+// with the palette index it needs; free colour / numbers off → the largest
+// non-background area (any colour fills it). Canvas pixel coordinates.
+// Returns null until the picture has areas to point at.
+export function firstHintTarget() {
+  if (!state.paintedImageData) return null;
+  const guided = showNumbersInput.checked && !state.isFreeMode;
+  // Badge points (overlayNumbers) sit inside their area, so prefer them whenever
+  // the numbers are drawn — in free mode too (any colour, no colorIndex).
+  if (state.numberRegions?.length && state.regionColorMap?.size) {
+    let best = null;
+    for (const reg of state.numberRegions) {
+      const id = reg._mapId ?? reg.id;
+      if (!(id > 0) || id === state.backgroundRegionId || !state.regionColorMap.has(id)) continue;
+      if (state.completedRegions.has(id)) continue;
+      const area = state.regionAreaMap?.get(id) ?? reg.area ?? 0;
+      if (!best || area > best.area) best = { x: reg.x, y: reg.y, area, colorIndex: guided ? state.regionColorMap.get(id) : null };
+    }
+    if (best || guided) return best;
+  }
+  if (state.regionPixels?.size) {
+    let bestId = 0, bestPx = null;
+    for (const [id, px] of state.regionPixels) {
+      if (id === state.backgroundRegionId || state.completedRegions.has(id) || !px.length) continue;
+      if (!bestPx || px.length > bestPx.length) { bestId = id; bestPx = px; }
+    }
+    if (!bestPx) return null;
+    const w = previewCanvas.width;
+    let { x, y } = _centroid(bestId, bestPx, w);
+    // A curved area's centroid can fall outside it: then point at one of its own pixels.
+    if (state.regionMap && state.regionMap[y * w + x] !== bestId) {
+      const p = bestPx[bestPx.length >> 1];
+      x = p % w; y = (p / w) | 0;
+    }
+    return { x, y, area: bestPx.length, colorIndex: null };
+  }
+  return null;
 }
 
 export function animateCompletion() {
@@ -1012,6 +1037,7 @@ export function drawBaseImage(image) {
   state.celebrationShown = false;
   state.completionRecorded = false; // new image → this coloring may be recorded once
   state.firstFillTracked = false;   // and its first fill counted once (analytics funnel)
+  state.colourPickedByUser = false; // a new picture opens on its hint colour again
   state.coloringStartTime = null;
   state.undoStack = [];
   state.isSegmenting = false; // worker path sets this; reset on new image

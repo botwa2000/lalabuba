@@ -23,6 +23,7 @@ export const state = {
   lastSource: null,
   coloringStartTime: null,
   selectedPaletteIndex: 0,
+  colourPickedByUser: false, // this picture: the child chose a colour (first-fill-hint.js leaves it alone)
   selectedSize: 'xxl',
   pencilDrawing: false,
   customColor: '#e91e63',

@@ -48,6 +48,7 @@ export function renderLegend() {
         new EyeDropper().open().then(({ sRGBHex }) => {
           state.customColor = sRGBHex;
           state.selectedPaletteIndex = -1;
+          state.colourPickedByUser = true;
           renderLegend();
         }).catch(() => {});
       });
@@ -116,6 +117,7 @@ export function renderLegend() {
     item.querySelector("button").addEventListener("click", () => {
       state.eraseMode = false;
       state.selectedPaletteIndex = index;
+      state.colourPickedByUser = true;
       renderLegend();
       setStatus(t('selected', entry.label));
     });
@@ -218,6 +220,7 @@ export function openMaxPicker() {
     state.customColor = btn.dataset.color;
     state.eraseMode = false;
     state.selectedPaletteIndex = -1;
+    state.colourPickedByUser = true;
     renderLegend();
     closeMaxPicker();
   });

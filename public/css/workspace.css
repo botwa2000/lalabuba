@@ -191,6 +191,65 @@
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z' fill='%23333'/%3E%3Cpath d='M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z' fill='%23555'/%3E%3C/svg%3E") 0 24, crosshair;
 }
 .preview-stage.empty .canvas-frame { display: none; }
+/* First-fill hint (first-fill-hint.js, growth plan L12): a pulsing ring on the
+   largest area + "Tap here!" until the picture's first colour. Inside
+   .canvas-frame so it follows zoom/pan; left/top are % of the canvas, set in JS.
+   pointer-events none on every part: the tap must reach #preview-canvas.
+   Fixed colours: it always sits on the white picture, in both themes.
+   .canvas-frame has line-height 0, so the label resets it. */
+.tap-here-hint {
+  position: absolute;
+  z-index: 2;            /* above #draw-canvas (absolute, no z-index) */
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.tap-here-hint[hidden] { display: none; }
+.tap-here-ring {
+  position: absolute;
+  left: -26px;
+  top: -26px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 3px solid #7c4dff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.85);
+  pointer-events: none;
+  animation: tapHerePulse 1.6s ease-in-out infinite;
+}
+.tap-here-label {
+  position: absolute;
+  left: 0;
+  bottom: 34px;          /* above the ring */
+  transform: translateX(-50%);
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: #7c4dff;
+  color: #fff;
+  font-family: var(--ff-brand);
+  font-size: .95rem;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  pointer-events: none;
+  animation: tapHereBob 1.6s ease-in-out infinite;
+}
+/* Near the top edge: label under the ring. Near a side: label grows inward. */
+.tap-here-hint--below .tap-here-label { bottom: auto; top: 34px; }
+.tap-here-hint--start .tap-here-label { transform: translateX(-18px); }
+.tap-here-hint--end   .tap-here-label { transform: translateX(calc(-100% + 18px)); }
+@keyframes tapHerePulse {
+  0%, 100% { transform: scale(.85); opacity: 1; }
+  50%      { transform: scale(1.15); opacity: .55; }
+}
+@keyframes tapHereBob {
+  0%, 100% { margin-bottom: 0; }
+  50%      { margin-bottom: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tap-here-ring, .tap-here-label { animation: none; }
+}
 /* Progress pill "🎨 7 / 12": top-left of the stage, never blocks a tap
    (pointer-events none), under zoom (4), loading (5) and error (6) layers. */
 .color-progress {
