@@ -23,6 +23,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Same JDK as flutter-release.yml. Without it the runner's default JDK
+      # (25 since 2026-11) is used, which Gradle 8.14 cannot run on, and the
+      # APK step failed on every push from 2026-11-21.
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
