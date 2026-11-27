@@ -29,7 +29,7 @@ not been declared — it is now. Typed drawing subjects are now kept 30 days.
 | Optional parent family account: email address, child nicknames/avatars/age groups, account ID, linked devices | our API (sign-in code via Brevo, processor) | until the account is deleted | app functionality (account management) | **Yes** | No |
 | Saved artwork, preferences | on device only | — | — | — | — |
 
-**Website only (2026-11-20, no store-form change — the apps send none of it):**
+**Website (2026-11-20, no store-form change):**
 coloring-funnel events `picture_open` (a picture is on the canvas; `source` =
 library | generated) and `first_fill` (first colour in that picture), plus the
 prop `lp` on `page_cta_open` / `picture_open` / `first_fill` / `complete`: the
@@ -37,6 +37,13 @@ path of the lalabuba.com page the visitor clicked "color" on (e.g.
 `/boyama-sayfalari/kedi`, or `(direct)`). It is one of our own page paths,
 validated server-side to `/[\w/.-]` (no query, no external URL, no free text),
 kept 13 months like every usage event, never linked to identity.
+
+**Apps too, from the release after 1.0.27 (2026-11-27, growth plan L12):** the
+apps now send `picture_open` (props `source` = library | generated, `difficulty`)
+and `first_fill` (prop `difficulty`), with the install's random ID like every
+other app usage event. Never `lp`, never the subject. Same data type as the
+existing "Usage events" row above (Play: App activity → App interactions; Apple:
+Usage Data → Product Interaction), so no store-form answer changes.
 
 **2026-11-23 (website only, no store-form change):** `pack_download` — the printable
 Christmas PDF was downloaded on a pack page. No props; the event's page path says
