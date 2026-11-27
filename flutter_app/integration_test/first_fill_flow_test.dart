@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:lalabuba/core/l10n/l10n_service.dart';
 import 'package:lalabuba/features/canvas/canvas_controller.dart';
 import 'package:lalabuba/features/canvas/canvas_screen.dart';
 import 'package:lalabuba/features/canvas/first_fill_hint.dart';
@@ -93,7 +94,10 @@ void main() {
     await idle(const Duration(milliseconds: 500));
     FocusManager.instance.primaryFocus?.unfocus();
     await idle(const Duration(milliseconds: 500));
-    await tester.tap(find.textContaining('Draw!').last);
+    // The device language decides the button text (English simulator, German AVD).
+    final l10n = ProviderScope.containerOf(tester.element(find.byType(TextField).first)).read(l10nProvider);
+    final drawWord = l10n.t('drawBtn').replaceAll('✨', '').trim();
+    await tester.tap(find.textContaining(drawWord).last);
     await waitFor(() {
       if (find.byType(CanvasScreen).evaluate().isEmpty) return false;
       final c = container().read(canvasProvider);
@@ -108,7 +112,14 @@ void main() {
     final target = c0.firstFillHint;
     check('hint_target_found', target != null, true);
     check('hint_shown', find.byType(TapHereHint).evaluate().length, 1);
-    check('hint_label', find.text('Tap here!').evaluate().length, 1);
+    final label = tester
+        .widgetList<Text>(find.descendant(of: find.byType(TapHereHint), matching: find.byType(Text)))
+        .map((t) => t.data ?? '')
+        .join();
+    // ignore: avoid_print
+    print('FLOW_CHECK hint_label=$label');
+    // Localised (simulator: English "Tap here!"; the German AVD: "Hier tippen!").
+    check('hint_label_localised', label, l10n.t('tapHere'));
     check('undo_empty_at_open', c0.undoStack.isEmpty, true);
     if (target != null) {
       check('opening_colour_matches_area',
