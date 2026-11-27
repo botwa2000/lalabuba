@@ -40,6 +40,8 @@ async function fixture(ctx, topic) {
 
 async function draw(page, subject) {
   await page.evaluate(() => { const p = document.getElementById('config-panel'); if (p) p.classList.remove('collapsed'); });
+  // Remember this picture's region map: the next one must bring a new one.
+  await page.evaluate(async () => { window.__qaOldMap = (await import('/js/state.js')).state.regionMap || null; });
   await page.fill('#subject', subject, { force: true });
   await page.evaluate(() => document.getElementById('generator-form')
     .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
@@ -48,7 +50,17 @@ async function draw(page, subject) {
     const btn = document.getElementById('canvas-numbers-btn');
     return c && !c.hidden && btn && !btn.disabled;
   }, null, { timeout: 90000 });
-  await page.waitForTimeout(1200);
+  // The Numbers button turns on before segmentation finishes; the hint moves to
+  // the worker-accurate area once the region map arrives, so wait for that.
+  for (let i = 0; i < 360; i++) {
+    const ready = await page.evaluate(async () => {
+      const { state } = await import('/js/state.js');
+      return !!state.regionMap && state.regionMap !== window.__qaOldMap && !state.isSegmenting;
+    });
+    if (ready) break;
+    await page.waitForTimeout(250);
+  }
+  await page.waitForTimeout(800);
 }
 
 // Hint + state as the page sees it (same module instances as main.js).
@@ -163,7 +175,7 @@ async function run() {
     pic = await fixture(ctx, 'dog');
     await draw(page, 'dog');
     p = await probe(page);
-    check('new picture: hint back, colour pre-selected', p.visible && !p.filled && p.selected === p.needs, `selected ${p.selected}, needs ${p.needs}`);
+    check('new picture: hint back, colour pre-selected', p.visible && !p.filled && p.selected === p.needs, `selected ${p.selected}, needs ${p.needs}, tap → ${p.regionId}, hinted ${p.targetId}, visible ${p.visible}`);
     await page.locator('#go-free-btn').dispatchEvent('click');
     await page.waitForTimeout(800);
     p = await probe(page);

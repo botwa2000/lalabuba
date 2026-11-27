@@ -29,7 +29,9 @@ export function updateTapHint() {
   const el = hintEl();
   const canvas = canvasEl();
   if (!el || !canvas) return;
-  if (state.firstFillTracked || !state.paintedImageData || canvas.hidden) { el.hidden = true; return; }
+  // Hidden while the regions are still being found (~1–2 s on phones): before
+  // that the areas are placeholders and the marker would jump once they land.
+  if (state.firstFillTracked || !state.paintedImageData || canvas.hidden || state.isSegmenting) { el.hidden = true; return; }
   const target = firstHintTarget();
   if (!target) { el.hidden = true; return; }
 
