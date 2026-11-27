@@ -178,6 +178,33 @@ workflows:
     artifacts:
       - $CM_BUILD_DIR/asc_submit.log
 
+  # ── App Store localisations (growth plan L6) — manual only ──────────────────
+  # scripts/asc_localize.py with MODE=check|status|apply|verify: name, subtitle,
+  # keywords, description and What's New for 10 languages. apply creates the next
+  # App Store version once the live one is approved and fills it; it NEVER submits
+  # for review. workflowId: "appstore-localize" (pass MODE as an env variable).
+  appstore-localize:
+    name: Lalabuba iOS — App Store localisations
+    max_build_duration: 15
+    instance_type: mac_mini_m2
+    triggering:
+      events: []
+    integrations:
+      app_store_connect: Bonistock ASC
+    environment:
+      xcode: "26.6"   # pinned — see flutter-release
+      vars:
+        APP_STORE_APPLE_ID: "6761691648"
+    scripts:
+      - name: App Store localisations ($MODE)
+        script: |
+          PY=$(head -1 "$(command -v app-store-connect)" | sed 's/^#!//')
+          $PY -c "import jwt" 2>/dev/null || { PY=python3; $PY -m pip install --quiet pyjwt cryptography; }
+          set -o pipefail
+          PYTHONIOENCODING=utf-8 $PY scripts/asc_localize.py "${MODE:-status}" 2>&1 | tee "$CM_BUILD_DIR/asc_localize.log"
+    artifacts:
+      - $CM_BUILD_DIR/asc_localize.log
+
   # ── iOS customer reviews report — manual only ────────────────────────────────
   # Lists every written App Store review (all territories) via the ASC API.
   # workflowId to use in API call: "appstore-reviews"

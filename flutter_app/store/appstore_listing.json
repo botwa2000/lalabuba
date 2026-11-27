@@ -1,0 +1,77 @@
+{
+  "_comment": "App Store localisations (growth plan L6), applied by scripts/asc_localize.py. name/subtitle ≤ 30, keywords ≤ 100 (comma-separated, no word from name or subtitle), description ≤ 4000. 'description_from' = take the Play draft docs/store-listing/<lang>.md full description and apply 'ios' replacements (gallery → Photos, phone/tablet → iPhone/iPad); otherwise 'description' is given here. 'What's New' comes from whats_new.json by language prefix. Keywords from the top Search Console landing pages per language (28 days to 2026-11-27) + the Play drafts.",
+  "locales": {
+    "en-US": {
+      "name": "Lalabuba: Coloring Page Maker",
+      "subtitle": "Color by number for kids",
+      "keywords": "unicorn,dinosaur,car,rocket,dragon,princess,cat,mermaid,christmas,drawing,paint,book,toddler,print",
+      "description_from": "en",
+      "ios": [["Print the picture or save it to your gallery", "Print the picture or save it to Photos"],
+              ["Works on phones and tablets, in 12 languages", "Works on iPhone and iPad, in 12 languages"]]
+    },
+    "de-DE": {
+      "name": "Lalabuba: Ausmalbilder Kinder",
+      "subtitle": "Malen nach Zahlen & Malbuch",
+      "keywords": "einhorn,dinosaurier,auto,rakete,drache,prinzessin,katze,meerjungfrau,weihnachten,polizei,zeichnen",
+      "description_from": "de",
+      "ios": [["Ausmalbild ausdrucken oder in der Galerie speichern", "Ausmalbild ausdrucken oder in Fotos speichern"],
+              ["Für Smartphone und Tablet, in 12 Sprachen", "Für iPhone und iPad, in 12 Sprachen"]]
+    },
+    "tr": {
+      "name": "Lalabuba: Çocuk Boyama Oyunu",
+      "subtitle": "Sayılarla boyama kitabı",
+      "keywords": "araba,roket,unicorn,dinozor,ejderha,kedi,prenses,yılbaşı,melek,kurabiye,resim,çizim,sayfaları",
+      "description_from": "tr",
+      "ios": [["Resmi yazdır ya da galeriye kaydet", "Resmi yazdır ya da Fotoğraflar'a kaydet"],
+              ["Telefon ve tablette, 12 dilde", "iPhone ve iPad'de, 12 dilde"]]
+    },
+    "es-ES": {
+      "name": "Dibujos para Colorear Lalabuba",
+      "subtitle": "Pintar por números, niños",
+      "keywords": "unicornio,dinosaurio,coche,cohete,dragón,gato,princesa,sirena,navidad,libro,infantil,juegos",
+      "description_from": "es",
+      "ios": [["Imprime el dibujo o guárdalo en tu galería", "Imprime el dibujo o guárdalo en Fotos"],
+              ["Para móvil y tablet, en 12 idiomas", "Para iPhone y iPad, en 12 idiomas"]]
+    },
+    "pl": {
+      "name": "Lalabuba: Kolorowanki do Druku",
+      "subtitle": "Malowanie po numerach dzieci",
+      "keywords": "samochód,jednorożec,dinozaur,rakieta,smok,kot,księżniczka,syrenka,święta,laweta,kamper,gry",
+      "description_from": "pl",
+      "ios": [["Wydrukuj kolorowankę albo zapisz ją w galerii", "Wydrukuj kolorowankę albo zapisz ją w Zdjęciach"],
+              ["Na telefon i tablet, w 12 językach", "Na iPhone'a i iPada, w 12 językach"]]
+    },
+    "fr-FR": {
+      "name": "Lalabuba : Coloriage Enfant",
+      "subtitle": "Dessins magiques à colorier",
+      "keywords": "licorne,dinosaure,voiture,fusée,dragon,chat,princesse,sirène,noël,numéro,peinture,maternelle",
+      "description_from": "fr",
+      "ios": [["Imprime le coloriage ou garde-le dans ta galerie", "Imprime le coloriage ou garde-le dans Photos"],
+              ["Sur téléphone et tablette, en 12 langues", "Sur iPhone et iPad, en 12 langues"]]
+    },
+    "it": {
+      "name": "Lalabuba: Disegni da Colorare",
+      "subtitle": "Colora con i numeri, bambini",
+      "keywords": "unicorno,dinosauro,auto,razzo,drago,gatto,principessa,sirena,natale,angelo,pittura,giochi,libro",
+      "description": "Lalabuba crea disegni da colorare per bambini da qualsiasi parola: scrivi un'idea e in pochi secondi arriva un nuovo disegno. Colora con i numeri, tocca per riempire o disegna liberamente con la matita. Niente pubblicità, niente acquisti in-app, nessun account.\n\nUn unicorno che salta sull'arcobaleno, un drago robot, un monster truck, un gatto con un gomitolo: qualunque cosa immagini tuo figlio, Lalabuba la disegna come una pagina da colorare in bianco e nero, pulita e chiara. Preferisci qualcosa di pronto? Scegli tra centinaia di disegni da colorare: animali, dinosauri, principesse, auto, razzi e, a dicembre, disegni di Natale.\n\nCOME FUNZIONA\n• Scrivi quello che vuoi colorare\n• Tocca un'area numerata, poi un colore per riempirla\n• Aggiungi i tuoi dettagli con la matita\n• Stampa il disegno o salvalo in Foto\n• Sfida un amico: condividi lo stesso disegno e vince chi finisce prima\n\nDA FACILE A DIFFICILE\n• 4 livelli: Facile, Medio, Difficile ed Estremo\n• I disegni facili hanno aree grandi per le mani piccole; quelli difficili tengono occupati i più grandi\n• Colora con i numeri, da 6 a 24 colori\n• Tavolozze pastelli a cera, pastello e natura, più tavolozze da sbloccare\n\nPREMI CHE FANNO VENIRE VOGLIA DI CREARE\n• Più di 30 adesivi da collezionare: traguardi, giorni di fila, esploratore, creatività, condivisione\n• Una nuova missione ogni giorno\n• Sblocca nuove confezioni di pastelli: Neon, Caramella e Galassia\n• Vesti il tuo pinguino mascotte\n\nPENSATO PER LE FAMIGLIE\n• Niente pubblicità, niente acquisti in-app\n• Nessun account necessario; un account genitore facoltativo conserva i progressi su più dispositivi\n• Ogni idea e ogni disegno vengono controllati per la sicurezza dei bambini prima di essere mostrati\n• I link esterni sono protetti da un controllo per genitori\n• Per iPhone e iPad, in 12 lingue\n\nDisegni da colorare per bambini dai 3 ai 12 anni, e per chiunque ami colorare."
+    },
+    "ru": {
+      "name": "Lalabuba: Раскраски для детей",
+      "subtitle": "Рисование по номерам",
+      "keywords": "единорог,динозавр,машина,ракета,дракон,котик,принцесса,русалка,новый год,ёлка,малыши,игры",
+      "description": "Lalabuba делает раскраски для детей из любого слова: напиши идею, и через несколько секунд появится новая картинка. Раскрашивай по номерам, заливай касанием или рисуй карандашом. Без рекламы, без встроенных покупок, без регистрации.\n\nЕдинорог прыгает через радугу, дракон-робот, монстр-трак, котик с клубком: что бы ни придумал ребёнок, Lalabuba нарисует это как чёткую чёрно-белую раскраску. Хочется готовую? Выбирай из сотен раскрасок: животные, динозавры, принцессы, машины, ракеты, а в декабре — новогодние картинки.\n\nКАК ЭТО РАБОТАЕТ\n• Напиши, что хочешь раскрасить\n• Коснись области с номером, затем цвета, чтобы её залить\n• Дорисуй свои детали карандашом\n• Распечатай картинку или сохрани её в «Фото»\n• Брось вызов другу: раскрасьте одну картинку наперегонки\n\nОТ ПРОСТОГО К СЛОЖНОМУ\n• 4 уровня: лёгкий, средний, сложный и экстрим\n• В лёгких картинках большие области для маленьких рук, сложные увлекут детей постарше\n• Раскраска по номерам от 6 до 24 цветов\n• Палитры «мелки», «пастель» и «природа», а также палитры, которые можно открыть\n\nНАГРАДЫ, С КОТОРЫМИ ХОЧЕТСЯ ТВОРИТЬ\n• Больше 30 наклеек: достижения, дни подряд, исследователь, творчество, «поделиться»\n• Новое задание каждый день\n• Открывай наборы мелков: неон, конфеты и галактика\n• Наряжай своего пингвина-талисмана\n\nСДЕЛАНО ДЛЯ СЕМЕЙ\n• Без рекламы и без встроенных покупок\n• Регистрация не нужна; родительский аккаунт по желанию сохраняет прогресс на всех устройствах\n• Каждая идея и каждая картинка проверяются на безопасность для детей, прежде чем их увидит ребёнок\n• Внешние ссылки защищены родительским контролем\n• Для iPhone и iPad, на 12 языках\n\nРаскраски для детей от 3 до 12 лет и для всех, кто любит раскрашивать."
+    },
+    "nl-NL": {
+      "name": "Lalabuba: Kleurplaten Kinderen",
+      "subtitle": "Kleuren op nummer, tekenen",
+      "keywords": "auto,eenhoorn,dinosaurus,raket,draak,kat,prinses,zeemeermin,kerst,sinterklaas,printen,kleurboek",
+      "description": "Lalabuba maakt kleurplaten voor kinderen van elk woord: typ een idee en binnen een paar seconden is er een nieuwe kleurplaat. Kleur op nummer, tik om te vullen of teken vrij met het potlood. Geen reclame, geen in-app-aankopen, geen account nodig.\n\nEen eenhoorn die over een regenboog springt, een drakenrobot, een monstertruck, een kat met een bolletje wol: wat je kind ook bedenkt, Lalabuba tekent het als een duidelijke zwart-witte kleurplaat. Liever iets kant-en-klaars? Kies uit honderden kleurplaten: dieren, dinosaurussen, prinsessen, auto's, raketten en in december kerstplaten.\n\nZO WERKT HET\n• Typ wat je wilt kleuren\n• Tik op een vlak met een nummer en dan op een kleur om het te vullen\n• Teken je eigen details met het potlood\n• Print de kleurplaat of bewaar hem in Foto's\n• Daag een vriend uit: deel dezelfde kleurplaat en kijk wie het eerst klaar is\n\nVAN MAKKELIJK TOT MOEILIJK\n• 4 niveaus: Makkelijk, Gemiddeld, Moeilijk en Extreem\n• Makkelijke platen hebben grote vlakken voor kleine handjes; moeilijke houden oudere kinderen bezig\n• Kleuren op nummer met 6 tot 24 kleuren\n• Paletten met waskrijt, pastel en natuurkleuren, plus paletten om vrij te spelen\n\nBELONINGEN DIE KINDEREN LATEN DOORGAAN\n• Meer dan 30 stickers om te verzamelen: mijlpalen, dagen op rij, ontdekker, creativiteit, delen\n• Elke dag een nieuwe opdracht\n• Speel krijtsets vrij: Neon, Snoep en Melkweg\n• Kleed je eigen pinguïn-mascotte aan\n\nGEMAAKT VOOR GEZINNEN\n• Geen reclame, geen in-app-aankopen\n• Geen account nodig; een optioneel ouderaccount bewaart de voortgang op al je apparaten\n• Elk idee en elke tekening wordt gecontroleerd op veiligheid voor kinderen voordat het verschijnt\n• Externe links zitten achter een oudercontrole\n• Voor iPhone en iPad, in 12 talen\n\nKleurplaten voor kinderen van 3 tot 12 jaar, en voor iedereen die graag kleurt."
+    },
+    "pt-BR": {
+      "name": "Desenhos para Colorir Lalabuba",
+      "subtitle": "Pintar por números, crianças",
+      "keywords": "unicórnio,dinossauro,carro,foguete,dragão,gato,princesa,sereia,natal,livro,pintura,infantil,jogos",
+      "description": "O Lalabuba cria desenhos para colorir para crianças a partir de qualquer palavra: digite uma ideia e, em poucos segundos, aparece um desenho novo. Pinte por números, toque para preencher ou desenhe livremente com o lápis. Sem anúncios, sem compras no app, sem precisar de conta.\n\nUm unicórnio pulando um arco-íris, um dragão robô, um monster truck, um gato com um novelo de lã: o que a criança imaginar, o Lalabuba desenha como uma página para colorir em preto e branco, limpa e clara. Prefere algo pronto? Escolha entre centenas de desenhos para colorir: animais, dinossauros, princesas, carros, foguetes e, em dezembro, desenhos de Natal.\n\nCOMO FUNCIONA\n• Digite o que você quer colorir\n• Toque numa área numerada e depois numa cor para preenchê-la\n• Desenhe seus próprios detalhes com o lápis\n• Imprima o desenho ou salve em Fotos\n• Desafie um amigo: compartilhe o mesmo desenho e veja quem termina primeiro\n\nDO FÁCIL AO DIFÍCIL\n• 4 níveis: Fácil, Médio, Difícil e Extremo\n• Os desenhos fáceis têm áreas grandes para mãos pequenas; os difíceis entretêm as crianças maiores\n• Pintura por números com 6 a 24 cores\n• Paletas de giz de cera, pastel e natureza, e mais paletas para desbloquear\n\nRECOMPENSAS QUE DÃO VONTADE DE CRIAR\n• Mais de 30 figurinhas para colecionar: conquistas, dias seguidos, explorador, criatividade, compartilhar\n• Uma missão nova todos os dias\n• Desbloqueie kits de giz: Neon, Doce e Galáxia\n• Vista o seu pinguim mascote\n\nFEITO PARA FAMÍLIAS\n• Sem anúncios, sem compras no app\n• Não precisa de conta; uma conta de responsável opcional guarda o progresso em todos os aparelhos\n• Cada ideia e cada desenho são verificados quanto à segurança infantil antes de aparecer\n• Links externos ficam atrás de uma verificação para pais\n• Para iPhone e iPad, em 12 idiomas\n\nDesenhos para colorir para crianças de 3 a 12 anos, e para todo mundo que gosta de colorir."
+    }
+  }
+}
